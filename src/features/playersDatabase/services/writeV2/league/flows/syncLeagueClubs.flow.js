@@ -8,6 +8,7 @@ import {
   trackedRunTransaction,
 } from '../../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
+import { invalidateClubDocumentCache } from '../../../cache/index.js'
 import {
   buildClubDocumentProjection,
   removeClubAgeGroupSeasonProjections,
@@ -195,6 +196,10 @@ export async function syncLeagueClubsV2({
     action: 'league-v2-sync-clubs',
     collection: PLAYERS_DATABASE_COLLECTIONS.clubs,
   })
+
+  if (clubResult.changedClubs > 0) {
+    affectedClubIds.forEach(invalidateClubDocumentCache)
+  }
 
   return {
     leagueId,

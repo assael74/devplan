@@ -1,9 +1,6 @@
 // src/features/playersDatabase/ui/pages/leagueCenterPage/deleteSeason/useDeleteLeagueSeason.js
 
 import * as React from 'react'
-import { readOpenDeleteSeasonReceipts, matchesDeleteSeasonReceipt } from '../../../../services/writeV2/league/deleteSeason/deleteLeagueSeasonReceipt.js'
-import { readClearLeagueSources } from '../../../../services/writeV2/league/clear/readClearLeagueTeams.js'
-import { buildDeleteLeagueSeasonPlan } from '../../../../domain/leagueV2/deleteSeason/deleteLeagueSeason.builder.js'
 import { approveDeleteSeason } from '../../../../domain/leagueV2/deleteSeason/deleteLeagueSeasonApprovedState.builder.js'
 import { prepareDeleteLeagueSeason } from '../../../../services/writeV2/league/deleteSeason/prepareDeleteLeagueSeason.js'
 import { startDeleteSeasonSession, writeDeleteSeasonStep, failDeleteSeasonSession, finishDeleteSeasonSession } from '../../../../services/writeV2/league/deleteSeason/deleteLeagueSeasonSession.js'
@@ -24,11 +21,7 @@ const describe = error => ({
 }[error?.code] || 'לא ניתן להשלים את הפעולה. יש לבדוק את נתוני הליגה והעונה.')
 const targetOf = row => ({ leagueId: row.leagueId, seasonKey: row.seasonKey })
 
-export default function useDeleteLeagueSeason({ reload, refreshKey }) {
-  const [sources, setSources] = React.useState(null)
-  const [receipts, setReceipts] = React.useState([])
-  const [readError, setReadError] = React.useState('')
-  const [receiptReadError, setReceiptReadError] = React.useState('')
+export default function useDeleteLeagueSeason({ reload }) {
   const [selected, setSelected] = React.useState(null)
   const [status, setStatus] = React.useState('idle')
   const [proposal, setProposal] = React.useState(null)
@@ -37,38 +30,11 @@ export default function useDeleteLeagueSeason({ reload, refreshKey }) {
   const [counts, setCounts] = React.useState({})
   const [message, setMessage] = React.useState('')
   const busy = React.useRef(false)
-  React.useEffect(() => {
-    let active = true
-    setSources(null)
-    setReadError('')
-    setReceiptReadError('')
-    setReceipts([])
-    Promise.allSettled([readClearLeagueSources(), readOpenDeleteSeasonReceipts()]).then(([domain, receiptResult]) => {
-      if (!active) return
-      if (domain.status === 'fulfilled') setSources(domain.value)
-      else setReadError('קריאת תנאי המחיקה נכשלה. יש לרענן את המרכז.')
-      if (receiptResult.status === 'fulfilled') setReceipts(receiptResult.value)
-      else setReceiptReadError('קריאת תיעודי המחיקה נכשלה. יש לרענן את המרכז.')
-    })
-    return () => { active = false }
-  }, [refreshKey])
-
   const availability = React.useCallback(row => {
-    if (!sources) return { allowed: false, reason: readError || 'בודק נתונים מהשרת…' }
-    if (receiptReadError) return { allowed: false, reason: receiptReadError }
     if (!row.seasonKey || row.seasonKey === 'all') return { allowed: false, reason: 'יש לבחור עונה מסוימת.' }
     if (selected && ['preparing', 'writing', 'steps'].includes(status)) return { allowed: false, reason: 'פעולת המחיקה בביצוע.' }
-    try {
-      const plan = buildDeleteLeagueSeasonPlan(sources, targetOf(row), new Date().toISOString())
-      const absent = plan.retryState !== 'season_present'
-      if (absent && !receipts.some(receipt => matchesDeleteSeasonReceipt(receipt, targetOf(row)))) {
-        return { allowed: false, hidden: true, reason: 'העונה אינה קיימת ואין מחיקה פתוחה להשלמה.' }
-      }
-      return { allowed: true, label: absent ? 'השלמת מחיקה' : 'מחיקת עונה', reason: 'מחיקת העונה תוך שמירת זהות הליגה' }
-    } catch (error) {
-      return { allowed: false, reason: describe(error) }
-    }
-  }, [sources, receipts, readError, receiptReadError, selected, status])
+    return { allowed: true, label: 'מחיקת עונה', reason: 'תנאי המחיקה ייבדקו לאחר הלחיצה' }
+  }, [selected, status])
 
   const prepare = async row => {
     if (busy.current) return
@@ -124,8 +90,6 @@ export default function useDeleteLeagueSeason({ reload, refreshKey }) {
           error.failedTarget = finding ? { targetType: finding.target, documentId: finding.documentId } : null
           throw error
         }
-        setSources(null)
-        setReceipts(value => value.filter(row => row.docId !== session.receiptId))
         setStatus('succeeded')
         setMessage('העונה נמחקה. זהות הליגה נשמרה והביקורת הושלמה בהצלחה.')
         try { await reload({ fromServer: true }) }

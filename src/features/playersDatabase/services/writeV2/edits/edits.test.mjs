@@ -284,9 +284,13 @@ async function environment(initial = fixture(), options = {}) {
       return synthetic('usage', usage)
     if (specifier.endsWith('/cache/documentCache.js'))
       return synthetic('cache', {
+        deleteDocumentCacheValue: () => {},
         invalidateDocumentCacheByPrefix: () => {
           invalidations += 1
         },
+        invalidateDocumentCacheByPrefixKeepingSnapshot: () => {},
+        invalidateDocumentCacheValueKeepingSnapshot: () => {},
+        updateDocumentCacheValue: () => null,
       })
     const resolved = path.resolve(path.dirname(parent.identifier), specifier)
     assert.ok(

@@ -33,6 +33,7 @@ export const FIRESTORE_USAGE_COVERAGE = [
   operation({ id: 'playersDatabase.player.fallback', feature: 'playersDatabase', collection: 'dbBirthTeams', type: 'query', instrumented: true, source: 'features/playersDatabase/services/read/playerPage.read.js' }),
   operation({ id: 'playersDatabase.leaguesMaster.read', feature: 'playersDatabase', collection: 'dbLeaguesMaster', type: 'document-read', instrumented: true, source: 'features/playersDatabase/services/read/leaguesMaster.read.js' }),
   operation({ id: 'playersDatabase.favorites.read', feature: 'playersDatabase', collection: 'dbFavorites', type: 'document-read', instrumented: true, source: 'features/playersDatabase/services/read/favorites.read.js' }),
+  operation({ id: 'playersDatabase.tasks.listener', feature: 'playersDatabase', collection: 'tasksShorts', type: 'listener', instrumented: true, source: 'features/playersDatabase/services/read/tasks/tasks.read.js' }),
 
   operation({ id: 'playersDatabase.entities.write', feature: 'playersDatabase', collection: 'dbPlayers/dbBirthTeams/dbLeagues', type: 'transaction', instrumented: true, source: 'features/playersDatabase/services/write' }),
   operation({ id: 'playersDatabase.favorites.write', feature: 'playersDatabase', collection: 'dbFavorites', type: 'transaction', instrumented: true, source: 'features/playersDatabase/services/write/favorites' }),

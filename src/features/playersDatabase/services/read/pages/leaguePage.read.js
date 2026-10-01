@@ -2,6 +2,9 @@
 
 import { getLeagueById } from '../entities/league.js'
 
-export const readLeaguePageData = async ({ leagueId = '' } = {}) => ({
-  leagueDoc: await getLeagueById(leagueId),
+export const readLeaguePageData = async ({
+  leagueId = '',
+  refresh = false,
+} = {}) => ({
+  leagueDoc: await getLeagueById(leagueId, { refresh }),
 })

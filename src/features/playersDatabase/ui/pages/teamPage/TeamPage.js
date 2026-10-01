@@ -51,6 +51,7 @@ import useTeamStatsColumns from './stats/table/hooks/useTeamStatsColumns.js'
 import useClearRosterFlow from './roster/clear/useClearRosterFlow.js'
 import ClearRosterModal from './roster/clear/ClearRosterModal.js'
 import useClearStatsFlow from './stats/clear/hooks/useClearStatsFlow.js'
+import { resolveNextTeamSeasonDeleteAction } from '../../../services/writeV2/roster/clear/readClearRoster.js'
 import ClearStatsModal from './stats/clear/components/ClearStatsModal.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import useTeamReport from './report/useTeamReport.js'
@@ -99,6 +100,7 @@ function TeamPageContent() {
     reload,
     loading,
     error,
+    refreshError,
     selectionError,
   } = useTeamPage()
   const auditFindingId = React.useMemo(() => (
@@ -173,15 +175,31 @@ function TeamPageContent() {
     reload,
   })
   const deleteSeasonOptions = React.useMemo(() => {
-    return seasonOptions.filter(option => Boolean(findTeamPageSeasonDoc({
-      teamSeasons,
-      selectedSeasonOption: option,
-    })))
-  }, [seasonOptions, teamSeasons])
+    return seasonOptions.map(option => {
+      const season = findTeamPageSeasonDoc({
+        teamSeasons,
+        selectedSeasonOption: option,
+      })
+      if (!season) return null
+
+      return {
+        ...option,
+        deleteAction: resolveNextTeamSeasonDeleteAction({
+          identity: {
+            birthTeamDocumentId: cleanKey(
+              team?.birthTeamDocumentId || team?.teamDocumentId || team?.id
+            ),
+            seasonKey: option.seasonKey,
+            leagueId: option.leagueId || leagueId,
+          },
+          season,
+        }),
+      }
+    }).filter(option => Boolean(option?.deleteAction))
+  }, [leagueId, seasonOptions, team, teamSeasons])
   const playersDelete = useClearRosterFlow({
     team,
     selectedSeasonOption,
-    seasonOptions: deleteSeasonOptions,
     leagueId,
     reload,
     refreshAfterStats: statsDelete.status,
@@ -433,6 +451,11 @@ function TeamPageContent() {
   return (
     <>
       <Box sx={sx.page}>
+        {refreshError ? (
+          <Typography level='body-sm' color='warning'>
+            הרענון נכשל. מוצגים הנתונים האחרונים שנטענו.
+          </Typography>
+        ) : null}
         <TeamHeader
           breadcrumbs={breadcrumbs}
           team={team}

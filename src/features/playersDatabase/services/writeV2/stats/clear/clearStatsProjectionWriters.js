@@ -5,6 +5,12 @@ import { doc, serverTimestamp, updateDoc } from 'firebase/firestore'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { trackedGetDocFromServer } from '../../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
+import {
+  invalidateClubDocumentCache,
+  invalidateClubsMasterDocumentCache,
+  invalidateLeagueDocumentCache,
+  invalidatePlayerDocumentCache,
+} from '../../../cache/index.js'
 import { CLEAR_STATS_APPROVED_STATE_VERSION } from '../../../../domain/statsV2/clearStatsApprovedState.builder.js'
 
 const normalize = value => {
@@ -95,6 +101,11 @@ const writeOperation = async ({ targetType, operation }) => {
   }
 
   await updateDoc(reference, writeFields)
+
+  if (targetType === 'club') invalidateClubDocumentCache(docId)
+  if (targetType === 'clubsMaster') invalidateClubsMasterDocumentCache()
+  if (targetType === 'league') invalidateLeagueDocumentCache(docId)
+  if (targetType === 'playerDocument') invalidatePlayerDocumentCache(docId)
 
   return { targetType, docId, action: 'update', status: 'written' }
 }

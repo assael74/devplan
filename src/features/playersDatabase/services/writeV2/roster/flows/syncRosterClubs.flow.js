@@ -6,6 +6,7 @@ import {
 
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
+import { invalidateClubDocumentCache } from '../../../cache/index.js'
 import { cleanValue } from '../../../../model/shared/value.model.js'
 
 export async function syncRosterClubsV2({
@@ -39,6 +40,7 @@ export async function syncRosterClubsV2({
   })
 
   await batch.commit()
+  validDocuments.forEach(item => invalidateClubDocumentCache(item.clubId))
 
   return {
     updatedClubs: validDocuments.length,

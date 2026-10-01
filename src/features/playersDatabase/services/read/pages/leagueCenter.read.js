@@ -2,7 +2,10 @@
 
 import { collection, doc } from 'firebase/firestore'
 import { db } from '../../../../../services/firebase/firebase.js'
-import { trackedGetDocsFromServer, trackedGetDocFromServer } from '../../../../../services/firestore/usage/index.js'
+import {
+  trackedGetDocFromServer,
+  trackedGetDocsFromServer,
+} from '../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS as C } from '../../../constants/pdb.constants.js'
 import { listLeagues } from '../entities/league.js'
 import { readLeaguesMasterDocument } from '../masters/leaguesMaster.read.js'
@@ -26,6 +29,7 @@ const readLeagueCenterFromServer = async () => {
     trackedGetDocsFromServer(collection(db, C.leagues), usage(C.leagues)),
     trackedGetDocFromServer(doc(db, C.leaguesMaster, 'all'), usage(C.leaguesMaster)),
   ])
+
   return {
     leagueDocuments: leagues.docs.map(row => ({ ...row.data(), id: row.id })),
     leaguesMasterDoc: master.exists() ? { ...master.data(), id: master.id, documentExists: true } : null,

@@ -56,7 +56,7 @@ export default function useLeagueUrlEditor({
     setOpen(true)
   }
 
-  // Only the selected section is updated. Reload must not reset the other draft.
+  // Only the selected section is updated. Recovery reload runs only after a failed write.
   const saveSection = async ({ write, setSection, submitted, label }) => {
     setSection(current => ({ ...current, saving: true, error: '' }))
     let saved = false
@@ -71,9 +71,9 @@ export default function useLeagueUrlEditor({
       notify({ status: SNACK_STATUS.ERROR, title: `שמירת ${label} נכשלה`, message })
     }
     try {
-      await reload()
+      if (!saved) await reload()
     } catch (error) {
-      const message = saved ? 'השמירה הצליחה; רענון התצוגה נכשל' : 'רענון התצוגה נכשל'
+      const message = 'רענון התצוגה נכשל'
       setSection(current => ({
         ...current,
         error: [current.error, message].filter(Boolean).join('. '),

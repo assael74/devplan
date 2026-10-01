@@ -1,17 +1,13 @@
 // src/features/playersDatabase/ui/pages/teamPage/roster/clear/useClearRosterFlow.js
 
 import * as React from 'react'
-import { readNextTeamSeasonDeleteAction } from '../../../../../services/writeV2/roster/clear/readClearRoster.js'
 import { prepareClearRoster } from '../../../../../services/writeV2/roster/clear/prepareClearRoster.js'
 import { buildClearRosterApprovedState } from '../../../../../domain/rosterV2/clear/clearRosterApprovedState.builder.js'
 import { writeClearRosterStep } from '../../../../../services/writeV2/roster/clear/writeClearRosterStep.js'
 import { CLEAR_ROSTER_STEPS, startClearRosterSession, reportClearRosterCanonical, reportClearRosterStep, reportClearRosterFailure, finishClearRosterSession } from '../../../../../services/writeV2/roster/clear/clearRosterSession.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
-const targetKey = target => [target.birthTeamDocumentId, target.seasonKey, target.leagueId].join('::')
-const EMPTY_SEASON_OPTIONS = []
-
-export default function useClearRosterFlow({ team, selectedSeasonOption, seasonOptions = EMPTY_SEASON_OPTIONS, leagueId, reload, refreshAfterStats }) {
+export default function useClearRosterFlow({ team, selectedSeasonOption, leagueId, reload, refreshAfterStats }) {
   const birthTeamDocumentId = team?.birthTeamDocumentId || team?.teamDocumentId || team?.id || ''
   const buildTarget = React.useCallback(seasonOption => ({
     birthTeamDocumentId: clean(birthTeamDocumentId),
@@ -22,20 +18,6 @@ export default function useClearRosterFlow({ team, selectedSeasonOption, seasonO
     () => buildTarget(selectedSeasonOption),
     [buildTarget, selectedSeasonOption]
   )
-  const availableTargets = React.useMemo(() => {
-    const uniqueTargets = new Map()
-    const options = seasonOptions.length ? seasonOptions : [selectedSeasonOption]
-
-    options.map(buildTarget).forEach(target => {
-      if (target.birthTeamDocumentId && target.seasonKey && target.leagueId) {
-        uniqueTargets.set(targetKey(target), target)
-      }
-    })
-
-    return [...uniqueTargets.values()]
-  }, [buildTarget, seasonOptions, selectedSeasonOption])
-  const [deleteActionByTarget, setDeleteActionByTarget] = React.useState({})
-  const [deleteActionsError, setDeleteActionsError] = React.useState('')
   const [activeTarget, setActiveTarget] = React.useState(null)
   const [open, setOpen] = React.useState(false)
   const [status, setStatus] = React.useState('idle')
@@ -45,29 +27,6 @@ export default function useClearRosterFlow({ team, selectedSeasonOption, seasonO
   const [counts, setCounts] = React.useState({})
   const [message, setMessage] = React.useState('')
   const busyRef = React.useRef(false)
-
-  React.useEffect(() => {
-    let active = true
-    setDeleteActionByTarget({})
-    setDeleteActionsError('')
-
-    Promise.all(availableTargets.map(async target => {
-      try {
-        return { key: targetKey(target), action: await readNextTeamSeasonDeleteAction(target) }
-      } catch (error) {
-        console.error('[playersDatabase] Delete action availability read failed:', error)
-        return { key: targetKey(target), action: null, failed: true }
-      }
-    })).then(entries => {
-      if (!active) return
-      setDeleteActionByTarget(Object.fromEntries(entries.map(entry => [entry.key, entry.action])))
-      if (entries.some(entry => entry.failed)) {
-        setDeleteActionsError('לא ניתן לבדוק כעת אילו פעולות מחיקה זמינות.')
-      }
-    })
-
-    return () => { active = false }
-  }, [availableTargets, refreshAfterStats])
 
   const prepareTarget = async requestedTarget => {
     if (busyRef.current) return
@@ -98,16 +57,14 @@ export default function useClearRosterFlow({ team, selectedSeasonOption, seasonO
   )
 
   const isDisabledFor = seasonOption => {
-    const target = buildTarget(seasonOption)
     return refreshAfterStats === 'executing' ||
       refreshAfterStats === 'loadingPreview' ||
-      deleteActionByTarget[targetKey(target)] !== 'roster'
+      seasonOption?.deleteAction !== 'roster'
   }
 
   const getDeleteActionFor = seasonOption => {
-    const target = buildTarget(seasonOption)
     if (refreshAfterStats === 'executing' || refreshAfterStats === 'loadingPreview') return null
-    return deleteActionByTarget[targetKey(target)] || null
+    return seasonOption?.deleteAction || null
   }
 
   const approve = async () => {
@@ -184,7 +141,7 @@ export default function useClearRosterFlow({ team, selectedSeasonOption, seasonO
     disabled: isDisabledFor(selectedSeasonOption),
     isDisabledFor,
     getDeleteActionFor,
-    deleteActionsError,
+    deleteActionsError: '',
     disabledReason: 'הפעולה נקבעת לפי מצב הסטטיסטיקה והסגל במסמך העונה.',
     openModal, retry: () => prepareTarget(activeTarget || defaultTarget), approve, next,
     close: () => {

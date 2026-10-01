@@ -128,7 +128,7 @@ test('Opening and unchanged save clicks do not call either service', async () =>
   assert.deepEqual(env.calls, [])
 })
 
-test('URL save sends only URL identity and preserves the unsaved rules draft across reload', async () => {
+test('URL save sends only URL identity and preserves the unsaved rules draft without reload', async () => {
   const env = await editorEnvironment()
   env.render().changeRule('promotionDirectPlaces', '2')
   env.render().changeUrl('https://new')
@@ -154,7 +154,7 @@ test('URL save sends only URL identity and preserves the unsaved rules draft acr
   assert.equal(editor.urlDirty, false)
   assert.equal(editor.rulesDirty, true)
   assert.equal(editor.draftRules.promotionDirectPlaces, '2')
-  assert.equal(env.reloads(), 1)
+  assert.equal(env.reloads(), 0)
 })
 
 test('Invalid rule input cannot block a valid URL save', async () => {
@@ -236,12 +236,23 @@ test('One section saves at a time; loading belongs only to that section', async 
   assert.equal(env.render().saving, false)
 })
 
-test('Reload failure after commit does not dirty or roll back the saved section', async () => {
+test('Successful commit does not reload because the raw League cache is write-through', async () => {
   const env = await editorEnvironment({ reloadFailure: true })
   env.render().changeUrl('https://new')
   await env.render().saveUrl()
   assert.equal(env.render().urlDirty, false)
-  assert.match(env.render().urlError, /השמירה הצליחה/)
+  assert.equal(env.render().urlError, '')
   assert.equal(env.render().rulesError, '')
   assert.equal(env.notices[0].status, 'success')
+  assert.equal(env.reloads(), 0)
+})
+
+test('Failed write still attempts one recovery reload', async () => {
+  const env = await editorEnvironment({
+    fail: 'updateLeagueSeasonUrl',
+  })
+  env.render().changeUrl('https://new')
+  await env.render().saveUrl()
+  assert.equal(env.reloads(), 1)
+  assert.match(env.render().urlError, /rejected/)
 })

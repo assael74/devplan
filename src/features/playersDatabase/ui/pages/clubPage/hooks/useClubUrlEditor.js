@@ -13,6 +13,7 @@ export default function useClubUrlEditor({ clubId, reload, notify }) {
     await saveEditor({
       write: () => updateClubUrl({ clubId, clubUrl }),
       reload,
+      reloadAfterSuccess: false,
       notify,
       close: () => setOpen(false),
       setSaving,

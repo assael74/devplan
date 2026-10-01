@@ -68,6 +68,8 @@ test('exposes the next safe team deletion action when League clear is blocked', 
 
   const { result } = renderHook(() => useClearLeagueTeamsFlow(props))
 
+  expect(prepareClearLeagueTeams).not.toHaveBeenCalled()
+  await act(async () => result.current.openModal())
   await waitFor(() => expect(result.current.nextDeleteAction).toBe('stats'))
   expect(result.current.nextDeleteTargetId).toBe('team-1')
   expect(result.current.disabled).toBe(true)
@@ -82,6 +84,8 @@ test('disables League clear when the complete plan is already absent', async () 
 
   const { result } = renderHook(() => useClearLeagueTeamsFlow(props))
 
+  expect(prepareClearLeagueTeams).not.toHaveBeenCalled()
+  await act(async () => result.current.openModal())
   await waitFor(() => expect(result.current.alreadyCleared).toBe(true))
   expect(result.current.disabled).toBe(true)
   expect(result.current.disabledReason).toBe('קבוצות העונה כבר נמחקו.')

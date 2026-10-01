@@ -37,6 +37,7 @@ export default function useTeamUrlEditor({
             teamUrl,
           }),
         reload,
+        reloadAfterSuccess: false,
         notify,
         close: () => setRow(null),
         setSaving,

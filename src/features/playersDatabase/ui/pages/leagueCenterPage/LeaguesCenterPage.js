@@ -35,7 +35,7 @@ export default function LeaguesCenterPage() {
   const tasksModel = usePlayersDatabaseTasks()
   const taskActions = usePlayersDatabaseTaskActions()
   const seasonCreate = useLeagueSeasonCreate({ onSuccess: model.reload })
-  const seasonDelete = useDeleteLeagueSeason({ reload: model.reload, refreshKey: model.leagueDocuments })
+  const seasonDelete = useDeleteLeagueSeason({ reload: model.reload })
   const [taskModalOpen, setTaskModalOpen] = React.useState(false)
   const [editTask, setEditTask] = React.useState(null)
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([

@@ -1,4 +1,4 @@
-// features/playersDatabase/services/read/teamPage.read.js
+// src/features/playersDatabase/services/read/pages/teamPage.read.js
 
 import { getLeagueById } from '../entities/league.js'
 import { getTeamById } from '../entities/team.js'
@@ -12,6 +12,11 @@ import { resolveTeamBirthYear } from '../../../model/team/teamIdentity.model.js'
 import { buildTeamPageSeasonSnapshots } from '../../../model/team/page/teamPageSeasonSnapshots.model.js'
 import { buildTeamPageData } from '../../../model/team/page/teamPageData.model.js'
 import { PLAYERS_DATABASE_SEASONS_CATALOG } from '../../../catalog/seasons.catalog.js'
+import {
+  buildTeamPageDataCacheKey,
+  readWithDocumentCache,
+  refreshWithDocumentCache,
+} from '../../cache/index.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
@@ -19,7 +24,7 @@ const getSeasonIdentity = season => String(
   season?.seasonKey || season?.seasonId || season?.id || ''
 ).trim()
 
-export const readTeamPageData = async ({ leagueId = '', teamId = '' } = {}) => {
+const loadTeamPageData = async ({ leagueId = '', teamId = '' } = {}) => {
   const [leagueDoc, teamDoc, leaguesMasterDoc] = await Promise.all([
     getLeagueById(leagueId),
     getTeamById(teamId),
@@ -28,16 +33,30 @@ export const readTeamPageData = async ({ leagueId = '', teamId = '' } = {}) => {
 
   const birthTeamDocumentId = teamDoc?.id || teamId
   const seasonEntries = Array.isArray(teamDoc?.seasons) ? teamDoc.seasons : []
-  const [listedTeamSeasons, indexedTeamSeasons] = await Promise.all([
-    listTeamSeasons(birthTeamDocumentId),
-    Promise.all(seasonEntries.map(entry => getTeamSeason({
-      birthTeamDocumentId,
-      seasonKey: entry?.seasonKey,
-    }))),
-  ])
+  const listedTeamSeasons = await listTeamSeasons(birthTeamDocumentId)
   const teamSeasonsByIdentity = new Map()
 
-  ;[...listedTeamSeasons, ...indexedTeamSeasons]
+  listedTeamSeasons
+    .filter(Boolean)
+    .forEach(season => {
+      const identity = getSeasonIdentity(season)
+      if (identity && !teamSeasonsByIdentity.has(identity)) {
+        teamSeasonsByIdentity.set(identity, season)
+      }
+    })
+
+  const missingSeasonEntries = seasonEntries.filter(entry => {
+    const identity = getSeasonIdentity(entry)
+    return identity && !teamSeasonsByIdentity.has(identity)
+  })
+  const fallbackTeamSeasons = await Promise.all(
+    missingSeasonEntries.map(entry => getTeamSeason({
+      birthTeamDocumentId,
+      seasonKey: entry?.seasonKey,
+    }))
+  )
+
+  fallbackTeamSeasons
     .filter(Boolean)
     .forEach(season => {
       const identity = getSeasonIdentity(season)
@@ -147,4 +166,22 @@ export const readTeamPageData = async ({ leagueId = '', teamId = '' } = {}) => {
       teamSeasons: [...expectedTeamSeasonStates.values()],
     },
   }
+}
+
+
+export const readTeamPageData = async ({
+  leagueId = '',
+  teamId = '',
+  rebuildFromCache = false,
+} = {}) => {
+  const key = buildTeamPageDataCacheKey({ leagueId, teamId })
+  if (!key) return loadTeamPageData({ leagueId, teamId })
+
+  // Team Page refresh rebuilds the derived page model from cached entity readers.
+  // It is intentionally not a Server Fresh operation.
+  const reader = rebuildFromCache ? refreshWithDocumentCache : readWithDocumentCache
+  return reader({
+    key,
+    read: () => loadTeamPageData({ leagueId, teamId }),
+  })
 }

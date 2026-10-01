@@ -544,7 +544,7 @@ export default function useTeamStatsImport({
     approvedState: approvedForSync,
     onAuditClean: () => {
       invalidateStatsImportCacheV2({ approvedState: approvedForSync })
-      reload?.()
+      if (typeof reload === 'function') void reload().catch(() => {})
     },
   })
 

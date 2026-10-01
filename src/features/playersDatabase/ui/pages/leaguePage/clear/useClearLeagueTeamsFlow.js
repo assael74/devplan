@@ -20,7 +20,7 @@ const messages = {
 }
 const describe = error => messages[error?.code] || 'לא ניתן להשלים את הפעולה. יש לבדוק את זהויות העונה ואת המסמכים הנדרשים.'
 
-export default function useClearLeagueTeamsFlow({ league, selectedSeasonOption, reload, refreshKey }) {
+export default function useClearLeagueTeamsFlow({ league, selectedSeasonOption, reload }) {
   const leagueId = league?.id || league?.leagueId || ''
   const seasonKey = selectedSeasonOption?.seasonKey || ''
   const target = React.useMemo(() => ({ leagueId, seasonKey }), [leagueId, seasonKey])
@@ -31,7 +31,7 @@ export default function useClearLeagueTeamsFlow({ league, selectedSeasonOption, 
   const [stepIndex, setStepIndex] = React.useState(0)
   const [counts, setCounts] = React.useState({})
   const [message, setMessage] = React.useState('')
-  const [eligibility, setEligibility] = React.useState({ allowed: false, reason: 'בודק את נתוני העונה מהשרת…' })
+  const [eligibility, setEligibility] = React.useState(null)
   const busy = React.useRef(false)
   const checkEligibility = React.useCallback(async () => {
     if (!leagueId || !seasonKey) return { allowed: false, reason: 'יש לבחור עונת ליגה.' }
@@ -56,11 +56,8 @@ export default function useClearLeagueTeamsFlow({ league, selectedSeasonOption, 
   }, [target, leagueId, seasonKey])
 
   React.useEffect(() => {
-    let active = true
-    setEligibility({ allowed: false, reason: 'בודק את נתוני העונה מהשרת…' })
-    checkEligibility().then(value => { if (active) setEligibility(value) })
-    return () => { active = false }
-  }, [checkEligibility, refreshKey])
+    setEligibility(null)
+  }, [leagueId, seasonKey])
 
   const prepare = async () => {
     if (busy.current) return
@@ -72,9 +69,27 @@ export default function useClearLeagueTeamsFlow({ league, selectedSeasonOption, 
     setCounts({})
     setStepIndex(0)
     try {
-      setProposal(await prepareClearLeagueTeams(target))
+      const prepared = await prepareClearLeagueTeams(target)
+      if (prepared.state === 'absent') {
+        setEligibility({
+          allowed: false,
+          reason: 'קבוצות העונה כבר נמחקו.',
+          alreadyCleared: true,
+        })
+        setStatus('succeeded')
+        setMessage('קבוצות העונה כבר נמחקו.')
+        return
+      }
+      setEligibility({ allowed: true, reason: '' })
+      setProposal(prepared)
       setStatus('preview')
     } catch (error) {
+      setEligibility({
+        allowed: false,
+        reason: describe(error),
+        nextAction: error?.details?.nextAction || '',
+        nextTargetId: error?.details?.birthTeamDocumentId || '',
+      })
       setStatus('failed')
       setMessage(describe(error))
     } finally {
@@ -156,11 +171,11 @@ export default function useClearLeagueTeamsFlow({ league, selectedSeasonOption, 
 
   return {
     open, status, proposal, counts, message, stepIndex,
-    disabled: !eligibility.allowed || ['preparing', 'writing', 'steps'].includes(status),
-    disabledReason: eligibility.reason,
-    nextDeleteAction: eligibility.nextAction || '',
-    nextDeleteTargetId: eligibility.nextTargetId || '',
-    alreadyCleared: eligibility.alreadyCleared === true,
+    disabled: !leagueId || !seasonKey || eligibility?.allowed === false || ['preparing', 'writing', 'steps'].includes(status),
+    disabledReason: eligibility?.reason || (!leagueId || !seasonKey ? 'יש לבחור עונת ליגה.' : ''),
+    nextDeleteAction: eligibility?.nextAction || '',
+    nextDeleteTargetId: eligibility?.nextTargetId || '',
+    alreadyCleared: eligibility?.alreadyCleared === true,
     openModal: prepare, retry: prepare, approve, next,
     recheck: async () => setEligibility(await checkEligibility()),
     close: () => { if (!busy.current && status !== 'steps') setOpen(false) },

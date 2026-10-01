@@ -15,6 +15,7 @@ import {
   buildLeagueDocumentCacheKey,
   buildLeaguesCollectionCacheKey,
   readWithDocumentCache,
+  refreshWithDocumentCache,
   setDocumentCacheValue,
 } from '../../cache/index.js'
 
@@ -70,14 +71,22 @@ export async function hasLeagueById(leagueId) {
   return Boolean(await getLeagueById(leagueId))
 }
 
-export async function getLeagueById(leagueId, { bypassCache = false } = {}) {
+export async function getLeagueById(leagueId, { bypassCache = false, refresh = false } = {}) {
   const safeLeagueId = clean(leagueId)
   if (!safeLeagueId) return null
 
   if (bypassCache) return readLeagueDocumentFromFirestore(safeLeagueId)
 
+  const key = buildLeagueDocumentCacheKey(safeLeagueId)
+  if (refresh) {
+    return refreshWithDocumentCache({
+      key,
+      read: () => readLeagueDocumentFromFirestore(safeLeagueId),
+    })
+  }
+
   return readWithDocumentCache({
-    key: buildLeagueDocumentCacheKey(safeLeagueId),
+    key,
     read: () => readLeagueDocumentFromFirestore(safeLeagueId),
   })
 }

@@ -5,7 +5,10 @@ import { doc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { db } from '../../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 import { APPROVED_STATS_STATE_VERSION } from '../../../../domain/statsV2/approvedStatsState.builder.js'
-import { invalidateClubsMasterDocumentCache } from '../../../cache/index.js'
+import {
+  invalidateClubDocumentCache,
+  invalidateClubsMasterDocumentCache,
+} from '../../../cache/index.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
@@ -65,6 +68,7 @@ export async function syncStatsClubsV2({ approvedState } = {}) {
     { clubs: masterPatch.clubs, updatedAt: serverTimestamp() }
   )
   await batch.commit()
+  patches.forEach(patch => invalidateClubDocumentCache(patch?.clubId))
   invalidateClubsMasterDocumentCache()
 
   return {

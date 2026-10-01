@@ -6,10 +6,16 @@ jest.mock('firebase/firestore', () => ({
   writeBatch: jest.fn(),
 }))
 jest.mock('../../../../../../services/firebase/firebase.js', () => ({ db: {} }))
-jest.mock('../../../cache/index.js', () => ({ invalidateClubsMasterDocumentCache: jest.fn() }))
+jest.mock('../../../cache/index.js', () => ({
+  invalidateClubsMasterDocumentCache: jest.fn(),
+  invalidateClubDocumentCache: jest.fn(),
+}))
 
 import { doc, serverTimestamp, writeBatch } from 'firebase/firestore'
-import { invalidateClubsMasterDocumentCache } from '../../../cache/index.js'
+import {
+  invalidateClubDocumentCache,
+  invalidateClubsMasterDocumentCache,
+} from '../../../cache/index.js'
 import { syncStatsClubsV2 } from './syncStatsClubs.flow.js'
 
 const approved = {
@@ -56,6 +62,8 @@ describe('syncStatsClubsV2', () => {
       },
     ])
     expect(commit).toHaveBeenCalledTimes(1)
+    expect(invalidateClubDocumentCache).toHaveBeenCalledTimes(1)
+    expect(invalidateClubDocumentCache).toHaveBeenCalledWith('c1')
     expect(invalidateClubsMasterDocumentCache).toHaveBeenCalledTimes(1)
     expect(result).toEqual({ updatedClubs: 1, masterUpdated: true, skipped: false })
   })
@@ -77,6 +85,9 @@ describe('syncStatsClubsV2', () => {
 
     expect(update).toHaveBeenCalledTimes(3)
     expect(commit).toHaveBeenCalledTimes(1)
+    expect(invalidateClubDocumentCache).toHaveBeenCalledTimes(2)
+    expect(invalidateClubDocumentCache).toHaveBeenNthCalledWith(1, 'c1')
+    expect(invalidateClubDocumentCache).toHaveBeenNthCalledWith(2, 'c2')
   })
 
   test('rejects fields outside Stats Club ownership', async () => {

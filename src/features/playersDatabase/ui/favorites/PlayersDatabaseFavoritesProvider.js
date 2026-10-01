@@ -2,14 +2,53 @@
 
 import * as React from 'react'
 
-import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../constants/pdb.constants.js'
+import {
+  PLAYERS_DATABASE_FAVORITE_TYPES,
+  PLAYERS_DATABASE_FAVORITES_DOCUMENTS,
+} from '../../constants/pdb.constants.js'
 import { buildFavoritesMap } from '../../model/player/favorite.model.js'
 import { readFavorites } from '../../services/read/index.js'
+import {
+  buildFavoriteDocumentCacheKey,
+  getDocumentCacheEntry,
+  setDocumentCacheValue,
+} from '../../services/cache/index.js'
 import { addBirthTeamFavorite } from '../../services/writeV2/favorites/birthTeam/add.js'
 import { removeBirthTeamFavorite } from '../../services/writeV2/favorites/birthTeam/remove.js'
 import { addPlayerFavorite } from '../../services/writeV2/favorites/player/add.js'
 import { removePlayerFavorite } from '../../services/writeV2/favorites/player/remove.js'
 import PlayersDatabaseFavoritesContext from './PlayersDatabaseFavoritesContext.js'
+
+
+const favoriteDocumentIdByType = favoriteType => (
+  favoriteType === PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER
+    ? PLAYERS_DATABASE_FAVORITES_DOCUMENTS.PLAYERS
+    : PLAYERS_DATABASE_FAVORITES_DOCUMENTS.BIRTH_TEAMS
+)
+
+const writeFavoriteItemsToCache = (favoriteType, items) => {
+  setDocumentCacheValue({
+    key: buildFavoriteDocumentCacheKey(favoriteDocumentIdByType(favoriteType)),
+    value: Array.isArray(items) ? items : [],
+  })
+}
+
+
+const readFavoriteItemsFromCache = documentId => {
+  const entry = getDocumentCacheEntry(buildFavoriteDocumentCacheKey(documentId))
+  return entry.hit && Array.isArray(entry.value) ? entry.value : null
+}
+
+const readInitialFavoritesCache = () => {
+  const players = readFavoriteItemsFromCache(PLAYERS_DATABASE_FAVORITES_DOCUMENTS.PLAYERS)
+  const birthTeams = readFavoriteItemsFromCache(PLAYERS_DATABASE_FAVORITES_DOCUMENTS.BIRTH_TEAMS)
+
+  return {
+    players: players || [],
+    birthTeams: birthTeams || [],
+    complete: Boolean(players && birthTeams),
+  }
+}
 
 const buildPendingKey = (favoriteType, entityId) => (
   `${favoriteType}:${String(entityId || '').trim()}`
@@ -33,14 +72,20 @@ const removeFavoriteItem = (items, entityId) => (
 )
 
 export function PlayersDatabaseFavoritesProvider({ children }) {
-  const [playerFavorites, setPlayerFavorites] = React.useState([])
-  const [birthTeamFavorites, setBirthTeamFavorites] = React.useState([])
+  const initialCacheRef = React.useRef(null)
+  if (initialCacheRef.current === null) {
+    initialCacheRef.current = readInitialFavoritesCache()
+  }
+  const initialCache = initialCacheRef.current
+  const [playerFavorites, setPlayerFavorites] = React.useState(initialCache.players)
+  const [birthTeamFavorites, setBirthTeamFavorites] = React.useState(initialCache.birthTeams)
   const [pendingKeys, setPendingKeys] = React.useState(() => new Set())
-  const [loading, setLoading] = React.useState(true)
+  const [loading, setLoading] = React.useState(!initialCache.complete)
   const [error, setError] = React.useState(null)
 
   const loadFavorites = React.useCallback(async () => {
-    setLoading(true)
+    const cached = readInitialFavoritesCache()
+    if (!cached.complete) setLoading(true)
     setError(null)
 
     try {
@@ -102,7 +147,9 @@ export function PlayersDatabaseFavoritesProvider({ children }) {
     setPending(pendingKey, true)
     setItems(current => {
       previousItems = current
-      return replaceFavoriteItem(current, optimisticItem)
+      const next = replaceFavoriteItem(current, optimisticItem)
+      writeFavoriteItemsToCache(favoriteType, next)
+      return next
     })
 
     try {
@@ -115,10 +162,15 @@ export function PlayersDatabaseFavoritesProvider({ children }) {
         birthYear,
       })
 
-      setItems(current => replaceFavoriteItem(current, savedItem))
+      setItems(current => {
+        const next = replaceFavoriteItem(current, savedItem)
+        writeFavoriteItemsToCache(favoriteType, next)
+        return next
+      })
       return savedItem
     } catch (writeError) {
       setItems(previousItems)
+      writeFavoriteItemsToCache(favoriteType, previousItems)
       setError(writeError)
       throw writeError
     } finally {
@@ -146,16 +198,24 @@ export function PlayersDatabaseFavoritesProvider({ children }) {
     setPending(pendingKey, true)
     setItems(current => {
       previousItems = current
-      return removeFavoriteItem(current, normalizedEntityId)
+      const next = removeFavoriteItem(current, normalizedEntityId)
+      writeFavoriteItemsToCache(favoriteType, next)
+      return next
     })
 
     try {
       const remove = favoriteType === PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER
         ? removePlayerFavorite
         : removeBirthTeamFavorite
-      return await remove({ entityId: normalizedEntityId })
+      const result = await remove({ entityId: normalizedEntityId })
+      setItems(current => {
+        writeFavoriteItemsToCache(favoriteType, current)
+        return current
+      })
+      return result
     } catch (writeError) {
       setItems(previousItems)
+      writeFavoriteItemsToCache(favoriteType, previousItems)
       setError(writeError)
       throw writeError
     } finally {

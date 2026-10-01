@@ -1,7 +1,7 @@
 // src/features/playersDatabase/ui/pages/playerPage/PlayerPage.js
 
 import * as React from 'react'
-import { Box } from '@mui/joy'
+import { Box, Typography } from '@mui/joy'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
@@ -65,6 +65,7 @@ function PlayerPageContent() {
     catalogSeasonKey,
     fromTeam,
     reload,
+    refreshError,
   } = usePlayerPage()
   const favorites = usePlayersDatabaseFavorites()
   const tasksModel = usePlayersDatabaseTasks()
@@ -265,6 +266,11 @@ function PlayerPageContent() {
   return (
     <>
       <Box sx={sx.page}>
+        {refreshError ? (
+          <Typography level='body-sm' color='warning'>
+            הרענון נכשל. מוצגים הנתונים האחרונים שנטענו.
+          </Typography>
+        ) : null}
         <PlayerHeader
           breadcrumbs={breadcrumbs}
           player={player}

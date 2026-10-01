@@ -18,6 +18,7 @@ const synthetic = (name, exports) => {
 
 test('Historical team season sends its own leagueId instead of route leagueId', async () => {
   const calls = []
+  const saveOptions = []
   const slots = []
   let cursor = 0
   context = vm.createContext({ console, structuredClone })
@@ -43,10 +44,12 @@ test('Historical team season sends its own leagueId instead of route leagueId', 
     }
     if (specifier === './saveEditor.js') {
       return synthetic('saveEditor', {
-        saveEditor: async ({ write, reload, close, setSaving }) => {
+        saveEditor: async options => {
+          saveOptions.push(options)
+          const { write, reload, reloadAfterSuccess = true, close, setSaving } = options
           setSaving(true)
           await write()
-          await reload()
+          if (reloadAfterSuccess) await reload()
           close()
           setSaving(false)
         },
@@ -72,4 +75,5 @@ test('Historical team season sends its own leagueId instead of route leagueId', 
   assert.equal(calls.length, 1)
   assert.equal(calls[0].leagueId, 'historical-league')
   assert.equal(calls[0].seasonKey, '25/26')
+  assert.equal(saveOptions[0].reloadAfterSuccess, false)
 })

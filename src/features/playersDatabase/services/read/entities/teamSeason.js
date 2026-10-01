@@ -16,7 +16,10 @@ import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.j
 import { buildTeamSeasonDocumentId } from '../../../model/team/teamIdentity.model.js'
 import {
   buildTeamSeasonDocumentCacheKey,
+  buildTeamSeasonsByRootCacheKey,
+  getDocumentCacheEntry,
   readWithDocumentCache,
+  setDocumentCacheValue,
 } from '../../cache/index.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
@@ -72,21 +75,62 @@ export async function getTeamSeason({
   })
 }
 
+const getTeamSeasonByDocumentId = async teamSeasonDocumentId => {
+  const safeDocumentId = clean(teamSeasonDocumentId)
+  if (!safeDocumentId) return null
+
+  const key = buildTeamSeasonDocumentCacheKey(safeDocumentId)
+  return readWithDocumentCache({
+    key,
+    read: async () => {
+      const snapshot = await trackedGetDoc(teamSeasonDocRefById(safeDocumentId), {
+        feature: 'playersDatabase',
+        action: 'team-season-read',
+        collection: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
+      })
+      if (!snapshot.exists()) return null
+
+      return {
+        id: snapshot.id,
+        ...snapshot.data(),
+      }
+    },
+  })
+}
+
 export async function listTeamSeasons(birthTeamDocumentId) {
   const safeBirthTeamDocumentId = clean(birthTeamDocumentId)
   if (!safeBirthTeamDocumentId) return []
 
-  const snapshot = await trackedGetDocs(query(
-    teamSeasonCollectionRef(),
-    where('birthTeamDocumentId', '==', safeBirthTeamDocumentId)
-  ), {
-    feature: 'playersDatabase',
-    action: 'team-seasons-list',
-    collection: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
+  const documentIds = await readWithDocumentCache({
+    key: buildTeamSeasonsByRootCacheKey(safeBirthTeamDocumentId),
+    read: async () => {
+      const snapshot = await trackedGetDocs(query(
+        teamSeasonCollectionRef(),
+        where('birthTeamDocumentId', '==', safeBirthTeamDocumentId)
+      ), {
+        feature: 'playersDatabase',
+        action: 'team-seasons-list',
+        collection: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
+      })
+      const rows = snapshot.docs.map(row => ({
+        id: row.id,
+        ...row.data(),
+      }))
+
+      rows.forEach(row => {
+        setDocumentCacheValue({
+          key: buildTeamSeasonDocumentCacheKey(row.id),
+          value: row,
+        })
+      })
+
+      return rows.map(row => row.id)
+    },
   })
 
-  return snapshot.docs.map(row => ({
-    id: row.id,
-    ...row.data(),
+  return Promise.all(documentIds.map(async documentId => {
+    const cached = getDocumentCacheEntry(buildTeamSeasonDocumentCacheKey(documentId))
+    return cached.hit ? cached.value : getTeamSeasonByDocumentId(documentId)
   }))
 }

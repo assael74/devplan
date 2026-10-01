@@ -1,8 +1,10 @@
-// features/playersDatabase/services/read/playerPage.read.js
+// src/features/playersDatabase/services/read/pages/playerPage.read.js
 
 import {
   collection,
   doc,
+  query,
+  where,
 } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
@@ -27,20 +29,44 @@ import {
 } from '../../../model/player/playerIdentity.model.js'
 import {
   buildPlayerDocumentCacheKey,
+  deleteDocumentCacheValue,
+  getDocumentCacheResolvedKey,
   readWithDocumentCache,
+  refreshWithDocumentCache,
+  setDocumentCacheAlias,
+  setDocumentCacheValue,
 } from '../../cache/index.js'
+import { getTeamSeason } from '../entities/teamSeason.js'
 
 const playerDocRef = documentId => (
   doc(db, PLAYERS_DATABASE_COLLECTIONS.players, cleanValue(documentId))
 )
 
-const resolvePlayerDocumentCandidates = playerId => {
+const resolveLegacyExternalPlayerId = playerId => {
   const safePlayerId = cleanValue(playerId)
   const legacyExternalMatch = safePlayerId.match(/^player__(?:19|20)\d{2}__(\d+)$/)
+  return cleanValue(legacyExternalMatch?.[1])
+}
 
-  if (legacyExternalMatch) {
+const resolveExternalLookupId = playerId => {
+  const safePlayerId = cleanValue(playerId)
+  const legacyExternalPlayerId = resolveLegacyExternalPlayerId(safePlayerId)
+  if (legacyExternalPlayerId) return legacyExternalPlayerId
+
+  const canonicalExternalMatch = safePlayerId.match(/^external__(\d+)$/)
+  if (canonicalExternalMatch) return cleanValue(canonicalExternalMatch[1])
+  if (/^\d{5,}$/.test(safePlayerId)) return safePlayerId
+
+  return ''
+}
+
+const resolvePlayerDocumentCandidates = playerId => {
+  const safePlayerId = cleanValue(playerId)
+  const legacyExternalPlayerId = resolveLegacyExternalPlayerId(safePlayerId)
+
+  if (legacyExternalPlayerId) {
     return [
-      `external__${legacyExternalMatch[1]}`,
+      `external__${legacyExternalPlayerId}`,
       safePlayerId,
     ]
   }
@@ -61,26 +87,39 @@ const isSamePlayerSource = (candidate = {}, player = {}) => {
   return playerKeys.some(key => candidateKeys.has(key))
 }
 
-const buildFallbackPlayerDocument = async playerId => {
+const normalizeFallbackSeason = ({ seasonDocument = {}, playerRow = {} } = {}) => ({
+  ...seasonDocument,
+  ...playerRow,
+  playerStats: playerRow.playerStats || {},
+  scoutProfiles: Array.isArray(playerRow.scoutProfiles)
+    ? playerRow.scoutProfiles
+    : [],
+  clubId: seasonDocument.clubId,
+  leagueId: seasonDocument.leagueId,
+  birthTeamId:
+    seasonDocument.birthTeamId ||
+    seasonDocument.teamId,
+  birthTeamDocumentId:
+    seasonDocument.birthTeamDocumentId,
+  birthTeamSlot:
+    seasonDocument.birthTeamSlot || 1,
+  ageGroupId: seasonDocument.ageGroupId,
+  ageGroupLabel: seasonDocument.ageGroupLabel,
+  teamDisplayName:
+    seasonDocument.displayName ||
+    seasonDocument.ageGroupLabel,
+})
+
+const buildFallbackDocumentFromTeamSeasons = ({
+  playerId = '',
+  teamSeasons = [],
+} = {}) => {
   const safePlayerId = cleanValue(playerId)
-  if (!safePlayerId) return null
-
-  const snapshot = await trackedGetDocs(
-    collection(db, PLAYERS_DATABASE_COLLECTIONS.teamSeasons),
-    {
-      feature: 'playersDatabase',
-      action: 'player-fallback-team-seasons-scan',
-      collection: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
-      meta: { playerId: safePlayerId },
-    }
-  )
-
   const current = []
   const history = []
   let identity = null
 
-  snapshot.docs.forEach(teamItem => {
-    const seasonDocument = { id: teamItem.id, ...teamItem.data() }
+  teamSeasons.filter(Boolean).forEach(seasonDocument => {
     const target = cleanValue(seasonDocument.seasonStatus) === 'completed'
       ? 'history'
       : 'current'
@@ -91,35 +130,17 @@ const buildFallbackPlayerDocument = async playerId => {
       isSamePlayerSource(candidate, {
         playerDocumentId: safePlayerId,
         playerId: safePlayerId,
+        externalPlayerId: resolveLegacyExternalPlayerId(safePlayerId),
       })
     ))
 
     if (!playerRow) return
 
     identity = identity || playerRow
-
-    const normalizedSeason = {
-        ...seasonDocument,
-        ...playerRow,
-        playerStats: playerRow.playerStats || {},
-        scoutProfiles: Array.isArray(playerRow.scoutProfiles)
-          ? playerRow.scoutProfiles
-          : [],
-        clubId: seasonDocument.clubId,
-        leagueId: seasonDocument.leagueId,
-        birthTeamId:
-          seasonDocument.birthTeamId ||
-          seasonDocument.teamId,
-        birthTeamDocumentId:
-          seasonDocument.birthTeamDocumentId,
-        birthTeamSlot:
-          seasonDocument.birthTeamSlot || 1,
-        ageGroupId: seasonDocument.ageGroupId,
-        ageGroupLabel: seasonDocument.ageGroupLabel,
-        teamDisplayName:
-          seasonDocument.displayName ||
-          seasonDocument.ageGroupLabel,
-    }
+    const normalizedSeason = normalizeFallbackSeason({
+      seasonDocument,
+      playerRow,
+    })
 
     if (target === 'current') {
       current.push(normalizedSeason)
@@ -142,10 +163,10 @@ const buildFallbackPlayerDocument = async playerId => {
       : ''
 
   return {
-    id: safePlayerId,
+    id: playerDocumentId || safePlayerId,
     playerDocumentId,
     playerId: cleanValue(identity?.playerId || safePlayerId),
-    externalPlayerId: cleanValue(identity?.externalPlayerId),
+    externalPlayerId,
     fullName: cleanValue(
       identity?.fullName ||
       identity?.displayName ||
@@ -162,6 +183,122 @@ const buildFallbackPlayerDocument = async playerId => {
     history,
   }
 }
+
+const readPlayerSeasonIndexQuery = async ({
+  requestedPlayerId,
+  field,
+  value,
+}) => {
+  const snapshot = await trackedGetDocs(
+    query(
+      collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+      where('entityType', '==', 'playerSeason'),
+      where(field, '==', value)
+    ),
+    {
+      feature: 'playersDatabase',
+      action: 'player-fallback-search-index-lookup',
+      collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+      meta: {
+        requestedPlayerId,
+        field,
+        value,
+      },
+    }
+  )
+
+  return snapshot.docs.map(item => ({
+    id: item.id,
+    ...item.data(),
+  }))
+}
+
+const readPlayerSeasonIndexMatches = async playerId => {
+  const safePlayerId = cleanValue(playerId)
+  if (!safePlayerId) return []
+
+  const externalLookupId = resolveExternalLookupId(safePlayerId)
+  const deterministicDocumentId = externalLookupId
+    ? `external__${externalLookupId}`
+    : safePlayerId
+  const primaryRows = await readPlayerSeasonIndexQuery({
+    requestedPlayerId: safePlayerId,
+    field: 'playerDocumentId',
+    value: deterministicDocumentId,
+  })
+  if (primaryRows.length) return primaryRows
+
+  const alternateRequests = [
+    ...(safePlayerId !== deterministicDocumentId
+      ? [['playerId', safePlayerId]]
+      : []),
+    ...(externalLookupId
+      ? [['externalPlayerId', externalLookupId]]
+      : []),
+  ]
+  const rowsById = new Map()
+
+  for (const [field, value] of alternateRequests) {
+    const rows = await readPlayerSeasonIndexQuery({
+      requestedPlayerId: safePlayerId,
+      field,
+      value,
+    })
+    rows.forEach(row => rowsById.set(row.id, row))
+    if (rowsById.size) break
+  }
+
+  return [...rowsById.values()]
+}
+
+const buildFallbackPlayerDocumentFromIndexes = async playerId => {
+  const indexRows = await readPlayerSeasonIndexMatches(playerId)
+  if (!indexRows.length) return null
+
+  const scopes = [...new Map(indexRows.map(row => {
+    const birthTeamDocumentId = cleanValue(row.birthTeamDocumentId)
+    const seasonKey = cleanValue(row.seasonKey)
+    return [
+      `${birthTeamDocumentId}:${seasonKey}`,
+      { birthTeamDocumentId, seasonKey },
+    ]
+  }).filter(([, scope]) => scope.birthTeamDocumentId && scope.seasonKey)).values()]
+  const teamSeasons = await Promise.all(scopes.map(scope => getTeamSeason(scope)))
+
+  return buildFallbackDocumentFromTeamSeasons({
+    playerId,
+    teamSeasons,
+  })
+}
+
+const buildLegacyFallbackPlayerDocument = async playerId => {
+  const safePlayerId = cleanValue(playerId)
+  if (!safePlayerId) return null
+
+  const snapshot = await trackedGetDocs(
+    collection(db, PLAYERS_DATABASE_COLLECTIONS.teamSeasons),
+    {
+      feature: 'playersDatabase',
+      action: 'player-legacy-fallback-team-seasons-scan',
+      collection: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
+      meta: { playerId: safePlayerId },
+    }
+  )
+  const teamSeasons = snapshot.docs.map(teamItem => ({
+    id: teamItem.id,
+    ...teamItem.data(),
+  }))
+
+  return buildFallbackDocumentFromTeamSeasons({
+    playerId: safePlayerId,
+    teamSeasons,
+  })
+}
+
+const buildFallbackPlayerDocument = async playerId => (
+  (await buildFallbackPlayerDocumentFromIndexes(playerId)) ||
+  buildLegacyFallbackPlayerDocument(playerId)
+)
 
 const adaptPlayerDocument = playerDocument => {
   const current = Array.isArray(playerDocument.current)
@@ -258,6 +395,43 @@ const loadPlayerSource = async ({ playerId = '', action = 'player-read' } = {}) 
   return buildFallbackPlayerDocument(safePlayerId)
 }
 
+const registerPlayerCacheAliases = ({ requestedPlayerId = '', playerPageData = null } = {}) => {
+  const requestedKey = buildPlayerDocumentCacheKey(requestedPlayerId)
+  const canonicalPlayerDocumentId = cleanValue(
+    playerPageData?.identity?.playerDocumentId || requestedPlayerId
+  )
+  const canonicalKey = buildPlayerDocumentCacheKey(canonicalPlayerDocumentId)
+  if (!requestedKey || !canonicalKey) return requestedKey
+
+  const aliasIds = [
+    requestedPlayerId,
+    playerPageData?.identity?.playerId,
+    playerPageData?.identity?.externalPlayerId,
+  ]
+    .map(cleanValue)
+    .filter(Boolean)
+
+  const resolvedRequestedKey = getDocumentCacheResolvedKey(requestedKey)
+  if (resolvedRequestedKey !== canonicalKey) {
+    setDocumentCacheValue({
+      key: canonicalKey,
+      value: playerPageData,
+    })
+    deleteDocumentCacheValue(requestedKey)
+  }
+
+  aliasIds.forEach(aliasId => {
+    const aliasKey = buildPlayerDocumentCacheKey(aliasId)
+    if (!aliasKey || aliasKey === canonicalKey) return
+    setDocumentCacheAlias({
+      aliasKey,
+      targetKey: canonicalKey,
+    })
+  })
+
+  return canonicalKey
+}
+
 export async function readPlayerSource({ playerId = '' } = {}) {
   return loadPlayerSource({
     playerId,
@@ -265,21 +439,42 @@ export async function readPlayerSource({ playerId = '' } = {}) {
   })
 }
 
-export async function readPlayerPageData({ playerId = '' } = {}) {
+export async function readPlayerPageData({
+  playerId = '',
+  refresh = false,
+} = {}) {
   const safePlayerId = cleanValue(playerId)
   if (!safePlayerId) return null
 
-  return readWithDocumentCache({
-    key: buildPlayerDocumentCacheKey(safePlayerId),
-    read: async () => {
-      const playerDocument = await loadPlayerSource({
-        playerId: safePlayerId,
-        action: 'player-read',
-      })
+  const requestedKey = buildPlayerDocumentCacheKey(safePlayerId)
+  const legacyExternalPlayerId = resolveLegacyExternalPlayerId(safePlayerId)
+  if (legacyExternalPlayerId) {
+    setDocumentCacheAlias({
+      aliasKey: requestedKey,
+      targetKey: buildPlayerDocumentCacheKey(`external__${legacyExternalPlayerId}`),
+    })
+  }
 
-      if (!playerDocument) return null
+  const read = async () => {
+    const playerDocument = await loadPlayerSource({
+      playerId: safePlayerId,
+      action: 'player-read',
+    })
 
-      return adaptPlayerDocument(playerDocument)
-    },
+    if (!playerDocument) return null
+
+    return adaptPlayerDocument(playerDocument)
+  }
+  const reader = refresh ? refreshWithDocumentCache : readWithDocumentCache
+  const playerPageData = await reader({
+    key: requestedKey,
+    read,
   })
+
+  if (!playerPageData) return null
+  registerPlayerCacheAliases({
+    requestedPlayerId: safePlayerId,
+    playerPageData,
+  })
+  return playerPageData
 }

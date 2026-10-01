@@ -12,6 +12,10 @@ import {
   buildFavoritesMap,
   normalizeFavoriteItems,
 } from '../../../model/player/favorite.model.js'
+import {
+  buildFavoriteDocumentCacheKey,
+  readWithDocumentCache,
+} from '../../cache/index.js'
 
 const favoriteDocRef = documentId => doc(
   db,
@@ -19,17 +23,20 @@ const favoriteDocRef = documentId => doc(
   documentId
 )
 
-const readFavoriteDocument = async documentId => {
-  const snapshot = await trackedGetDoc(favoriteDocRef(documentId), {
-    feature: 'playersDatabase',
-    action: 'favorites-read',
-    collection: PLAYERS_DATABASE_COLLECTIONS.favorites,
-    queryKey: documentId,
-  })
-  const data = snapshot.exists() ? snapshot.data() || {} : {}
+const readFavoriteDocument = async documentId => readWithDocumentCache({
+  key: buildFavoriteDocumentCacheKey(documentId),
+  read: async () => {
+    const snapshot = await trackedGetDoc(favoriteDocRef(documentId), {
+      feature: 'playersDatabase',
+      action: 'favorites-read',
+      collection: PLAYERS_DATABASE_COLLECTIONS.favorites,
+      queryKey: documentId,
+    })
+    const data = snapshot.exists() ? snapshot.data() || {} : {}
 
-  return normalizeFavoriteItems(data.items)
-}
+    return normalizeFavoriteItems(data.items)
+  },
+})
 
 export async function readFavorites() {
   const [players, birthTeams] = await Promise.all([

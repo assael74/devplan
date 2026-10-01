@@ -38,7 +38,7 @@ export default function usePlayerGoalDistributionEditor({
         message: 'פיזור השערים נשמר.',
       })
       setOpen(false)
-      reload()
+      void reload().catch(() => {})
     } catch (error) {
       notify({
         status: 'error',

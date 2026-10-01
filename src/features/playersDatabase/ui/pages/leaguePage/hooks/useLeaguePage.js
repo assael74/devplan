@@ -4,7 +4,6 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useState,
 } from 'react'
 import {
   useLocation,
@@ -20,6 +19,8 @@ import {
 } from '../../../../model/league/page/leaguePage.model.js'
 import { normalizeSeasonLookupKey } from '../../../../model/shared/season.model.js'
 import { readLeaguePageData } from '../../../../services/read/index.js'
+import { buildLeagueDocumentCacheKey } from '../../../../services/cache/index.js'
+import usePlayersDatabaseReadStoreEntry from '../../../hooks/usePlayersDatabaseReadStoreEntry.js'
 
 function isSameSeasonKey(left, right) {
   const leftKey = normalizeSeasonLookupKey(left)
@@ -48,44 +49,26 @@ export function useLeaguePage() {
       ? centerSeasonKey
       : ''
   )
-  const [leagueDoc, setLeagueDoc] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [reloadToken, setReloadToken] = useState(0)
+  const leagueCacheKey = useMemo(
+    () => buildLeagueDocumentCacheKey(leagueId),
+    [leagueId]
+  )
+  const leagueStoreEntry = usePlayersDatabaseReadStoreEntry(leagueCacheKey)
+  const leagueDoc = leagueStoreEntry.data
+  const loading = leagueStoreEntry.status === 'idle' || leagueStoreEntry.status === 'loading'
+  const refreshing = leagueStoreEntry.status === 'refreshing'
+  const refreshError = leagueStoreEntry.refreshError?.message || ''
+  const error = leagueStoreEntry.status === 'error'
+    ? leagueStoreEntry.error?.message || 'טעינת הליגה נכשלה'
+    : ''
 
-  const reload = useCallback(() => {
-    setReloadToken(current => current + 1)
-  }, [])
+  const reload = useCallback(() => (
+    readLeaguePageData({ leagueId, refresh: true })
+  ), [leagueId])
 
   useEffect(() => {
-    let active = true
-
-    setLoading(true)
-    setError('')
-
-    readLeaguePageData({ leagueId })
-      .then(({ leagueDoc: nextLeague }) => {
-        if (!active) return
-        setLeagueDoc(nextLeague)
-      })
-      .catch(err => {
-        if (!active) return
-        setLeagueDoc(null)
-        setError(err?.message || 'טעינת הליגה נכשלה')
-      })
-      .finally(() => {
-        if (active) {
-          setLoading(false)
-        }
-      })
-
-    return () => {
-      active = false
-    }
-  }, [
-    leagueId,
-    reloadToken,
-  ])
+    readLeaguePageData({ leagueId }).catch(() => {})
+  }, [leagueId])
 
   const seasonOptions = useMemo(
     () => buildLeaguePageSeasonOptions(leagueDoc),
@@ -220,7 +203,9 @@ export function useLeaguePage() {
     setSelectedSeasonKey,
     reload,
     loading,
+    refreshing,
     error,
+    refreshError,
     selectionError,
   }
 }

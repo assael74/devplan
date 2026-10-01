@@ -1,4 +1,4 @@
-// features/playersDatabase/services/cache/cacheKeys.js
+// src/features/playersDatabase/services/cache/cacheKeys.js
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
@@ -10,7 +10,11 @@ export const PLAYERS_DATABASE_CACHE_PREFIXES = {
   teams: 'teams',
   team: 'team',
   teamSeason: 'teamSeason',
+  teamSeasonsByRoot: 'teamSeasonsByRoot',
+  teamPage: 'teamPage',
   player: 'player',
+  favorite: 'favorite',
+  club: 'club',
   leaguesMaster: 'leaguesMaster',
   clubsMaster: 'clubsMaster',
   clubSeasonIdentity: 'clubSeasonIdentity',
@@ -36,8 +40,28 @@ export const buildTeamSeasonDocumentCacheKey = teamSeasonDocumentId => (
   joinKey(PLAYERS_DATABASE_CACHE_PREFIXES.teamSeason, teamSeasonDocumentId)
 )
 
+export const buildTeamSeasonsByRootCacheKey = birthTeamDocumentId => (
+  joinKey(PLAYERS_DATABASE_CACHE_PREFIXES.teamSeasonsByRoot, birthTeamDocumentId)
+)
+
+export const buildTeamPageDataCacheKey = ({ leagueId, teamId } = {}) => {
+  const safeLeagueId = clean(leagueId)
+  const safeTeamId = clean(teamId)
+  if (!safeLeagueId || !safeTeamId) return ''
+
+  return joinKey(PLAYERS_DATABASE_CACHE_PREFIXES.teamPage, safeLeagueId, safeTeamId)
+}
+
 export const buildPlayerDocumentCacheKey = playerId => (
   joinKey(PLAYERS_DATABASE_CACHE_PREFIXES.player, playerId)
+)
+
+export const buildFavoriteDocumentCacheKey = documentId => (
+  joinKey(PLAYERS_DATABASE_CACHE_PREFIXES.favorite, documentId)
+)
+
+export const buildClubDocumentCacheKey = clubId => (
+  joinKey(PLAYERS_DATABASE_CACHE_PREFIXES.club, clubId)
 )
 
 export const buildLeaguesMasterCacheKey = () => (

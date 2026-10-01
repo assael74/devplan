@@ -115,7 +115,6 @@ function LeaguePageContent() {
     leagueDoc,
     selectedSeasonOption,
     reload,
-    refreshKey: leagueDoc,
   })
   const leagueImport = useLeagueTableImport({
     league,

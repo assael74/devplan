@@ -563,10 +563,11 @@ export default function useTeamRosterImport({
       return false
     }
 
-    await closeWriteActionReceiptV2({ receiptId })
+    await closeWriteActionReceiptV2({ receiptId })
+
     invalidateRosterImportCacheV2({ plan: rosterImportPlan })
     setOpen(false)
-    if (typeof reload === 'function') reload()
+    if (typeof reload === 'function') void reload().catch(() => {})
     return true
   }, [auditResult, busy, notify, receiptId, reload, rosterImportPlan, syncComplete])
 

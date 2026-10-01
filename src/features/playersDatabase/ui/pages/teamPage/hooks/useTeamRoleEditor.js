@@ -67,7 +67,7 @@ export default function useTeamRoleEditor({
 
       setRow(null)
       setDraft(EMPTY_ROLE_DRAFT)
-      reload()
+      void reload().catch(() => {})
     } catch (error) {
       notify({
         status: SNACK_STATUS.ERROR,

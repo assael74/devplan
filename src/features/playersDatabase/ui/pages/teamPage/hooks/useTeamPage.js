@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/teamPage/hooks/useTeamPage.js
+// src/features/playersDatabase/ui/pages/teamPage/hooks/useTeamPage.js
 
 import {
   useCallback,
@@ -20,6 +20,8 @@ import { buildTeamPageSeasonOptions, findTeamPageLeagueSeasonDoc, findTeamPageSe
 import { adaptTeamPagePlayerRow } from '../../../../model/team/page/teamPagePlayer.model.js'
 import { PLAYERS_DATABASE_CURRENT_SEASON_KEY } from '../../../../catalog/seasons.catalog.js'
 import { readClubPageDocument, readTeamPageData } from '../../../../services/read/index.js'
+import { buildTeamPageDataCacheKey } from '../../../../services/cache/index.js'
+import usePlayersDatabaseReadStoreEntry from '../../../hooks/usePlayersDatabaseReadStoreEntry.js'
 import { PLAYERS_DATABASE_UI_ROUTES } from '../../../logic/routeBuilders.js'
 
 function cleanValue(value) {
@@ -55,18 +57,30 @@ export function useTeamPage() {
   )
   const auditSeasonKey = cleanValue(searchParams.get('auditSeason'))
   const fromClubs = searchParams.get('fromClubs') === '1'
-  const [leagueDoc, setLeagueDoc] = useState(null)
-  const [leagueDocuments, setLeagueDocuments] = useState([])
-  const [documentLoadState, setDocumentLoadState] = useState(null)
-  const [teamDoc, setTeamDoc] = useState(null)
-  const [teamSeasons, setTeamSeasons] = useState([])
-  const [seasonSnapshots, setSeasonSnapshots] = useState([])
-  const [teamPageData, setTeamPageData] = useState(null)
+  const pageStoreKey = buildTeamPageDataCacheKey({ leagueId, teamId })
+  const pageEntry = usePlayersDatabaseReadStoreEntry(pageStoreKey)
+  const pageResult = pageEntry.data
+  const leagueDoc = pageResult?.leagueDoc || null
+  const leagueDocuments = pageResult?.leagueDocuments || []
+  const documentLoadState = pageResult?.documentLoadState || null
+  const teamDoc = pageResult?.teamDoc || null
+  const teamSeasons = pageResult?.teamSeasons || []
+  const seasonSnapshots = pageResult?.teamPageData?.seasons.map(season => ({
+    ...season.resolved,
+    sources: season.sources,
+    availability: season.availability,
+  })) || pageResult?.seasonSnapshots || []
+  const teamPageData = pageResult?.teamPageData || null
   const [clubDoc, setClubDoc] = useState(null)
   const [selectedOptionKey, setSelectedOptionKey] = useState('')
-  const [refreshKey, setRefreshKey] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const loading = !pageResult && (
+    pageEntry.status === 'idle' ||
+    pageEntry.status === 'loading' ||
+    pageEntry.status === 'refreshing'
+  )
+  const refreshing = Boolean(pageResult && pageEntry.status === 'refreshing')
+  const error = pageResult ? '' : (pageEntry.error?.message || '')
+  const refreshError = pageEntry.refreshError?.message || ''
 
   useEffect(() => {
     if (!searchParams.has('season') && !searchParams.has('version')) return
@@ -82,70 +96,24 @@ export function useTeamPage() {
     })
   }, [location.pathname, location.state, navigate, searchParams])
 
-  const reload = useCallback(() => {
-    setRefreshKey(value => value + 1)
-  }, [])
-
-  useEffect(() => {
-    let active = true
-
-    setLoading(true)
-    setError('')
-    setLeagueDoc(null)
-    setLeagueDocuments([])
-    setDocumentLoadState(null)
-    setTeamDoc(null)
-    setTeamSeasons([])
-    setSeasonSnapshots([])
-    setTeamPageData(null)
-    setClubDoc(null)
-    setSelectedOptionKey('')
-
+  const reload = useCallback(() => (
     readTeamPageData({
       leagueId,
       teamId,
+      rebuildFromCache: true,
     })
-      .then(data => {
-        if (!active) return
-        setLeagueDoc(data.leagueDoc)
-        setLeagueDocuments(data.leagueDocuments || [])
-        setDocumentLoadState(data.documentLoadState || null)
-        setTeamDoc(data.teamDoc)
-        setTeamSeasons(data.teamSeasons || [])
-        setSeasonSnapshots(
-          data.teamPageData?.seasons.map(season => ({
-            ...season.resolved,
-            sources: season.sources,
-            availability: season.availability,
-          })) || data.seasonSnapshots || []
-        )
-        setTeamPageData(data.teamPageData || null)
-      })
-      .catch(err => {
-        if (!active) return
-        setLeagueDoc(null)
-        setLeagueDocuments([])
-        setDocumentLoadState(null)
-        setTeamDoc(null)
-        setTeamSeasons([])
-        setSeasonSnapshots([])
-        setTeamPageData(null)
-        setError(err?.message || 'טעינת הקבוצה נכשלה')
-      })
-      .finally(() => {
-        if (active) {
-          setLoading(false)
-        }
-      })
+  ), [leagueId, teamId])
 
-    return () => {
-      active = false
-    }
-  }, [
-    leagueId,
-    teamId,
-    refreshKey,
-  ])
+  useEffect(() => {
+    readTeamPageData({
+      leagueId,
+      teamId,
+    }).catch(() => {})
+  }, [leagueId, teamId])
+
+  useEffect(() => {
+    setSelectedOptionKey('')
+  }, [leagueId, teamId])
 
   useEffect(() => {
     let active = true
@@ -318,7 +286,9 @@ export function useTeamPage() {
     setSelectedSeasonKey: changeSeason,
     reload,
     loading,
+    refreshing,
     error,
+    refreshError,
     selectionError,
   }
 }

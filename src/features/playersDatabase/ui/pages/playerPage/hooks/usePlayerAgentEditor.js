@@ -33,7 +33,7 @@ export default function usePlayerAgentEditor({
         message: 'פרטי הסוכן נשמרו.',
       })
       setOpen(false)
-      reload()
+      void reload().catch(() => {})
     } catch (error) {
       notify({
         status: 'error',

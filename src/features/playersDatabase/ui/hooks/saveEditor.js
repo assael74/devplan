@@ -2,7 +2,15 @@
 
 import { SNACK_STATUS } from '../../../../ui/core/feedback/snackbar/snackbar.model.js'
 
-export async function saveEditor({ write, reload, notify, close, setSaving, title }) {
+export async function saveEditor({
+  write,
+  reload,
+  reloadAfterSuccess = true,
+  notify,
+  close,
+  setSaving,
+  title,
+}) {
   setSaving(true)
   let saved = false
   try {
@@ -17,7 +25,9 @@ export async function saveEditor({ write, reload, notify, close, setSaving, titl
     })
   }
   try {
-    await reload()
+    if (!saved || reloadAfterSuccess) {
+      await reload()
+    }
   } catch (error) {
     notify({
       status: SNACK_STATUS.ERROR,

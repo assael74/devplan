@@ -1,15 +1,12 @@
 // src/features/playersDatabase/ui/pages/teamPage/roster/clear/useClearRosterFlow.test.js
 
-import { act, renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook } from '@testing-library/react'
 import useClearRosterFlow from './useClearRosterFlow.js'
 import { prepareClearRoster } from '../../../../../services/writeV2/roster/clear/prepareClearRoster.js'
 import { buildClearRosterApprovedState } from '../../../../../domain/rosterV2/clear/clearRosterApprovedState.builder.js'
 import { writeClearRosterStep } from '../../../../../services/writeV2/roster/clear/writeClearRosterStep.js'
 import { startClearRosterSession, reportClearRosterStep, reportClearRosterFailure } from '../../../../../services/writeV2/roster/clear/clearRosterSession.js'
 
-jest.mock('../../../../../services/writeV2/roster/clear/readClearRoster.js', () => ({
-  readNextTeamSeasonDeleteAction: jest.fn().mockResolvedValue('roster'),
-}))
 jest.mock('../../../../../services/writeV2/roster/clear/prepareClearRoster.js', () => ({ prepareClearRoster: jest.fn() }))
 jest.mock('../../../../../domain/rosterV2/clear/clearRosterApprovedState.builder.js', () => ({ buildClearRosterApprovedState: jest.fn() }))
 jest.mock('../../../../../services/writeV2/roster/clear/writeClearRosterStep.js', () => ({ writeClearRosterStep: jest.fn() }))
@@ -30,17 +27,14 @@ test('failure after canonical retries from step one with a fresh approved state 
   startClearRosterSession.mockResolvedValue('original')
   const error = Object.assign(new Error('offline'), { failedTarget: 'index-1' })
   writeClearRosterStep.mockResolvedValueOnce({}).mockRejectedValueOnce(error).mockResolvedValueOnce({})
-  const historicalSeason = { seasonKey: '25/26', leagueId: 'league-history' }
+  const historicalSeason = { seasonKey: '25/26', leagueId: 'league-history', deleteAction: 'roster' }
   const { result } = renderHook(() => useClearRosterFlow({
     team: { id: 'team-1' },
     selectedSeasonOption: { seasonKey: '26/27', leagueId: 'league-1' },
-    seasonOptions: [
-      { seasonKey: '26/27', leagueId: 'league-1' },
-      historicalSeason,
-    ],
   }))
 
-  await waitFor(() => expect(result.current.getDeleteActionFor(historicalSeason)).toBe('roster'))
+  expect(result.current.getDeleteActionFor(historicalSeason)).toBe('roster')
+  expect(prepareClearRoster).not.toHaveBeenCalled()
 
   await act(async () => result.current.openModal(historicalSeason))
   expect(prepareClearRoster).toHaveBeenCalledWith({

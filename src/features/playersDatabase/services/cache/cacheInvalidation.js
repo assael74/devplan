@@ -3,20 +3,40 @@
 import {
   buildLeagueDocumentCacheKey,
   buildClubSeasonIdentityIndexCacheKey,
+  buildClubDocumentCacheKey,
   buildClubsMasterCacheKey,
   buildLeaguesCollectionCacheKey,
   buildLeaguesMasterCacheKey,
   buildPlayerDocumentCacheKey,
   buildTeamDocumentCacheKey,
+  buildTeamPageDataCacheKey,
+  buildTeamSeasonsByRootCacheKey,
   buildTeamSeasonDocumentCacheKey,
   PLAYERS_DATABASE_CACHE_PREFIXES,
 } from './cacheKeys.js'
 import {
   deleteDocumentCacheValue,
   invalidateDocumentCacheByPrefix,
+  invalidateDocumentCacheByPrefixKeepingSnapshot,
+  invalidateDocumentCacheValueKeepingSnapshot,
 } from './documentCache.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
+
+export const invalidateTeamPageDataCache = ({ leagueId = '', teamId = '' } = {}) => {
+  const safeLeagueId = clean(leagueId)
+  const safeTeamId = clean(teamId)
+
+  if (safeLeagueId && safeTeamId) {
+    invalidateDocumentCacheValueKeepingSnapshot(buildTeamPageDataCacheKey({
+      leagueId: safeLeagueId,
+      teamId: safeTeamId,
+    }))
+    return
+  }
+
+  invalidateDocumentCacheByPrefixKeepingSnapshot(PLAYERS_DATABASE_CACHE_PREFIXES.teamPage)
+}
 
 export const invalidateLeagueDocumentCache = leagueId => {
   const safeLeagueId = clean(leagueId)
@@ -25,6 +45,7 @@ export const invalidateLeagueDocumentCache = leagueId => {
   }
 
   deleteDocumentCacheValue(buildLeaguesCollectionCacheKey())
+  invalidateTeamPageDataCache()
 }
 export const invalidateTeamDocumentCache = teamId => {
   const safeTeamId = clean(teamId)
@@ -34,6 +55,10 @@ export const invalidateTeamDocumentCache = teamId => {
 
   invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.teams)
   invalidateDocumentCacheByPrefix(PLAYERS_DATABASE_CACHE_PREFIXES.teamSeason)
+  if (safeTeamId) {
+    deleteDocumentCacheValue(buildTeamSeasonsByRootCacheKey(safeTeamId))
+  }
+  invalidateTeamPageDataCache()
 }
 
 export const invalidateTeamSeasonDocumentCache = teamSeasonDocumentId => {
@@ -41,6 +66,23 @@ export const invalidateTeamSeasonDocumentCache = teamSeasonDocumentId => {
   if (safeTeamSeasonDocumentId) {
     deleteDocumentCacheValue(buildTeamSeasonDocumentCacheKey(safeTeamSeasonDocumentId))
   }
+  invalidateTeamPageDataCache()
+}
+
+
+export const invalidateTeamSeasonsByRootCache = birthTeamDocumentId => {
+  const safeBirthTeamDocumentId = clean(birthTeamDocumentId)
+  if (!safeBirthTeamDocumentId) return
+
+  deleteDocumentCacheValue(buildTeamSeasonsByRootCacheKey(safeBirthTeamDocumentId))
+  invalidateTeamPageDataCache()
+}
+
+export const invalidateClubDocumentCache = clubId => {
+  const safeClubId = clean(clubId)
+  if (!safeClubId) return
+
+  deleteDocumentCacheValue(buildClubDocumentCacheKey(safeClubId))
 }
 
 export const invalidatePlayerDocumentCache = playerId => {
@@ -52,6 +94,7 @@ export const invalidatePlayerDocumentCache = playerId => {
 
 export const invalidateLeaguesMasterDocumentCache = () => {
   deleteDocumentCacheValue(buildLeaguesMasterCacheKey())
+  invalidateTeamPageDataCache()
 }
 
 export const invalidateClubsMasterDocumentCache = () => {
@@ -68,4 +111,5 @@ export const invalidateClubSeasonIdentityIndexCache = ({
     seasonKey,
     birthYear,
   }))
+  invalidateTeamPageDataCache()
 }

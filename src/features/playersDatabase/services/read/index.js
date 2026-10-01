@@ -66,4 +66,7 @@ export {
   buildLeagueTeamsForBirthYear,
   readLeagueTeamsForBirthYear,
 } from './tasks/workTasks.read.js'
-export { subscribePlayersDatabaseTasks } from './tasks/tasks.read.js'
+export {
+  resetPlayersDatabaseTasksSubscription,
+  subscribePlayersDatabaseTasks,
+} from './tasks/tasks.read.js'
