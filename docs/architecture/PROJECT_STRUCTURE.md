@@ -68,7 +68,7 @@ CoreData תלוי ב־Auth ולכן הוא צריך לשבת מתחת ל־`AuthP
 - `src/features/videoHub`
 - `src/features/calendarHub`
 - `src/features/squadSimulator`
-- `src/features/coreData`
+- `src/coreData`
 
 בתוך פיצ'ר מקובל להשתמש בחלוקה:
 
@@ -85,7 +85,7 @@ logic/
 
 ---
 
-## src/features/coreData
+## src/coreData
 
 שכבת הרכבת הדאטה המרכזית של האפליקציה.
 
@@ -214,7 +214,7 @@ docs/architecture/targets/
    `src/services`
 
 2. הרכבת אובייקטים ראשיים של האפליקציה?  
-   `src/features/coreData`
+   `src/coreData`
 
 3. חישוב גלובלי או מודל עסקי רוחבי?  
    `src/shared`

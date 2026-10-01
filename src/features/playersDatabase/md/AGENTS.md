@@ -1,5 +1,9 @@
 # AGENTS.md
 
+> כללי הפיצ'ר הפעילים נמצאים ב־`../AGENTS.md`. הקובץ הזה נשמר זמנית לצורך
+> תאימות והקשר היסטורי. בעבודה על התיעוד יש לעדכן גם את `README.md` כאשר
+> מסמך מתווסף, משנה מעמד או עובר לארכיון.
+
 ## playersDatabase working rules
 
 Before modifying code under this directory, read:

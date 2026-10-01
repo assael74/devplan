@@ -28,6 +28,8 @@
 - [חוזה Stats Load](./contracts/STATS_LOAD_CONTRACT.md)
 - [חוזה Team Balance](./contracts/TEAM_BALANCE_CONTRACT.md)
 - [חוזה Audit ו־Repair](./contracts/AUDIT_REPAIR_CONTRACT.md)
+- [חוזה Delete ו־Clear V2](./contracts/DELETE_V2_CONTRACT.md)
+- [חוזה פעולות עריכה עצמאיות](./contracts/STANDALONE_EDITS_CONTRACT.md)
 - [Runbook איפוס נקי](./runbooks/CLEAN_RESET_RUNBOOK.md)
 
 ## מסמכי Legacy
@@ -37,4 +39,3 @@
 חוזה הכתיבה והבקרה הפעיל עבור Write V2 ו־Audit V2 הוא
 plans/WRITE_V2_PLAN_UPDATED.md.
 
-- [חוזה פעולות עריכה עצמאיות — ארבע פעולות קישור וחוקי תחרות נפרדים](./contracts/STANDALONE_EDITS_CONTRACT.md)

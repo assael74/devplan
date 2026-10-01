@@ -1,5 +1,9 @@
 # DevPlan — קובץ פתיחה לצ׳אט חדש
 
+> **מעמד: Legacy onboarding.** אין צורך לצרף מסמך זה לצ׳אט חדש.
+> `AGENTS.md`, הסקילים של הפרויקט ו־`docs/README.md` הם מנגנון הכניסה הפעיל.
+> מסמך זה נשמר כרקע בלבד וכולל הפניות ישנות שעשויות שלא להתקיים.
+
 זה הקובץ הראשון שצריך לצרף בתחילת שיחה חדשה עם ChatGPT.
 
 המטרה:
@@ -124,7 +128,7 @@
 - `features/.../sharedLogic` = לוגיקה מקומית / view models של פיצ׳ר
 - `features/.../sharedUi` = UI מקומי משותף לדסקטופ/מובייל
 - חישובים גלובליים כבדים צריכים להיות ב־`src/shared`
-- אובייקטים ראשיים מורכבים צריכים להגיע מ־`src/features/coreData`
+- אובייקטים ראשיים מורכבים צריכים להגיע מ־`src/coreData`
 
 אם המשימה קשורה לדאטה הגדול של האפליקציה, enriched players, teams, games, meetings, videos, payments, indexes או relations בין ישויות ראשיות, לצרף:
 
@@ -170,7 +174,7 @@
 
 שייך ל:
 
-`src/features/coreData`
+`src/coreData`
 
 ---
 
@@ -238,7 +242,7 @@
 - indexes/maps
 - relations בין ישויות
 - חיבור דאטה מפיירסטור לאובייקטים גדולים
-- `src/features/coreData`
+- `src/coreData`
 
 ### Player Scoring Model
 
@@ -347,7 +351,7 @@
 לפני יצירת קובץ חדש, פונקציה חדשה או שכבת לוגיקה חדשה, לבדוק:
 
 1. האם זה כבר קיים ב־`src/shared`?
-2. האם זה כבר קיים ב־`src/features/coreData`?
+2. האם זה כבר קיים ב־`src/coreData`?
 3. האם זה כבר קיים ב־`features/**/sharedLogic`?
 4. האם זה רק UI שצריך להיות ב־`sharedUi` או `src/ui`?
 5. האם צריך להרחיב קובץ קיים במקום ליצור מקביל חדש?

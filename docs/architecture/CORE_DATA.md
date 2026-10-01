@@ -1,6 +1,6 @@
 # Core Data - שכבת הרכבת הנתונים המרכזית
 
-מסמך זה מתאר את תפקיד `src/features/coreData`, את סדר הטעינה הנוכחי, ואת תהליך הפיכת מסמכי Firestore shorts לאובייקטים העיקריים של האפליקציה.
+מסמך זה מתאר את תפקיד `src/coreData`, את סדר הטעינה הנוכחי, ואת תהליך הפיכת מסמכי Firestore shorts לאובייקטים העיקריים של האפליקציה.
 
 יש לצרף את המסמך הזה לצ'אט כאשר המשימה קשורה לטעינת נתונים, אובייקטים ראשיים, enriched players/teams/clubs, אינדקסים, relations, או ביצועים בכניסה לאפליקציה.
 
@@ -8,7 +8,7 @@
 
 ## תפקיד השכבה
 
-`src/features/coreData` היא שכבת הרכבת הדאטה המרכזית של DevPlan.
+`src/coreData` היא שכבת הרכבת הדאטה המרכזית של DevPlan.
 
 Firestore מחזיק נתונים מפוצלים במסמכי `shorts`. השכבה הזו מחברת את המסמכים האלה לאובייקטים עשירים ומוכנים לצריכה:
 
@@ -32,15 +32,15 @@ Firestore מחזיק נתונים מפוצלים במסמכי `shorts`. השכב
 
 הקבצים המרכזיים:
 
-- `src/features/coreData/CoreDataProvider.js`
-- `src/features/coreData/resolvers/coreData.resolver.js`
-- `src/features/coreData/resolve/coreData.resolver.next.js`
-- `src/features/coreData/resolve/merge-stage.js`
-- `src/features/coreData/resolve/index-stage.js`
-- `src/features/coreData/resolve/enrich-stage.js`
-- `src/features/coreData/resolve/relations-stage.js`
-- `src/features/coreData/resolvers/builders/*`
-- `src/features/coreData/utils/*`
+- `src/coreData/CoreDataProvider.js`
+- `src/coreData/resolvers/coreData.resolver.js`
+- `src/coreData/resolve/coreData.resolver.next.js`
+- `src/coreData/resolve/merge-stage.js`
+- `src/coreData/resolve/index-stage.js`
+- `src/coreData/resolve/enrich-stage.js`
+- `src/coreData/resolve/relations-stage.js`
+- `src/coreData/resolvers/builders/*`
+- `src/coreData/utils/*`
 
 `coreData.resolver.js` הוא wrapper ששומר API יציב ומפנה ל־`resolveCoreDataNext`.
 
@@ -131,7 +131,7 @@ coreReady       // כרגע זהה ל-primaryReady
 
 ## זרימת resolver
 
-הזרימה המרכזית נמצאת ב־`src/features/coreData/resolve/coreData.resolver.next.js`.
+הזרימה המרכזית נמצאת ב־`src/coreData/resolve/coreData.resolver.next.js`.
 
 ```txt
 input shorts
@@ -151,7 +151,7 @@ input shorts
 
 ## 1. Merge stage
 
-קובץ: `src/features/coreData/resolve/merge-stage.js`
+קובץ: `src/coreData/resolve/merge-stage.js`
 
 מטרה:
 
@@ -199,7 +199,7 @@ externalGamesShorts
 
 ## 2. Index stage
 
-קובץ: `src/features/coreData/resolve/index-stage.js`
+קובץ: `src/coreData/resolve/index-stage.js`
 
 מטרה:
 
@@ -230,7 +230,7 @@ externalGamesShorts
 
 ## 3. Enrich stage
 
-קובץ: `src/features/coreData/resolve/enrich-stage.js`
+קובץ: `src/coreData/resolve/enrich-stage.js`
 
 מטרה:
 
@@ -297,7 +297,7 @@ externalGamesShorts
 
 ## 4. Relations stage
 
-קובץ: `src/features/coreData/resolve/relations-stage.js`
+קובץ: `src/coreData/resolve/relations-stage.js`
 
 מטרה:
 
