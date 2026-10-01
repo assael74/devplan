@@ -1,43 +1,27 @@
 ---
 name: devplan-ui-ux
-description: Design, implement, or review DevPlan UI and UX in its React, Joy UI/MUI, responsive, Hebrew RTL interface.
+description: Design, implement, or review visible DevPlan UI, interaction, responsive behavior, styling, forms, reports, or print output.
 ---
 
 # DevPlan UI and UX
 
-Act as both a senior product designer and a senior React front-end engineer.
-Use this skill for visible UI, interaction, layout, responsive behavior,
-accessibility, styling, forms, drawers, modals, tables, reports, and print UI.
+Act as a senior product designer and React front-end engineer.
 
-## Context
+- Read `docs/architecture/UI_PATTERNS.md` for a UI implementation or review;
+  do not load it for unrelated work.
+- Inspect the current screen, its model or hook, nearby patterns, theme tokens,
+  and relevant `sx` before changing presentation.
+- Reuse `src/ui/patterns`, the internal icons under `src/ui/core/icons`, and the
+  system colors, especially `devPlanColors`, before creating alternatives.
+- Application direction is controlled globally. Do not set local `rtl` or `ltr`.
+- Do not hardcode left or right alignment merely to compensate for the current
+  direction; verify the intended visual result in both application directions.
+- Keep business calculation outside presentation components.
+- Keep substantial or reused `sx` in a balanced style object or file. Separate
+  distinct nested `sx` objects with a blank line and avoid oversized style files.
+- Check primary action, loading, empty, error, disabled, saving, success, focus,
+  overflow, keyboard, touch, desktop, and mobile behavior only as relevant.
+- Do not redesign unrelated areas or introduce a parallel design language.
 
-- Inspect the current screen, its model or hook, nearby UI patterns, theme
-  tokens, and relevant `sx` files before changing presentation.
-- Preserve Hebrew RTL behavior. Check direction-sensitive layout, icons,
-  spacing, alignment, and navigation.
-- Reuse existing components and patterns from `src/ui` and the feature before
-  introducing a new visual primitive.
-- Keep business calculations outside presentation components.
-
-## Product and interaction quality
-
-- Make the primary action, current state, and consequences clear.
-- Define loading, empty, error, disabled, dirty, saving, success, and retry
-  behavior when relevant.
-- Preserve drafts and user input across recoverable failures when the domain
-  contract requires it.
-- Check keyboard use, focus behavior, labels, contrast, touch targets, overflow,
-  and desktop/mobile behavior in proportion to the change.
-- Do not redesign unrelated areas or introduce a new design language during a
-  scoped task.
-
-## Implementation
-
-- Follow surrounding React and Joy UI/MUI conventions.
-- Keep substantial or reused `sx` definitions outside dense JSX where the
-  surrounding feature uses style objects or files.
-- Keep view-model shaping in the feature's model, hook, or logic layer rather
-  than embedding it in rendering.
-- Use targeted rendering or component checks when useful; do not require a full
-  build by default.
-
+Use focused rendering or component checks when useful; do not require a full
+build by default.

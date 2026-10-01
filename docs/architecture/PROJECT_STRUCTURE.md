@@ -194,11 +194,12 @@ Cloud Functions וצד שרת.
 מסמכים מרכזיים:
 
 ```txt
-docs/onboarding/CHATGPT_CONTEXT.md
+AGENTS.md
+docs/README.md
 docs/architecture/CORE_DATA.md
 docs/architecture/PROJECT_STRUCTURE.md
-docs/architecture/ADVANCED_STATS_PIPELINE.md
-docs/architecture/LIVE_TAGGING_STATS_PIPELINE.md
+docs/architecture/UI_PATTERNS.md
+docs/architecture/FIRESTORE_ROUTER.md
 docs/architecture/PLAYER_SCORING_MODEL.md
 docs/architecture/TEAM_SCORING_MODEL.md
 docs/architecture/targets/

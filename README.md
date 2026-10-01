@@ -1,70 +1,40 @@
-# Getting Started with Create React App
+<!-- README.md -->
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# DevPlan
 
-## Available Scripts
+DevPlan היא אפליקציה לניהול, ניתוח ופיתוח מקצועי של קבוצות ושחקני כדורגל.
 
-In the project directory, you can run:
+הפרויקט בנוי כאפליקציה למשתמש יחיד שמבצע בכל רגע תהליך מרכזי אחד. יש להעדיף
+פתרון ישיר, ברור ותחום על פני תשתית מורכבת שאינה נדרשת לצורך ממשי.
 
-### `npm start`
+## כניסה מהירה
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- כללי עבודה לסוכן: [`AGENTS.md`](./AGENTS.md)
+- נתב מסמכי הפרויקט: [`docs/README.md`](./docs/README.md)
+- מבנה השכבות: [`docs/architecture/PROJECT_STRUCTURE.md`](./docs/architecture/PROJECT_STRUCTURE.md)
+- עבודה עם ChatGPT וקובץ ZIP: [`docs/onboarding/CHATGPT_ZIP_MODE.md`](./docs/onboarding/CHATGPT_ZIP_MODE.md)
+- תיעוד Players Database: [`src/features/playersDatabase/md/README.md`](./src/features/playersDatabase/md/README.md)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+אין צורך לקרוא את כל התיעוד לפני כל משימה. מתחילים ב־`AGENTS.md`, מזהים את
+תחום העבודה, ואז קוראים רק את המסמך הרלוונטי דרך נתב המסמכים.
 
-### `npm test`
+## מבנה מרכזי
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- `src/app` — מעטפת האפליקציה והחיבורים העליונים.
+- `src/coreData` — הרכבת אובייקטי המידע המרכזיים.
+- `src/features` — מסכים ותהליכים לפי תחום מוצר.
+- `src/services` — גישה לשירותים חיצוניים ולמסד הנתונים.
+- `src/shared` — מנועים וחישובים משותפים.
+- `src/ui` — רכיבי תצוגה ותבניות משותפות.
+- `functions/src` — תהליכים בצד השרת.
 
-### `npm run build`
+## פקודות שימושיות
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+npm start
+npm test
+npm run build
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+בדיקות ובנייה נבחרות לפי היקף השינוי; אין צורך להפעיל בנייה מלאה לכל שינוי
+מקומי.

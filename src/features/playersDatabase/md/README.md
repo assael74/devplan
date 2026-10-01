@@ -1,41 +1,30 @@
-# Players Database Documentation
+# Players Database documentation router
 
-## מסמך כניסה
-
-זהו האינדקס המרכזי לתיעוד של `playersDatabase`. יש להבחין בין מסמכי חובה,
-חוזי זרימה, תוכנית המימוש ומסמכי רקע.
+זהו נתב בלבד. אין לקרוא את כל המסמכים בכל משימה.
 
 ## סדר סמכות
 
-1. `AGENTS.md` — כללי עבודה.
-2. `architecture/DATA_ARCHITECTURE.md` — בעלות, משמעות ומקורות אמת.
-3. `catalog/firestoreDocuments` — מבנה מסמכי Firestore.
-4. `contracts/*` — חוזה הזרימה או התחום הרלוונטי.
-5. `architecture/WRITE_V2_ARCHITECTURE.md` — עקרונות שכבת Write V2.
-6. `plans/WRITE_V2_PLAN_UPDATED.md` — חוזה הכתיבה והבקרה הקנוני של Write V2 ו־Audit V2.
-7. `runbooks/*` — הוראות הפעלה ובדיקות.
+1. `../AGENTS.md`
+2. `architecture/DATA_ARCHITECTURE.md`
+3. קטלוג המסמך הרלוונטי
+4. חוזה הזרימה הרלוונטי
+5. מסמכי Write V2, רק כאשר השינוי חוצה מספר זרימות
 
-בסתירה בין מסמכים, חוזי התחום וארכיטקטורת הנתונים קובעים בעלות ומשמעות;
-מסמך Write V2 קובע את גבולות הכתיבה והבקרה התפעוליים.
+## בחירת מסמך
 
-## מסמכים פעילים
+| משימה | מסמך |
+|---|---|
+| בעלות, מקור אמת או מבנה שמירה | `architecture/DATA_ARCHITECTURE.md` והקטלוג המתאים |
+| League וביצועי קבוצה | `contracts/LEAGUE_CONTRACT.md` |
+| Roster או Movement | `contracts/ROSTER_MOVEMENT_CONTRACT.md` |
+| Stats Load | `contracts/STATS_LOAD_CONTRACT.md` |
+| Team Balance או שמירת סקאוט | `contracts/TEAM_BALANCE_CONTRACT.md` |
+| Audit או Repair | `contracts/AUDIT_REPAIR_CONTRACT.md` וחוזה הזרימה |
+| ניקוי סגל או ליגה | ה־`README.md` הצמוד למסלול תחת `services/writeV2` |
+| עריכת כתובת או חוקי תחרות | `contracts/STANDALONE_EDITS_CONTRACT.md` |
+| עקרונות Write V2 חוצי זרימות | `architecture/WRITE_V2_ARCHITECTURE.md` |
+| חוזה תפעולי Write V2 או Audit V2 | הסעיף המתאים ב־`plans/WRITE_V2_PLAN_UPDATED.md` |
+| איפוס נקי | `runbooks/CLEAN_RESET_RUNBOOK.md` |
+| יישור מידע ישן | `plans/LEGACY_DATA_ALIGNMENT_CHECKLIST.md` |
 
-- [ארכיטקטורת נתונים](./architecture/DATA_ARCHITECTURE.md)
-- [ארכיטקטורת Write V2](./architecture/WRITE_V2_ARCHITECTURE.md)
-- [חוזה הכתיבה והבקרה של Write V2 ו־Audit V2](./plans/WRITE_V2_PLAN_UPDATED.md)
-- [חוזה League](./contracts/LEAGUE_CONTRACT.md)
-- [חוזה Roster ו־Movement](./contracts/ROSTER_MOVEMENT_CONTRACT.md)
-- [חוזה Stats Load](./contracts/STATS_LOAD_CONTRACT.md)
-- [חוזה Team Balance](./contracts/TEAM_BALANCE_CONTRACT.md)
-- [חוזה Audit ו־Repair](./contracts/AUDIT_REPAIR_CONTRACT.md)
-- [חוזה Delete ו־Clear V2](./contracts/DELETE_V2_CONTRACT.md)
-- [חוזה פעולות עריכה עצמאיות](./contracts/STANDALONE_EDITS_CONTRACT.md)
-- [Runbook איפוס נקי](./runbooks/CLEAN_RESET_RUNBOOK.md)
-
-## מסמכי Legacy
-
-המסמכים הישנים נשמרים זמנית בתיקיית המקור לצורך תאימות והיסטוריה. אין להוסיף
-בהם החלטות חדשות. מסמכי יעד ותקלות שאינם רלוונטיים נשמרים תחת `archive/`.
-חוזה הכתיבה והבקרה הפעיל עבור Write V2 ו־Audit V2 הוא
-plans/WRITE_V2_PLAN_UPDATED.md.
-
+מסמכים שאינם פעילים אינם נשמרים בתיקיית ארכיון. היסטוריה נשמרת בגיט.

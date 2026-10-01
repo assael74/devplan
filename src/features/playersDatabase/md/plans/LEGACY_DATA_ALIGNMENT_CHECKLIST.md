@@ -13,8 +13,9 @@
 
 מקורות מחייבים, ביחס לשורש `playersDatabase`:
 
-- `md/AGENTS.md`, `md/README.md`, `md/architecture/DATA_ARCHITECTURE.md`.
-- `md/contracts/DELETE_V2_CONTRACT.md`, במיוחד מצב Stats absent, בעלות Clear Stats / Clear Roster ושימור ההיסטוריה.
+- `AGENTS.md`, `md/README.md`, `md/architecture/DATA_ARCHITECTURE.md`.
+- מסמכי `README.md` הצמודים למסלולי הניקוי תחת `services/writeV2`, במיוחד
+  מצב Stats absent, בעלות Clear Stats / Clear Roster ושימור ההיסטוריה.
 - `md/plans/DEFERRED_ISSUES_AND_TASKS.md`, משימה 2: ייצוג עונה בטוח במזהי מסמכים בלבד.
 - `md/plans/WRITE_V2_PLAN_UPDATED.md`, סעיפים 9–10: Receipt קטן, Coverage ודיווח Canonical שאינו הוכחת כתיבה.
 - `catalog/firestoreDocuments/`: קטלוגי Team Root, Team Season, Player, שני SearchIndexes, League, Club, שני Masters ו־WriteAction.
