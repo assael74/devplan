@@ -1,5 +1,4 @@
 import {
-  buildClubIntelligenceFromMaster,
   getClubCollapseView,
 } from '../../domain/clubIntelligence/index.js'
 import {
@@ -8,41 +7,64 @@ import {
   buildClubSummaryModel,
 } from './clubPresentation.model.js'
 
-const intelligence = buildClubIntelligenceFromMaster({
-  club: {
-    clubId: 'club',
-    clubLevel: 1,
-    ageGroups: [{
-      ageGroupId: 'u15',
-      ageGroupLabel: 'נערים ג',
-      current: [{
+const currentTeam = {
+  teamId: 'club_2012_1',
+  teamSlot: 1,
+  birthYear: 2012,
+  ageGroupId: 'u15',
+  ageGroupLabel: 'נערים ג',
+  league: { leagueLevel: 2 },
+  performance: {},
+  teamTaskSignals: { offense: true, defense: false },
+  teamTaskAvailability: { availability: 'available', reason: null },
+}
+
+const intelligence = {
+  club: { clubId: 'club', clubLevel: 1 },
+  birthYearTeams: [{
+    birthYear: 2012,
+    seasons: {
+      current: { teams: [currentTeam] },
+      previous: {
+        teams: [{
         teamId: 'club_2012_1',
         teamSlot: 1,
         birthYear: 2012,
-        league: { leagueLevel: 2 },
-        performance: {},
-        teamTaskSignals: { offense: true, defense: false },
-        teamTaskAvailability: { availability: 'available', reason: null },
-      }],
-      previous: [{
-        teamId: 'club_2012_1',
-        teamSlot: 1,
-        birthYear: 2012,
-        league: { leagueLevel: 1 },
-        performance: {},
-      }],
-    }],
-    competitionPaths: [{
-      birthYear: 2012,
-      sourceTeamId: 'club_2012_1',
-      sourceTeamSlot: 1,
-      currentLeagueLevel: 2,
-      projectedNextLeagueLevel: 3,
-      status: 'RELEGATION_RISK',
-      source: 'AUTOMATIC',
-    }],
+          ageGroupId: 'u15',
+          ageGroupLabel: 'נערים ג',
+          league: { leagueLevel: 1 },
+          performance: {},
+        }],
+      },
+    },
+  }],
+  signalCoverage: {
+    futureLeaguePath: { status: 'full' },
+    leagueVsClubLevel: { status: 'full' },
+    squadTask: { status: 'full' },
   },
-})
+  spotlights: [{
+    id: 'FUTURE_LEAGUE_PATH_DROP:2012:team:club_2012_1',
+    type: 'FUTURE_LEAGUE_PATH_DROP',
+    birthYear: 2012,
+    teamId: 'club_2012_1',
+    context: { teamSlot: 1 },
+  }, {
+    id: 'LEAGUE_BELOW_CLUB_LEVEL:2012:team:club_2012_1',
+    type: 'LEAGUE_BELOW_CLUB_LEVEL',
+    birthYear: 2012,
+    teamId: 'club_2012_1',
+    context: { clubLevel: 1, leagueLevel: 2, gap: 1 },
+  }, {
+    id: 'OFFENSE_SQUAD_TASK:2012:team:club_2012_1',
+    type: 'OFFENSE_SQUAD_TASK',
+    birthYear: 2012,
+    teamId: 'club_2012_1',
+    context: {
+      availability: { availability: 'available', reason: null },
+    },
+  }],
+}
 
 describe('Club presentation model', () => {
   test('uses partial or no coverage only when no signal exists', () => {

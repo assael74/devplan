@@ -1,11 +1,11 @@
-// features/playersDatabase/catalog/seasons.catalog.js
+// src/features/playersDatabase/catalog/seasons.catalog.js
 //
 // The catalog defines the seasons the UI may create and filter. Firestore
 // documents remain the source of truth for seasons that actually exist.
 
-const buildSeason = (seasonKey, target) => ({
+const buildSeason = (seasonId, seasonKey, target) => ({
   id: seasonKey,
-  seasonId: seasonKey,
+  seasonId,
   seasonKey,
   label: seasonKey,
   target,
@@ -13,11 +13,11 @@ const buildSeason = (seasonKey, target) => ({
 })
 
 export const PLAYERS_DATABASE_SEASONS_CATALOG = Object.freeze([
-  buildSeason('26/27', 'current'),
-  buildSeason('25/26', 'history'),
-  buildSeason('24/25', 'history'),
-  buildSeason('23/24', 'history'),
-  buildSeason('22/23', 'history'),
+  buildSeason('2026_2027', '26/27', 'current'),
+  buildSeason('2025_2026', '25/26', 'history'),
+  buildSeason('2024_2025', '24/25', 'history'),
+  buildSeason('2023_2024', '23/24', 'history'),
+  buildSeason('2022_2023', '22/23', 'history'),
 ])
 
 export const PLAYERS_DATABASE_CURRENT_SEASON_KEY =
@@ -28,7 +28,7 @@ export const getSeasonCatalogEntry = seasonKey => {
   const key = String(seasonKey || '').trim()
 
   return PLAYERS_DATABASE_SEASONS_CATALOG.find(season => (
-    season.seasonKey === key || season.seasonId === key
+    season.seasonKey === key || season.seasonId === key || season.id === key
   )) || null
 }
 

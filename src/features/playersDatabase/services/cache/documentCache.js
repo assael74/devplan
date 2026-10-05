@@ -426,10 +426,3 @@ export const refreshWithDocumentCache = async ({ key, read }) => {
   return request
 }
 
-export const getPlayersDatabaseCacheDebugSnapshot = () => ({
-  revision: cacheRevision,
-  cachedKeys: Array.from(documentCache.keys()),
-  pendingKeys: Array.from(pendingRequests.keys()),
-  subscribedKeys: Array.from(subscribersByKey.keys()),
-  aliases: Array.from(aliases.entries()),
-})

@@ -1,12 +1,11 @@
 import * as React from 'react'
 
-import { updatePlayerSeasonGoalDistribution } from '../../../../services/writeV2/edits/player/updateGoalDistribution.js'
+import { updatePlayerSeasonGoalDistribution } from '../../../../services/write/roster/edits/updatePlayerSeasonManual.js'
 
 export default function usePlayerGoalDistributionEditor({
   player,
   selectedRow,
   notify,
-  reload,
 }) {
   const [open, setOpen] = React.useState(false)
   const [saving, setSaving] = React.useState(false)
@@ -25,12 +24,10 @@ export default function usePlayerGoalDistributionEditor({
     setSaving(true)
     try {
       await updatePlayerSeasonGoalDistribution({
-        playerDocumentId:
-          player.domain?.identity?.playerDocumentId || player.id,
-        birthTeamId: selectedRow.birthTeamId || selectedRow.teamId,
-        birthTeamDocumentId:
-          selectedRow.birthTeamDocumentId || selectedRow.teamDocumentId,
-        seasonKey: selectedRow.seasonKey,
+        playerId: player.playerId,
+        teamId: selectedRow.teamId,
+        teamSeasonDocumentId: selectedRow.teamSeasonDocumentId,
+        seasonId: selectedRow.seasonId,
         scoringGames: goalDistribution.scoringGames,
       })
       notify({
@@ -38,7 +35,6 @@ export default function usePlayerGoalDistributionEditor({
         message: 'פיזור השערים נשמר.',
       })
       setOpen(false)
-      void reload().catch(() => {})
     } catch (error) {
       notify({
         status: 'error',
@@ -47,7 +43,7 @@ export default function usePlayerGoalDistributionEditor({
     } finally {
       setSaving(false)
     }
-  }, [notify, player, reload, saving, selectedRow])
+  }, [notify, player, saving, selectedRow])
 
   return {
     open,

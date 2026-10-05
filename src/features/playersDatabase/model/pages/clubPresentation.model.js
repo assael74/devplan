@@ -259,9 +259,23 @@ const buildTransferSummary = teams => {
   }
 
   const partial = coverage.includes('PARTIAL')
+  const countDirection = (team, direction) => {
+    const transfers = team?.transfers || {}
+    const legacyValue = Number(transfers?.out?.[direction])
+    if (Number.isFinite(legacyValue)) return legacyValue
+
+    const external = Object.values(
+      transfers?.external?.out?.[direction]?.clubsById || {}
+    ).reduce((total, value) => total + Number(value || 0), 0)
+    const internal = Object.values(
+      transfers?.internal?.out?.[direction]?.teamsById || {}
+    ).reduce((total, value) => total + Number(value || 0), 0)
+
+    return external + internal
+  }
   const totals = teams.reduce((summary, team) => ({
-    up: summary.up + Number(team?.transfers?.out?.up || 0),
-    down: summary.down + Number(team?.transfers?.out?.down || 0),
+    up: summary.up + countDirection(team, 'up'),
+    down: summary.down + countDirection(team, 'down'),
   }), { up: 0, down: 0 })
 
   return { status: partial ? 'PARTIAL' : 'COMPLETE', label: partial ? 'כיסוי חלקי' : '', ...totals }

@@ -1,14 +1,10 @@
+// src/features/playersDatabase/ui/components/modals/audit/AuditFindingsList.js
+
 import { Button, Sheet, Stack, Typography } from '@mui/joy'
 import {
   clean,
-  conflictingLeagueIdsOf,
   formatAuditDate,
   formatValue,
-  isLeagueClubProjectionFinding,
-  isLeagueDocumentFinding,
-  isLeagueLifecycleDocumentFinding,
-  isLeaguesMasterSummaryFinding,
-  isTeamSearchIndexLifecycleMismatch,
   lifecycleLabel,
   playerDetailsOf,
   sourceLabel,
@@ -32,7 +28,6 @@ const hasExpectedActual = finding =>
 
 function AuditFindingCard({ finding, busy, actions }) {
   const playerDetails = playerDetailsOf(finding)
-  const conflictingLeagueIds = conflictingLeagueIdsOf(finding)
   const target = finding?.target && typeof finding.target === 'object' ? finding.target : {}
   const entityType = finding?.entityType || target.entityType || ''
   const documentId = finding?.documentId || target.teamSeasonDocumentId || target.playerDocumentId || ''
@@ -127,6 +122,12 @@ function AuditFindingCard({ finding, busy, actions }) {
     {finding.source ? (
       <Typography level='body-xs'>מקור הנתונים: {sourceLabel(finding.source)}</Typography>
     ) : null}
+    {finding.owner ? (
+      <Typography level='body-xs'>אחריות: {finding.owner}</Typography>
+    ) : null}
+    {finding.recommendedAction ? (
+      <Typography level='body-sm'>{finding.recommendedAction}</Typography>
+    ) : null}
     <Typography level='body-xs'>זוהתה: {formatAuditDate(finding.detectedAt)}</Typography>
     <Typography level='body-xs'>
       עדכון מקור: {formatAuditDate(finding.sourceUpdatedAt)}
@@ -149,70 +150,6 @@ function AuditFindingCard({ finding, busy, actions }) {
       <Typography level='body-xs'>
         שמורה בפועל: {formatValue(finding.actual)} · אמור להיות: {formatValue(finding.expected)}
       </Typography>
-    ) : null}
-    {isTeamSearchIndexLifecycleMismatch(finding) ? (
-      <Button
-        size='sm'
-        color='warning'
-        variant='solid'
-        disabled={busy}
-        sx={sx.actionButton}
-        onClick={() => actions.onLeagueOpen?.(finding)}
-      >
-        מעבר לעמוד ליגה
-      </Button>
-    ) : null}
-    {isLeagueDocumentFinding(finding) || isLeagueLifecycleDocumentFinding(finding) ? (
-      <Button
-        size='sm'
-        color='warning'
-        variant='solid'
-        disabled={busy}
-        sx={sx.actionButton}
-        onClick={() => actions.onLeagueOpen?.(finding)}
-      >
-        מעבר לעמוד ליגה
-      </Button>
-    ) : null}
-    {isLeagueClubProjectionFinding(finding) ? (
-      <Button
-        size='sm'
-        color='warning'
-        variant='solid'
-        disabled={busy}
-        sx={sx.actionButton}
-        onClick={() => actions.onLeagueOpen?.(finding)}
-      >
-        מעבר לתיקוני הליגה
-      </Button>
-    ) : null}
-    {conflictingLeagueIds.map(leagueId => (
-      <Button
-        key={leagueId}
-        size='sm'
-        color='warning'
-        variant='solid'
-        disabled={busy}
-        sx={sx.actionButton}
-        onClick={() => actions.onLeagueOpen?.({
-          ...finding,
-          relatedDocumentId: leagueId,
-        })}
-      >
-        פתח ליגה: {leagueId}
-      </Button>
-    ))}
-    {isLeaguesMasterSummaryFinding(finding) ? (
-      <Button
-        size='sm'
-        color='warning'
-        variant='solid'
-        disabled={busy}
-        sx={sx.actionButton}
-        onClick={() => actions.onLeaguesCenterOpen?.()}
-      >
-        מעבר למרכז הליגות
-      </Button>
     ) : null}
     {finding.lifecycleStatus ? (
       <Typography level='body-xs'>מצב: {lifecycleLabel(finding.lifecycleStatus)}</Typography>

@@ -1,11 +1,15 @@
 // src/features/playersDatabase/model/league/page/leaguePage.model.js
 
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../catalog/clubs.catalog.js'
+import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../catalog/leagues.catalog.js'
 import { buildTeamDisplayName } from '../../../catalog/teamDisplay.js'
-import { buildLeagueTeamSeasons } from '../../../domain/index.js'
 import {
-  normalizeSeasonIdentity,
+  getSeasonCatalogEntry,
+  PLAYERS_DATABASE_CURRENT_SEASON_KEY,
+} from '../../../catalog/seasons.catalog.js'
+import {
   normalizeSeasonLookupKey,
+  resolveSeasonBirthYear,
 } from '../../shared/season.model.js'
 import {
   cleanValue,
@@ -13,6 +17,10 @@ import {
 } from '../../shared/value.model.js'
 import { buildTeamPerformanceViewModel } from '../../team/teamPerformance.viewModel.js'
 import { sortByTableRank } from '../../shared/tableRows.model.js'
+
+const object = value => (
+  value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+)
 
 const getSeasonSortValue = value => {
   const match = String(value || '').match(/(\d{2,4})/)
@@ -22,128 +30,171 @@ const getSeasonSortValue = value => {
   return year < 100 ? 2000 + year : year
 }
 
-const buildSeasonOption = ({ season, target, league }) => {
-  const identity = normalizeSeasonIdentity({ season })
-
-  const seasonKey = normalizeSeasonLookupKey(
-    identity.seasonKey || identity.seasonId
-  )
+const buildSeasonOption = ({ season, seasonId, league }) => {
+  const seasonKey = normalizeSeasonLookupKey(season?.seasonKey || seasonId)
   const birthYear = toNumberOrZero(season?.birthYear)
+  const target = cleanValue(season?.seasonStatus).toLowerCase() || 'season'
 
   return {
     target,
-    season,
-    seasonId: identity.seasonId,
+    season: {
+      ...object(season),
+      seasonId: cleanValue(seasonId),
+    },
+    seasonId: cleanValue(seasonId),
     seasonKey,
     birthYear,
-    label: [
-      seasonKey,
-      birthYear ? `שנתון ${birthYear}` : '',
-    ].filter(Boolean).join(' · '),
+    label: [seasonKey, birthYear ? `שנתון ${birthYear}` : ''].filter(Boolean).join(' · '),
     primaryLabel: [
-      cleanValue(league?.leagueName || league?.name || 'ליגה'),
+      cleanValue(league?.names?.display || league?.names?.official || league?.leagueId || 'ליגה'),
       seasonKey,
     ].filter(Boolean).join(' · '),
     secondaryLabel: [
       birthYear ? `שנתון ${birthYear}` : '',
       cleanValue(league?.ageGroupLabel || league?.ageGroupId),
     ].filter(Boolean).join(' · '),
-    sortValue: getSeasonSortValue(seasonKey || identity.seasonId),
+    sortValue: getSeasonSortValue(seasonId || seasonKey),
   }
 }
 
-export const buildLeaguePageSeasonOptions = league => {
-  const options = []
+export const buildLeaguePageSeasonOptions = (league, { bootstrapSeason = null } = {}) => {
+  const options = Object.entries(object(league?.seasonsById)).map(([seasonId, season]) => (
+    buildSeasonOption({ season, seasonId, league })
+  ))
 
-  if (league?.current?.seasonId || league?.current?.seasonKey) {
-    options.push(buildSeasonOption({
-      season: league.current,
-      target: 'current',
-      league,
-    }))
+  const bootstrapSeasonKey = normalizeSeasonLookupKey(
+    bootstrapSeason?.seasonKey || PLAYERS_DATABASE_CURRENT_SEASON_KEY
+  )
+
+  if (!options.length && bootstrapSeasonKey) {
+    const catalogSeason = getSeasonCatalogEntry(bootstrapSeasonKey)
+    const bootstrapSeasonId = cleanValue(catalogSeason?.seasonId)
+    const bootstrapBirthYear = Number(bootstrapSeason?.birthYear) || resolveSeasonBirthYear({
+      seasonKey: bootstrapSeasonKey,
+      ageGroupId: league?.ageGroupId,
+    })
+
+    if (!bootstrapSeasonId) return options
+
+    options.push({
+      target: 'bootstrap',
+      season: {
+        seasonId: bootstrapSeasonId,
+        seasonKey: bootstrapSeasonKey,
+        seasonStatus: '',
+        birthYear: bootstrapBirthYear || null,
+        seasonUrl: '',
+        leagueTotalRound: null,
+        gameDurationMinutes: null,
+        tableImportedAt: null,
+        competitionRules: { configured: false },
+        table: {
+          tableState: 'NOT_LOADED',
+          teamsById: {},
+        },
+        bootstrap: true,
+      },
+      seasonId: bootstrapSeasonId,
+      seasonKey: bootstrapSeasonKey,
+      birthYear: bootstrapBirthYear || null,
+      label: bootstrapSeasonKey,
+      primaryLabel: [
+        cleanValue(league?.names?.display || league?.names?.official || league?.leagueId || 'ליגה'),
+        bootstrapSeasonKey,
+      ].filter(Boolean).join(' · '),
+      secondaryLabel: bootstrapBirthYear
+        ? `שנתון ${bootstrapBirthYear}`
+        : '',
+      sortValue: getSeasonSortValue(bootstrapSeasonKey),
+    })
   }
 
-  const history = Array.isArray(league?.history) ? league.history : []
-  history.forEach(season => {
-    if (!season?.seasonId && !season?.seasonKey) return
-
-    options.push(buildSeasonOption({
-      season,
-      target: 'history',
-      league,
-    }))
-  })
-
-  return options
-    .filter(option => option.seasonKey || option.seasonId)
-    .sort((left, right) => (
-      right.sortValue - left.sortValue ||
-      String(right.seasonKey).localeCompare(String(left.seasonKey), 'he')
-    ))
+  return options.sort((left, right) => (
+    right.sortValue - left.sortValue ||
+    String(right.seasonKey).localeCompare(String(left.seasonKey), 'he')
+  ))
 }
 
-const getClubById = clubId =>
+export const buildLeaguePageBootstrapLeague = leagueId => {
+  const safeLeagueId = cleanValue(leagueId)
+  const catalog = PLAYERS_DATABASE_LEAGUES_CATALOG.find(item => (
+    cleanValue(item?.id) === safeLeagueId
+  )) || null
+
+  return {
+    leagueId: safeLeagueId,
+    names: {
+      official: cleanValue(catalog?.name),
+      display: cleanValue(catalog?.name),
+      short: cleanValue(catalog?.name),
+      source: cleanValue(catalog?.name),
+    },
+    region: cleanValue(catalog?.region),
+    ageGroupId: cleanValue(catalog?.ageGroupId),
+    ageGroupLabel: cleanValue(catalog?.ageGroupLabel),
+    level: catalog?.level || null,
+    seasonsById: {},
+    bootstrap: true,
+  }
+}
+
+const getClubById = clubId => (
   PLAYERS_DATABASE_CLUBS_CATALOG.find(
     club => cleanValue(club.id) === cleanValue(clubId)
   ) || null
+)
 
-const resolveTeamName = teamSeason => {
-  const clubId = cleanValue(teamSeason?.identity?.clubId)
-  const teamId = cleanValue(teamSeason?.identity?.teamId)
+const resolveTeamName = ({ teamId, team }) => {
+  const clubId = cleanValue(team?.clubId)
   const club = getClubById(clubId)
 
   return buildTeamDisplayName({
-    clubName: club?.name || teamSeason?.identity?.displayName,
+    clubName: club?.name,
     clubId,
     teamId,
-    teamSlot: teamSeason?.identity?.teamSlot || 1,
+    teamSlot: team?.teamSlot,
   }) || cleanValue(teamId || clubId || '-')
 }
 
-const buildTeamRow = teamSeason => {
-  const stats = teamSeason?.stats?.actual || {}
-  const ranking = teamSeason?.ranking || {}
-  const performance = teamSeason?.performance || {}
+const buildTeamRow = ([teamId, team]) => {
+  const officialTable = object(team?.officialTable)
+  const performance = object(team?.performance)
   const performanceView = buildTeamPerformanceViewModel(performance)
-  const scoutSummary = teamSeason?.scoutProfilesSummary || {}
-  const profilesCount = toNumberOrZero(scoutSummary.total)
-  const profileAssignmentsCount = Object.values(
-    scoutSummary.profileCounts || {}
-  ).reduce((total, value) => (
-    total + toNumberOrZero(value)
-  ), 0)
-  const clubId = cleanValue(teamSeason?.identity?.clubId)
-  const club = getClubById(clubId)
+  const roster = object(team?.roster)
+  const stats = object(team?.stats)
+  const scouting = object(team?.scouting)
+  const clubId = cleanValue(team?.clubId)
 
   return {
-    id: cleanValue(
-      teamSeason?.identity?.teamId ||
-      teamSeason?.identity?.teamDocumentId ||
-      ranking.tableRank
-    ),
-    teamId: cleanValue(teamSeason?.identity?.teamId),
-    birthTeamId: cleanValue(teamSeason?.identity?.teamId),
-    teamDocumentId: cleanValue(teamSeason?.identity?.teamDocumentId),
+    id: cleanValue(teamId),
+    teamId: cleanValue(teamId),
+    birthTeamId: cleanValue(teamId),
+    teamDocumentId: cleanValue(teamId),
     clubId,
-    clubLevel: toNumberOrZero(teamSeason?.clubLevel || club?.clubLevel),
-    teamUrl: cleanValue(teamSeason?.metadata?.teamUrl),
-    tableRank: toNumberOrZero(ranking.tableRank),
-    name: resolveTeamName(teamSeason),
-    teamSlot: teamSeason?.identity?.teamSlot || 1,
-    points: toNumberOrZero(stats.points),
-    goalsFor: toNumberOrZero(stats.goalsFor),
-    goalsAgainst: toNumberOrZero(stats.goalsAgainst),
-    games: toNumberOrZero(stats.gamesPlayed),
-    teamStats: stats,
-    playersCount: toNumberOrZero(teamSeason?.playersCount),
-    hasPlayers: Boolean(teamSeason?.loadStatus?.hasPlayers),
-    statsComplete: Boolean(teamSeason?.loadStatus?.statsComplete),
-    profilesCount,
-    profileAssignmentsCount,
+    clubLevel: toNumberOrZero(team?.clubLevel),
+    teamUrl: cleanValue(team?.teamUrl),
+    tableRank: toNumberOrZero(officialTable.rank),
+    name: resolveTeamName({ teamId, team }),
+    teamSlot: team?.teamSlot,
+    points: toNumberOrZero(officialTable.points),
+    goalsFor: toNumberOrZero(officialTable.goalsFor),
+    goalsAgainst: toNumberOrZero(officialTable.goalsAgainst),
+    games: toNumberOrZero(officialTable.teamGamePlayed),
+    teamStats: {
+      points: officialTable.points,
+      goalsFor: officialTable.goalsFor,
+      goalsAgainst: officialTable.goalsAgainst,
+      teamGamePlayed: officialTable.teamGamePlayed,
+    },
+    playersCount: toNumberOrZero(roster.playersCount),
+    hasPlayers: Boolean(roster.hasPlayers),
+    statsComplete: Boolean(stats.statsComplete),
+    profilesCount: toNumberOrZero(scouting.playersWithScoutProfileCount),
+    profileAssignmentsCount: toNumberOrZero(scouting.playersWithScoutProfileCount),
     attackPriority: performanceView.offense.priority.level,
     defensePriority: performanceView.defense.priority.level,
     performanceView,
-    teamTaskSignals: teamSeason?.teamTaskSignals || {
+    teamTaskSignals: scouting.teamTaskSignals || {
       offense: false,
       defense: false,
       updatedAt: null,
@@ -151,19 +202,13 @@ const buildTeamRow = teamSeason => {
   }
 }
 
-export const buildLeaguePageTeams = ({ season, leagueDoc, target = 'current' }) => {
-  const teamSeasons = buildLeagueTeamSeasons({
-    leagueDocument: leagueDoc,
-    seasonDocument: season,
-    target,
-  })
-
-  return sortByTableRank(
-    teamSeasons
+export const buildLeaguePageTeams = ({ season }) => (
+  sortByTableRank(
+    Object.entries(object(season?.table?.teamsById))
       .map(buildTeamRow)
       .filter(row => row.id)
   )
-}
+)
 
 const getLeagueLevelLabel = level => {
   if (level === null || level === undefined || level === '') return '-'
@@ -171,9 +216,15 @@ const getLeagueLevelLabel = level => {
 }
 
 export const buildLeaguePageView = ({ league, leagueId, selectedSeason }) => ({
-  id: cleanValue(league?.id || league?.leagueId || leagueId),
-  name: cleanValue(league?.leagueName || league?.name || leagueId || '-'),
-  region: cleanValue(league?.regionLabel || league?.region),
+  id: cleanValue(league?.leagueId || leagueId),
+  name: cleanValue(
+    league?.names?.display ||
+    league?.names?.official ||
+    league?.names?.short ||
+    leagueId ||
+    '-'
+  ),
+  region: cleanValue(league?.region),
   seasonKey: normalizeSeasonLookupKey(
     selectedSeason?.seasonKey || selectedSeason?.seasonId
   ) || '-',
@@ -182,7 +233,7 @@ export const buildLeaguePageView = ({ league, leagueId, selectedSeason }) => ({
   level: toNumberOrZero(league?.level) || '',
   levelLabel: getLeagueLevelLabel(league?.level),
   leagueTotalRound: selectedSeason?.leagueTotalRound || '-',
-  gameTime: selectedSeason?.gameTime || league?.gameTime || '-',
+  gameTime: selectedSeason?.gameDurationMinutes || '-',
 })
 
 const POSITIVE_PRIORITY_LEVELS = ['elite', 'high', 'positive']
@@ -191,7 +242,7 @@ const isTeamStatsComplete = team => (
   Boolean(team?.hasPlayers) && Boolean(team?.statsComplete)
 )
 
-export const buildLeaguePageSummary = ({ teams, league }) => {
+export const buildLeaguePageSummary = ({ teams }) => {
   const attackTargets = teams.filter(
     team => POSITIVE_PRIORITY_LEVELS.includes(team.attackPriority)
   )
@@ -203,14 +254,8 @@ export const buildLeaguePageSummary = ({ teams, league }) => {
 
   return {
     teamsCount: teams.length,
-    goalsCount: teams.reduce(
-      (total, team) => total + toNumberOrZero(team.goalsFor),
-      0
-    ),
-    profilesCount: teams.reduce(
-      (total, team) => total + toNumberOrZero(team.profilesCount),
-      0
-    ),
+    goalsCount: teams.reduce((total, team) => total + toNumberOrZero(team.goalsFor), 0),
+    profilesCount: teams.reduce((total, team) => total + toNumberOrZero(team.profilesCount), 0),
     attackPositive: attackTargets.length,
     attackMissing: Math.max(0, attackTargets.length - attackComplete),
     defensePositive: defenseTargets.length,

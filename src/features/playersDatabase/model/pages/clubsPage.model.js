@@ -25,18 +25,21 @@ const positiveTeamSlotOrNull = value => {
 
 const isPrimaryTeam = teamSlot => positiveTeamSlotOrNull(teamSlot) === 1
 
-const getSeasonEntries = (club, seasonView) => (
-  (Array.isArray(club?.ageGroups) ? club.ageGroups : []).flatMap(ageGroup => {
-    const entries = Array.isArray(ageGroup?.[seasonView]) ? ageGroup[seasonView] : []
+const getSeasonEntries = (intelligence, seasonView) => (
+  (Array.isArray(intelligence?.birthYearTeams) ? intelligence.birthYearTeams : [])
+    .flatMap(birthYearTeam => {
+      const entries = Array.isArray(birthYearTeam?.seasons?.[seasonView]?.teams)
+        ? birthYearTeam.seasons[seasonView].teams
+        : []
 
-    return entries.map(team => ({
-      clubId: clean(club?.clubId),
-      clubName: clean(club?.name),
-      clubShortName: clean(club?.shortName),
-      clubLevel: toNumberOrZero(club?.clubLevel),
-      clubStrengthLevel: getClubLevel(club),
-      ageGroupId: clean(ageGroup?.ageGroupId),
-      ageGroupLabel: clean(ageGroup?.ageGroupLabel),
+      return entries.map(team => ({
+      clubId: clean(intelligence?.club?.clubId),
+      clubName: clean(intelligence?.club?.name),
+      clubShortName: clean(intelligence?.club?.shortName),
+      clubLevel: toNumberOrZero(intelligence?.club?.clubLevel),
+      clubStrengthLevel: getClubLevel(intelligence?.club),
+      ageGroupId: clean(team?.ageGroupId),
+      ageGroupLabel: clean(team?.ageGroupLabel),
       teamId: clean(team?.teamId),
       teamSlot: positiveTeamSlotOrNull(team?.teamSlot || team?.birthTeamSlot),
       seasonKey: clean(team?.seasonKey),
@@ -64,17 +67,14 @@ const getSeasonEntries = (club, seasonView) => (
 )
 
 export const buildClubsPageRows = ({
-  clubsMasterDoc,
   seasonView = 'current',
   intelligencesByClubId = new Map(),
 } = {}) => {
-  const clubs = Array.isArray(clubsMasterDoc?.clubs) ? clubsMasterDoc.clubs : []
-
-  return clubs
-    .map(club => ({
-      club,
-      intelligence: intelligencesByClubId.get(clean(club?.clubId)) || null,
-      teams: getSeasonEntries(club, seasonView),
+  return [...intelligencesByClubId.values()]
+    .map(intelligence => ({
+      club: intelligence?.club || {},
+      intelligence,
+      teams: getSeasonEntries(intelligence, seasonView),
     }))
     .filter(group => clean(group?.club?.clubId))
     .sort((left, right) => (

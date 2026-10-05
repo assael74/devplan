@@ -2,8 +2,8 @@
 
 import * as React from 'react'
 
-import { updatePlayerSeasonNotes } from '../../../../services/writeV2/edits/player/updateSeasonNotes.js'
-import { updatePlayerLineClassification } from '../../../../services/writeV2/edits/player/updateLineClassification.js'
+import { updatePlayerNotes } from '../../../../services/write/player/edits/updatePlayerRootManual.js'
+import { updatePlayerRole } from '../../../../services/write/player/edits/updatePlayerRootManual.js'
 
 const buildRowKey = row => [
   row?.playerId,
@@ -25,8 +25,6 @@ export default function useSearchPlayerActions({
   const getRowKey = React.useCallback(row => buildRowKey(row), [])
 
   const saveNotes = React.useCallback(async (row, notes) => {
-    if (row?.entityType === 'birthTeamSeason') return null
-
     const noteKey = getRowKey(row)
     if (!noteKey || pendingNoteKeys.has(noteKey)) return null
 
@@ -48,27 +46,8 @@ export default function useSearchPlayerActions({
     )))
 
     try {
-      const identity = row?.identity || {}
-      const metadata = row?.metadata || {}
-      const season = row?.season || {}
-      const team = row?.team || {}
-
-      const result = await updatePlayerSeasonNotes({
-        playerDocumentId:
-          identity.playerDocumentId ||
-          metadata.sourceDocumentId ||
-          row?.playerDocumentId ||
-          row?.id,
-        playerId: row?.playerId || identity.playerId,
-        birthTeamId:
-          team.birthTeamId || team.teamId || row?.birthTeamId || '',
-        birthTeamDocumentId:
-          team.birthTeamDocumentId ||
-          team.teamDocumentId ||
-          row?.birthTeamDocumentId ||
-          row?.teamDocumentId ||
-          '',
-        seasonKey: season.seasonKey || row?.seasonKey || '',
+      const result = await updatePlayerNotes({
+        playerId: row?.playerId,
         notes: nextNotes,
       })
 
@@ -97,7 +76,7 @@ export default function useSearchPlayerActions({
   }, [getRowKey, pendingNoteKeys, setLoadedRows])
 
   const openRoleEditor = React.useCallback(row => {
-    if (!row || row.entityType === 'birthTeamSeason') return
+    if (!row) return
 
     setRoleRow(row)
     setRoleDraft({
@@ -140,21 +119,10 @@ export default function useSearchPlayerActions({
     )))
 
     try {
-      const result = await updatePlayerLineClassification({
-        league: roleRow.league || {},
-        season: roleRow.season || {},
-        team: roleRow.team || {},
-        player: {
-          ...(roleRow.identity || {}),
-          playerId: roleRow.playerId || roleRow.identity?.playerId,
-          playerDocumentId: roleRow.identity?.playerDocumentId || roleRow.id,
-          positionLayer: previousPositionLayer,
-          primaryPosition: previousPrimaryPosition,
-          numShirt: roleRow.numShirt || roleRow.position?.shirtNumber || '',
-        },
+      const result = await updatePlayerRole({
+        playerId: roleRow.playerId,
         positionLayer: roleDraft.positionLayer,
         primaryPosition: roleDraft.primaryPosition,
-        numShirt: roleRow.numShirt || roleRow.position?.shirtNumber || '',
       })
 
       setRoleRow(null)

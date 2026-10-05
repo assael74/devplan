@@ -1,26 +1,26 @@
 import * as React from 'react'
-import { updatePlayerSeasonUrl } from '../../../../services/writeV2/edits/player/updateSeasonUrl.js'
+import { updatePlayerSeasonUrl } from '../../../../services/write/roster/edits/updatePlayerSeasonManual.js'
 
-const clean = value => String(value ?? '').trim()
+const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
 export const buildPlayerUrlRows = player => {
   const contexts = Array.isArray(player?.seasonContexts) ? player.seasonContexts : []
-  const playerDocumentId = clean(player?.domain?.identity?.playerDocumentId || player?.playerDocumentId || player?.id)
   const rootPlayerId = clean(player?.playerId)
-  return contexts.filter(row => clean(row?.seasonKey) && clean(row?.birthTeamId || row?.teamId)).map(row => {
+  return contexts.filter(row => clean(row?.seasonId) && clean(row?.teamId)).map(row => {
     const seasonKey = clean(row.seasonKey)
-    const birthTeamId = clean(row.birthTeamId || row.teamId)
-    const birthTeamDocumentId = clean(row.birthTeamDocumentId || row.teamDocumentId)
+    const seasonId = clean(row.seasonId)
+    const teamId = clean(row.teamId)
+    const teamSeasonDocumentId = clean(row.teamSeasonDocumentId)
     const originalUrl = clean(row.playerUrl)
     return {
-      key: `${seasonKey}::${birthTeamId}::${birthTeamDocumentId}`,
+      key: `${seasonId}::${teamId}::${teamSeasonDocumentId}`,
+      seasonId,
       seasonKey,
       leagueId: clean(row.leagueId),
       leagueName: clean(row.leagueName),
       teamName: clean(row.clubName || row.teamName),
-      birthTeamId,
-      birthTeamDocumentId,
-      playerDocumentId: playerDocumentId || clean(row.playerDocumentId),
+      teamId,
+      teamSeasonDocumentId,
       playerId: rootPlayerId || clean(row.playerId),
       originalUrl,
       draftUrl: originalUrl,
@@ -31,7 +31,7 @@ export const buildPlayerUrlRows = player => {
   })
 }
 
-export default function usePlayerUrlEditor({ player, notify, reload }) {
+export default function usePlayerUrlEditor({ player, notify }) {
   const [rows, setRows] = React.useState([])
   const [openState, setOpenState] = React.useState(false)
   const [saving, setSaving] = React.useState(false)
@@ -48,9 +48,11 @@ export default function usePlayerUrlEditor({ player, notify, reload }) {
       setRows(current => current.map(row => row.key === item.key ? { ...row, saving: true, error: '' } : row))
       try {
         await updatePlayerSeasonUrl({
-          playerDocumentId: item.playerDocumentId, playerId: item.playerId,
-          birthTeamId: item.birthTeamId, birthTeamDocumentId: item.birthTeamDocumentId,
-          seasonKey: item.seasonKey, playerUrl: clean(item.draftUrl),
+          playerId: item.playerId,
+          teamId: item.teamId,
+          teamSeasonDocumentId: item.teamSeasonDocumentId,
+          seasonId: item.seasonId,
+          playerUrl: clean(item.draftUrl),
         })
         setRows(current => current.map(row => row.key === item.key ? { ...row, originalUrl: clean(item.draftUrl), draftUrl: clean(item.draftUrl), saving: false, saved: true, error: '' } : row))
       } catch (error) {
@@ -58,9 +60,8 @@ export default function usePlayerUrlEditor({ player, notify, reload }) {
         setRows(current => current.map(row => row.key === item.key ? { ...row, saving: false, saved: false, error: error?.message || 'שמירת הקישור נכשלה' } : row))
       }
     }
-    let reloadFailed = false
-    try { await reload?.() } catch { reloadFailed = true } finally { setSaving(false) }
-    notify?.({ status: failed || reloadFailed ? 'warning' : 'success', title: failed ? 'חלק מהקישורים לא נשמרו' : reloadFailed ? 'הקישורים נשמרו, אך רענון הנתונים נכשל' : 'קישורי השחקן נשמרו' })
-  }, [notify, reload, rows, saving])
+    setSaving(false)
+    notify?.({ status: failed ? 'warning' : 'success', title: failed ? 'חלק מהקישורים לא נשמרו' : 'קישורי השחקן נשמרו' })
+  }, [notify, rows, saving])
   return { open: openState, rows, saving, openDrawer: open, close, change, save }
 }

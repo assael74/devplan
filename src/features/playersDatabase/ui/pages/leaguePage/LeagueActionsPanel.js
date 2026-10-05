@@ -198,15 +198,18 @@ export default function LeagueActionsPanel({
           </span>
         </Tooltip>
 
-        <Tooltip title='הגדרות עונת ליגה'>
-          <IconButton
-            variant='outlined'
-            aria-label='הגדרות עונת ליגה'
-            sx={sx.sideLinkButton}
-            onClick={onLeagueUrlEdit}
-          >
-            {iconUi({id: 'edit', size: 'md'})}
-          </IconButton>
+        <Tooltip title={onLeagueUrlEdit ? 'הגדרות עונת ליגה' : 'עריכת הגדרות עונת ליגה אינה זמינה כרגע'}>
+          <span>
+            <IconButton
+              variant='outlined'
+              aria-label='הגדרות עונת ליגה'
+              disabled={!onLeagueUrlEdit}
+              sx={sx.sideLinkButton}
+              onClick={onLeagueUrlEdit}
+            >
+              {iconUi({id: 'edit', size: 'md'})}
+            </IconButton>
+          </span>
         </Tooltip>
 
         <Tooltip title='תצוגה ופרסום דוח'>

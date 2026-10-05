@@ -1,9 +1,16 @@
+// src/features/playersDatabase/model/team/page/teamPageSeasonSnapshots.model.js
+
 import { buildLeagueTeamSeasons } from '../../../domain/index.js'
 import { cleanValue } from '../../shared/value.model.js'
 import { normalizeTeamIdentity } from '../teamIdentity.model.js'
+import { buildTeamPageSeasonView } from './teamPagePlayer.model.js'
 
 const seasonKeyOf = season => cleanValue(
-  season?.seasonKey || season?.seasonId || season?.id
+  season?.identity?.seasonKey ||
+  season?.identity?.seasonId ||
+  season?.seasonKey ||
+  season?.seasonId ||
+  season?.id
 )
 
 const teamMatches = ({ candidate, teamId }) => {
@@ -83,6 +90,7 @@ export const buildTeamPageSeasonSnapshots = ({
   const teamSeasonsByKey = new Map(
     (Array.isArray(teamSeasons) ? teamSeasons : [])
       .filter(Boolean)
+      .map(season => buildTeamPageSeasonView({ teamSeason: season }))
       .map(season => [seasonKeyOf(season), season])
       .filter(([seasonKey]) => Boolean(seasonKey))
   )

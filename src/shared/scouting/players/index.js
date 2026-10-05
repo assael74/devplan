@@ -17,7 +17,6 @@ export * from './scoutingPlayerLifecycle.model.js'
 export * from './playerDocumentId.js'
 export * from './contracts/playerScoutInput.contract.js'
 export * from './contracts/domainValue.contract.js'
-export * from './contracts/playersDatabaseClubs.catalog.js'
 export * from './contracts/playersDatabaseLeagueGameTime.js'
 
 export * from './context/index.js'

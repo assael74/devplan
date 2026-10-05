@@ -19,33 +19,41 @@ import {
 import { clearStatsModalSx as sx } from '../sx/clearStatsModal.sx.js'
 
 const ERROR_MESSAGES = {
-  CLEAR_STATS_MULTIPLE_OPEN_RECEIPTS: 'נמצאו כמה פעולות סטטיסטיקה פתוחות. נדרשת בדיקה לפני המשך.',
-  CLEAR_STATS_OTHER_OPERATION_OPEN: 'קיימת פעולת סטטיסטיקה אחרת שטרם הושלמה. יש להשלים אותה לפני התחלת המחיקה.',
-  CLEAR_STATS_PROJECTION_SOURCE_MISMATCH: 'הנתונים השתנו מאז הצגת התצוגה המקדימה. יש לבנות תוכנית חדשה.',
-  CLEAR_STATS_PROJECTION_TARGET_NOT_FOUND: 'אחד ממסמכי היעד לא נמצא.',
-  CLEAR_STATS_AUDIT_FAILED: 'המחיקה הסתיימה, אך בדיקת הסנכרון מצאה פער.',
-  CLEAR_STATS_TEAM_ROOT_NOT_FOUND: 'מסמך הקבוצה לא נמצא.',
-  CLEAR_STATS_TEAM_SEASON_NOT_FOUND: 'מסמך העונה של הקבוצה לא נמצא.',
+  STATS_CLEAR_TEAM_ROOT_NOT_FOUND: 'מסמך הקבוצה לא נמצא.',
+  STATS_CLEAR_TEAM_SEASON_NOT_FOUND: 'מסמך העונה של הקבוצה לא נמצא.',
+  STATS_CLEAR_LEAGUE_NOT_FOUND: 'מסמך הליגה לא נמצא.',
+  STATS_CLEAR_IDENTITY_MISMATCH: 'זהות הקבוצה, העונה או הליגה אינה תואמת למקורות הראשיים.',
+  STATS_CLEAR_AUDIT_FAILED: 'המחיקה הסתיימה, אך בדיקת התקינות מצאה פערים.',
 }
 
 const FAILURE_STEP_LABELS = {
   receipt: 'פתיחת תיעוד הפעולה',
   canonical: 'עדכון נתוני הקבוצה והעונה',
-  projections: 'עדכון המסמכים הנלווים',
+  playerRoots: 'בדיקת מסמכי השחקנים',
+  playerSeasons: 'עדכון עונות השחקנים',
+  playerSearchIndexes: 'עדכון תוצרי חיפוש השחקנים',
+  leagueProjection: 'עדכון מסמך הליגה',
+  leaguesCenter: 'עדכון מרכז הליגות',
+  clubsCenter: 'עדכון מרכז המועדונים',
   audit: 'בדיקת סנכרון',
 }
 
 const TARGET_LABELS = {
-  playerDocument: 'מסמכי השחקנים',
-  playerSearchIndex: 'אינדקסי השחקנים',
-  teamSearchIndex: 'אינדקס הקבוצה',
-  league: 'מסמך הליגה',
-  club: 'מסמך המועדון',
-  clubsMaster: 'מאגר המועדונים',
+  playerRoots: 'מסמכי השחקנים',
+  playerSeasons: 'עונות השחקנים',
+  playerSearchIndexes: 'תוצרי חיפוש השחקנים',
+  leagueProjection: 'מסמך הליגה',
+  leaguesCenter: 'מרכז הליגות',
+  clubsCenter: 'מרכז המועדונים',
 }
 
 const AUDIT_TARGET_LABELS = {
   teamSeason: 'נתוני הקבוצה והעונה',
+  playerRoot: 'מסמכי השחקנים',
+  playerSeason: 'עונות השחקנים',
+  playerSearchIndex: 'תוצרי חיפוש השחקנים',
+  leagueMetadata: 'מסמך הליגה',
+  statsAudit: 'בדיקת הנתונים הסטטיסטיים',
   ...TARGET_LABELS,
 }
 
@@ -55,8 +63,8 @@ const summarizeProjectionTargets = projectionWrite => {
     const targetType = String(target?.targetType || '').trim()
     if (!targetType) return
     const current = groups.get(targetType) || { written: 0, skipped: 0, failed: 0 }
-    if (target?.status === 'written') current.written += 1
-    if (target?.status === 'skipped') current.skipped += 1
+    if (target?.status === 'written') current.written += Number(target?.written) || 1
+    if (target?.status === 'skipped') current.skipped += Number(target?.skipped) || 1
     if (target?.status === 'failed') current.failed += 1
     groups.set(targetType, current)
   }
@@ -154,14 +162,11 @@ export default function ClearStatsModal({
   } = controller
 
   const projectionImpact = proposedPlan?.projectionPlan?.impact || {}
-  const noWork = Boolean(
-    proposedPlan?.isIdempotent === true &&
-    Number(projectionImpact.operationsRequired || 0) === 0
-  )
+  const noWork = proposedPlan?.isIdempotent === true
   const busy = status === 'loadingPreview' || status === 'executing'
   const failedStepLabel = FAILURE_STEP_LABELS[error?.failedStep] || 'לא ידוע'
-  const auditFailures = Array.isArray(error?.audit?.checks)
-    ? error.audit.checks.filter(item => item?.status === 'failed')
+  const auditFailures = Array.isArray(error?.audit?.findings)
+    ? error.audit.findings
     : []
 
   return (
@@ -195,11 +200,11 @@ export default function ClearStatsModal({
 
             {noWork ? (
               <Alert color='success' variant='soft'>
-                נתוני הסטטיסטיקה כבר נקיים. ניתן לבצע בדיקת סנכרון ולתעד את השלמת הפעולה, ללא שינוי נתונים שכבר תקינים.
+                נתוני הסטטיסטיקה כבר נקיים. הפעולה תבנה מחדש את התוצרים הנגזרים ותבדוק את תקינותם.
               </Alert>
             ) : (
               <Box sx={sx.summaryGrid}>
-                <SummaryItem label='קבוצה' value={teamName || proposedPlan?.identity?.birthTeamDocumentId || '—'} />
+                <SummaryItem label='קבוצה' value={teamName || proposedPlan?.identity?.teamId || '—'} />
                 <SummaryItem label='עונה' value={seasonKey || proposedPlan?.identity?.seasonKey || '—'} />
                 <SummaryItem label='מצב הנתונים הנוכחי' value={proposedPlan?.currentStatsState === 'absent' ? 'חסרים' : 'קיימים'} />
                 <SummaryItem label='שחקנים שיושפעו' value={proposedPlan?.impact?.playersAffected || 0} />
@@ -244,12 +249,12 @@ export default function ClearStatsModal({
               <SummaryItem label='שחקנים שעודכנו' value={result?.canonicalWrite?.playersAffected || 0} />
               <SummaryItem label='מסמכים שנכתבו' value={result?.projectionWrite?.writesCompleted || 0} />
               <SummaryItem label='מסמכים שכבר היו תקינים' value={result?.projectionWrite?.writesSkipped || 0} />
-              <SummaryItem label='בדיקת תקינות' value={result?.audit?.status === 'passed' ? 'עברה בהצלחה' : 'נכשלה'} />
+              <SummaryItem label='בדיקת תקינות' value={result?.audit?.status === 'CLEAN' ? 'עברה בהצלחה' : 'נכשלה'} />
             </Box>
             <ProjectionExecutionSummary projectionWrite={result?.projectionWrite} />
             <DeleteModalIds>
-              {proposedPlan?.identity?.birthTeamDocumentId ? <Typography level='body-xs'>מזהה קבוצה: {proposedPlan.identity.birthTeamDocumentId}</Typography> : null}
-              {proposedPlan?.identity?.seasonKey ? <Typography level='body-xs'>מזהה עונה: {proposedPlan.identity.seasonKey}</Typography> : null}
+              {proposedPlan?.identity?.teamId ? <Typography level='body-xs'>מזהה קבוצה: {proposedPlan.identity.teamId}</Typography> : null}
+              {proposedPlan?.identity?.seasonId ? <Typography level='body-xs'>מזהה עונה: {proposedPlan.identity.seasonId}</Typography> : null}
               {result?.receiptId ? <Typography level='body-xs'>מזהה תיעוד פעולה: {result.receiptId}</Typography> : null}
             </DeleteModalIds>
             <Box sx={sx.actions}>
@@ -285,8 +290,8 @@ export default function ClearStatsModal({
                 <Box>
                   <Typography level='title-sm'>פערים שנמצאו בבדיקת הסנכרון</Typography>
                   {auditFailures.slice(0, 3).map((finding, index) => (
-                    <Typography key={`${finding.targetType}-${finding.check}-${index}`} level='body-xs'>
-                      נמצא פער ב־{AUDIT_TARGET_LABELS[finding.targetType] || 'אחד המסמכים הנלווים'}
+                    <Typography key={`${finding.target}-${finding.field}-${index}`} level='body-xs'>
+                      נמצא פער ב־{AUDIT_TARGET_LABELS[finding.target] || 'אחד המסמכים הנלווים'}
                     </Typography>
                   ))}
                   {auditFailures.length > 3 ? (
@@ -298,7 +303,11 @@ export default function ClearStatsModal({
             <DeleteModalIds>
               {error?.receiptId ? <Typography level='body-xs'>מזהה תיעוד פעולה: {error.receiptId}</Typography> : null}
               {error?.code ? <Typography level='body-xs'>קוד תקלה: {error.code}</Typography> : null}
-              {error?.projectionWrite?.failedTarget?.docId ? <Typography level='body-xs'>מזהה יעד שלא הושלם: {error.projectionWrite.failedTarget.docId}</Typography> : null}
+              {error?.projectionWrite?.failedTarget?.documentId || error?.projectionWrite?.failedTarget?.docId ? (
+                <Typography level='body-xs'>
+                  מזהה יעד שלא הושלם: {error.projectionWrite.failedTarget.documentId || error.projectionWrite.failedTarget.docId}
+                </Typography>
+              ) : null}
             </DeleteModalIds>
             <Typography level='body-sm'>
               הנתונים לא ימשיכו להימחק אוטומטית. ניסיון נוסף יבנה תוכנית חדשה לפי המצב הנוכחי.

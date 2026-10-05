@@ -1,6 +1,6 @@
 // src/features/playersDatabase/domain/contracts/playerScoutInput.contract.js
 
-import { PLAYERS_DATABASE_CLUBS_CATALOG } from './playersDatabaseClubs.catalog.js'
+import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../features/playersDatabase/catalog/clubs.catalog.js'
 import { resolvePlayersDatabaseLeagueGameTime } from './playersDatabaseLeagueGameTime.js'
 import {
   cleanDomainValue,

@@ -134,9 +134,6 @@ const buildSeasonContextView = (season, identity = {}) => {
     isCurrentSeason: season?.lifecycle?.type === 'current',
     lifecycle: season?.lifecycle,
     playerId: cleanValue(identity.playerId),
-    playerDocumentId: cleanValue(
-      identity.playerDocumentId || identity.playerId
-    ),
     externalPlayerId: cleanValue(identity.externalPlayerId),
     fullName: cleanValue(identity.displayName),
     playerUrl: cleanValue(season?.metadata?.playerUrl || season?.playerUrl),
@@ -144,6 +141,7 @@ const buildSeasonContextView = (season, identity = {}) => {
     clubId: cleanValue(season?.team?.clubId),
     clubName: getClubShortName(season?.team?.clubId) || '-',
     teamId: cleanValue(season?.team?.teamId),
+    teamSeasonDocumentId: cleanValue(season?.team?.teamSeasonDocumentId),
     birthTeamId: cleanValue(season?.team?.teamId),
     birthTeamDocumentId: cleanValue(season?.team?.teamDocumentId),
     teamName: resolveAgeGroupLabel({
@@ -265,10 +263,7 @@ export const buildPlayerPageView = (
   return {
     domain: playerDomain,
     activeSeason: season,
-    id: cleanValue(
-      playerDomain.identity?.playerDocumentId ||
-      playerDomain.identity?.playerId
-    ),
+    id: cleanValue(playerDomain.identity?.playerId),
     playerId: cleanValue(playerDomain.identity?.playerId),
     externalPlayerId: cleanValue(playerDomain.identity?.externalPlayerId),
     fullName: cleanValue(playerDomain.identity?.displayName || '-'),

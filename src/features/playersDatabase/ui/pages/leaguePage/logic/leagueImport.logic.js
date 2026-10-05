@@ -1,8 +1,8 @@
-// features/playersDatabase/ui/pages/leaguePage/logic/leagueImport.logic.js
+// src/features/playersDatabase/ui/pages/leaguePage/logic/leagueImport.logic.js
 
 import { formatLtrNumber } from '../../../../../../shared/format/direction.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
-import { buildTeamIdentity } from '../../../../catalog/teamIdentity.js'
+import { resolvePlayersDatabaseLeagueGameTime } from '../../../../catalog/leagues.catalog.js'
 import { buildLeagueTablePastePreview } from '../../../../import/logic/leagueTablePastePreview.js'
 
 import { pickDefinedValue } from '../../../../model/shared/value.model.js'
@@ -22,22 +22,23 @@ const stripTrailingSlot = teamName =>
   clean(teamName).replace(/\s+[2-3]$/, '').trim()
 
 const buildExistingTeamUrlKey = ({ clubId = '', teamSlot = '' } = {}) => (
-  `${clean(clubId)}::${clean(teamSlot || '1') || '1'}`
+  `${clean(clubId)}::${clean(teamSlot)}`
 )
 
 export const resolveExistingLeagueTeamUrl = ({
-  existingTableRank = [],
+  existingTeamsById = {},
   clubId = '',
   teamSlot = '',
 } = {}) => {
   const targetKey = buildExistingTeamUrlKey({ clubId, teamSlot })
+  const entries = existingTeamsById && typeof existingTeamsById === 'object'
+    ? Object.values(existingTeamsById)
+    : []
 
-  return clean((Array.isArray(existingTableRank) ? existingTableRank : [])
-    .find(row => buildExistingTeamUrlKey({
-      clubId: row?.clubId,
-      teamSlot: row?.teamSlot || row?.birthTeamSlot,
-    }) === targetKey)
-    ?.teamUrl)
+  return clean(entries.find(row => buildExistingTeamUrlKey({
+    clubId: row && row.clubId,
+    teamSlot: row && row.teamSlot,
+  }) === targetKey)?.teamUrl)
 }
 
 export const normalizeSignedNumberText = value => {
@@ -64,82 +65,82 @@ const getClubById = clubId =>
 const getClubNameById = clubId => getClubById(clubId)?.name || ''
 
 export const buildServiceLeague = ({ league = {}, leagueDoc = {} } = {}) => ({
-  id: clean(leagueDoc.id || leagueDoc.leagueId || league.id),
-  name: clean(leagueDoc.name || leagueDoc.leagueName || league.name),
-  leagueName: clean(leagueDoc.leagueName || leagueDoc.name || league.name),
-  ageGroupId: clean(leagueDoc.ageGroupId),
+  leagueId: clean(leagueDoc.leagueId || league.id),
+  names: {
+    official: clean(leagueDoc.names?.official || league.name),
+    display: clean(leagueDoc.names?.display || league.name),
+    short: clean(leagueDoc.names?.short || league.name),
+    source: clean(leagueDoc.names?.source || league.name),
+  },
+  ageGroupId: clean(leagueDoc.ageGroupId || league.ageGroupId),
   ageGroupLabel: clean(leagueDoc.ageGroupLabel || league.ageGroup),
-  level: toNumber(leagueDoc.level),
-  region: clean(leagueDoc.region),
+  level: toNumber(leagueDoc.level || league.level),
+  region: clean(leagueDoc.region || league.region),
 })
+
+export const resolveLeagueImportGameDuration = ({
+  league = {},
+  leagueDoc = {},
+  selectedSeasonOption = {},
+} = {}) => {
+  const season = selectedSeasonOption && selectedSeasonOption.season
+    ? selectedSeasonOption.season
+    : {}
+  const existingValue = Number(season.gameDurationMinutes)
+
+  if (Number.isFinite(existingValue) && existingValue > 0) return existingValue
+
+  return resolvePlayersDatabaseLeagueGameTime(clean(leagueDoc.ageGroupId || league.ageGroupId))
+}
 
 export const buildServiceSeason = ({
   league = {},
   leagueDoc = {},
   selectedSeasonOption = {},
   seasonStatus = '',
+  gameDurationMinutes = null,
 } = {}) => {
   const season = selectedSeasonOption?.season || {}
+  const resolvedGameDurationMinutes = gameDurationMinutes === null ||
+    gameDurationMinutes === undefined ||
+    gameDurationMinutes === ''
+    ? resolveLeagueImportGameDuration({ league, leagueDoc, selectedSeasonOption })
+    : toNumber(gameDurationMinutes)
 
   return {
-    ...season,
-    leagueId: clean(leagueDoc.id || leagueDoc.leagueId || league.id),
-    seasonId: clean(season.seasonId || season.seasonKey || league.seasonKey),
+    seasonId: clean(season.seasonId),
     seasonKey: clean(season.seasonKey || league.seasonKey),
     birthYear: toNumber(season.birthYear || league.birthYear),
     leagueTotalRound: toNumber(season.leagueTotalRound || league.leagueTotalRound),
     seasonStatus: clean(seasonStatus),
+    seasonUrl: clean(season.seasonUrl),
+    gameDurationMinutes: resolvedGameDurationMinutes,
+    competitionRules: season.competitionRules && typeof season.competitionRules === 'object'
+      ? season.competitionRules
+      : { configured: false },
   }
 }
 
-export const buildServiceRows = ({ rows = [], league = {}, season = {} } = {}) => (
-  (Array.isArray(rows) ? rows : []).map(row => {
-    const club = getClubById(row.clubId)
-    const teamSlot = toNumber(row.teamSlot) || 1
-    const identity = buildTeamIdentity({
-      clubId: row.clubId,
-      clubName: club?.name || row.clubName,
-      ageGroupId: league.ageGroupId,
-      ageGroupLabel: league.ageGroupLabel,
-      birthYear: season.birthYear,
-      teamSlot,
-      leagueId: league.id,
-      leagueName: league.name,
-    })
-
-    return {
-      position: toNumber(row.rank),
+export const buildServiceRows = ({ rows = [] } = {}) => (
+  (Array.isArray(rows) ? rows : []).map(row => ({
+    clubId: clean(row.clubId),
+    teamSlot: toNumber(row.teamSlot),
+    teamUrl: clean(row.pastedTeamUrl || row.displayTeamUrl || row.teamUrl),
+    officialTable: {
       rank: toNumber(row.rank),
-      clubId: clean(row.clubId),
-      clubName: club?.name || row.clubName || row.teamName,
-      clubLevel: toNumber(club?.clubLevel),
-      displayName: clean(row.teamName),
-      teamSlot,
-      birthTeamId: identity.birthTeamId,
-      birthTeamSlot: identity.birthTeamSlot,
-      birthYear: identity.birthYear,
-      teamSlotId: identity.teamSlotId,
-      teamId: identity.teamId,
-      teamUrl: clean(row.teamUrl),
-      ageGroupId: league.ageGroupId,
-      ageGroupLabel: league.ageGroupLabel,
-      games: toNumber(row.games),
-      wins: toNumber(row.wins),
-      draws: toNumber(row.draws),
-      losses: toNumber(row.losses),
+      points: toNumber(row.points),
       goalsFor: toNumber(row.goalsFor),
       goalsAgainst: toNumber(row.goalsAgainst),
-      goalDifference: toNumber(normalizeSignedNumberText(row.goalDifference)),
-      points: toNumber(row.points),
-    }
-  }).filter(row => row.rank || row.clubId || row.teamId)
+      teamGamePlayed: toNumber(row.games),
+    },
+  })).filter(row => row.clubId && row.teamSlot)
 )
 
 const getExpectedTeamDisplayName = row => {
   const clubName = row.clubName || getClubNameById(row.clubId)
-  const slot = clean(row.teamSlot || '1')
+  const slot = clean(row.teamSlot)
 
-  if (!clubName) return ''
+  if (!clubName || !slot) return ''
   if (slot === '1') return clubName
 
   return `${clubName} ${slot}`
@@ -155,11 +156,9 @@ export const shouldShowDisplayName = row => {
   return normalizeName(sourceName) !== normalizeName(expectedName)
 }
 
-const mapPreviewRow = ({ row, existingTableRank = [] } = {}) => {
+const mapPreviewRow = ({ row, existingTeamsById = {} } = {}) => {
   const data = row.data || {}
-  // Team 1 is always the neutral default. The importer may suggest a club,
-  // but the operator explicitly decides whether a row is a second team.
-  const teamSlot = '1'
+  const teamSlot = clean(data.teamSlot) || '1'
   const pastedTeamUrl = clean(data.teamUrl)
 
   return {
@@ -171,7 +170,7 @@ const mapPreviewRow = ({ row, existingTableRank = [] } = {}) => {
     teamName: data.clubName || data.clubCatalogName || '',
     teamUrl: pastedTeamUrl,
     displayTeamUrl: pastedTeamUrl || resolveExistingLeagueTeamUrl({
-      existingTableRank,
+      existingTeamsById,
       clubId: data.clubId,
       teamSlot,
     }),
@@ -205,8 +204,8 @@ export const buildLeagueImportPreview = ({
     selectedSeasonOption,
   })
   const preview = buildLeagueTablePastePreview(text, {
-    leagueId: serviceLeague.id,
-    leagueName: serviceLeague.name,
+    leagueId: serviceLeague.leagueId,
+    leagueName: clean(serviceLeague.names && (serviceLeague.names.display || serviceLeague.names.official)),
     leagueLevel: serviceLeague.level,
     ageGroupId: serviceLeague.ageGroupId,
     ageGroupLabel: serviceLeague.ageGroupLabel,
@@ -218,7 +217,7 @@ export const buildLeagueImportPreview = ({
     ...preview,
     rows: (preview.rows || []).map(row => mapPreviewRow({
       row,
-      existingTableRank: selectedSeasonOption?.season?.tableRank || [],
+      existingTeamsById: selectedSeasonOption?.season?.table?.teamsById || {},
     })),
   }
 }

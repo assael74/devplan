@@ -1,6 +1,5 @@
 // src/features/playersDatabase/services/read/index.js
 
-export { readFavorites } from './entities/favorites.read.js'
 
 export {
   getLeagueById,
@@ -23,33 +22,39 @@ export {
   readTeamSeasonRosterHistory,
 } from './entities/teamSeasonRosterHistory.js'
 
-export { readTeamPageData } from './pages/teamPage.read.js'
-export { buildLeagueTeamPerformanceProjection } from './projections/teamPerformance.projection.js'
-export { readLeaguePageData } from './pages/leaguePage.read.js'
-export { readLeagueCenterData } from './pages/leagueCenter.read.js'
-export { readLeaguesMasterDocument } from './masters/leaguesMaster.read.js'
-export { readClubsMasterDocument } from './masters/clubsMaster.read.js'
 export {
-  buildClubSeasonIdentityScopesFromLeaguesMaster,
-  readClubSeasonIdentityIndex,
-  readClubSeasonIdentityIndexes,
-} from './masters/clubSeasonIdentityIndex.read.js'
-export { readClubPageDocument } from './pages/clubPage.read.js'
+  readTeamPageData,
+  subscribeTeamPageData,
+} from './pages/teamPage.read.js'
+export {
+  readLeaguePageData,
+  subscribeLeaguePageData,
+} from './pages/leaguePage.read.js'
+export {
+  readLeagueCenterData,
+  subscribeLeagueCenterData,
+} from './pages/leagueCenter.read.js'
+export {
+  CLUBS_DIRECTORY_STORE_KEY,
+  readClubPageData,
+  readClubProfileDocument,
+  readClubsCenterSeasonDocument,
+  readClubsDirectoryDocument,
+  readClubsPageData,
+  subscribeClubsDirectoryDocument,
+} from './pages/clubs.read.js'
 
 export {
   readPlayerPageData,
   readPlayerSource,
+  subscribePlayerPageData,
 } from './pages/playerPage.read.js'
 export {
   canReadPlayerSearchIndexExport,
-  canReadTeamSearchIndexExport,
   readPlayerSearchIndexExport,
   readPlayerSearchIndexesExport,
   readSearchIndexExportById,
-  readTeamSearchIndexExport,
-  readTeamSearchIndexesExport,
-} from './indexes/playerSearchIndexExport.read.js'
-export { readPlayerScoutMeasurementHistory } from './indexes/playerScoutHistory.read.js'
+} from './indexes/playerSearchIndexes.read.js'
 export { readPlayerIdentityReview } from './indexes/playerIdentityReview.read.js'
 export {
   readSearchPageCount,
@@ -59,7 +64,6 @@ export {
 
 export {
   clearPlayersDatabaseDocumentCache,
-  getPlayersDatabaseCacheDebugSnapshot,
 } from '../cache/index.js'
 
 export {

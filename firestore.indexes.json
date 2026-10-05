@@ -1,21 +1,120 @@
 {
-  "indexes": [
+  "indexes": [],
+  "fieldOverrides": [
     {
-      "collectionGroup": "dbLeagueProjectionJobs",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "leaseExpiresAt", "order": "ASCENDING" }
-      ]
+      "collectionGroup": "dbLeagues",
+      "fieldPath": "seasonsById",
+      "indexes": []
     },
     {
-      "collectionGroup": "dbTeamStatsProjectionJobs",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "leaseExpiresAt", "order": "ASCENDING" }
-      ]
+      "collectionGroup": "dbBirthTeamSeasons",
+      "fieldPath": "roster.playersById",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbBirthTeamSeasons",
+      "fieldPath": "roster.pendingById",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbBirthTeamSeasons",
+      "fieldPath": "stats.playersById",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbBirthTeamSeasons",
+      "fieldPath": "movement.transfersInById",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbBirthTeamSeasons",
+      "fieldPath": "movement.transfersOutById",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbBirthTeamSeasons",
+      "fieldPath": "scouting.playersById",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbBirthTeamSeasons",
+      "fieldPath": "manual.playersById",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbBirthTeams",
+      "fieldPath": "seasonRefsById",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbPlayers",
+      "fieldPath": "seasonRefsById",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbPlayerSeasons",
+      "fieldPath": "teamsById",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbLeaguesCenter",
+      "fieldPath": "leaguesById",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbClubsCenter",
+      "fieldPath": "leaguesById",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbClubsCenter",
+      "fieldPath": "clubsById",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbClubsDirectory",
+      "fieldPath": "clubsById",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbSearchIndexes",
+      "fieldPath": "references",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbSearchIndexes",
+      "fieldPath": "identity",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbSearchIndexes",
+      "fieldPath": "season",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbSearchIndexes",
+      "fieldPath": "team",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbSearchIndexes",
+      "fieldPath": "player",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbSearchIndexes",
+      "fieldPath": "stats",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbSearchIndexes",
+      "fieldPath": "scout",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dbSearchIndexes",
+      "fieldPath": "scoutEvidence",
+      "indexes": []
     }
-  ],
-  "fieldOverrides": []
+  ]
 }

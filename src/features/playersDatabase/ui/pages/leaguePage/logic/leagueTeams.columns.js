@@ -370,11 +370,12 @@ export const buildLeagueTeamsColumns = ({
         <IconButton
             size='sm'
             variant='outlined'
-            aria-label='פעולות נוספות'
+            aria-label={onTeamUrlEdit ? 'פעולות נוספות' : 'עריכת קישור קבוצה אינה זמינה כרגע'}
+            disabled={!onTeamUrlEdit}
             sx={actionSx.actionButton}
             onClick={event => {
               event.stopPropagation()
-              onTeamUrlEdit(row)
+              if (onTeamUrlEdit) onTeamUrlEdit(row)
             }}
           >
             {iconUi({

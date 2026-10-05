@@ -36,14 +36,31 @@ export const entryVisualsSx = {
   previewChartCard: {
     position: 'absolute',
     left: 230,
-    top: 12,
-    width: 126,
-    height: 72,
-    p: 1.25,
+    top: 8,
+    width: 156,
+    height: 76,
+    p: 0,
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    alignItems: 'center',
+    overflow: 'hidden',
     borderRadius: 8,
-    bgcolor: '#fff',
-    border: '1px solid #dbe5f4',
+    bgcolor: devPlanColors.primaryLight,
+    border: `1px solid ${devPlanColors.tertiary}`,
     boxShadow: '0 10px 22px rgba(11, 31, 77, 0.08)',
+    transition: 'transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease',
+    cursor: 'pointer',
+
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      borderColor: devPlanColors.tertiaryDark,
+      boxShadow: '0 14px 28px rgba(11, 31, 77, 0.14)',
+    },
+
+    '&:focus-visible': {
+      outline: `3px solid ${devPlanColors.tertiary}`,
+      outlineOffset: 3,
+    },
   },
 
   previewLineCard: {
@@ -76,18 +93,37 @@ export const entryVisualsSx = {
     boxShadow: '0 10px 22px rgba(11, 31, 77, 0.08)',
   },
 
-  previewChartBars: {
-    height: 42,
-    display: 'flex',
-    gap: 0.7,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
+  previewChartImage: {
+    width: 64,
+    height: 64,
+    display: 'block',
+    justifySelf: 'center',
+    objectFit: 'contain',
   },
 
-  previewChartBar: {
-    width: 10,
-    borderRadius: 2,
-    bgcolor: '#8fb4ea',
+  previewChartLabel: {
+    position: 'relative',
+    minWidth: 0,
+    width: '100%',
+    height: '100%',
+    display: 'grid',
+    placeItems: 'center',
+    color: devPlanColors.primary,
+    fontSize: 12,
+    fontWeight: 800,
+    lineHeight: 1.25,
+    textAlign: 'center',
+    whiteSpace: 'nowrap',
+  },
+
+  previewChartArrow: {
+    position: 'absolute',
+    left: '50%',
+    bottom: 5,
+    flexShrink: 0,
+    fontSize: 14,
+    color: devPlanColors.tertiaryDark,
+    transform: 'translateX(-50%)',
   },
 
   previewLine: {

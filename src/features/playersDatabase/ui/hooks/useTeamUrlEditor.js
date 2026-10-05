@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 
-import { updateTeamSeasonUrl } from '../../services/writeV2/edits/team/updateSeasonUrl.js'
+import { updateTeamSeasonUrl } from '../../services/write/league/edits/updateTeamSeasonUrl.js'
 import { saveEditor } from './saveEditor.js'
 
 export default function useTeamUrlEditor({
@@ -30,10 +30,9 @@ export default function useTeamUrlEditor({
         write: () =>
           updateTeamSeasonUrl({
             leagueId: selectedSeasonOption.leagueId || leagueId,
-            birthTeamId: row.birthTeamId || row.teamId,
-            birthTeamDocumentId:
-              row.birthTeamDocumentId || row.teamDocumentId,
-            seasonKey: selectedSeasonOption.seasonKey,
+            teamId: row.teamId,
+            teamSeasonDocumentId: row.teamSeasonDocumentId,
+            seasonId: selectedSeasonOption.seasonId,
             teamUrl,
           }),
         reload,

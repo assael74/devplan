@@ -1,13 +1,12 @@
-import { Box, RadioGroup } from '@mui/joy'
+// src/features/playersDatabase/ui/components/modals/paste/TeamSeasonChoiceCards.js
+
+import { RadioGroup } from '@mui/joy'
 
 import gameSeasonImage from '../../../../../../ui/core/images/modals/gameSeason.png'
 import ImportChoiceCard from './ImportChoiceCard.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
-// Import actions are always performed for the season visible in Team Page.
-// A second card makes the page context explicit without allowing a modal to
-// silently load data into another season.
 export default function TeamSeasonChoiceCards({
   seasonOptions = [],
   activeSeasonOptionKey = '',
@@ -16,40 +15,40 @@ export default function TeamSeasonChoiceCards({
   sx,
 }) {
   const options = Array.isArray(seasonOptions) ? seasonOptions : []
-  const activeOption = options.find(option => (
+  const selectedOption = options.find(option => (
+    clean(option?.optionKey) === clean(value)
+  )) || options.find(option => (
     clean(option?.optionKey) === clean(activeSeasonOptionKey)
-  )) || options.find(option => clean(option?.optionKey) === clean(value)) || options[0] || null
-  const alternativeOption = options.find(option => (
-    clean(option?.optionKey) && clean(option?.optionKey) !== clean(activeOption?.optionKey)
-  )) || null
-  const cards = [
-    activeOption,
-    alternativeOption || {
+  )) || options[0] || null
+  const cards = options.length
+    ? options
+    : [{
       optionKey: 'unavailable-season',
       seasonKey: 'עונה נוספת',
       unavailable: true,
-    },
-  ].filter(Boolean)
+    }]
 
   return (
     <RadioGroup
-      value={clean(activeOption?.optionKey)}
+      value={clean(selectedOption?.optionKey)}
       sx={sx}
       onChange={event => onChange?.(event.target.value)}
     >
       {cards.map(option => {
-        const selected = clean(option?.optionKey) === clean(activeOption?.optionKey)
-        const disabled = !selected
+        const selected = clean(option?.optionKey) === clean(selectedOption?.optionKey)
+        const isPageSeason = clean(option?.optionKey) === clean(activeSeasonOptionKey)
+        const disabled = Boolean(option.unavailable)
         return (
           <ImportChoiceCard
             key={option.optionKey}
             value={option.optionKey}
             label={option.seasonKey || 'עונה'}
             description={disabled
-              ? option.unavailable
-                ? 'לא קיימת עונה נוספת לקבוצה זו.'
-                : 'עבור לטאב שלה בעמוד הקבוצה.'
-              : option.leagueName || 'זו העונה שנבחרה בעמוד הקבוצה.'}
+              ? 'לא קיימת עונה נוספת לקבוצה זו.'
+              : [
+                  option.leagueName,
+                  isPageSeason ? 'העונה המוצגת בעמוד' : '',
+                ].filter(Boolean).join(' · ')}
             image={gameSeasonImage}
             selected={selected}
             disabled={disabled}

@@ -6,6 +6,27 @@ Roster Load כותב את Team Season snapshot, את הסגל, את מצב הת�
 מטא־דאטת הסגל. הוא משמר Team Performance קנוני ואינו יוצר Player Documents,
 Stats או Scout Profiles רק בגלל שחקן בסגל.
 
+## סדר הכתיבה והקבלה
+
+טעינת סגל מפעילה בלחיצה אחת את השלבים הבאים לפי הסדר:
+
+```text
+canonical → counterparts → playerSeasons → playerSearchIndexes
+→ leagueProjection → leaguesCenter → clubsCenter → audit
+```
+
+כל שלב שהושלם מתועד מיד באותה קבלת `dbWriteActions`. הממשק מציג את מצב
+השלבים מן הקבלה ואינו מציג כפתור כתיבה נפרד לכל collection.
+
+אם `canonical` טרם אושר, ניסיון חוזר רשאי לקרוא מקורות טריים, לבנות מצב
+מאושר חדש ולהמשיך עם אותה קבלה. אם `canonicalOutcome === 'confirmed'`, אין
+לפתוח מחדש את הקבלה ואין לכתוב שוב את מקור האמת; הפעולה הבאה היא תיקון
+תוצרים בלבד באמצעות `repairWriteActionReceipt`.
+
+בתיקון `rosterLoad`, עדכוני `counterparts` נבנים מחדש רק מעובדות Movement
+קנוניות שב־Team Season וממסמכי Team Season מקבילים שקיימים בפועל. אין ליצור
+מסמך קבוצה חסר ואין להסיק תנועה לפי שם או לפי תוצר חיפוש.
+
 ## Snapshot
 
 כל import נושא:

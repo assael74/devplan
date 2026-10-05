@@ -37,7 +37,7 @@ test('Historical team season sends its own leagueId instead of route leagueId', 
         useCallback: fn => fn,
       })
     }
-    if (specifier.includes('/writeV2/edits/team/updateSeasonUrl.js')) {
+    if (specifier.includes('/write/league/edits/updateTeamSeasonUrl.js')) {
       return synthetic('write', {
         updateTeamSeasonUrl: async input => { calls.push(structuredClone(input)); return { completed: true } },
       })
@@ -61,7 +61,11 @@ test('Historical team season sends its own leagueId instead of route leagueId', 
 
   const props = {
     leagueId: 'route-league',
-    selectedSeasonOption: { seasonKey: '25/26', leagueId: 'historical-league' },
+    selectedSeasonOption: {
+      seasonId: '2025_2026',
+      seasonKey: '25/26',
+      leagueId: 'historical-league',
+    },
     notify: () => {},
     reload: async () => {},
   }
@@ -69,11 +73,11 @@ test('Historical team season sends its own leagueId instead of route leagueId', 
     cursor = 0
     return hookModule.namespace.default(props)
   }
-  render().open({ birthTeamId: 'team-1', birthTeamDocumentId: 'team-doc-1' })
+  render().open({ teamId: 'team-1', teamSeasonDocumentId: 'team-1__2025_2026' })
   await render().save('https://example.com/team')
 
   assert.equal(calls.length, 1)
   assert.equal(calls[0].leagueId, 'historical-league')
-  assert.equal(calls[0].seasonKey, '25/26')
+  assert.equal(calls[0].seasonId, '2025_2026')
   assert.equal(saveOptions[0].reloadAfterSuccess, false)
 })

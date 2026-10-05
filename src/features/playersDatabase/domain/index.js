@@ -13,9 +13,7 @@ export * from './contracts/teamSeason.contract.js'
 export * from './contracts/club.contract.js'
 
 export * from './adapters/playerDocument.adapter.js'
-export * from './adapters/playerSearchIndex.adapter.js'
 export * from './adapters/birthTeamDocument.adapter.js'
-export * from './adapters/teamSearchIndex.adapter.js'
 export * from './adapters/leagueTableTeam.adapter.js'
 export * from './adapters/teamScoutEngine.adapter.js'
 export * from './adapters/playerScoutEngine.adapter.js'
@@ -27,17 +25,12 @@ export * from './selectors/lifecycle.selectors.js'
 export * from './orchestration/buildLeagueTeamSeasons.js'
 export * from './orchestration/buildDbPlayerScoutResult.js'
 
-export * from './orchestration/buildPlayerScoutShadowAudit.js'
-export * from './orchestration/buildTeamScoutShadowAudit.js'
-
 export * from './adapters/teamBalanceInput.adapter.js'
 export * from './orchestration/buildTeamBalanceState.js'
 export * from './orchestration/buildPlayerLineClassificationState.js'
 export * from './orchestration/buildTeamLineInterpretationState.js'
 
 export * from './projections/leagueSchedule.projection.js'
-export * from './projections/club/index.js'
+export * from './projections/club/clubCompetition.projection.js'
 
 export * from './movement/index.js'
-
-export * from './statsV2/index.js'

@@ -1,15 +1,16 @@
 // features/playersDatabase/catalog/leagues.catalog.js
 
+import { resolveAgeGroupCatalogItem } from './ageGroups.catalog.js'
+
 export {
   PLAYERS_DATABASE_LEAGUE_GAME_TIME_BY_AGE_GROUP,
   resolvePlayersDatabaseLeagueGameTime,
 } from '@devplan/players-scout-engine/players/index.js'
 
-export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
+const RAW_PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u19-premier',
     ageGroupId: 'u19',
-    ageGroupLabel: 'נוער',
     order: 1,
     level: 1,
     region: '',
@@ -19,7 +20,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u19-national-south',
     ageGroupId: 'u19',
-    ageGroupLabel: 'נוער',
     order: 2,
     level: 2,
     region: '',
@@ -29,7 +29,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u19-national-north',
     ageGroupId: 'u19',
-    ageGroupLabel: 'נוער',
     order: 2,
     level: 2,
     region: '',
@@ -39,7 +38,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u19-regional-north',
     ageGroupId: 'u19',
-    ageGroupLabel: 'נוער',
     order: 3,
     level: 3,
     region: 'north',
@@ -49,7 +47,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u19-regional-south',
     ageGroupId: 'u19',
-    ageGroupLabel: 'נוער',
     order: 4,
     level: 3,
     region: 'south',
@@ -59,7 +56,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u19-district-center',
     ageGroupId: 'u19',
-    ageGroupLabel: 'נוער',
     order: 5,
     level: 4,
     region: 'center',
@@ -69,7 +65,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u19-district-sharon',
     ageGroupId: 'u19',
-    ageGroupLabel: 'נוער',
     order: 6,
     level: 4,
     region: 'sharon',
@@ -79,7 +74,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u19-district-shfela',
     ageGroupId: 'u19',
-    ageGroupLabel: 'נוער',
     order: 7,
     level: 4,
     region: 'shfela',
@@ -89,7 +83,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u19-district-north',
     ageGroupId: 'u19',
-    ageGroupLabel: 'נוער',
     order: 8,
     level: 4,
     region: 'north',
@@ -99,7 +92,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u19-district-south',
     ageGroupId: 'u19',
-    ageGroupLabel: 'נוער',
     order: 9,
     level: 4,
     region: 'south',
@@ -110,7 +102,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u17-premier',
     ageGroupId: 'u17',
-    ageGroupLabel: 'נערים א',
     order: 1,
     level: 1,
     region: '',
@@ -120,7 +111,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u17-national-south',
     ageGroupId: 'u17',
-    ageGroupLabel: 'נערים א',
     order: 2,
     level: 2,
     region: '',
@@ -130,7 +120,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u17-national-north',
     ageGroupId: 'u17',
-    ageGroupLabel: 'נערים א',
     order: 2,
     level: 2,
     region: '',
@@ -140,7 +129,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u17-regional-north',
     ageGroupId: 'u17',
-    ageGroupLabel: 'נערים א',
     order: 3,
     level: 3,
     region: 'north',
@@ -150,7 +138,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u17-regional-south',
     ageGroupId: 'u17',
-    ageGroupLabel: 'נערים א',
     order: 4,
     level: 3,
     region: 'south',
@@ -160,7 +147,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u17-district-dan',
     ageGroupId: 'u17',
-    ageGroupLabel: 'נערים א',
     order: 5,
     level: 4,
     region: 'dan',
@@ -170,7 +156,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u17-district-center',
     ageGroupId: 'u17',
-    ageGroupLabel: 'נערים א',
     order: 6,
     level: 4,
     region: 'center',
@@ -180,7 +165,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u17-district-shfela',
     ageGroupId: 'u17',
-    ageGroupLabel: 'נערים א',
     order: 7,
     level: 4,
     region: 'shfela',
@@ -190,7 +174,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u17-district-sharon',
     ageGroupId: 'u17',
-    ageGroupLabel: 'נערים א',
     order: 8,
     level: 4,
     region: 'sharon',
@@ -200,7 +183,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u17-district-north',
     ageGroupId: 'u17',
-    ageGroupLabel: 'נערים א',
     order: 9,
     level: 4,
     region: 'north',
@@ -210,7 +192,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u17-district-south',
     ageGroupId: 'u17',
-    ageGroupLabel: 'נערים א',
     order: 10,
     level: 4,
     region: 'south',
@@ -221,7 +202,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u16-premier',
     ageGroupId: 'u16',
-    ageGroupLabel: 'נערים ב',
     order: 1,
     level: 1,
     region: '',
@@ -231,7 +211,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u16-national-south',
     ageGroupId: 'u16',
-    ageGroupLabel: 'נערים ב',
     order: 2,
     level: 2,
     region: '',
@@ -241,7 +220,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u16-national-north',
     ageGroupId: 'u16',
-    ageGroupLabel: 'נערים ב',
     order: 2,
     level: 2,
     region: '',
@@ -251,7 +229,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u16-regional-center',
     ageGroupId: 'u16',
-    ageGroupLabel: 'נערים ב',
     order: 3,
     level: 3,
     region: 'center',
@@ -261,7 +238,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u16-regional-north',
     ageGroupId: 'u16',
-    ageGroupLabel: 'נערים ב',
     order: 3,
     level: 3,
     region: 'north',
@@ -271,7 +247,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u16-regional-south',
     ageGroupId: 'u16',
-    ageGroupLabel: 'נערים ב',
     order: 4,
     level: 3,
     region: 'south',
@@ -281,7 +256,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u16-regional-sharon',
     ageGroupId: 'u16',
-    ageGroupLabel: 'נערים ב',
     order: 3,
     level: 3,
     region: 'center',
@@ -291,7 +265,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u16-district-dan',
     ageGroupId: 'u16',
-    ageGroupLabel: 'נערים ב',
     order: 5,
     level: 4,
     region: 'dan',
@@ -301,7 +274,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u16-district-center',
     ageGroupId: 'u16',
-    ageGroupLabel: 'נערים ב',
     order: 6,
     level: 4,
     region: 'center',
@@ -311,7 +283,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u16-district-shfela',
     ageGroupId: 'u16',
-    ageGroupLabel: 'נערים ב',
     order: 7,
     level: 4,
     region: 'shfela',
@@ -321,7 +292,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u16-district-sharon',
     ageGroupId: 'u16',
-    ageGroupLabel: 'נערים ב',
     order: 8,
     level: 4,
     region: 'sharon',
@@ -331,7 +301,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u16-district-north',
     ageGroupId: 'u16',
-    ageGroupLabel: 'נערים ב',
     order: 9,
     level: 4,
     region: 'north',
@@ -341,7 +310,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u16-district-south',
     ageGroupId: 'u16',
-    ageGroupLabel: 'נערים ב',
     order: 10,
     level: 4,
     region: 'south',
@@ -351,7 +319,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u16-district-mifratz',
     ageGroupId: 'u16',
-    ageGroupLabel: 'נערים ב',
     order: 11,
     level: 4,
     region: 'mifratz',
@@ -362,7 +329,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u15-premier',
     ageGroupId: 'u15',
-    ageGroupLabel: 'נערים ג',
     order: 1,
     level: 1,
     region: '',
@@ -372,7 +338,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u15-national-south',
     ageGroupId: 'u15',
-    ageGroupLabel: 'נערים ג',
     order: 2,
     level: 2,
     region: '',
@@ -382,7 +347,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u15-national-north',
     ageGroupId: 'u15',
-    ageGroupLabel: 'נערים ג',
     order: 2,
     level: 2,
     region: '',
@@ -392,7 +356,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u15-regional-center',
     ageGroupId: 'u15',
-    ageGroupLabel: 'נערים ג',
     order: 3,
     level: 3,
     region: 'center',
@@ -402,7 +365,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u15-regional-sharon',
     ageGroupId: 'u15',
-    ageGroupLabel: 'נערים ג',
     order: 3,
     level: 3,
     region: 'center',
@@ -412,7 +374,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u15-regional-north',
     ageGroupId: 'u15',
-    ageGroupLabel: 'נערים ג',
     order: 3,
     level: 3,
     region: 'north',
@@ -422,7 +383,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u15-regional-south',
     ageGroupId: 'u15',
-    ageGroupLabel: 'נערים ג',
     order: 4,
     level: 3,
     region: 'south',
@@ -432,7 +392,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u15-district-dan',
     ageGroupId: 'u15',
-    ageGroupLabel: 'נערים ג',
     order: 5,
     level: 4,
     region: 'dan',
@@ -442,7 +401,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u15-district-center',
     ageGroupId: 'u15',
-    ageGroupLabel: 'נערים ג',
     order: 6,
     level: 4,
     region: 'center',
@@ -452,7 +410,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u15-district-shfela',
     ageGroupId: 'u15',
-    ageGroupLabel: 'נערים ג',
     order: 7,
     level: 4,
     region: 'shfela',
@@ -462,7 +419,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u15-district-sharon',
     ageGroupId: 'u15',
-    ageGroupLabel: 'נערים ג',
     order: 8,
     level: 4,
     region: 'sharon',
@@ -472,7 +428,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u15-district-north',
     ageGroupId: 'u15',
-    ageGroupLabel: 'נערים ג',
     order: 9,
     level: 4,
     region: 'north',
@@ -482,7 +437,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u15-district-south',
     ageGroupId: 'u15',
-    ageGroupLabel: 'נערים ג',
     order: 10,
     level: 4,
     region: 'south',
@@ -492,7 +446,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u15-district-mifratz',
     ageGroupId: 'u15',
-    ageGroupLabel: 'נערים ג',
     order: 11,
     level: 4,
     region: 'mifratz',
@@ -503,7 +456,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u14-district-dan',
     ageGroupId: 'u14',
-    ageGroupLabel: 'ילדים א',
     order: 1,
     level: 3,
     region: 'dan',
@@ -513,7 +465,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u14-district-dan-1',
     ageGroupId: 'u14',
-    ageGroupLabel: 'ילדים א',
     order: 2,
     level: 4,
     region: 'dan',
@@ -523,7 +474,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u14-district-dan-2',
     ageGroupId: 'u14',
-    ageGroupLabel: 'ילדים א',
     order: 3,
     level: 5,
     region: 'dan',
@@ -533,7 +483,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u14-district-center',
     ageGroupId: 'u14',
-    ageGroupLabel: 'ילדים א',
     order: 4,
     level: 1,
     region: 'center',
@@ -543,7 +492,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u14-district-center-1',
     ageGroupId: 'u14',
-    ageGroupLabel: 'ילדים א',
     order: 5,
     level: 4,
     region: 'center',
@@ -553,7 +501,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u14-district-sharon',
     ageGroupId: 'u14',
-    ageGroupLabel: 'ילדים א',
     order: 6,
     level: 2,
     region: 'sharon',
@@ -563,7 +510,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u14-district-sharon-1',
     ageGroupId: 'u14',
-    ageGroupLabel: 'ילדים א',
     order: 7,
     level: 4,
     region: 'sharon',
@@ -573,7 +519,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u14-district-shfela',
     ageGroupId: 'u14',
-    ageGroupLabel: 'ילדים א',
     order: 8,
     level: 3,
     region: 'shfela',
@@ -583,7 +528,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u14-district-shfela-1',
     ageGroupId: 'u14',
-    ageGroupLabel: 'ילדים א',
     order: 9,
     level: 4,
     region: 'shfela',
@@ -593,7 +537,6 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u14-district-hof',
     ageGroupId: 'u14',
-    ageGroupLabel: 'ילדים א',
     order: 10,
     level: 4,
     region: 'hof',
@@ -603,11 +546,24 @@ export const PLAYERS_DATABASE_LEAGUES_CATALOG = [
   {
     id: 'u14-district-mizrah',
     ageGroupId: 'u14',
-    ageGroupLabel: 'ילדים א',
     order: 11,
     level: 5,
     region: 'mizrarh',
     name: 'ליגה מחוזית מזרח',
     aliases: [],
   },
-];
+]
+
+export const PLAYERS_DATABASE_LEAGUES_CATALOG = RAW_PLAYERS_DATABASE_LEAGUES_CATALOG.map(
+  league => {
+    const ageGroup = resolveAgeGroupCatalogItem(league.ageGroupId)
+    if (!ageGroup) {
+      throw new Error(`Unknown league ageGroupId: ${league.ageGroupId}`)
+    }
+
+    return {
+      ...league,
+      ageGroupLabel: ageGroup.label,
+    }
+  }
+)

@@ -1,20 +1,10 @@
 // features/playersDatabase/ui/pages/searchPage/logic/search.model.js
 
-import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
 import { buildTeamDisplayName } from '../../../../catalog/teamDisplay.js'
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../../catalog/leagues.catalog.js'
 
 import { pickDefinedValue } from '../../../../model/shared/value.model.js'
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
-
-const toNumberOrZero = value => {
-  const number = Number(value)
-  return Number.isFinite(number) ? number : 0
-}
-
-const getClubById = clubId => PLAYERS_DATABASE_CLUBS_CATALOG.find(
-  club => clean(club.id) === clean(clubId)
-) || null
 
 const LEAGUE_BY_ID = PLAYERS_DATABASE_LEAGUES_CATALOG.reduce((map, league) => {
   map[clean(league.id)] = league
@@ -45,116 +35,61 @@ const resolveTeamName = team => {
 
 const normalizePlayerSearchRow = playerSeason => {
   const scout = playerSeason.scout || {}
-  const display = scout.display || {}
-  const primaryProfile = scout.primaryProfile || null
+  const primaryProfile = scout.primary || null
   const actual = playerSeason.stats?.actual || {}
   const team = playerSeason.team || {}
   const season = playerSeason.season || {}
   const identity = playerSeason.identity || {}
-  const metadata = playerSeason.metadata || {}
+  const player = playerSeason.player || {}
 
   return {
     ...playerSeason,
-    id: clean(identity.playerDocumentId || identity.playerId || playerSeason.id),
-    playerId: clean(identity.playerId),
+    id: clean(playerSeason.id),
+    playerId: clean(playerSeason.playerId),
     entityType: 'playerSeason',
     playerName: clean(identity.displayName) || 'שחקן ללא שם',
-    teamName: resolveTeamName(team) || '-',
-    leagueName: resolveLeagueName(team.leagueId) || '-',
-    leagueLevel: pickDefinedValue(team.leagueLevel, '-'),
-    birthYear: pickDefinedValue(season.birthYear, '-'),
+    teamId: clean(team.teamId),
+    teamSeasonDocumentId: clean(playerSeason.references?.teamSeasonDocumentId),
+    teamName: resolveTeamName({
+      ...team,
+      displayName: team.teamDisplayName,
+      birthTeamSlot: team.teamSlot,
+    }) || '-',
+    leagueId: clean(playerSeason.leagueId),
+    leagueName: resolveLeagueName(playerSeason.leagueId) || '-',
+    leagueLevel: pickDefinedValue(playerSeason.leagueLevel, '-'),
+    birthYear: pickDefinedValue(playerSeason.birthYear, '-'),
     ageGroupLabel: clean(team.ageGroupLabel) || '-',
-    seasonKey: clean(season.seasonKey || season.seasonId) || '-',
+    seasonId: clean(playerSeason.seasonId),
+    seasonKey: clean(season.seasonKey || playerSeason.seasonId) || '-',
     minutes: Number(actual.minutes || 0),
     appearances: Number(actual.games || 0),
     starts: Number(actual.starts || 0),
     goals: Number(actual.goals || 0),
-    primaryProfile: clean(primaryProfile?.label || display.label) || '-',
-    scoutProfiles: Array.isArray(scout.profiles) ? scout.profiles : [],
-    scoutCombinations: Array.isArray(scout.combinations) ? scout.combinations : [],
-    scoutProfileDisplay: display,
-    profileStrength: display.profileStrength || null,
-    score: Number(pickDefinedValue(display.score, primaryProfile?.score, 0)),
-    avatarUrl: clean(metadata.avatarUrl),
-    playerUrl: clean(metadata.playerUrl),
-    notes: clean(metadata.notes),
-    positionLayer: clean(playerSeason.position?.layer),
-    primaryPosition: clean(playerSeason.position?.primary),
-    numShirt: clean(playerSeason.position?.shirtNumber),
-  }
-}
-
-const normalizeTeamSearchRow = teamSeason => {
-  const identity = teamSeason.identity || {}
-  const season = teamSeason.season || {}
-  const league = teamSeason.league || {}
-  const actual = teamSeason.stats?.actual || {}
-  const offense = teamSeason.performance?.offense || {}
-  const defense = teamSeason.performance?.defense || {}
-  const ranking = teamSeason.ranking || {}
-  const offensePriorityScore = offense.scoutPriorityScore
-  const defensePriorityScore = defense.scoutPriorityScore
-  const primarySide = Number(offensePriorityScore || 0) >= Number(defensePriorityScore || 0)
-    ? offense
-    : defense
-  const primaryScore = primarySide.scoutPriorityScore
-  const clubId = clean(identity.clubId)
-  const club = getClubById(clubId)
-
-  return {
-    ...teamSeason,
-    id: clean(identity.teamDocumentId || identity.teamId || teamSeason.id),
-    birthTeamId: clean(identity.teamId),
-    clubId,
-    clubLevel: toNumberOrZero(teamSeason.clubLevel || club?.clubLevel),
-    entityType: 'birthTeamSeason',
-    playerName: resolveTeamName({
-      displayName: identity.displayName,
-      clubId: identity.clubId,
-      teamId: identity.teamId,
-      birthTeamSlot: identity.teamSlot,
-    }) || 'קבוצה ללא שם',
-    teamName: resolveTeamName({
-      displayName: identity.displayName,
-      clubId: identity.clubId,
-      teamId: identity.teamId,
-      birthTeamSlot: identity.teamSlot,
-    }) || '-',
-    leagueName: resolveLeagueName(league.leagueId) || '-',
-    leagueLevel: pickDefinedValue(league.leagueLevel, '-'),
-    birthYear: pickDefinedValue(season.birthYear, '-'),
-    ageGroupLabel: clean(league.ageGroupLabel) || '-',
-    seasonKey: clean(season.seasonKey || season.seasonId) || '-',
-    minutes: 0,
-    appearances: Number(actual.gamesPlayed || 0),
-    tableRank: Number(ranking.tableRank || 0),
-    tableAttackRank: Number(ranking.attackRank || 0),
-    tableDefenseRank: Number(ranking.defenseRank || 0),
-    goalsFor: Number(actual.goalsFor || 0),
-    goalsAgainst: Number(actual.goalsAgainst || 0),
-    playersCount: Number(teamSeason.playersCount || 0),
-    starts: 0,
-    goals: Number(actual.goalsFor || 0),
-    primaryProfile: clean(primarySide.priorityLevel) || '-',
+    primaryProfile: clean(primaryProfile?.profileId) || '-',
+    scoutProfiles: (Array.isArray(playerSeason.scoutProfileIds)
+      ? playerSeason.scoutProfileIds
+      : []).map(profileId => ({ profileId, label: profileId })),
+    scoutCombinations: Array.isArray(playerSeason.scoutCombinationIds)
+      ? playerSeason.scoutCombinationIds
+      : [],
     scoutProfileDisplay: {
-      type: 'teamPerformance',
-      id: clean(primarySide.side),
-      label: clean(primarySide.priorityLevel),
-      score: pickDefinedValue(primaryScore, null),
-      baseProfiles: [],
+      id: clean(primaryProfile?.profileId),
+      label: clean(primaryProfile?.profileId),
+      score: pickDefinedValue(primaryProfile?.score, null),
+      profileStrength: pickDefinedValue(primaryProfile?.strengthDepthPct, null),
     },
-    score: Number(primaryScore || 0),
-    offense,
-    defense,
-    teamUrl: clean(teamSeason.metadata?.teamUrl),
+    profileStrength: pickDefinedValue(primaryProfile?.strengthDepthPct, null),
+    score: Number(pickDefinedValue(primaryProfile?.score, 0)),
+    playerUrl: clean(player.playerUrl),
+    notes: clean(player.notes),
+    positionLayer: clean(player.positionLayer),
+    primaryPosition: clean(player.primaryPosition),
+    numShirt: clean(player.numShirt),
   }
 }
 
 export function normalizeSearchRow(row = {}) {
-  if (row?.entityType === 'birthTeamSeason' || row?.performance) {
-    return normalizeTeamSearchRow(row)
-  }
-
   return normalizePlayerSearchRow(row)
 }
 

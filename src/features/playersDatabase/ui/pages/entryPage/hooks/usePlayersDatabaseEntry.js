@@ -1,63 +1,45 @@
-// features/playersDatabase/ui/pages/entryPage/hooks/usePlayersDatabaseEntry.js
+// src/features/playersDatabase/ui/pages/entryPage/hooks/usePlayersDatabaseEntry.js
 
 import {
-  useEffect,
   useMemo,
-  useState,
 } from 'react'
 
 import {
-  buildClubSeasonIdentityScopesFromLeaguesMaster,
-  readClubSeasonIdentityIndexes,
-  readLeaguesMasterDocument,
-} from '../../../../services/read/index.js'
+  LEAGUES_CENTER_STORE_KEY,
+} from '../../../../services/read/pages/leagueCenter.read.js'
+import usePlayersDatabaseReadStoreEntry from '../../../hooks/usePlayersDatabaseReadStoreEntry.js'
+
+const object = value => (
+  value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+)
 
 export function usePlayersDatabaseEntry() {
-  const [masterDocument, setMasterDocument] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const entry = usePlayersDatabaseReadStoreEntry(LEAGUES_CENTER_STORE_KEY)
+  const leaguesCenterDocument = entry.data
 
-  useEffect(() => {
-    let active = true
+  const summary = useMemo(() => {
+    const leagues = Object.values(object(leaguesCenterDocument?.leaguesById))
+    const seasons = leagues.flatMap(league => Object.values(object(league?.seasonsById)))
+    const teams = seasons.flatMap(season => Object.values(object(season?.teamsById)))
+    const teamsWithStats = teams.filter(team => (
+      ['STATS_LOADED', 'STATS_FINAL'].includes(String(team?.documentationState || '').trim().toUpperCase())
+    ))
 
-    setLoading(true)
-    setError('')
-
-    readLeaguesMasterDocument()
-      .then(doc => {
-        if (!active) return
-        setMasterDocument(doc)
-
-        // Warm the compact locator documents in the background. This never
-        // blocks the entry screen and does not read the large Clubs Master.
-        readClubSeasonIdentityIndexes({
-          scopes: buildClubSeasonIdentityScopesFromLeaguesMaster({
-            leaguesMasterDoc: doc,
-          }),
-        }).catch(() => {})
-      })
-      .catch(nextError => {
-        if (!active) return
-        setMasterDocument(null)
-        setError(nextError?.message || 'טעינת מסמך האב נכשלה')
-      })
-      .finally(() => {
-        if (active) setLoading(false)
-      })
-
-    return () => {
-      active = false
+    return {
+      leaguesCount: leagues.length,
+      seasonsCount: seasons.length,
+      teamsCount: teams.length,
+      teamsWithStatsCount: teamsWithStats.length,
     }
-  }, [])
-
-  const summary = useMemo(() => (
-    masterDocument?.summary || {}
-  ), [masterDocument])
+  }, [leaguesCenterDocument])
 
   return {
-    masterDocument,
+    leaguesCenterDocument,
     summary,
-    loading,
-    error,
+    loading: entry.status === 'idle' || entry.status === 'loading',
+    refreshing: entry.status === 'refreshing',
+    error: entry.status === 'error'
+      ? entry.error?.message || 'טעינת מרכז הליגות נכשלה'
+      : '',
   }
 }

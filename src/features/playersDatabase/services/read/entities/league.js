@@ -1,4 +1,4 @@
-// features/playersDatabase/services/read/entities/league.js
+// src/features/playersDatabase/services/read/entities/league.js
 
 import {
   collection,
@@ -8,6 +8,7 @@ import {
 import { db } from '../../../../../services/firebase/firebase.js'
 import {
   trackedGetDoc,
+  trackedGetDocFromServer,
   trackedGetDocs,
 } from '../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
@@ -27,12 +28,15 @@ const leaguesRef = () =>
 const leagueDocRef = leagueId =>
   doc(db, PLAYERS_DATABASE_COLLECTIONS.leagues, clean(leagueId))
 
-const readLeagueDocumentFromFirestore = async leagueId => {
-  const snapshot = await trackedGetDoc(leagueDocRef(leagueId), {
+const readLeagueDocumentFromFirestore = async (leagueId, { fromServer = false } = {}) => {
+  const usage = {
     feature: 'playersDatabase',
-    action: 'league-read',
+    action: fromServer ? 'league-server-reload' : 'league-read',
     collection: PLAYERS_DATABASE_COLLECTIONS.leagues,
-  })
+  }
+  const snapshot = fromServer
+    ? await trackedGetDocFromServer(leagueDocRef(leagueId), usage)
+    : await trackedGetDoc(leagueDocRef(leagueId), usage)
   if (!snapshot.exists()) return null
 
   return {
@@ -81,7 +85,7 @@ export async function getLeagueById(leagueId, { bypassCache = false, refresh = f
   if (refresh) {
     return refreshWithDocumentCache({
       key,
-      read: () => readLeagueDocumentFromFirestore(safeLeagueId),
+      read: () => readLeagueDocumentFromFirestore(safeLeagueId, { fromServer: true }),
     })
   }
 

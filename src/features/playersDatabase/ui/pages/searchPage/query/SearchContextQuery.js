@@ -21,7 +21,10 @@ import {
 import SearchQuerySection from './SearchQuerySection.js'
 import { searchContextQuerySx as sx } from './sx/searchContextQuery.sx.js'
 
-const seasonOptions = getSeasonCatalogOptions().map(option => option.seasonKey)
+const seasonOptions = getSeasonCatalogOptions().map(option => ({
+  value: option.seasonId,
+  label: option.seasonKey,
+}))
 const birthYearOptions = ['2008', '2009', '2010', '2011', '2012', '2013']
 const leagueLevelOptions = ['1', '2', '3', '4']
 
@@ -42,13 +45,13 @@ function MultiSelectChips({ values, selected = [], onToggle, prefix = '' }) {
     <Stack direction='row' sx={sx.chipGroup}>
       {values.map(value => (
         <Chip
-          key={value}
+          key={value?.value || value}
           size='md'
-          variant={selected.includes(value) ? 'solid' : 'outlined'}
+          variant={selected.includes(value?.value || value) ? 'solid' : 'outlined'}
           sx={sx.filterChip}
-          onClick={() => onToggle(value)}
+          onClick={() => onToggle(value?.value || value)}
         >
-          {prefix}{value}
+          {prefix}{value?.label || value}
         </Chip>
       ))}
     </Stack>
@@ -71,7 +74,7 @@ function EntityTypeSelector({ value, onSelect }) {
               id: option.value,
               size: 'sm',
             })}
-            onClick={() => onSelect(selected ? '' : option.value)}
+            onClick={() => onSelect(option.value)}
           >
             {option.label}
           </Chip>

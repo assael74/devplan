@@ -8,6 +8,10 @@ const loadVideoHubPage = () => import('../../features/videoHub/VideoHubPage')
 const loadTagsManagementPage = () => import('../../features/tagsHub/TagsManagementPage.js')
 const loadFinancePage = () => import('../../features/finance/FinancePage.js')
 const loadPlayersDatabasePage = () => import('../../features/playersDatabase/index.js')
+const loadPlayersDatabaseReadScope = () =>
+  import('../../features/playersDatabase/index.js').then(module => ({
+    default: module.PlayersDatabaseReadScope,
+  }))
 const loadHubPage = () => import('../../features/hub/ui/HubPage')
 const loadPrivatePage = () => import('../../features/hub/scopes/PrivatePage.js')
 const loadRolesPage = () => import('../../features/roles/RolesPage.js')
@@ -51,6 +55,10 @@ const loadPlayersDatabaseSearchPage = () =>
     default: module.SearchPage,
   }))
 
+const loadPlayersDatabaseDataOpsPage = () =>
+  import('../../features/playersDatabase/index.js').then(module => ({
+    default: module.DataOpsPage,
+  }))
 
 const loadPlayersDatabaseClubsPage = () =>
   import('../../features/playersDatabase/index.js').then(module => ({
@@ -84,11 +92,13 @@ export const VideoHubPage = React.lazy(loadVideoHubPage)
 export const TagsManagementPage = React.lazy(loadTagsManagementPage)
 export const FinancePage = React.lazy(loadFinancePage)
 export const PlayersDatabasePage = React.lazy(loadPlayersDatabasePage)
+export const PlayersDatabaseReadScope = React.lazy(loadPlayersDatabaseReadScope)
 export const PlayersDatabaseLeaguesCenterPage = React.lazy(loadPlayersDatabaseLeaguesCenterPage)
 export const PlayersDatabaseLeaguePage = React.lazy(loadPlayersDatabaseLeaguePage)
 export const PlayersDatabaseTeamPage = React.lazy(loadPlayersDatabaseTeamPage)
 export const PlayersDatabasePlayerPage = React.lazy(loadPlayersDatabasePlayerPage)
 export const PlayersDatabaseSearchPage = React.lazy(loadPlayersDatabaseSearchPage)
+export const PlayersDatabaseDataOpsPage = React.lazy(loadPlayersDatabaseDataOpsPage)
 export const PlayersDatabaseClubsPage = React.lazy(loadPlayersDatabaseClubsPage)
 export const PlayersDatabaseClubPage = React.lazy(loadPlayersDatabaseClubPage)
 export const PlayersDatabaseProfilesPage = React.lazy(loadPlayersDatabaseProfilesPage)

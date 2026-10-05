@@ -38,17 +38,28 @@ const resolveProfileId = profile => clean(
   profile?.id
 )
 
-const resolveProfileLabel = profile => clean(
-  profile?.profileLabel ||
-  profile?.label ||
-  profile?.name ||
-  resolveProfileId(profile)
-) || 'פרופיל סקאוט'
+const resolveProfileLabel = profile => {
+  const profileId = resolveProfileId(profile)
+  const definition = resolveScoutProfileDefinition(profileId)
 
-const resolveProfileShortLabel = profile => clean(
-  profile?.profileShortLabel ||
-  profile?.shortLabel
-)
+  return clean(
+    profile?.profileLabel ||
+    profile?.label ||
+    profile?.name ||
+    definition?.label ||
+    profileId
+  ) || 'פרופיל סקאוט'
+}
+
+const resolveProfileShortLabel = profile => {
+  const definition = resolveScoutProfileDefinition(resolveProfileId(profile))
+
+  return clean(
+    profile?.profileShortLabel ||
+    profile?.shortLabel ||
+    definition?.shortLabel
+  )
+}
 
 const resolveProfileIconId = profile => {
   const definition = resolveScoutProfileDefinition(resolveProfileId(profile))
@@ -69,6 +80,13 @@ const resolveCombinationProfileIds = combination => (
       : []
 ).map(clean).filter(Boolean)
 
+const normalizeCombination = combination => {
+  if (typeof combination !== 'string') return combination
+
+  const id = clean(combination)
+  return COMBINATION_BY_ID[id] || { id }
+}
+
 export const buildScoutNearProfileLabel = player => {
   const nearProfile = (
     player?.scoutProfileProgression?.nearestProfile ||
@@ -76,10 +94,13 @@ export const buildScoutNearProfileLabel = player => {
       ? player.scoutCandidateSignals[0]
       : null)
   )
+  const profileId = clean(nearProfile?.profileId || nearProfile?.id)
+  const definition = resolveScoutProfileDefinition(profileId)
   const label = cleanDisplayLabel(
     nearProfile?.profileLabel ||
     nearProfile?.label ||
-    nearProfile?.profileId
+    definition?.label ||
+    profileId
   )
 
   return label ? `קרוב · ${label}` : ''
@@ -126,7 +147,9 @@ export const buildScoutDisplayItems = ({
   combinations = [],
 } = {}) => {
   const safeProfiles = uniqueById(profiles)
-  const safeCombinations = uniqueById(combinations)
+  const safeCombinations = uniqueById(
+    (Array.isArray(combinations) ? combinations : []).map(normalizeCombination)
+  )
   const coveredProfileIds = new Set(
     safeCombinations.flatMap(resolveCombinationProfileIds)
   )
@@ -213,8 +236,8 @@ export const buildScoutCompactView = ({
       : 'default',
     isCombination,
     tooltipTitle: (
-      cleanDisplayLabel(display.label) ||
       cleanDisplayLabel(primaryItem?.label) ||
+      cleanDisplayLabel(display.label) ||
       buildScoutNearProfileLabel(player) ||
       'פרופילי סקאוט'
     ),

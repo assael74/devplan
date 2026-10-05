@@ -1,4 +1,4 @@
-// features/playersDatabase/domain/movement/movement.reconciliation.js
+// src/features/playersDatabase/domain/movement/movement.reconciliation.js
 
 import {
   createEmptyMovementState,
@@ -23,7 +23,7 @@ const uniqueById = rows => {
   return [...lookup.values()]
 }
 
-const playerKey = player => clean(player?.playerId || player?.externalPlayerId || player?.identityKey)
+const playerKey = player => clean(player?.playerId || player?.externalPlayerId)
 
 const buildPlayerLookup = players => new Map(
   (Array.isArray(players) ? players : [])
@@ -376,7 +376,6 @@ export const reconcileRosterMovement = ({
         pendingId,
         playerId,
         externalPlayerId: clean(player.externalPlayerId),
-        identityKey: clean(player.identityKey),
         fullName: clean(player.fullName),
         previousSeasonKey: clean(currentSeason?.seasonKey || previousSeason?.seasonKey),
         previousBirthTeamDocumentId: currentBirthTeamDocumentId,

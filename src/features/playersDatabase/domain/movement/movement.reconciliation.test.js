@@ -1,3 +1,5 @@
+// src/features/playersDatabase/domain/movement/movement.reconciliation.test.js
+
 import {
   MOVEMENT_TIMING,
   ROSTER_IMPORT_MODE,
@@ -20,6 +22,26 @@ describe('Movement reconciliation', () => {
 
     expect(result.unresolved).toHaveLength(0)
     expect(result.resolved[0].player.playerId).toBe('player__2012__12345')
+  })
+
+  test('does not resolve a player from name or legacy identity fields', () => {
+    const result = resolveRosterPlayersLocally({
+      players: [{
+        fullName: 'Player A',
+        identityKey: '2012__player_a',
+        playerDocumentId: 'name__player_a',
+      }],
+      previousPlayers: [{
+        playerId: 'player__2012__12345',
+        externalPlayerId: '12345',
+        fullName: 'Player A',
+        identityKey: '2012__player_a',
+        playerDocumentId: 'name__player_a',
+      }],
+    })
+
+    expect(result.resolved).toHaveLength(0)
+    expect(result.unresolved).toHaveLength(1)
   })
 
   test('identical roster content hash is deterministic while event keys stay distinct', () => {

@@ -1,49 +1,104 @@
 // src/features/playersDatabase/ui/pages/leagueCenterPage/deleteSeason/useDeleteLeagueSeason.test.js
 
 import { act, renderHook } from '@testing-library/react'
-import useDeleteLeagueSeason from './useDeleteLeagueSeason.js'
-import { approveDeleteSeason } from '../../../../domain/leagueV2/deleteSeason/deleteLeagueSeasonApprovedState.builder.js'
-import { prepareDeleteLeagueSeason } from '../../../../services/writeV2/league/deleteSeason/prepareDeleteLeagueSeason.js'
-import { startDeleteSeasonSession, writeDeleteSeasonStep, finishDeleteSeasonSession } from '../../../../services/writeV2/league/deleteSeason/deleteLeagueSeasonSession.js'
 
-jest.mock('../../../../domain/leagueV2/deleteSeason/deleteLeagueSeasonApprovedState.builder.js', () => ({ approveDeleteSeason: jest.fn() }))
-jest.mock('../../../../services/writeV2/league/deleteSeason/prepareDeleteLeagueSeason.js', () => ({ prepareDeleteLeagueSeason: jest.fn() }))
-jest.mock('../../../../services/writeV2/league/deleteSeason/deleteLeagueSeasonSession.js', () => ({
-  startDeleteSeasonSession: jest.fn(), writeDeleteSeasonStep: jest.fn(),
-  finishDeleteSeasonSession: jest.fn(), failDeleteSeasonSession: jest.fn(),
+import { deleteLeagueSeason } from '../../../../services/write/league/index.js'
+import useDeleteLeagueSeason from './useDeleteLeagueSeason.js'
+
+jest.mock('../../../../services/write/league/index.js', () => ({
+  deleteLeagueSeason: jest.fn(),
 }))
-const row = { leagueId: 'league', seasonKey: '26/27', hasSelectedSeason: true }
-beforeEach(() => {
-  jest.resetAllMocks()
-  prepareDeleteLeagueSeason.mockResolvedValue({ identity: row })
-  approveDeleteSeason.mockImplementation(value => value)
-  startDeleteSeasonSession.mockResolvedValue('receipt')
-  writeDeleteSeasonStep.mockResolvedValue({ written: 1, skipped: 0, failed: 0 })
-  finishDeleteSeasonSession.mockResolvedValue({ result: 'clean', findings: [] })
+
+const row = {
+  leagueId: 'league-1',
+  leagueName: 'ליגת נוער',
+  seasonId: '2026_2027',
+  seasonKey: '26/27',
+  birthYear: 2008,
+  teamsCount: 0,
+  tableStatus: 'missing',
+  hasSelectedSeason: true,
+}
+
+const succeededResult = receiptId => ({
+  receiptId,
+  status: 'closed',
+  executionStatus: 'succeeded',
+  recoveryRequired: false,
+  audit: { findings: [] },
 })
 
-test('does not prepare deletion before the delete button is clicked', async () => {
+beforeEach(() => {
+  jest.resetAllMocks()
+  deleteLeagueSeason.mockResolvedValue(succeededResult('receipt-1'))
+})
+
+test('opens a preview without writing and sends the final League Delete API input', async () => {
   const { result } = renderHook(() => useDeleteLeagueSeason({ reload: jest.fn() }))
 
   expect(result.current.availability(row).allowed).toBe(true)
-  expect(prepareDeleteLeagueSeason).not.toHaveBeenCalled()
-  expect(startDeleteSeasonSession).not.toHaveBeenCalled()
+  act(() => result.current.open(row))
+  expect(deleteLeagueSeason).not.toHaveBeenCalled()
 
-  await act(async () => result.current.open(row))
-  expect(prepareDeleteLeagueSeason).toHaveBeenCalledTimes(1)
-  expect(prepareDeleteLeagueSeason).toHaveBeenCalledWith({ leagueId: 'league', seasonKey: '26/27' })
+  await act(async () => result.current.approve())
+
+  expect(deleteLeagueSeason).toHaveBeenCalledWith({
+    input: {
+      leagueId: 'league-1',
+      seasonId: '2026_2027',
+      updatedAt: expect.any(String),
+    },
+    receiptId: '',
+    display: {
+      leagueName: 'ליגת נוער',
+      seasonKey: '26/27',
+      birthYear: 2008,
+    },
+  })
+  expect(result.current.status).toBe('succeeded')
 })
 
-test('successful center action reloads from the server without navigation', async () => {
+test('retry preserves the action input and reuses the returned receipt', async () => {
+  deleteLeagueSeason
+    .mockResolvedValueOnce({
+      receiptId: 'receipt-open',
+      status: 'open',
+      executionStatus: 'failed',
+      recoveryRequired: true,
+      audit: { findings: [{ type: 'stale_projection' }] },
+    })
+    .mockResolvedValueOnce(succeededResult('receipt-open'))
+  const { result } = renderHook(() => useDeleteLeagueSeason({ reload: jest.fn() }))
+
+  act(() => result.current.open(row))
+  await act(async () => result.current.approve())
+  const firstInput = deleteLeagueSeason.mock.calls[0][0].input
+  await act(async () => result.current.retry())
+
+  expect(deleteLeagueSeason.mock.calls[1][0]).toEqual(expect.objectContaining({
+    input: firstInput,
+    receiptId: 'receipt-open',
+  }))
+  expect(result.current.status).toBe('succeeded')
+})
+
+test('successful Delete reloads the selected League row', async () => {
   const reload = jest.fn().mockResolvedValue(undefined)
   const { result } = renderHook(() => useDeleteLeagueSeason({ reload }))
-  await act(async () => result.current.open(row))
+
+  act(() => result.current.open(row))
   await act(async () => result.current.approve())
-  await act(async () => result.current.close())
-  expect(result.current.selected).toEqual(row)
-  await act(async () => result.current.next())
-  await act(async () => result.current.next())
-  await act(async () => result.current.next())
+
   expect(result.current.status).toBe('succeeded')
-  expect(reload).toHaveBeenCalledWith({ fromServer: true })
+  expect(reload).toHaveBeenCalledWith(row)
+})
+
+test('blocks Delete while the League table is still loaded', () => {
+  const { result } = renderHook(() => useDeleteLeagueSeason({ reload: jest.fn() }))
+
+  expect(result.current.availability({
+    ...row,
+    tableStatus: 'full',
+  }).allowed).toBe(false)
+  expect(deleteLeagueSeason).not.toHaveBeenCalled()
 })

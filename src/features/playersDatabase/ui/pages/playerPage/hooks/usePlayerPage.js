@@ -4,7 +4,6 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useState,
 } from 'react'
 import {
   useLocation,
@@ -19,7 +18,10 @@ import {
 } from '../../../../model/player/page/playerPage.model.js'
 import { PLAYERS_DATABASE_CURRENT_SEASON_KEY } from '../../../../catalog/seasons.catalog.js'
 import { normalizeSeasonLookupKey } from '../../../../model/shared/season.model.js'
-import { readClubPageDocument, readPlayerPageData } from '../../../../services/read/index.js'
+import {
+  CLUBS_DIRECTORY_STORE_KEY,
+  subscribePlayerPageData,
+} from '../../../../services/read/index.js'
 import { buildPlayerDocumentCacheKey } from '../../../../services/cache/index.js'
 import usePlayersDatabaseReadStoreEntry from '../../../hooks/usePlayersDatabaseReadStoreEntry.js'
 import { PLAYERS_DATABASE_UI_ROUTES } from '../../../logic/routeBuilders.js'
@@ -44,6 +46,9 @@ export function usePlayerPage() {
   )
   const playerStoreKey = buildPlayerDocumentCacheKey(playerId)
   const playerEntry = usePlayersDatabaseReadStoreEntry(playerStoreKey)
+  const clubsDirectoryEntry = usePlayersDatabaseReadStoreEntry(
+    CLUBS_DIRECTORY_STORE_KEY
+  )
   const row = playerEntry.data
   const loading = !row && (
     playerEntry.status === 'idle' ||
@@ -52,18 +57,9 @@ export function usePlayerPage() {
   )
   const error = row ? null : playerEntry.error
   const refreshError = playerEntry.refreshError?.message || ''
-  const [clubDoc, setClubDoc] = useState(null)
 
   useEffect(() => {
-    let active = true
-
-    readPlayerPageData({ playerId }).catch(() => {
-      if (!active) return
-    })
-
-    return () => {
-      active = false
-    }
+    return subscribePlayerPageData({ playerId })
   }, [playerId])
 
   const player = useMemo(() => (
@@ -79,13 +75,10 @@ export function usePlayerPage() {
     row,
   ])
 
-  useEffect(() => {
-    let active = true
+  const clubDoc = useMemo(() => {
     const clubId = cleanValue(player?.clubId)
-    if (!clubId) { setClubDoc(null); return () => { active = false } }
-    readClubPageDocument({ clubId }).then(value => { if (active) setClubDoc(value) }).catch(() => { if (active) setClubDoc(null) })
-    return () => { active = false }
-  }, [player?.clubId])
+    return clubId ? clubsDirectoryEntry.data?.clubsById?.[clubId] || null : null
+  }, [clubsDirectoryEntry.data, player?.clubId])
 
   const setSelectedSeasonKey = useCallback(value => {
     const nextSeasonKey = normalizeSeasonLookupKey(value)
@@ -133,13 +126,6 @@ export function usePlayerPage() {
     })
   }, [fromTeam, navigate, playerId])
 
-  const reload = useCallback(() => (
-    readPlayerPageData({
-      playerId,
-      refresh: true,
-    })
-  ), [playerId])
-
   return {
     player,
     clubDoc,
@@ -151,7 +137,6 @@ export function usePlayerPage() {
     setSelectedSeasonKey,
     setSelectedSeasonContext,
     fromTeam,
-    reload,
     loading,
     error,
     refreshError,

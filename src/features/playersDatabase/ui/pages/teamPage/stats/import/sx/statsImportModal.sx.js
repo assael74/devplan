@@ -118,4 +118,23 @@ export const statsImportModalSx = {
     fontSize: 11,
     fontWeight: 700,
   },
+
+  reviewStep: {
+    minWidth: 0,
+    minHeight: 0,
+    display: 'grid',
+    gridTemplateRows: 'minmax(0, 1fr) auto',
+    gap: 1,
+    overflow: 'hidden',
+  },
+
+  reviewIssues: {
+    maxHeight: 150,
+    p: 1,
+    overflow: 'auto',
+    borderRadius: 8,
+    border: '1px solid',
+    borderColor: 'danger.200',
+    bgcolor: 'danger.50',
+  },
 }

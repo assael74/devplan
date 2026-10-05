@@ -2,7 +2,6 @@
 
 import {
   useCallback,
-  useEffect,
   useMemo,
   useState,
 } from 'react'
@@ -11,7 +10,6 @@ import {
   useSearchParams,
 } from 'react-router-dom'
 
-import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../../catalog/leagues.catalog.js'
 import {
   LEAGUE_CENTER_ALL_SEASONS_KEY,
   LEAGUE_CENTER_DEFAULT_SEASON_KEY,
@@ -23,11 +21,16 @@ import {
   buildLeagueCenterAgeGroupOptions,
   buildLeagueCenterBirthYearOptions,
   buildLeagueCenterLevelOptions,
+  buildLeagueCenterOpenOptions,
   buildLeagueCenterSeasonOptions,
 } from '../../../../model/league/center/leagueCenterOptions.model.js'
 import { buildLeagueCenterSummary } from '../../../../model/league/center/leagueCenterSummary.model.js'
 import { normalizeSeasonLookupKey } from '../../../../model/shared/season.model.js'
-import { readLeagueCenterData } from '../../../../services/read/index.js'
+import {
+  LEAGUES_CENTER_STORE_KEY,
+  readLeagueCenterData,
+} from '../../../../services/read/pages/leagueCenter.read.js'
+import usePlayersDatabaseReadStoreEntry from '../../../hooks/usePlayersDatabaseReadStoreEntry.js'
 import {
   filterByText,
   filterByValue,
@@ -51,58 +54,29 @@ export function useLeagueCenter() {
   const leagueStatus = cleanFilterValue(searchParams.get('status'))
   const seasonKey = requestedSeasonKey || LEAGUE_CENTER_ALL_SEASONS_KEY
   const [query, setQuery] = useState('')
-  const [leaguesMasterDoc, setLeaguesMasterDoc] = useState(null)
-  const [leagueDocuments, setLeagueDocuments] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const centerEntry = usePlayersDatabaseReadStoreEntry(LEAGUES_CENTER_STORE_KEY)
+  const leaguesCenterDoc = centerEntry.data
+  const loading = centerEntry.status === 'idle' || centerEntry.status === 'loading'
+  const refreshing = centerEntry.status === 'refreshing'
+  const error = centerEntry.status === 'error'
+    ? centerEntry.error?.message || 'טעינת מרכז הליגות נכשלה'
+    : ''
+  const refreshError = centerEntry.refreshError?.message || ''
 
-  const reload = useCallback(async (options = {}) => {
-    setLoading(true)
-    setError('')
-
-    try {
-      const {
-        leaguesMasterDoc: nextMasterDoc,
-        leagueDocuments: nextLeagueDocuments,
-      } = await readLeagueCenterData({ fromServer: options?.fromServer === true })
-
-      setLeaguesMasterDoc(nextMasterDoc || null)
-      setLeagueDocuments(
-        Array.isArray(nextLeagueDocuments) ? nextLeagueDocuments : []
-      )
-
-      return {
-        leaguesMasterDoc: nextMasterDoc || null,
-        leagueDocuments: Array.isArray(nextLeagueDocuments)
-          ? nextLeagueDocuments
-          : [],
-      }
-    } catch (err) {
-      setLeaguesMasterDoc(null)
-      setLeagueDocuments([])
-      setError(err?.message || 'טעינת מרכז הליגות נכשלה')
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    reload().catch(() => {})
-  }, [reload])
+  const reload = useCallback((options = {}) => (
+    readLeagueCenterData({ fromServer: options?.fromServer === true })
+  ), [])
 
   const leagueDocs = useMemo(
-    () => buildLeagueCenterLeagueDocuments({
-      leaguesMasterDoc,
-      leagueDocuments,
-    }),
-    [
-      leagueDocuments,
-      leaguesMasterDoc,
-    ]
+    () => buildLeagueCenterLeagueDocuments({ leaguesCenterDoc }),
+    [leaguesCenterDoc]
   )
   const seasonOptions = useMemo(
     () => buildLeagueCenterSeasonOptions(leagueDocs),
+    [leagueDocs]
+  )
+  const openLeagueOptions = useMemo(
+    () => buildLeagueCenterOpenOptions(leagueDocs),
     [leagueDocs]
   )
   const allRows = useMemo(() => buildLeagueCenterRows({
@@ -121,47 +95,40 @@ export function useLeagueCenter() {
     () => buildLeagueCenterAgeGroupOptions(allRows),
     [allRows]
   )
+  const rowsForSelectedSeason = useMemo(() => (
+    seasonKey === LEAGUE_CENTER_ALL_SEASONS_KEY
+      ? allRows
+      : buildLeagueCenterRows({
+        leagueDocs,
+        selectedSeasonKey: seasonKey,
+      })
+  ), [allRows, leagueDocs, seasonKey])
   const contextRows = useMemo(() => {
-    const bySeason = filterByValue(
-      allRows,
-      'seasonKey',
-      seasonKey
-    )
     const byBirthYear = filterByValue(
-      bySeason,
+      rowsForSelectedSeason,
       'birthYear',
       birthYear
     )
-
     const byLevel = filterByValue(
       byBirthYear,
       'level',
       leagueLevel
     )
-
     const byAgeGroup = filterByValue(byLevel, 'ageGroupId', ageGroupId)
 
     return filterByValue(byAgeGroup, 'seasonStatus', leagueStatus)
   }, [
-    allRows,
+    rowsForSelectedSeason,
     birthYear,
     ageGroupId,
     leagueStatus,
     leagueLevel,
-    seasonKey,
   ])
-  const leagues = useMemo(() => {
-    const byText = filterByText(
-      contextRows,
-      query,
-      ['teamSearchText']
-    )
-
-    return byText
-  }, [
+  const leagues = useMemo(() => filterByText(
     contextRows,
     query,
-  ])
+    ['leagueName', 'teamSearchText']
+  ), [contextRows, query])
   const summary = useMemo(
     () => buildLeagueCenterSummary(contextRows),
     [contextRows]
@@ -180,50 +147,32 @@ export function useLeagueCenter() {
       replace: true,
       state: location.state,
     })
-  }, [
-    location.state,
-    searchParams,
-    setSearchParams,
-  ])
+  }, [location.state, searchParams, setSearchParams])
 
   const setSeasonKey = useCallback(value => {
     if (value === null || value === undefined || value === '') return
 
     const nextValue = cleanSeasonKey(value) || LEAGUE_CENTER_DEFAULT_SEASON_KEY
-    updateParam(
-      'season',
-      nextValue,
-      LEAGUE_CENTER_ALL_SEASONS_KEY
-    )
+    updateParam('season', nextValue, LEAGUE_CENTER_ALL_SEASONS_KEY)
   }, [updateParam])
 
   const setBirthYear = useCallback(value => {
     if (value === null || value === undefined || value === '') return
-
-    updateParam(
-      'birthYear',
-      cleanFilterValue(value)
-    )
+    updateParam('birthYear', cleanFilterValue(value))
   }, [updateParam])
 
   const setAgeGroupId = useCallback(value => {
     if (value === null || value === undefined || value === '') return
-
     updateParam('ageGroup', cleanFilterValue(value))
   }, [updateParam])
 
   const setLeagueLevel = useCallback(value => {
     if (value === null || value === undefined || value === '') return
-
-    updateParam(
-      'level',
-      cleanFilterValue(value)
-    )
+    updateParam('level', cleanFilterValue(value))
   }, [updateParam])
 
   const setLeagueStatus = useCallback(value => {
     if (value === null || value === undefined || value === '') return
-
     updateParam('status', cleanFilterValue(value))
   }, [updateParam])
 
@@ -240,11 +189,7 @@ export function useLeagueCenter() {
       replace: true,
       state: location.state,
     })
-  }, [
-    location.state,
-    searchParams,
-    setSearchParams,
-  ])
+  }, [location.state, searchParams, setSearchParams])
 
   const resetContext = useCallback(() => {
     setQuery('')
@@ -252,10 +197,7 @@ export function useLeagueCenter() {
       replace: true,
       state: location.state,
     })
-  }, [
-    location.state,
-    setSearchParams,
-  ])
+  }, [location.state, setSearchParams])
 
   return {
     query,
@@ -275,16 +217,17 @@ export function useLeagueCenter() {
     setSeasonKey,
     seasonTarget: resolveLeagueCenterSeasonTarget(seasonKey),
     seasonOptions,
+    openLeagueOptions,
     allRows,
     contextRows,
     leagues,
     summary,
     loading,
+    refreshing,
     error,
-    leaguesMasterDoc,
+    refreshError,
+    leaguesCenterDoc,
     leagueDocs,
-    leagueDocuments,
-    catalogLeagues: PLAYERS_DATABASE_LEAGUES_CATALOG,
     reload,
     resetPrimaryFilters,
     resetContext,

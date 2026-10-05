@@ -1,37 +1,110 @@
 // src/features/playersDatabase/services/read/pages/leagueCenter.read.js
 
-import { collection, doc } from 'firebase/firestore'
+import {
+  doc,
+  onSnapshot,
+} from 'firebase/firestore'
 import { db } from '../../../../../services/firebase/firebase.js'
 import {
+  trackFirestoreListenerClose,
+  trackFirestoreListenerOpen,
+  trackFirestoreListenerUpdate,
+  trackedGetDoc,
   trackedGetDocFromServer,
-  trackedGetDocsFromServer,
 } from '../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS as C } from '../../../constants/pdb.constants.js'
-import { listLeagues } from '../entities/league.js'
-import { readLeaguesMasterDocument } from '../masters/leaguesMaster.read.js'
+import {
+  readWithDocumentCache,
+  refreshWithDocumentCache,
+  setDocumentCacheValue,
+} from '../../cache/index.js'
 
-export const readLeagueCenterData = async ({ fromServer = false } = {}) => {
-  if (fromServer) return readLeagueCenterFromServer()
-  const [leaguesMasterDoc, leagueDocuments] = await Promise.all([
-    readLeaguesMasterDocument({ fresh: true }),
-    listLeagues(),
-  ])
+export const LEAGUES_CENTER_STORE_KEY = 'leaguesCenter:all'
 
+const buildEmptyLeaguesCenterDocument = () => ({
+  id: 'all',
+  leaguesById: {},
+  updatedAt: null,
+  documentExists: false,
+})
+
+const mapLeaguesCenterSnapshot = snapshot => {
+  if (!snapshot.exists()) return buildEmptyLeaguesCenterDocument()
+
+  const data = snapshot.data() || {}
   return {
-    leaguesMasterDoc,
-    leagueDocuments: Array.isArray(leagueDocuments) ? leagueDocuments : [],
+    id: snapshot.id,
+    ...data,
+    leaguesById: data.leaguesById || {},
+    documentExists: true,
   }
 }
 
-const readLeagueCenterFromServer = async () => {
-  const usage = name => ({ feature: 'playersDatabase', collection: name, action: 'league-center-server-reload' })
-  const [leagues, master] = await Promise.all([
-    trackedGetDocsFromServer(collection(db, C.leagues), usage(C.leagues)),
-    trackedGetDocFromServer(doc(db, C.leaguesMaster, 'all'), usage(C.leaguesMaster)),
-  ])
+const readLeaguesCenterFromFirestore = async ({ fromServer = false } = {}) => {
+  const ref = doc(db, C.leaguesCenter, 'all')
+  const usage = {
+    feature: 'playersDatabase',
+    action: fromServer ? 'league-center-server-reload' : 'league-center-read',
+    collection: C.leaguesCenter,
+  }
+  const snapshot = fromServer
+    ? await trackedGetDocFromServer(ref, usage)
+    : await trackedGetDoc(ref, usage)
 
-  return {
-    leagueDocuments: leagues.docs.map(row => ({ ...row.data(), id: row.id })),
-    leaguesMasterDoc: master.exists() ? { ...master.data(), id: master.id, documentExists: true } : null,
+  return mapLeaguesCenterSnapshot(snapshot)
+}
+
+export const readLeagueCenterData = async ({ fromServer = false } = {}) => {
+  const reader = fromServer ? refreshWithDocumentCache : readWithDocumentCache
+
+  return reader({
+    key: LEAGUES_CENTER_STORE_KEY,
+    read: () => readLeaguesCenterFromFirestore({ fromServer }),
+  })
+}
+
+export const subscribeLeagueCenterData = ({ onError } = {}) => {
+  const reference = doc(db, C.leaguesCenter, 'all')
+  const listenerId = `players-database-leagues-center-${Date.now()}`
+  const usage = {
+    collection: C.leaguesCenter,
+    shortKey: 'all',
+    feature: 'playersDatabase',
+    action: 'league-center-live',
+    listenerId,
+  }
+
+  trackFirestoreListenerOpen(usage)
+  const unsubscribe = onSnapshot(
+    reference,
+    snapshot => {
+      const document = mapLeaguesCenterSnapshot(snapshot)
+      trackFirestoreListenerUpdate({
+        ...usage,
+        docs: [document],
+        docsCount: snapshot.exists() ? 1 : 0,
+        readsCount: snapshot.exists() ? 1 : 0,
+        fromCache: snapshot.metadata.fromCache,
+      })
+      setDocumentCacheValue({
+        key: LEAGUES_CENTER_STORE_KEY,
+        value: document,
+      })
+    },
+    error => {
+      trackFirestoreListenerUpdate({
+        ...usage,
+        docsCount: 0,
+        readsCount: 0,
+        status: 'error',
+        errorCode: error && error.code ? error.code : 'unknown',
+      })
+      if (typeof onError === 'function') onError(error)
+    }
+  )
+
+  return () => {
+    unsubscribe()
+    trackFirestoreListenerClose(usage)
   }
 }

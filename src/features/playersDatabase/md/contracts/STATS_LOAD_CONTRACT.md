@@ -30,9 +30,13 @@ Club Documents ו־Clubs Master, אך רק בשדות הנגזרים ממצב ה
 Stats Load דורש Team Root ו־Team Season קיימים שנוצרו בזרימת Roster. הוא
 אינו יוצר אותם. Team Root הוא אינדקס ניווט בלבד ואינו יעד כתיבה של Stats.
 
+Stats Load אינו קורא או דורש מסמך מועדון. רמות המועדון מגיעות מ־
+`TeamSeason.competitionSnapshot`. העמוד יכול להשתמש ב־`dbClubsDirectory/all`
+שכבר נמצא ב־Read Store, אך הכנת הטעינה, הכתיבה וה־Audit אינם תלויים בו.
+
 ## תרחישי טעינה
 
-Stats V2 תומך בשלושה תרחישים:
+Stats Load תומך בשלושה תרחישים:
 
 1. טעינת Stats ראשונה ל־Team Season קיים.
 2. טעינת Stats חוזרת לעונה פעילה; המצב החדש מחליף את מצב ה־Stats הקודם לפי
@@ -40,15 +44,21 @@ Stats V2 תומך בשלושה תרחישים:
 3. טעינת Stats לעונה שהסתיימה; היעד וה־`seasonStatus` נגזרים מה־League
    הקנוני.
 
-`Clear Stats` אינו חלק מ־Stats V2 הנוכחי.
+`Clear Stats` הוא תהליך נפרד מטעינת Stats.
+
+`Clear Stats` מנקה רק מצב שבבעלות Stats ואת תוצרי החיפוש והמרכזים הנגזרים
+ממנו. הוא שומר תמיד את Team Root,‏ Player Root,‏ הסגל, ה־Movement, המידע
+הידני ונתוני הטבלה הרשמיים. הכנת המחיקה אינה דורשת `ClubProfile`; רמות
+המועדון מגיעות מ־`TeamSeason.competitionSnapshot`, כמו בטעינת Stats.
 
 ## משתתפי עונה
 
 שורה שאינה בסגל המקורי מחייבת החלטה מפורשת: `left`,‏ `joined` או
 `youngerAgeGroup`. החלטה זו אינה יוצרת `pendingPlayers`.
 
-משתתף `left` או `youngerAgeGroup` נשמר לצורך היסטוריה וסטטיסטיקה, אך אינו
-נכלל ב־Balance או ב־scout scope הנוכחי.
+משתתף `left` או `youngerAgeGroup` נשמר לצורך היסטוריה וסטטיסטיקה ומקבל
+Player Scouting אישי. הוא אינו נכלל ב־Team Balance התפעולי, שמייצג את
+הסגל הפעיל בלבד.
 
 בטעינה חוזרת, שחקן שהיה במצב ה־Stats הקודם ואינו מופיע בטעינה החדשה מחייב
 החלטה מפורשת לפני Approval:
@@ -70,8 +80,11 @@ Stats V2 תומך בשלושה תרחישים:
 ואינו כתיבת Firestore נפרדת.
 
 Stats רשאי ליצור או לעדכן Player Document לפי חוזי ה־scouting וה־lifecycle.
-Stats V2 אינו מוחק Player Documents. ניקוי מסמכים שאינם נדרשים יוגדר כתהליך
+Stats Load אינו מוחק Player Documents. ניקוי מסמכים שאינם נדרשים יוגדר כתהליך
 נפרד בעתיד.
+
+המסלול הפעיל נמצא תחת `services/write/stats`. תיקיות `writeV2` ו־`auditV2`
+אינן חלק מזרימת Stats Load הפעילה.
 
 ## גבולות הכתיבה
 

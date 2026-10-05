@@ -41,9 +41,7 @@ export default function TeamActionsPanel({
   onReport,
   onTeamLink,
   onDownloadJson,
-  onDownloadIndexesJson,
   jsonDownloadDisabled = false,
-  indexesDownloadDisabled = false,
   jsonDownloadBusy = false,
   tasks = [],
   tasksLoading,
@@ -164,7 +162,7 @@ export default function TeamActionsPanel({
                 aria-label='הורדת נתוני הקבוצה כ־JSON'
                 disabled={
                   jsonDownloadBusy ||
-                  (jsonDownloadDisabled && indexesDownloadDisabled)
+                  jsonDownloadDisabled
                 }
                 sx={sx.secondaryIconButton}
                 size='sm'
@@ -179,14 +177,6 @@ export default function TeamActionsPanel({
               onClick={onDownloadJson}
             >
               הורדת כל מסמכי העמוד
-            </MenuItem>
-            <MenuItem
-              disabled={jsonDownloadBusy || indexesDownloadDisabled}
-              onClick={onDownloadIndexesJson}
-            >
-              {jsonDownloadBusy
-                ? 'טוען את אינדקסי הקבוצה...'
-                : 'הורדת אינדקסי הקבוצה'}
             </MenuItem>
           </Menu>
         </Dropdown>

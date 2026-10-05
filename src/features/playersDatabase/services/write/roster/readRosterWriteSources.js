@@ -1,0 +1,282 @@
+// src/features/playersDatabase/services/write/roster/readRosterWriteSources.js
+
+import {
+  collection,
+  doc,
+  query,
+  where,
+} from 'firebase/firestore'
+
+import { db } from '../../../../../services/firebase/firebase.js'
+import {
+  trackedGetDocFromServer,
+  trackedGetDocsFromServer,
+} from '../../../../../services/firestore/usage/index.js'
+import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
+import {
+  buildPlayerId,
+  buildPlayerSeasonDocumentId,
+  buildTeamId,
+  buildTeamSeasonDocumentId,
+  requireSeasonId,
+} from '../../../domain/identity/index.js'
+
+const clean = value => String(value === null || value === undefined ? '' : value).trim()
+const object = value => value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+const map = value => object(value)
+const list = value => Array.isArray(value) ? value : []
+const unique = values => Array.from(new Set(values.map(clean).filter(Boolean)))
+
+const readDocument = async ({ collectionName, documentId }) => {
+  const id = clean(documentId)
+  if (!id) return null
+  const snapshot = await trackedGetDocFromServer(
+    doc(db, collectionName, id),
+    {
+      feature: 'playersDatabase',
+      collection: collectionName,
+      action: 'write-roster-prepare-read',
+      operationSubtype: 'write-prepare-getDoc',
+    }
+  )
+  return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null
+}
+
+const readDocumentsByIds = async ({ collectionName, documentIds }) => {
+  const rows = await Promise.all(unique(documentIds).map(async documentId => {
+    const row = await readDocument({ collectionName, documentId })
+    return row ? [documentId, row] : null
+  }))
+  return Object.fromEntries(rows.filter(Boolean))
+}
+
+const resolveIncomingPlayerIds = ({ players, birthYear }) => list(players).map(player => {
+  const source = object(player)
+  const externalPlayerId = clean(source.externalPlayerId)
+  const expected = buildPlayerId({ birthYear, externalPlayerId })
+  const playerId = clean(source.playerId) || expected
+  if (playerId !== expected) throw new Error('Roster player identity mismatch')
+  return playerId
+})
+
+const findClubsCenterTeam = ({ clubsCenter, teamId }) => {
+  const matches = []
+  Object.entries(map(clubsCenter && clubsCenter.clubsById)).forEach(([clubId, club]) => {
+    const team = map(club && club.teamsById)[teamId]
+    if (team) matches.push({ clubId, team })
+  })
+  if (matches.length > 1) throw new Error('Duplicate ClubsCenter Team projection')
+  return matches[0] || null
+}
+
+const readCenters = async ({ leagueId, seasonId, teamId }) => {
+  const [leaguesCenter, clubsCenter] = await Promise.all([
+    readDocument({ collectionName: PLAYERS_DATABASE_COLLECTIONS.leaguesCenter, documentId: 'all' }),
+    readDocument({ collectionName: PLAYERS_DATABASE_COLLECTIONS.clubsCenter, documentId: seasonId }),
+  ])
+  const leagueCenterSeason = object(
+    map(object(map(leaguesCenter && leaguesCenter.leaguesById)[leagueId]).seasonsById)[seasonId]
+  )
+  return {
+    previousLeaguesCenterTeamsById: map(leagueCenterSeason.teamsById),
+    previousLeaguesCenterTeamProjection: map(leagueCenterSeason.teamsById)[teamId] || null,
+    previousClubsCenterTeamProjection: findClubsCenterTeam({ clubsCenter, teamId })?.team || null,
+  }
+}
+
+const readCounterparts = async counterpartRequests => {
+  const documentIds = list(counterpartRequests).map(row => clean(row && row.teamSeasonDocumentId))
+  return readDocumentsByIds({
+    collectionName: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
+    documentIds,
+  })
+}
+
+const collectCanonicalCounterpartDocumentIds = teamSeason => {
+  const movement = object(teamSeason && teamSeason.movement)
+  const currentDocumentId = clean(
+    teamSeason && teamSeason.identity && teamSeason.identity.teamSeasonDocumentId
+  )
+  const documentIds = [
+    ...Object.values(map(movement.transfersInById))
+      .map(fact => clean(fact && fact.fromTeamSeasonDocumentId)),
+    ...Object.values(map(movement.transfersOutById))
+      .map(fact => clean(fact && fact.toTeamSeasonDocumentId)),
+  ]
+  return unique(documentIds.filter(documentId => documentId !== currentDocumentId))
+}
+
+export const readRosterLoadSources = async ({ input = {} } = {}) => {
+  const source = object(input)
+  const team = object(source.team)
+  const season = object(source.season)
+  const seasonId = requireSeasonId(season.seasonId)
+  const birthYear = Number(team.birthYear || season.birthYear)
+  const teamId = buildTeamId({
+    clubId: team.clubId,
+    birthYear,
+    teamSlot: team.teamSlot,
+  })
+  const teamSeasonDocumentId = buildTeamSeasonDocumentId({ teamId, seasonId })
+  const leagueId = clean(source.leagueId || season.leagueId)
+  if (!leagueId) throw new Error('Missing leagueId')
+
+  const [existingTeamRoot, existingTeamSeason, league] = await Promise.all([
+    readDocument({ collectionName: PLAYERS_DATABASE_COLLECTIONS.teamRoots, documentId: teamId }),
+    readDocument({ collectionName: PLAYERS_DATABASE_COLLECTIONS.teamSeasons, documentId: teamSeasonDocumentId }),
+    readDocument({ collectionName: PLAYERS_DATABASE_COLLECTIONS.leagues, documentId: leagueId }),
+  ])
+  if (!league) throw new Error('Canonical League document was not found')
+
+  const leagueSeason = object(map(league.seasonsById)[seasonId])
+  const teamRow = object(map(leagueSeason.table && leagueSeason.table.teamsById)[teamId])
+  if (!Object.keys(teamRow).length) throw new Error('Team row was not found in canonical League season')
+  const clubId = clean(teamRow.clubId || team.clubId)
+
+  const clubProfile = await readDocument({
+    collectionName: PLAYERS_DATABASE_COLLECTIONS.clubProfiles,
+    documentId: clubId,
+  })
+  if (!clubProfile) throw new Error('Canonical ClubProfile was not found')
+
+  const incomingPlayerIds = resolveIncomingPlayerIds({ players: source.players, birthYear })
+  const existingPlayerIds = Object.keys(object(existingTeamSeason && existingTeamSeason.roster && existingTeamSeason.roster.playersById))
+  const affectedPlayerIds = unique([...incomingPlayerIds, ...existingPlayerIds])
+  const playerSeasonDocumentIds = affectedPlayerIds.map(playerId => buildPlayerSeasonDocumentId({ playerId, seasonId }))
+
+  const [playerRootsById, playerSeasonRowsById, existingCounterpartTeamSeasonsById, centers] = await Promise.all([
+    readDocumentsByIds({ collectionName: PLAYERS_DATABASE_COLLECTIONS.playerRoots, documentIds: affectedPlayerIds }),
+    readDocumentsByIds({ collectionName: PLAYERS_DATABASE_COLLECTIONS.playerSeasons, documentIds: playerSeasonDocumentIds }),
+    readCounterparts(source.counterpartRequests),
+    readCenters({ leagueId, seasonId, teamId }),
+  ])
+
+  const existingPlayerSeasonsById = {}
+  Object.entries(playerSeasonRowsById).forEach(([_documentId, row]) => {
+    const playerId = clean(row.identity && row.identity.playerId)
+    if (playerId) existingPlayerSeasonsById[playerId] = row
+  })
+
+  return {
+    existingTeamRoot,
+    existingTeamSeason,
+    league,
+    clubProfile,
+    playerRootsById,
+    existingPlayerSeasonsById,
+    existingCounterpartTeamSeasonsById,
+    ...centers,
+  }
+}
+
+const readRosterSearchIndexes = async ({ teamSeasonDocumentId }) => {
+  const reference = collection(db, PLAYERS_DATABASE_COLLECTIONS.playerSearchIndexes)
+  const snapshot = await trackedGetDocsFromServer(
+    query(reference, where('references.teamSeasonDocumentId', '==', teamSeasonDocumentId)),
+    {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.playerSearchIndexes,
+      action: 'write-roster-clear-read-player-search-indexes',
+      operationSubtype: 'write-prepare-query',
+    }
+  )
+  return snapshot.docs.map(row => ({ id: row.id, ...row.data() }))
+}
+
+const readRosterPlayerSeasonsByTeam = async ({ teamId, teamSeasonDocumentId }) => {
+  const snapshot = await trackedGetDocsFromServer(
+    query(
+      collection(db, PLAYERS_DATABASE_COLLECTIONS.playerSeasons),
+      where(
+        `teamsById.${teamId}.teamSeasonDocumentId`,
+        '==',
+        teamSeasonDocumentId
+      )
+    ),
+    {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.playerSeasons,
+      action: 'write-roster-clear-read-player-seasons',
+      operationSubtype: 'write-prepare-getDocs',
+    }
+  )
+  return Object.fromEntries(snapshot.docs.map(item => [
+    item.id,
+    { id: item.id, ...item.data() },
+  ]))
+}
+
+export const readRosterClearSources = async ({
+  input = {},
+  includeCounterparts = false,
+} = {}) => {
+  const source = object(input)
+  const teamId = clean(source.teamId)
+  const seasonId = requireSeasonId(source.seasonId)
+  const leagueId = clean(source.leagueId)
+  if (!teamId || !leagueId) throw new Error('Missing Roster Clear target identity')
+  const teamSeasonDocumentId = buildTeamSeasonDocumentId({ teamId, seasonId })
+
+  const [existingTeamRoot, existingTeamSeason, league, existingPlayerSearchIndexes, centers] = await Promise.all([
+    readDocument({ collectionName: PLAYERS_DATABASE_COLLECTIONS.teamRoots, documentId: teamId }),
+    readDocument({ collectionName: PLAYERS_DATABASE_COLLECTIONS.teamSeasons, documentId: teamSeasonDocumentId }),
+    readDocument({ collectionName: PLAYERS_DATABASE_COLLECTIONS.leagues, documentId: leagueId }),
+    readRosterSearchIndexes({ teamSeasonDocumentId }),
+    readCenters({ leagueId, seasonId, teamId }),
+  ])
+  if (!league) throw new Error('Canonical League document was not found')
+
+  const season = object(map(league.seasonsById)[seasonId])
+  const teamRow = object(map(season.table && season.table.teamsById)[teamId])
+  if (!Object.keys(teamRow).length) throw new Error('Team row was not found in canonical League season')
+  const clubId = clean(teamRow.clubId)
+  const clubProfile = await readDocument({
+    collectionName: PLAYERS_DATABASE_COLLECTIONS.clubProfiles,
+    documentId: clubId,
+  })
+  if (!clubProfile) throw new Error('Canonical ClubProfile was not found')
+
+  const playerIds = unique(
+    Object.keys(object(existingTeamSeason && existingTeamSeason.roster && existingTeamSeason.roster.playersById))
+  )
+  const playerSeasonDocumentIds = playerIds.map(playerId => buildPlayerSeasonDocumentId({ playerId, seasonId }))
+  const [
+    playerRootsById,
+    playerSeasonRowsById,
+    existingCounterpartTeamSeasonsById,
+  ] = await Promise.all([
+    readDocumentsByIds({
+      collectionName: PLAYERS_DATABASE_COLLECTIONS.playerRoots,
+      documentIds: playerIds,
+    }),
+    existingTeamSeason
+      ? readDocumentsByIds({
+          collectionName: PLAYERS_DATABASE_COLLECTIONS.playerSeasons,
+          documentIds: playerSeasonDocumentIds,
+        })
+      : readRosterPlayerSeasonsByTeam({ teamId, teamSeasonDocumentId }),
+    readDocumentsByIds({
+      collectionName: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
+      documentIds: includeCounterparts
+        ? collectCanonicalCounterpartDocumentIds(existingTeamSeason)
+        : [],
+    }),
+  ])
+  const existingPlayerSeasonsById = {}
+  Object.values(playerSeasonRowsById).forEach(row => {
+    const playerId = clean(row.identity && row.identity.playerId)
+    if (playerId) existingPlayerSeasonsById[playerId] = row
+  })
+
+  return {
+    existingTeamRoot,
+    existingTeamSeason,
+    playerRootsById,
+    existingPlayerSeasonsById,
+    existingPlayerSearchIndexes,
+    existingCounterpartTeamSeasonsById,
+    league,
+    clubProfile,
+    ...centers,
+  }
+}

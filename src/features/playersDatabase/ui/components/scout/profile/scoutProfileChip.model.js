@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/components/scout/profile/scoutProfileChip.model.js
+
 import { resolveScoutProfileDefinition } from '../../../../../../shared/scouting/players/profiles.js'
 
 const clean = value => String(value || '').trim()
@@ -42,8 +44,8 @@ export const buildScoutProfileChipModel = ({
   const providedDepthPct = clampDepthPct(depthPct)
   const resolvedDepthPct = providedDepthPct === null && isFilter ? 100 : providedDepthPct
 
-  // עומק חסר אינו פרופיל סקאוט להצגה, למעט צ'יפ פילטר שמוצג מלא.
-  if (resolvedDepthPct === null || resolvedDepthPct <= 0) return null
+  // התאמה מדויקת לסף היא פרופיל תקין גם כאשר עומק ההתאמה הוא 0%.
+  if (resolvedDepthPct === null) return null
 
   const definition = resolveScoutProfileDefinition(profileId)
   const resolvedLabel = shortLabel
@@ -58,7 +60,7 @@ export const buildScoutProfileChipModel = ({
     fullLabel: definition?.label || resolvedLabel,
     depthPct: Math.round(resolvedDepthPct),
     extraCount: resolvedExtraCount,
-    endLabel: resolvedExtraCount > 0 ? `+${resolvedExtraCount}` : `${Math.round(resolvedDepthPct)}%`,
+    endLabel: `${Math.round(resolvedDepthPct)}%`,
     showEndLabel: !isFilter || resolvedExtraCount > 0,
     isFilter,
     isCombination,

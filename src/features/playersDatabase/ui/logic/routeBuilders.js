@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/logic/routeBuilders.js
+// src/features/playersDatabase/ui/logic/routeBuilders.js
 
 export const PLAYERS_DATABASE_UI_ROUTES = {
   entry: '/players-database',
@@ -14,6 +14,7 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
     return query ? `${basePath}?${query}` : basePath
   },
   search: '/players-database/search',
+  dataOps: '/players-database/data-ops',
   clubs: '/players-database/clubs',
   club: clubId => `/players-database/clubs/${clubId || ''}`,
   league: (leagueId, {
@@ -81,6 +82,31 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
     const query = params.toString()
     return query ? `${basePath}?${query}` : basePath
   },
+}
+
+export function buildDataOpsNavigationState({
+  pathname = '',
+  search = '',
+  hash = '',
+} = {}) {
+  const from = `${pathname}${search}${hash}`
+  return from && from !== PLAYERS_DATABASE_UI_ROUTES.dataOps ? { from } : {}
+}
+
+export function resolveDataOpsReturnPath(state = {}) {
+  const from = String(state && state.from ? state.from : '').trim()
+  const entryPath = PLAYERS_DATABASE_UI_ROUTES.entry
+  const belongsToPlayersDatabase = (
+    from === entryPath
+    || from.startsWith(`${entryPath}/`)
+    || from.startsWith(`${entryPath}?`)
+  )
+  const isDataOpsPath = (
+    from === PLAYERS_DATABASE_UI_ROUTES.dataOps
+    || from.startsWith(`${PLAYERS_DATABASE_UI_ROUTES.dataOps}?`)
+  )
+
+  return belongsToPlayersDatabase && !isDataOpsPath ? from : entryPath
 }
 
 export function buildPlayersDatabaseBreadcrumbs(items = []) {

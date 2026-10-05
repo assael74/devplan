@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { Box, Typography } from '@mui/joy'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import { usePlayerPage } from './hooks/usePlayerPage.js'
@@ -55,16 +55,12 @@ function getPathParam(path, key) {
 
 function PlayerPageContent() {
   const navigate = useNavigate()
-  const location = useLocation()
   const { notify } = useSnackbar()
   const {
     player,
     clubDoc,
-    requestedSeasonKey,
-    requestedTeamId,
     catalogSeasonKey,
     fromTeam,
-    reload,
     refreshError,
   } = usePlayerPage()
   const favorites = usePlayersDatabaseFavorites()
@@ -82,18 +78,15 @@ function PlayerPageContent() {
   const agentEditor = usePlayerAgentEditor({
     player,
     notify,
-    reload,
   })
   const goalDistributionEditor = usePlayerGoalDistributionEditor({
     player,
     selectedRow: selectedSeasonRow,
     notify,
-    reload,
   })
   const playerUrlEditor = usePlayerUrlEditor({
     player,
     notify,
-    reload,
   })
   const playerReport = usePlayerReport({
     player,

@@ -10,10 +10,6 @@ export const SEARCH_CONTEXT_TYPES = [
     value: 'player',
     label: 'שחקן',
   },
-  {
-    value: 'team',
-    label: 'קבוצה',
-  },
 ]
 
 export const SEARCH_EXPECTED_LEVEL_CHANGE_OPTIONS = [
@@ -188,7 +184,7 @@ export const createSearchCondition = id => ({
 })
 
 export const createSearchFilters = () => ({
-  searchContext: '',
+  searchContext: 'player',
   favoritesOnly: false,
   expectedLeagueLevelChanges: [],
   seasons: [],

@@ -21,5 +21,10 @@ export const pageHeaderSx = {
 
   actions: {
     minWidth: 0,
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 1,
+    alignItems: 'flex-end',
+    justifyContent: 'flex-start',
   },
 }

@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/pages/teamPage/positionClassification/components/TeamPositionClassificationTable.js
+
 import { Box, IconButton, Tooltip, Typography } from '@mui/joy'
 
 import DataTable from '../../../../components/tables/dataTable/DataTable.js'
@@ -13,6 +15,7 @@ import { teamPositionClassificationTableSx as sx } from '../sx/teamPositionClass
 
 export default function TeamPositionClassificationTable({
   rows = [],
+  seasonDoc = null,
   teamName = '',
   seasonKey = '',
   birthYear = '',
@@ -66,6 +69,7 @@ export default function TeamPositionClassificationTable({
                 disabled={!rows.length}
                 onClick={() => exportTeamPositionClassificationToXlsx({
                   rows,
+                  seasonDoc,
                   teamName,
                   seasonKey,
                   birthYear,

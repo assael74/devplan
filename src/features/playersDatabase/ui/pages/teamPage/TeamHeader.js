@@ -9,6 +9,7 @@ import {
 
 import PageHeader from '../../components/page/PageHeader.js'
 import FavoriteButton from '../../components/actions/FavoriteButton.js'
+import TeamName from '../../components/entities/TeamName.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import teamLogo from '../../../../../ui/core/images/teamLogo.png'
 import { teamHeaderSx as sx } from './sx/teamHeader.sx.js'
@@ -18,7 +19,6 @@ export default function TeamHeader({
   team,
   clubUrl = '',
   seasonKey,
-  latestSeason = null,
   favorite = false,
   favoritePending = false,
   onFavoriteToggle,
@@ -27,11 +27,7 @@ export default function TeamHeader({
   backLabel = 'חזרה לליגה',
 }) {
   const resolvedClubUrl = String(clubUrl || '').trim()
-  const headerLeagueContext = [
-    latestSeason?.leagueName || team?.leagueName,
-    latestSeason?.ageGroupLabel || latestSeason?.ageGroupId || team?.ageGroupLabel || team?.ageGroupId,
-    latestSeason?.seasonKey || seasonKey,
-  ].filter(Boolean).join(' · ') || '-'
+  const headerSeason = String(seasonKey || '').trim() || '-'
   const actions = (
     <Stack sx={sx.headerActionsPanel}>
 
@@ -80,12 +76,20 @@ export default function TeamHeader({
             sx={sx.pageTitleLink}
           >
             <Typography data-team-title level='h1' sx={sx.pageTitle}>
-              {team.name}
+              <TeamName
+                value={team.name}
+                slot={team.teamSlot || team.birthTeamSlot}
+                nameSx={sx.pageTitle}
+              />
             </Typography>
           </Box>
         ) : (
           <Typography level='h1' sx={sx.pageTitle}>
-            {team.name}
+            <TeamName
+              value={team.name}
+              slot={team.teamSlot || team.birthTeamSlot}
+              nameSx={sx.pageTitle}
+            />
           </Typography>
         )}
 
@@ -102,7 +106,7 @@ export default function TeamHeader({
         </Box>
 
         <Box sx={sx.contextChip}>
-          {headerLeagueContext}
+          עונה {headerSeason}
         </Box>
       </Box>
     </PageHeader>

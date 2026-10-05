@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/teamPage/stats/import/logic/teamStatsImport.logic.js
+// src/features/playersDatabase/ui/pages/teamPage/stats/import/logic/teamStatsImport.logic.js
 
 import {
   buildStatsHeaderMap,
@@ -24,27 +24,27 @@ const resolvePlayerIdFromUrl = value => {
   return match?.[1] || ''
 }
 
-const PLAYER_STATS_FIELDS = Object.freeze([
-  'games',
-  'goals',
-  'yellowCards',
-  'minutes',
-  'starts',
-  'substituteIn',
-  'substitutedOut',
-])
-
 export const buildApprovedStatsImportPlayer = row => ({
-  ...row,
-  statsStatus: 'loaded',
-  playerStats: PLAYER_STATS_FIELDS.reduce((stats, field) => ({
-    ...stats,
-    [field]: toNumber(row?.[field]),
-  }), {
-    ...((row?.playerStats && typeof row.playerStats === 'object')
-      ? row.playerStats
-      : {}),
-  }),
+  playerId: clean(row?.playerId),
+  externalPlayerId: clean(row?.externalPlayerId),
+  identityKey: clean(row?.identityKey),
+  fullName: clean(row?.fullName),
+  normalizedName: clean(row?.normalizedName),
+  aliases: Array.isArray(row?.aliases) ? row.aliases : [],
+  birthYear: toNumber(row?.birthYear),
+  rosterStatus: clean(row?.rosterStatus),
+  statsMovementDecision: clean(row?.statsMovementDecision),
+  statsMovementTeam: row?.statsMovementTeam || null,
+  isYoungerAgeGroup: Boolean(row?.isYoungerAgeGroup),
+  isOlderAgeGroup: Boolean(row?.isOlderAgeGroup),
+  numShirt: row?.numShirt === undefined ? null : row.numShirt,
+  games: toNumber(row?.games),
+  goals: toNumber(row?.goals),
+  yellowCards: toNumber(row?.yellowCards),
+  minutes: toNumber(row?.minutes),
+  starts: toNumber(row?.starts),
+  substituteIn: toNumber(row?.substituteIn),
+  substitutedOut: toNumber(row?.substitutedOut),
 })
 
 const getStatsCell = ({

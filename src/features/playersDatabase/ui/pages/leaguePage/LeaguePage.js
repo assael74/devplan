@@ -13,6 +13,9 @@ import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../../constants/pdb.constant
 import { usePlayersDatabaseFavorites } from '../../favorites/index.js'
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import { useLeaguePage } from './hooks/useLeaguePage.js'
+import { useLeagueTableImport } from './hooks/useLeagueTableImport.js'
+import useClearLeagueTeamsFlow from './clear/useClearLeagueTeamsFlow.js'
+import ClearLeagueTeamsModal from './clear/ClearLeagueTeamsModal.js'
 import usePlayersDatabaseTasks from '../../hooks/usePlayersDatabaseTasks.js'
 import usePlayersDatabaseTaskActions from '../../hooks/usePlayersDatabaseTaskActions.js'
 import {
@@ -23,32 +26,22 @@ import LeagueHeader from './LeagueHeader.js'
 import LeagueKpiOverview from './LeagueKpiOverview.js'
 import LeagueActionsPanel from './LeagueActionsPanel.js'
 import LeagueTeamsTable from './LeagueTeamsTable.js'
-import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
-import LeagueSeasonSettingsDrawer from '../../components/drawers/LeagueSeasonSettingsDrawer.js'
 import {
   LeagueImportModal,
   TaskEditModal,
   WorkTaskModal,
 } from '../../components/modals/index.js'
-import { useLeagueTableImport } from './hooks/useLeagueTableImport.js'
 import {
   buildPriorityCounts,
   filterTeamsByPriority,
 } from './logic/leaguePriorityFilters.logic.js'
-import useTeamUrlEditor from '../../hooks/useTeamUrlEditor.js'
-import useLeagueUrlEditor from './hooks/useLeagueUrlEditor.js'
-import useClearLeagueTeamsFlow from './clear/useClearLeagueTeamsFlow.js'
-import ClearLeagueTeamsModal from './clear/ClearLeagueTeamsModal.js'
-import {
-  buildLeagueImportColumns,
-  LEAGUE_IMPORT_PLACEHOLDER,
-} from './logic/leagueImport.columns.js'
 import { splitLeagueTitle } from './logic/leaguePage.logic.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
 import useLeagueReport from './report/useLeagueReport.js'
 import { pageCoreLayoutSx as sx } from '../../components/page/sx/pageCoreLayout.sx.js'
 import { downloadLeaguePageDocumentsJson } from './logic/leagueDocumentsJson.logic.js'
+import { buildLeagueImportColumns, LEAGUE_IMPORT_PLACEHOLDER } from './logic/leagueImport.columns.js'
 
 
 function LeaguePageContent() {
@@ -62,23 +55,34 @@ function LeaguePageContent() {
   const [defensePriorityFilter, setDefensePriorityFilter] = React.useState('')
   const [taskModalOpen, setTaskModalOpen] = React.useState(false)
   const [editTask, setEditTask] = React.useState(null)
+  const pageSearchParams = React.useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  )
   const {
     league,
     leagueDoc,
+    displayLeagueDoc,
     teams,
     summary,
     seasonOptions,
     selectedSeasonKey,
     selectedSeasonOption,
     setSelectedSeasonKey,
-    reload,
     loading,
     error,
     selectionError,
   } = useLeaguePage()
-  const auditFindingId = React.useMemo(() => (
-    new URLSearchParams(location.search).get('auditFinding') || ''
-  ), [location.search])
+  const leagueImport = useLeagueTableImport({
+    league,
+    leagueDoc: displayLeagueDoc,
+    selectedSeasonOption,
+  })
+  const clearLeagueTeamsFlow = useClearLeagueTeamsFlow({
+    league,
+    selectedSeasonOption,
+  })
+  const leagueImportColumns = React.useMemo(() => buildLeagueImportColumns(), [])
   const teamsWithFavorites = React.useMemo(() => (
     teams.map(team => ({
       ...team,
@@ -90,18 +94,6 @@ function LeaguePageContent() {
     }))
   ), [favorites, teams])
 
-  const teamUrlEditor = useTeamUrlEditor({
-    leagueId: league.id,
-    selectedSeasonOption,
-    notify,
-    reload,
-  })
-  const leagueUrlEditor = useLeagueUrlEditor({
-    league,
-    selectedSeasonOption,
-    notify,
-    reload,
-  })
   const attackPriorityCounts = React.useMemo(
     () => buildPriorityCounts(teamsWithFavorites, 'attack'),
     [teamsWithFavorites]
@@ -110,22 +102,6 @@ function LeaguePageContent() {
     () => buildPriorityCounts(teamsWithFavorites, 'defense'),
     [teamsWithFavorites]
   )
-  const teamsDelete = useClearLeagueTeamsFlow({
-    league,
-    leagueDoc,
-    selectedSeasonOption,
-    reload,
-  })
-  const leagueImport = useLeagueTableImport({
-    league,
-    leagueDoc,
-    selectedSeasonOption,
-    reload,
-  })
-
-  const importColumns = React.useMemo(() => (
-    buildLeagueImportColumns(leagueImport.rows)
-  ), [leagueImport.rows])
 
   const filteredTeams = React.useMemo(() => (
     filterTeamsByPriority({
@@ -166,10 +142,6 @@ function LeaguePageContent() {
     teams,
   ])
 
-  const pageSearchParams = React.useMemo(
-    () => new URLSearchParams(location.search),
-    [location.search]
-  )
   const hasCenterContext = (
     pageSearchParams.has('centerSeason') ||
     pageSearchParams.has('centerBirthYear') ||
@@ -194,11 +166,7 @@ function LeaguePageContent() {
     { label: league.name },
   ])
   const titleParts = splitLeagueTitle(league)
-  const isActiveLeague = selectedSeasonOption?.target === 'current'
-  const isHistoricalLoadedLeague = (
-    selectedSeasonOption?.target === 'history' &&
-    teams.length > 0
-  )
+  const isActiveLeague = String(selectedSeasonOption?.season?.seasonStatus || '').toLowerCase() === 'active'
   const leagueReport = useLeagueReport({
     league,
     teams: filteredTeams,
@@ -221,16 +189,6 @@ function LeaguePageContent() {
     }))
   }
 
-  const handleNextDeleteAction = () => {
-    const teamId = teamsDelete.nextDeleteTargetId
-    if (!teamId) return
-
-    navigate(PLAYERS_DATABASE_UI_ROUTES.team({
-      leagueId: league.id,
-      teamId,
-      fromLeague: `${location.pathname}${location.search}`,
-    }))
-  }
 
   const handleFavoriteToggle = team => {
     const payload = {
@@ -318,7 +276,7 @@ function LeaguePageContent() {
               ageGroup={league.ageGroup}
               birthYear={league.birthYear}
               onTeamOpen={handleTeamOpen}
-              onTeamUrlEdit={teamUrlEditor.open}
+              onTeamUrlEdit={null}
               onFavoriteToggle={handleFavoriteToggle}
             />
           </Box>
@@ -335,16 +293,22 @@ function LeaguePageContent() {
             onDefensePriorityFilterChange={setDefensePriorityFilter}
             onLoad={leagueImport.handleOpen}
             onDownloadDocuments={handleDownloadDocuments}
-            onLeagueUrlEdit={leagueUrlEditor.show}
+            onLeagueUrlEdit={null}
             downloadDisabled={!leagueDoc || loading}
-            loadDisabled={isHistoricalLoadedLeague}
-            loadDisabledReason='לא ניתן לטעון נתוני ליגה לעונה היסטורית שכבר כוללת קבוצות'
-            onDeleteTeams={teamsDelete.openModal}
-            deleteTeamsDisabled={!selectedSeasonOption || teamsDelete.disabled}
-            deleteTeamsDisabledReason={teamsDelete.disabledReason}
-            onRecheckDeleteTeams={teamsDelete.recheck}
-            nextDeleteAction={teamsDelete.nextDeleteAction}
-            onNextDeleteAction={handleNextDeleteAction}
+            loadDisabled={clearLeagueTeamsFlow.open || leagueImport.busy || !selectedSeasonOption?.seasonId}
+            loadDisabledReason={!selectedSeasonOption?.seasonId
+              ? 'חסר seasonId טכני לעונה שנבחרה'
+              : clearLeagueTeamsFlow.open
+                ? 'פעולת League אחרת פתוחה כרגע'
+                : ''}
+            onDeleteTeams={clearLeagueTeamsFlow.openModal}
+            deleteTeamsDisabled={leagueImport.open || clearLeagueTeamsFlow.disabled}
+            deleteTeamsDisabledReason={leagueImport.open
+              ? 'פעולת League אחרת פתוחה כרגע'
+              : clearLeagueTeamsFlow.disabledReason}
+            onRecheckDeleteTeams={clearLeagueTeamsFlow.recheck}
+            nextDeleteAction=''
+            onNextDeleteAction={() => {}}
             onReport={leagueReport.openPreview}
             tasks={leagueTasks}
             tasksLoading={tasksModel.loading}
@@ -353,6 +317,21 @@ function LeaguePageContent() {
           />
         </Box>
       </Box>
+
+      <LeagueImportModal
+        league={{
+          ...league,
+          seasonKey: selectedSeasonKey,
+        }}
+        columns={leagueImportColumns}
+        leagueImport={leagueImport}
+        placeholder={LEAGUE_IMPORT_PLACEHOLDER}
+      />
+
+      <ClearLeagueTeamsModal
+        flow={clearLeagueTeamsFlow}
+        seasonKey={selectedSeasonKey}
+      />
 
       <TaskEditModal
         open={Boolean(editTask)}
@@ -378,26 +357,7 @@ function LeaguePageContent() {
         onClose={leagueReport.closePreview}
       />
 
-      <LeagueSeasonSettingsDrawer editor={leagueUrlEditor} />
 
-      <TeamUrlEditDrawer
-        open={Boolean(teamUrlEditor.row)}
-        row={teamUrlEditor.row}
-        seasonLabel={selectedSeasonOption?.seasonKey || selectedSeasonKey}
-        saving={teamUrlEditor.saving}
-        onSave={teamUrlEditor.save}
-        onClose={teamUrlEditor.close}
-      />
-
-
-      <ClearLeagueTeamsModal flow={teamsDelete} seasonKey={selectedSeasonKey} />
-
-      <LeagueImportModal
-        league={league}
-        columns={importColumns}
-        leagueImport={leagueImport}
-        placeholder={LEAGUE_IMPORT_PLACEHOLDER}
-      />
 
     </>
   )

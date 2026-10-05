@@ -1,183 +1,201 @@
 // src/features/playersDatabase/ui/pages/leaguePage/clear/useClearLeagueTeamsFlow.js
 
 import * as React from 'react'
-import { prepareClearLeagueTeams } from '../../../../services/writeV2/league/clear/prepareClearLeagueTeams.js'
-import { buildClearLeagueTeamsApprovedState } from '../../../../domain/leagueV2/clear/clearLeagueTeamsApprovedState.builder.js'
-import { CLEAR_LEAGUE_STEPS } from '../../../../domain/leagueV2/clear/clearLeagueTeamsPlan.builder.js'
-import { writeClearLeagueTeamsStep } from '../../../../services/writeV2/league/clear/writeClearLeagueTeamsStep.js'
-import {
-  startClearLeagueTeamsSession, reportClearLeagueStep, reportClearLeagueFailure, finishClearLeagueTeamsSession,
-} from '../../../../services/writeV2/league/clear/clearLeagueTeamsSession.js'
 
-const messages = {
-  CLEAR_LEAGUE_ORPHAN_ROOT: 'נמצאה הפניית קבוצה לעונה חסרה או שגויה. נדרשת בדיקת הנתונים לפני המחיקה.',
-  CLEAR_LEAGUE_DEPENDENCIES: 'יש להשלים מחיקת סטטיסטיקה וסגל בקבוצות העונה, כולל העברות ושאריות סקאוטינג.',
-  CLEAR_LEAGUE_STATS_PRESENT: 'נמצאו נתוני סטטיסטיקה או שאריות סקאוטינג. יש למחוק תחילה את הסטטיסטיקה בקבוצה המסומנת.',
-  CLEAR_LEAGUE_ROSTER_PRESENT: 'הסטטיסטיקה נקייה, אך עדיין קיים סגל או מידע תנועתי. יש למחוק את הסגל בקבוצה המסומנת.',
-  CLEAR_LEAGUE_PLAYER_INDEX: 'נותרו אינדקסי שחקנים. יש להשלים מחיקת סגל וביקורת סגל לפני מחיקת קבוצות הליגה.',
-  CLEAR_LEAGUE_FORECAST_AMBIGUOUS: 'לא ניתן לזהות לאיזו עונה שייכת תחזית. נדרשת בדיקת הנתונים לפני המחיקה.',
-  CLEAR_LEAGUE_CHANGED: 'הנתונים השתנו מאז ההכנה. יש להכין ולאשר מחדש.',
-}
-const describe = error => messages[error?.code] || 'לא ניתן להשלים את הפעולה. יש לבדוק את זהויות העונה ואת המסמכים הנדרשים.'
+import { clearLeagueTeams } from '../../../../services/write/league/index.js'
+import { getWriteActionReceipt } from '../../../../services/write/receipt/index.js'
+import { repairWriteActionReceipt } from '../../../../services/write/recovery/index.js'
+import {
+  applyLeagueSyncProgressEvent,
+  buildLeagueSyncStages,
+} from '../logic/leagueSyncProgress.model.js'
+
+const clean = value => String(value === null || value === undefined ? '' : value).trim()
+
+const describe = error => clean(error && (error.message || error.code)) || 'לא ניתן להשלים את מחיקת קבוצות העונה.'
+
+const getSeason = selectedSeasonOption => (
+  selectedSeasonOption && selectedSeasonOption.season && typeof selectedSeasonOption.season === 'object'
+    ? selectedSeasonOption.season
+    : {}
+)
+
+const getTeamsCount = season => (
+  season && season.table && season.table.teamsById && typeof season.table.teamsById === 'object'
+    ? Object.keys(season.table.teamsById).length
+    : 0
+)
 
 export default function useClearLeagueTeamsFlow({ league, selectedSeasonOption, reload }) {
-  const leagueId = league?.id || league?.leagueId || ''
-  const seasonKey = selectedSeasonOption?.seasonKey || ''
-  const target = React.useMemo(() => ({ leagueId, seasonKey }), [leagueId, seasonKey])
   const [open, setOpen] = React.useState(false)
   const [status, setStatus] = React.useState('idle')
   const [proposal, setProposal] = React.useState(null)
-  const [session, setSession] = React.useState(null)
-  const [stepIndex, setStepIndex] = React.useState(0)
-  const [counts, setCounts] = React.useState({})
   const [message, setMessage] = React.useState('')
-  const [eligibility, setEligibility] = React.useState(null)
+  const [receiptId, setReceiptId] = React.useState('')
+  const [executionReceipt, setExecutionReceipt] = React.useState(null)
+  const [actionInput, setActionInput] = React.useState(null)
+  const [result, setResult] = React.useState(null)
   const busy = React.useRef(false)
-  const checkEligibility = React.useCallback(async () => {
-    if (!leagueId || !seasonKey) return { allowed: false, reason: 'יש לבחור עונת ליגה.' }
-    try {
-      const prepared = await prepareClearLeagueTeams(target)
-      if (prepared.state === 'absent') {
-        return {
-          allowed: false,
-          reason: 'קבוצות העונה כבר נמחקו.',
-          alreadyCleared: true,
-        }
-      }
-      return { allowed: true, reason: '' }
-    } catch (error) {
-      return {
-        allowed: false,
-        reason: describe(error),
-        nextAction: error?.details?.nextAction || '',
-        nextTargetId: error?.details?.birthTeamDocumentId || '',
-      }
-    }
-  }, [target, leagueId, seasonKey])
+
+  const season = getSeason(selectedSeasonOption)
+  const leagueId = clean(league && league.id)
+  const seasonId = clean(selectedSeasonOption && selectedSeasonOption.seasonId)
+  const seasonKey = clean(selectedSeasonOption && selectedSeasonOption.seasonKey)
+  const tableState = clean(season && season.table && season.table.tableState)
+  const alreadyCleared = tableState === 'NOT_LOADED'
+  const disabled = !leagueId || !seasonId || alreadyCleared || ['writing'].includes(status)
+  const disabledReason = !leagueId || !seasonId
+    ? 'יש לבחור עונת ליגה תקינה.'
+    : alreadyCleared
+      ? 'קבוצות העונה כבר אינן טעונות.'
+      : ''
 
   React.useEffect(() => {
-    setEligibility(null)
-  }, [leagueId, seasonKey])
-
-  const prepare = async () => {
-    if (busy.current) return
-    busy.current = true
-    setOpen(true)
-    setStatus('preparing')
-    setMessage('')
+    setOpen(false)
+    setStatus('idle')
     setProposal(null)
-    setCounts({})
-    setStepIndex(0)
-    try {
-      const prepared = await prepareClearLeagueTeams(target)
-      if (prepared.state === 'absent') {
-        setEligibility({
-          allowed: false,
-          reason: 'קבוצות העונה כבר נמחקו.',
-          alreadyCleared: true,
-        })
-        setStatus('succeeded')
-        setMessage('קבוצות העונה כבר נמחקו.')
-        return
-      }
-      setEligibility({ allowed: true, reason: '' })
-      setProposal(prepared)
-      setStatus('preview')
-    } catch (error) {
-      setEligibility({
-        allowed: false,
-        reason: describe(error),
-        nextAction: error?.details?.nextAction || '',
-        nextTargetId: error?.details?.birthTeamDocumentId || '',
-      })
-      setStatus('failed')
-      setMessage(describe(error))
-    } finally {
-      busy.current = false
-    }
-  }
+    setMessage('')
+    setReceiptId('')
+    setExecutionReceipt(null)
+    setActionInput(null)
+    setResult(null)
+  }, [leagueId, seasonId])
 
-  const approve = async () => {
-    if (busy.current || status !== 'preview') return
+  const openModal = React.useCallback(() => {
+    if (disabled || busy.current) return
+    const nextInput = {
+      leagueId,
+      seasonId,
+      updatedAt: new Date().toISOString(),
+    }
+    setActionInput(nextInput)
+    setProposal({
+      identity: { leagueId, seasonId, seasonKey },
+      impact: {
+        teams: getTeamsCount(season),
+      },
+    })
+    setMessage('')
+    setExecutionReceipt(null)
+    setStatus('preview')
+    setOpen(true)
+  }, [disabled, leagueId, season, seasonId, seasonKey])
+
+  const execute = React.useCallback(async () => {
+    if (busy.current || !actionInput) return false
+    if (receiptId && !executionReceipt) {
+      setMessage('לא ניתן לקבוע את מצב הקבלה. יש לפתוח אותה בעמוד ניהול הדאטה.')
+      return false
+    }
     busy.current = true
     setStatus('writing')
+    setMessage('')
+
     try {
-      const approvedState = buildClearLeagueTeamsApprovedState(proposal)
-      const receiptId = await startClearLeagueTeamsSession(approvedState)
-      setSession({ approvedState, receiptId })
-      setStatus('steps')
+      const canonicalConfirmed = clean(
+        executionReceipt && executionReceipt.canonicalOutcome
+      ) === 'confirmed'
+      if (canonicalConfirmed) {
+        setExecutionReceipt(current => applyLeagueSyncProgressEvent({
+          receipt: current,
+          event: { type: 'repairStarted', receiptId },
+        }))
+      }
+      const nextResult = canonicalConfirmed
+        ? await repairWriteActionReceipt({ receiptId })
+        : await clearLeagueTeams({
+            input: actionInput,
+            receiptId,
+            display: {
+              leagueName: clean(league && league.name),
+              seasonKey,
+              birthYear: season && season.birthYear ? season.birthYear : null,
+            },
+            onProgress: event => {
+              setReceiptId(clean(event && event.receiptId))
+              setExecutionReceipt(current => applyLeagueSyncProgressEvent({
+                receipt: current,
+                event,
+              }))
+            },
+          })
+      setResult(nextResult)
+      setReceiptId(clean(nextResult && nextResult.receiptId))
+      try {
+        const completedReceipt = await getWriteActionReceipt({
+          receiptId: clean(nextResult && nextResult.receiptId),
+        })
+        setExecutionReceipt(completedReceipt)
+      } catch {
+        setExecutionReceipt(current => ({
+          ...current,
+          id: clean(nextResult && nextResult.receiptId),
+          status: nextResult && nextResult.status,
+          executionStatus: nextResult && nextResult.executionStatus,
+          recoveryRequired: Boolean(nextResult && nextResult.recoveryRequired),
+        }))
+      }
+
+      if (nextResult && nextResult.status === 'closed' && nextResult.executionStatus === 'succeeded') {
+        setStatus('succeeded')
+        setMessage('קבוצות העונה נמחקו וה־Audit הושלם בהצלחה.')
+        try {
+          if (typeof reload === 'function') await reload()
+        } catch (error) {
+          setMessage('המחיקה וה־Audit הושלמו, אך רענון התצוגה נכשל. יש לרענן את העמוד.')
+        }
+        return true
+      }
+
+      setStatus('failed')
+      setMessage('הפעולה הסתיימה עם Audit שאינו נקי. ניתן לנסות שוב עם אותו Receipt.')
+      return false
     } catch (error) {
+      const failedReceiptId = clean(error && error.receiptId) || receiptId
+      if (failedReceiptId) {
+        setReceiptId(failedReceiptId)
+        try {
+          const failedReceipt = await getWriteActionReceipt({ receiptId: failedReceiptId })
+          setExecutionReceipt(failedReceipt)
+        } catch {
+          setExecutionReceipt(null)
+        }
+      }
       setStatus('failed')
       setMessage(describe(error))
+      return false
     } finally {
       busy.current = false
     }
-  }
-
-  const next = async () => {
-    if (busy.current || status !== 'steps' || !session) return
-    busy.current = true
-    setStatus('writing')
-    const step = CLEAR_LEAGUE_STEPS[stepIndex]
-    try {
-      if (step) {
-        await writeClearLeagueTeamsStep({
-          approvedState: session.approvedState, step: step.id,
-          onProgress: value => setCounts(previous => ({ ...previous, [step.id]: value })),
-        })
-        try {
-          await reportClearLeagueStep(session.receiptId, step.id)
-        } catch (error) {
-          error.failedTarget = { targetType: 'writeAction', documentId: session.receiptId }
-          throw error
-        }
-        setStepIndex(value => value + 1)
-        setStatus('steps')
-      } else {
-        const audit = await finishClearLeagueTeamsSession(session)
-        if (audit.result !== 'clean') {
-          const error = new Error('Audit findings')
-          const finding = audit.findings.find(item => item.documentId)
-          error.failedTarget = finding ? { targetType: finding.target, documentId: finding.documentId } : null
-          throw error
-        }
-        setStatus('succeeded')
-        setMessage('קבוצות העונה נמחקו והביקורת הושלמה בהצלחה.')
-        try {
-          await reload?.()
-        } catch (error) {
-          setMessage('המחיקה והביקורת הסתיימו בהצלחה, אך רענון התצוגה נכשל. יש לרענן את העמוד.')
-        }
-      }
-    } catch (error) {
-      let receiptError = false
-      try {
-        await reportClearLeagueFailure(session.receiptId, step?.id || 'audit', error)
-      } catch (failure) {
-        receiptError = true
-      }
-      let reloadError = false
-      try {
-        await reload?.()
-      } catch (failure) {
-        reloadError = true
-      }
-      setStatus('failed')
-      setMessage(`הפעולה נעצרה בשלב ${step?.label || 'ביקורת'}. יש לבצע הכנה ואישור חדשים לאותה פעולה.${receiptError ? ' גם תיעוד הכשל לא נשמר.' : ''}${reloadError ? ' רענון התצוגה נכשל; יש לרענן את העמוד.' : ''}`)
-    } finally {
-      busy.current = false
-    }
-  }
+  }, [actionInput, executionReceipt, league, receiptId, reload, season, seasonKey])
 
   return {
-    open, status, proposal, counts, message, stepIndex,
-    disabled: !leagueId || !seasonKey || eligibility?.allowed === false || ['preparing', 'writing', 'steps'].includes(status),
-    disabledReason: eligibility?.reason || (!leagueId || !seasonKey ? 'יש לבחור עונת ליגה.' : ''),
-    nextDeleteAction: eligibility?.nextAction || '',
-    nextDeleteTargetId: eligibility?.nextTargetId || '',
-    alreadyCleared: eligibility?.alreadyCleared === true,
-    openModal: prepare, retry: prepare, approve, next,
-    recheck: async () => setEligibility(await checkEligibility()),
-    close: () => { if (!busy.current && status !== 'steps') setOpen(false) },
+    open,
+    status,
+    proposal,
+    message,
+    receiptId,
+    result,
+    executionReceipt,
+    syncStages: buildLeagueSyncStages({ receipt: executionReceipt, busy: status === 'writing' }),
+    retryMode: clean(executionReceipt && executionReceipt.canonicalOutcome) === 'confirmed'
+      ? 'repair'
+      : 'retry',
+    busy: status === 'writing',
+    disabled,
+    disabledReason,
+    nextDeleteAction: '',
+    nextDeleteTargetId: '',
+    alreadyCleared,
+    openModal,
+    approve: execute,
+    retry: execute,
+    recheck: async () => {
+      if (typeof reload === 'function') await reload()
+    },
+    close: () => {
+      if (busy.current) return
+      setOpen(false)
+    },
   }
 }

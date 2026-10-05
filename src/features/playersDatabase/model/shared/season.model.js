@@ -1,4 +1,4 @@
-// features/playersDatabase/model/shared/season.model.js
+// src/features/playersDatabase/model/shared/season.model.js
 
 import {
   cleanValue,
@@ -32,13 +32,23 @@ export const normalizeSeasonLookupKey = value => {
   const key = cleanValue(value)
   if (!key) return ''
 
-  const fullMatch = key.match(/^20(\d{2})\s*[\/_-]\s*20(\d{2})$/)
+  const fullMatch = key.match(/^20(\d{2})\s*[/_-]\s*20(\d{2})$/)
   if (fullMatch) return `${fullMatch[1]}/${fullMatch[2]}`
 
-  const shortMatch = key.match(/^(\d{2})\s*[\/_-]\s*(\d{2})$/)
+  const shortMatch = key.match(/^(\d{2})\s*[/_-]\s*(\d{2})$/)
   if (shortMatch) return `${shortMatch[1]}/${shortMatch[2]}`
 
   return key.replace(/_/g, '/')
+}
+
+export const resolveSeasonBirthYear = ({ seasonKey, ageGroupId } = {}) => {
+  const seasonMatch = normalizeSeasonLookupKey(seasonKey).match(/^(\d{2})\/(\d{2})$/)
+  const ageMatch = cleanValue(ageGroupId).toLowerCase().match(/^u(\d{1,2})$/)
+  if (!seasonMatch || !ageMatch) return null
+
+  const seasonStartYear = 2000 + Number(seasonMatch[1])
+  const age = Number(ageMatch[1])
+  return seasonStartYear - age + 1
 }
 
 export const normalizeSeasonIdentity = ({

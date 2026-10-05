@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/components/modals/paste/sx/leagueImportModal.sx.js
+
 import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 export const leagueImportModalSx = {
@@ -103,6 +105,16 @@ export const leagueImportModalSx = {
   syncStep: {
     display: 'grid',
     gridTemplateColumns: '36px minmax(0, 1fr) auto',
+    gap: 1.25,
+    alignItems: 'center',
+    p: 1.25,
+    borderRadius: 10,
+    bgcolor: devPlanColors.secondaryLight,
+  },
+
+  syncProgress: {
+    display: 'grid',
+    gridTemplateColumns: '36px minmax(0, 1fr)',
     gap: 1.25,
     alignItems: 'center',
     p: 1.25,

@@ -1,14 +1,10 @@
-// features/playersDatabase/domain/movement/movement.identity.js
+// src/features/playersDatabase/domain/movement/movement.identity.js
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
-
-const normalize = value => clean(value).toLowerCase()
 
 const buildKeys = player => [
   clean(player?.playerId),
   clean(player?.externalPlayerId),
-  clean(player?.identityKey),
-  normalize(player?.normalizedName || player?.fullName),
 ].filter(Boolean)
 
 const buildKnownLookup = players => {
@@ -69,10 +65,7 @@ export const resolveRosterPlayersLocally = ({
       player: {
         ...player,
         playerId: clean(knownPlayer.playerId),
-        playerDocumentId: clean(knownPlayer.playerDocumentId),
         externalPlayerId: clean(player.externalPlayerId || knownPlayer.externalPlayerId),
-        identityKey: clean(player.identityKey || knownPlayer.identityKey),
-        aliases: Array.isArray(knownPlayer.aliases) ? knownPlayer.aliases : [],
         // A unique match in the current/previous Team Season is an already
         // supplied canonical identity.  Consumers must not ask SearchIndex
         // to prove it again or reject it as an unresolved Stats identity.

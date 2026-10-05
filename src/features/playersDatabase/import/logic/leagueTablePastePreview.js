@@ -391,36 +391,3 @@ export function buildLeagueTablePastePreview(text = '', options = {}) {
   }
 }
 
-export function buildLeagueTableWritePlanFromPreview(preview = {}, context = {}) {
-  const rows = (preview.rows || []).filter((row) => row.valid)
-  const seasonKey = `s${clean(context.seasonId).replace(/[^0-9a-zA-Z]+/g, '_')}`
-  const clubIds = rows.map((row) => row.data.clubId).filter(Boolean)
-
-  return {
-    flowType: 'league_table',
-    leaguesToUpsert: [{
-      id: clean(context.leagueId),
-      leagueName: clean(context.leagueName),
-      level: pickDefinedValue(context.level, null),
-      region: clean(context.region),
-      leagueNum: pickDefinedValue(context.leagueNum, null),
-      ageGroupId: clean(context.ageGroupId),
-      ageGroupLabel: clean(context.ageGroupLabel),
-      seasons: {
-        [seasonKey]: {
-          seasonId: clean(context.seasonId),
-          birthYears: context.primaryBirthYear ? [Number(context.primaryBirthYear)] : [],
-          primaryBirthYear: context.primaryBirthYear ? Number(context.primaryBirthYear) : null,
-          clubsCount: Number(context.clubsCount || rows.length),
-          loadedClubsCount: rows.length,
-          clubIds,
-        },
-      },
-    }],
-    summary: {
-      leaguesToUpsert: 1,
-      warnings: 0,
-      blockedRows: preview.ok ? 0 : 1,
-    },
-  }
-}

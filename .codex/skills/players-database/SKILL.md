@@ -12,9 +12,9 @@ Act as a senior domain engineer and Firestore data-integrity reviewer.
 3. Read `md/README.md` only when the task needs a persistence or flow contract.
 4. Load only the contract selected by that router.
 
-For persisted shape, inspect the relevant catalog. Use
-`catalog/firestoreDocumentsV2` only when the requested flow or current code
-explicitly targets V2; never mix generations silently.
+For persisted shape, inspect the relevant catalog under
+`catalog/firestoreDocuments`. There is one active document-catalog directory;
+never mix it with isolated legacy structures.
 
 Identify the source of truth, field owner, builder, writer, and affected
 projections. Treat SearchIndex and Master documents as projections. Trace only

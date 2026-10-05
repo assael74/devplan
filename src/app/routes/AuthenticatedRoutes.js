@@ -29,11 +29,13 @@ import {
   PlayerProfilePage,
   PlayersDatabaseClubsPage,
   PlayersDatabaseClubPage,
+  PlayersDatabaseDataOpsPage,
   PlayersDatabaseLeaguePage,
   PlayersDatabaseLeaguesCenterPage,
   PlayersDatabasePage,
   PlayersDatabasePlayerPage,
   PlayersDatabaseProfilesPage,
+  PlayersDatabaseReadScope,
   PlayersDatabaseSearchPage,
   PlayersDatabaseTeamPage,
   ReportsDashboardPage,
@@ -64,16 +66,19 @@ function renderAdminRoutes() {
       <Route path={ADMIN_ROUTES.finance} element={lazyRoute(<FinancePage />)} />
       <Route path={ADMIN_ROUTES.paymentsLegacy} element={<Navigate to={ADMIN_ROUTES.finance} replace />} />
 
-      <Route path={ADMIN_ROUTES.playersDatabase} element={lazyRoute(<PlayersDatabasePage />)} />
-      <Route path={ADMIN_ROUTES.playersDatabaseLeagues} element={lazyRoute(<PlayersDatabaseLeaguesCenterPage />)} />
-      <Route path={ADMIN_ROUTES.playersDatabaseSearch} element={lazyRoute(<PlayersDatabaseSearchPage />)} />
-      <Route path={ADMIN_ROUTES.playersDatabaseClubs} element={lazyRoute(<PlayersDatabaseClubsPage />)} />
-      <Route path={ADMIN_ROUTES.playersDatabaseClub} element={lazyRoute(<PlayersDatabaseClubPage />)} />
-      <Route path={ADMIN_ROUTES.playersDatabaseProfiles} element={lazyRoute(<PlayersDatabaseProfilesPage />)} />
-      <Route path={ADMIN_ROUTES.playersDatabaseLegacyScan} element={<Navigate to={ROUTE_REDIRECTS.playersDatabaseSearch} replace />} />
-      <Route path={ADMIN_ROUTES.playersDatabaseLeague} element={lazyRoute(<PlayersDatabaseLeaguePage />)} />
-      <Route path={ADMIN_ROUTES.playersDatabaseTeam} element={lazyRoute(<PlayersDatabaseTeamPage />)} />
-      <Route path={ADMIN_ROUTES.playersDatabasePlayer} element={lazyRoute(<PlayersDatabasePlayerPage />)} />
+      <Route element={lazyRoute(<PlayersDatabaseReadScope />)}>
+        <Route path={ADMIN_ROUTES.playersDatabase} element={lazyRoute(<PlayersDatabasePage />)} />
+        <Route path={ADMIN_ROUTES.playersDatabaseLeagues} element={lazyRoute(<PlayersDatabaseLeaguesCenterPage />)} />
+        <Route path={ADMIN_ROUTES.playersDatabaseSearch} element={lazyRoute(<PlayersDatabaseSearchPage />)} />
+        <Route path={ADMIN_ROUTES.playersDatabaseDataOps} element={lazyRoute(<PlayersDatabaseDataOpsPage />)} />
+        <Route path={ADMIN_ROUTES.playersDatabaseClubs} element={lazyRoute(<PlayersDatabaseClubsPage />)} />
+        <Route path={ADMIN_ROUTES.playersDatabaseClub} element={lazyRoute(<PlayersDatabaseClubPage />)} />
+        <Route path={ADMIN_ROUTES.playersDatabaseProfiles} element={lazyRoute(<PlayersDatabaseProfilesPage />)} />
+        <Route path={ADMIN_ROUTES.playersDatabaseLegacyScan} element={<Navigate to={ROUTE_REDIRECTS.playersDatabaseSearch} replace />} />
+        <Route path={ADMIN_ROUTES.playersDatabaseLeague} element={lazyRoute(<PlayersDatabaseLeaguePage />)} />
+        <Route path={ADMIN_ROUTES.playersDatabaseTeam} element={lazyRoute(<PlayersDatabaseTeamPage />)} />
+        <Route path={ADMIN_ROUTES.playersDatabasePlayer} element={lazyRoute(<PlayersDatabasePlayerPage />)} />
+      </Route>
 
       <Route path={ADMIN_ROUTES.abilitiesExplainer} element={lazyRoute(<AbilitiesExplainerPage />)} />
       <Route path={ADMIN_ROUTES.squadSimulator} element={lazyRoute(<SquadSimulatorPage />, <SimulatorSkeleton />)} />

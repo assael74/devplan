@@ -25,10 +25,9 @@ describe('Stats import row edits', () => {
   test('selecting an existing roster player preserves correction, aliases, and roster context', () => {
     const result = applyRosterMatchEdit({
       row: rowWithCorrection({ originalFullName: 'שם מודבק', aliases: ['כינוי קודם'] }),
-      value: 'doc-1',
+      value: 'player-1',
       players: [{
         playerId: 'player-1',
-        playerDocumentId: 'doc-1',
         externalPlayerId: '123',
         fullName: 'שם שחקן קיים',
         rosterStatus: 'regular',
@@ -37,12 +36,11 @@ describe('Stats import row edits', () => {
 
     expect(result).toMatchObject({
       playerId: 'player-1',
-      playerDocumentId: 'doc-1',
       externalPlayerId: '123',
       fullName: 'שם שחקן קיים',
       originalFullName: 'שם מודבק',
       aliases: ['כינוי קודם', 'שם מודבק'],
-      matchedPlayerId: 'doc-1',
+      matchedPlayerId: 'player-1',
       matchedPlayerName: 'שם שחקן קיים',
       rosterStatus: 'regular',
       isYoungerAgeGroup: false,
@@ -152,14 +150,13 @@ describe('Stats import row edits', () => {
     const result = applySystemCandidateApproval({
       row: rowWithCorrection({
         rosterStatus: 'unresolved',
-        identityCandidates: [{ candidateKey: 'candidate-1', playerId: 'player-1', playerDocumentId: 'doc-1' }],
+        identityCandidates: [{ candidateKey: 'candidate-1', playerId: 'player-1' }],
       }),
       value: 'candidate-1',
     })
 
     expect(result).toMatchObject({
-      playerDocumentId: 'doc-1',
-      approvedPlayerDocumentId: 'doc-1',
+      playerId: 'player-1',
       approvedIdentityCandidateId: 'player-1',
       approvedCanonicalPlayerId: 'player-1',
       identityResolution: 'useSystemCandidate',
@@ -297,7 +294,7 @@ describe('Stats import row edits', () => {
   test('dispatcher routes every special column and generic cells to the established transformation', () => {
     const rosterMatchRow = rowWithCorrection()
     const candidateRow = rowWithCorrection({
-      identityCandidates: [{ candidateKey: 'candidate-1', playerId: 'player-1', playerDocumentId: 'doc-1' }],
+      identityCandidates: [{ candidateKey: 'candidate-1', playerId: 'player-1' }],
     })
 
     expect(updateStatsImportRow({

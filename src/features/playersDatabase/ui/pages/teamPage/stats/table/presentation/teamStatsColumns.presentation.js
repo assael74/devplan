@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/stats/table/presentation/teamStatsColumns.presentation.js
 import * as React from 'react'
 import {
   Autocomplete, Box, Button, Chip, Dropdown, Menu, MenuButton, Option, Select, Stack, Tooltip, Typography,
@@ -321,7 +322,7 @@ export function IdentityResolutionPopover({
           {mode === 'systemCandidate' ? (
             <>
               <Typography level='body-xs'>
-                {systemCandidate?.displayName || systemCandidate?.fullName || systemCandidate?.playerDocumentId || 'לא נמצאה התאמה מאושרת'}
+                {systemCandidate?.displayName || systemCandidate?.fullName || systemCandidate?.playerId || 'לא נמצאה התאמה מאושרת'}
               </Typography>
               {systemCandidate?.playerId ? (
                 <Button size='sm' onClick={() => approveCandidate(systemCandidate)}>
@@ -346,11 +347,11 @@ export function IdentityResolutionPopover({
             >
               {candidates.map(candidate => (
                 <Option
-                  key={candidate.candidateKey || candidate.playerId || candidate.playerDocumentId}
+                  key={candidate.candidateKey || candidate.playerId}
                   value={candidate.candidateKey}
                   disabled={!candidate.playerId}
                 >
-                  {candidate.displayName || candidate.fullName || candidate.playerDocumentId || candidate.playerId}
+                  {candidate.displayName || candidate.fullName || candidate.playerId}
                 </Option>
               ))}
             </Select>

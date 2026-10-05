@@ -8,6 +8,7 @@ import {
 } from '@mui/joy'
 
 import Breadcrumbs from '../../layout/Breadcrumbs.js'
+import DataOpsQuickAccessButton from '../../components/page/DataOpsQuickAccessButton.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { searchHeaderSx as sx } from './sx/searchHeader.sx.js'
 
@@ -29,6 +30,8 @@ export default function SearchHeader({
       </Stack>
 
       <Stack direction='row' spacing={1} sx={sx.actions}>
+        <DataOpsQuickAccessButton />
+
         <Button
           variant='outlined'
           sx={sx.auditButton}

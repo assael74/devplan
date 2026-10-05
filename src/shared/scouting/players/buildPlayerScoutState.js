@@ -93,9 +93,9 @@ export const resolveImmediacyContext = ({ player, team, season, immediacyContext
   }
 }
 
-export const isScoutCalculationExcludedRosterStatus = player => (
-  String(player?.rosterStatus || 'regular').trim() !== 'regular'
-)
+// Personal scouting eligibility is derived from season performance. Roster
+// status remains relevant to operational team views, not to the player engine.
+export const isScoutCalculationExcludedRosterStatus = () => false
 
 export const isOperationalRosterPlayer = player => {
   const rosterStatus = String(player?.rosterStatus || '').trim()
@@ -152,14 +152,6 @@ export const buildPlayerScoutState = ({
   futureCompetitionPath = null,
   clubBirthTeams = [],
 } = {}) => {
-  if (isScoutCalculationExcludedRosterStatus(player)) {
-    return {
-      ...player,
-      ...createEmptyPlayerScoutComputedState(),
-      scoutCalculationStatus: 'success',
-    }
-  }
-
   const contract = buildPlayerScoutCalculationContract({
     player: buildScoutPlayer({
       player,

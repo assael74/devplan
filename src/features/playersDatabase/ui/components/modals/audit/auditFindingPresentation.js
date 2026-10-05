@@ -34,15 +34,9 @@ const FIELD_LABELS = Object.freeze({
 export const lifecycleLabel = status => LIFECYCLE_LABELS[clean(status)] || clean(status)
 
 export const sourceLabel = source => {
-  if (source === 'League table → buildLeagueTeamPerformanceProjection') return 'טבלת הליגה'
-  if (source === 'Team Season teamBalance → buildTeamBalanceSearchIndexProjection') return 'מאזן הקבוצה בעונה'
-  if (source === 'Team Season player scout state → buildPlayerScoutIndexFields') return 'נתוני הסקאוט של השחקן'
   if (source === 'Team Season player scout profile → Player Document') return 'פרופיל הסקאוט בעונת הקבוצה'
-  if (source === 'Team Season player scout profile → Player SearchIndex') return 'פרופיל הסקאוט בעונת הקבוצה'
   if (source === 'Player and Team Season data → Team Season player scout profile') return 'נתוני השחקן והקבוצה בעונה'
   if (source === 'Team Season scout profile lifecycle') return 'כללי יצירת מסמך שחקן'
-  if (source === 'League Documents → buildLeaguesMasterLeagueEntry') return 'מסמכי הליגה'
-  if (source === 'League Documents → buildLeaguesMasterSummary') return 'מסמכי הליגה'
   if (source === 'League season lifecycle') return 'מחזור החיים של עונת הליגה'
   if (source === 'Write flow recovery journal') return 'יומן התאוששות כתיבה'
   return clean(source)
@@ -74,31 +68,3 @@ export const playerDetailsOf = finding => {
   }
 }
 
-export const isTeamSearchIndexLifecycleMismatch = finding => (
-  finding?.type === 'source_mismatch' &&
-  finding?.entityType === 'teamSearchIndex' &&
-  finding?.source === 'League season → buildTeamSeasonSearchMetrics' &&
-  clean(finding?.documentId) &&
-  clean(finding?.teamDocumentId) &&
-  clean(finding?.seasonKey)
-)
-export const isLeagueDocumentFinding = finding => (
-  finding?.type === 'source_mismatch' && finding?.entityType === 'leaguesMasterLeague' && clean(finding?.relatedDocumentId)
-)
-export const isLeagueLifecycleDocumentFinding = finding => (
-  finding?.type === 'source_mismatch' && finding?.entityType === 'leagueSeason' &&
-  finding?.source === 'League season lifecycle' && clean(finding?.actual?.leagueId)
-)
-export const isLeagueClubProjectionFinding = finding => (
-  finding?.type === 'missing_document' &&
-  (finding?.entityType === 'clubDocument' || finding?.entityType === 'clubAgeGroupSeason') &&
-  finding?.source === 'League table → Club Document' && clean(finding?.relatedDocumentId) && clean(finding?.seasonKey)
-)
-export const conflictingLeagueIdsOf = finding => (
-  finding?.type === 'broken_relation' && finding?.source === 'League table identity'
-    ? [...new Set((Array.isArray(finding?.actual?.leagueIds) ? finding.actual.leagueIds : []).map(clean).filter(Boolean))]
-    : []
-)
-export const isLeaguesMasterSummaryFinding = finding => (
-  finding?.type === 'source_mismatch' && finding?.entityType === 'leaguesMaster'
-)

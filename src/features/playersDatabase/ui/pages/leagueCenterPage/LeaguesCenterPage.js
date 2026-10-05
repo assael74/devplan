@@ -4,6 +4,7 @@ import * as React from 'react'
 import { Box } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 
+import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import { useLeagueCenter } from './hooks/useLeagueCenter.js'
 import usePlayersDatabaseTasks from '../../hooks/usePlayersDatabaseTasks.js'
@@ -13,43 +14,60 @@ import {
   PLAYERS_DATABASE_UI_ROUTES,
 } from '../../logic/routeBuilders.js'
 import LeagueCenterHeader from './LeagueCenterHeader.js'
+import OpenLeagueModal from './OpenLeagueModal.js'
 import LeagueCenterKpiOverview from './LeagueCenterKpiOverview.js'
 import LeagueCenterTable from './LeagueCenterTable.js'
 import LeagueCenterSidePanel from './LeagueCenterSidePanel.js'
 import {
-  CreateSeasonModal,
   TaskEditModal,
   WorkTaskModal,
-  WriteFlowReportModal,
 } from '../../components/modals/index.js'
-import useDeleteLeagueSeason from './deleteSeason/useDeleteLeagueSeason.js'
-import DeleteLeagueSeasonModal from './deleteSeason/DeleteLeagueSeasonModal.js'
-import useLeagueSeasonCreate from './hooks/useLeagueSeasonCreate.js'
 import { buildLeagueCenterColumns } from './logic/leagueCenter.columns.js'
 import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
+import useDeleteLeagueSeason from './deleteSeason/useDeleteLeagueSeason.js'
+import DeleteLeagueSeasonModal from './deleteSeason/DeleteLeagueSeasonModal.js'
+import { readLeaguePageData } from '../../../services/read/index.js'
+import { openLeagueSeason } from '../../../services/write/league/index.js'
+import { hasLeagueCenterSeason } from '../../../model/league/center/leagueCenterOptions.model.js'
 import { leaguesCenterPageSx as sx } from './sx/leaguesCenterPage.sx.js'
+
+const EMPTY_OPEN_LEAGUE_ACTION = {
+  busy: false,
+  error: '',
+  writeCompleted: false,
+  target: null,
+}
 
 export default function LeaguesCenterPage() {
   const navigate = useNavigate()
+  const { notify } = useSnackbar()
   const model = useLeagueCenter()
   const tasksModel = usePlayersDatabaseTasks()
   const taskActions = usePlayersDatabaseTaskActions()
-  const seasonCreate = useLeagueSeasonCreate({ onSuccess: model.reload })
-  const seasonDelete = useDeleteLeagueSeason({ reload: model.reload })
   const [taskModalOpen, setTaskModalOpen] = React.useState(false)
+  const [openLeagueModal, setOpenLeagueModal] = React.useState(false)
+  const [openLeagueAction, setOpenLeagueAction] = React.useState(EMPTY_OPEN_LEAGUE_ACTION)
   const [editTask, setEditTask] = React.useState(null)
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     { label: 'ניהול נתוני ליגות' },
   ])
 
+  const deleteLeagueSeasonFlow = useDeleteLeagueSeason({
+    reload: async row => {
+      await Promise.all([
+        model.reload({ fromServer: true }),
+        readLeaguePageData({ leagueId: row.leagueId, refresh: true }),
+      ])
+    },
+  })
+
   const columns = React.useMemo(() => buildLeagueCenterColumns({
-    onCreateSeason: seasonCreate.open,
-    onDeleteSeason: seasonDelete.open,
-    deleteSeasonAvailability: seasonDelete.availability,
+    onDeleteLeagueSeason: deleteLeagueSeasonFlow.open,
+    getDeleteAvailability: deleteLeagueSeasonFlow.availability,
     onOpenLeague: row => {
       const rowSeasonKey = row.seasonKey && row.seasonKey !== 'all'
         ? row.seasonKey
-        : row.seasonId
+        : ''
       const leagueSeasonKey = rowSeasonKey || (
         model.seasonKey !== 'all' ? model.seasonKey : ''
       )
@@ -68,13 +86,12 @@ export default function LeaguesCenterPage() {
       navigate(leaguePath)
     },
   }), [
+    deleteLeagueSeasonFlow.availability,
+    deleteLeagueSeasonFlow.open,
     model.birthYear,
     model.leagueLevel,
     model.seasonKey,
     navigate,
-    seasonCreate.open,
-    seasonDelete.open,
-    seasonDelete.availability,
   ])
 
   const handleTaskOpen = task => {
@@ -82,14 +99,115 @@ export default function LeaguesCenterPage() {
     navigate(task.url)
   }
 
+  React.useEffect(() => {
+    const target = openLeagueAction.target
+    if (!openLeagueAction.writeCompleted || !target) return
+
+    if (!hasLeagueCenterSeason({
+      leaguesCenterDoc: model.leaguesCenterDoc,
+      leagueId: target.leagueId,
+      seasonId: target.seasonId,
+    })) return
+
+    setOpenLeagueModal(false)
+    setOpenLeagueAction(EMPTY_OPEN_LEAGUE_ACTION)
+    notify({
+      status: 'success',
+      title: 'הליגה נפתחה',
+      message: 'הליגה והעונה נוספו למרכז הליגות ללא קבוצות',
+    })
+  }, [
+    model.leaguesCenterDoc,
+    notify,
+    openLeagueAction.target,
+    openLeagueAction.writeCompleted,
+  ])
+
+  const handleLeagueOpen = async option => {
+    if (openLeagueAction.busy) return
+
+    const actionTime = new Date().toISOString()
+    const target = {
+      leagueId: option.value,
+      seasonId: option.seasonId,
+    }
+    setOpenLeagueAction({
+      busy: true,
+      error: '',
+      writeCompleted: false,
+      target,
+    })
+
+    try {
+      const result = await openLeagueSeason({
+        input: {
+          league: {
+            leagueId: option.value,
+            names: {
+              official: option.name,
+              display: option.name,
+              short: option.name,
+              source: option.name,
+            },
+            region: option.region,
+            ageGroupId: option.ageGroupId,
+            ageGroupLabel: option.ageGroupLabel,
+            level: option.level,
+          },
+          season: {
+            seasonId: option.seasonId,
+            seasonKey: option.seasonKey,
+            seasonStatus: 'not_started',
+            birthYear: option.birthYear,
+            seasonUrl: '',
+            leagueTotalRound: null,
+            gameDurationMinutes: option.gameDurationMinutes,
+            competitionRules: { configured: false },
+          },
+          createdAt: actionTime,
+          updatedAt: actionTime,
+        },
+        display: {
+          leagueName: option.name,
+          seasonKey: option.seasonKey,
+          birthYear: option.birthYear,
+        },
+      })
+
+      if (!result || result.executionStatus !== 'succeeded' || result.status !== 'closed') {
+        throw new Error('פתיחת הליגה הסתיימה ללא אישור תקין')
+      }
+
+      setOpenLeagueAction(current => ({
+        ...current,
+        writeCompleted: true,
+      }))
+    } catch (error) {
+      setOpenLeagueAction(current => ({
+        ...current,
+        busy: false,
+        error: error && error.message ? error.message : 'פתיחת הליגה נכשלה',
+      }))
+    }
+  }
+
+  const handleOpenLeagueModal = () => {
+    setOpenLeagueAction(EMPTY_OPEN_LEAGUE_ACTION)
+    setOpenLeagueModal(true)
+  }
+
+  const handleCloseLeagueModal = () => {
+    if (openLeagueAction.busy) return
+    setOpenLeagueModal(false)
+    setOpenLeagueAction(EMPTY_OPEN_LEAGUE_ACTION)
+  }
+
   const handleTaskEditSave = async patch => {
     if (!editTask?.id || taskActions.pending) return
 
     const nextPatch = {
       ...patch,
-      doneAt: patch.status === TASK_STATUS.DONE
-        ? Date.now()
-        : null,
+      doneAt: patch.status === TASK_STATUS.DONE ? Date.now() : null,
     }
 
     await taskActions.updateTask(editTask, nextPatch)
@@ -98,7 +216,6 @@ export default function LeaguesCenterPage() {
 
   const handleTaskEditDone = async task => {
     if (!task?.id || taskActions.pending) return
-
     await taskActions.markDone(task)
     setEditTask(null)
   }
@@ -115,7 +232,11 @@ export default function LeaguesCenterPage() {
         <Box sx={sx.contentGrid}>
           <Box sx={sx.mainColumn}>
             <LeagueCenterKpiOverview summary={model.summary} />
-            <LeagueCenterTable columns={columns} model={model} />
+            <LeagueCenterTable
+              columns={columns}
+              model={model}
+              onOpenLeague={handleOpenLeagueModal}
+            />
           </Box>
 
           <LeagueCenterSidePanel
@@ -128,6 +249,18 @@ export default function LeaguesCenterPage() {
           />
         </Box>
       </Box>
+
+      <DeleteLeagueSeasonModal flow={deleteLeagueSeasonFlow} />
+
+      <OpenLeagueModal
+        open={openLeagueModal}
+        options={model.openLeagueOptions}
+        busy={openLeagueAction.busy}
+        waitingForCenter={openLeagueAction.writeCompleted}
+        error={openLeagueAction.error}
+        onConfirm={handleLeagueOpen}
+        onClose={handleCloseLeagueModal}
+      />
 
       <TaskEditModal
         open={Boolean(editTask)}
@@ -142,23 +275,6 @@ export default function LeaguesCenterPage() {
         open={taskModalOpen}
         model={model}
         onClose={() => setTaskModalOpen(false)}
-      />
-
-      <DeleteLeagueSeasonModal flow={seasonDelete} />
-
-      <CreateSeasonModal
-        open={Boolean(seasonCreate.league)}
-        league={seasonCreate.league}
-        defaultSeasonKey={model.seasonKey}
-        busy={seasonCreate.busy}
-        onClose={seasonCreate.close}
-        onConfirm={seasonCreate.confirm}
-      />
-
-      <WriteFlowReportModal
-        open={Boolean(seasonCreate.writeReport)}
-        report={seasonCreate.writeReport}
-        onClose={seasonCreate.closeWriteReport}
       />
     </PlayersDatabaseLayout>
   )

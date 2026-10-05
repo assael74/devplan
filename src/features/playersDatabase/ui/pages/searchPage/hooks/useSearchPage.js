@@ -54,7 +54,6 @@ export default function useSearchPage() {
     resetResultFilters: results.resetResultFilters,
     toggleFavorite: results.toggleFavorite,
     saveNotes: results.saveNotes,
-    teamUrlEditor: results.teamUrlEditor,
     roleEditor: results.roleEditor,
     loadDocuments: results.loadDocuments,
   }

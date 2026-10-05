@@ -1,104 +1,191 @@
 // src/features/playersDatabase/ui/pages/leaguePage/clear/useClearLeagueTeamsFlow.test.js
 
-import { act, renderHook, waitFor } from '@testing-library/react'
-import { buildClearLeagueTeamsApprovedState } from '../../../../domain/leagueV2/clear/clearLeagueTeamsApprovedState.builder.js'
-import useClearLeagueTeamsFlow from './useClearLeagueTeamsFlow.js'
-import { prepareClearLeagueTeams } from '../../../../services/writeV2/league/clear/prepareClearLeagueTeams.js'
-import { writeClearLeagueTeamsStep } from '../../../../services/writeV2/league/clear/writeClearLeagueTeamsStep.js'
-import { finishClearLeagueTeamsSession, startClearLeagueTeamsSession } from '../../../../services/writeV2/league/clear/clearLeagueTeamsSession.js'
+import { act, renderHook } from '@testing-library/react'
 
-jest.mock('../../../../services/writeV2/league/clear/prepareClearLeagueTeams.js', () => ({ prepareClearLeagueTeams: jest.fn() }))
-jest.mock('../../../../domain/leagueV2/clear/clearLeagueTeamsApprovedState.builder.js', () => ({ buildClearLeagueTeamsApprovedState: jest.fn(value => value) }))
-jest.mock('../../../../domain/leagueV2/clear/clearLeagueTeamsPlan.builder.js', () => ({ CLEAR_LEAGUE_STEPS: [{ id: 'league', label: 'ליגה' }] }))
-jest.mock('../../../../services/writeV2/league/clear/writeClearLeagueTeamsStep.js', () => ({ writeClearLeagueTeamsStep: jest.fn() }))
-jest.mock('../../../../services/writeV2/league/clear/clearLeagueTeamsSession.js', () => ({
-  startClearLeagueTeamsSession: jest.fn(), reportClearLeagueStep: jest.fn(),
-  reportClearLeagueFailure: jest.fn(), finishClearLeagueTeamsSession: jest.fn(),
+import { clearLeagueTeams } from '../../../../services/write/league/index.js'
+import { getWriteActionReceipt } from '../../../../services/write/receipt/index.js'
+import { repairWriteActionReceipt } from '../../../../services/write/recovery/index.js'
+import useClearLeagueTeamsFlow from './useClearLeagueTeamsFlow.js'
+
+jest.mock('../../../../services/write/league/index.js', () => ({
+  clearLeagueTeams: jest.fn(),
+}))
+jest.mock('../../../../services/write/receipt/index.js', () => ({
+  getWriteActionReceipt: jest.fn(),
+}))
+jest.mock('../../../../services/write/recovery/index.js', () => ({
+  repairWriteActionReceipt: jest.fn(),
 }))
 
-const props = { league: { id: 'league' }, selectedSeasonOption: { seasonKey: '26/27' } }
+const buildProps = ({ reload = jest.fn(), tableState = 'LOADED' } = {}) => ({
+  league: { id: 'league-1', name: 'ליגת נוער' },
+  selectedSeasonOption: {
+    seasonId: '2026_2027',
+    seasonKey: '26/27',
+    season: {
+      birthYear: 2008,
+      table: {
+        tableState,
+        teamsById: {
+          'club-1_2008_1': { clubId: 'club-1', teamSlot: 1 },
+        },
+      },
+    },
+  },
+  reload,
+})
+
+const succeededResult = receiptId => ({
+  receiptId,
+  status: 'closed',
+  executionStatus: 'succeeded',
+  recoveryRequired: false,
+  audit: { findings: [] },
+})
+
+const succeededReceipt = receiptId => ({
+  id: receiptId,
+  status: 'closed',
+  executionStatus: 'succeeded',
+  recoveryRequired: false,
+  canonicalOutcome: 'confirmed',
+  progress: {
+    completedByStage: {
+      canonical: true,
+      teamSeasonCompetitionSnapshots: true,
+      leaguesCenter: true,
+      clubsCenter: true,
+      audit: true,
+    },
+    failed: {},
+  },
+})
 
 beforeEach(() => {
   jest.resetAllMocks()
-  buildClearLeagueTeamsApprovedState.mockImplementation(value => value)
-  prepareClearLeagueTeams.mockResolvedValue({ identity: {}, operations: [] })
-  startClearLeagueTeamsSession.mockResolvedValue('original')
-  writeClearLeagueTeamsStep.mockResolvedValue({})
-  finishClearLeagueTeamsSession.mockResolvedValue({ result: 'clean', findings: [] })
+  clearLeagueTeams.mockResolvedValue(succeededResult('receipt-1'))
+  getWriteActionReceipt.mockResolvedValue(succeededReceipt('receipt-1'))
+  repairWriteActionReceipt.mockResolvedValue(succeededResult('receipt-1'))
 })
 
-test('Retry prepares and approves again and restarts at the first step', async () => {
-  writeClearLeagueTeamsStep.mockRejectedValueOnce(new Error('offline'))
-  const { result } = renderHook(() => useClearLeagueTeamsFlow(props))
-  await waitFor(() => expect(result.current.disabled).toBe(false))
-  await act(async () => result.current.openModal())
+test('opens a preview without writing and sends the final League Clear API input', async () => {
+  const { result } = renderHook(() => useClearLeagueTeamsFlow(buildProps()))
+
+  act(() => result.current.openModal())
+  expect(clearLeagueTeams).not.toHaveBeenCalled()
+  expect(result.current.proposal.impact.teams).toBe(1)
+
   await act(async () => result.current.approve())
-  await act(async () => result.current.next())
-  expect(result.current.status).toBe('failed')
-  const previousReads = prepareClearLeagueTeams.mock.calls.length
+
+  expect(clearLeagueTeams).toHaveBeenCalledWith({
+    input: {
+      leagueId: 'league-1',
+      seasonId: '2026_2027',
+      updatedAt: expect.any(String),
+    },
+    receiptId: '',
+    display: {
+      leagueName: 'ליגת נוער',
+      seasonKey: '26/27',
+      birthYear: 2008,
+    },
+    onProgress: expect.any(Function),
+  })
+  expect(result.current.status).toBe('succeeded')
+})
+
+test('retry preserves the action input and reuses the returned receipt', async () => {
+  clearLeagueTeams
+    .mockResolvedValueOnce({
+      receiptId: 'receipt-open',
+      status: 'open',
+      executionStatus: 'failed',
+      recoveryRequired: true,
+      audit: { findings: [{ type: 'projection_mismatch' }] },
+    })
+    .mockResolvedValueOnce(succeededResult('receipt-open'))
+  getWriteActionReceipt
+    .mockResolvedValueOnce({
+      id: 'receipt-open',
+      status: 'open',
+      executionStatus: 'failed',
+      recoveryRequired: true,
+      canonicalOutcome: 'failed_or_unknown',
+      progress: { completedByStage: {}, failed: { stageId: 'canonical' } },
+    })
+    .mockResolvedValueOnce(succeededReceipt('receipt-open'))
+  const { result } = renderHook(() => useClearLeagueTeamsFlow(buildProps()))
+
+  act(() => result.current.openModal())
+  await act(async () => result.current.approve())
+  const firstInput = clearLeagueTeams.mock.calls[0][0].input
   await act(async () => result.current.retry())
-  expect(prepareClearLeagueTeams.mock.calls.length).toBe(previousReads + 1)
-  expect(result.current.status).toBe('preview')
-  expect(result.current.stepIndex).toBe(0)
-  await act(async () => result.current.approve())
-  await act(async () => result.current.next())
-  expect(startClearLeagueTeamsSession).toHaveBeenCalledTimes(2)
-  expect(writeClearLeagueTeamsStep).toHaveBeenLastCalledWith(expect.objectContaining({ step: 'league' }))
+
+  expect(clearLeagueTeams.mock.calls[1][0]).toEqual(expect.objectContaining({
+    input: firstInput,
+    receiptId: 'receipt-open',
+  }))
+  expect(result.current.status).toBe('succeeded')
 })
 
-test('reload failure after clean Audit does not turn deletion into failure', async () => {
-  const { result } = renderHook(() => useClearLeagueTeamsFlow({ ...props, reload: jest.fn().mockRejectedValue(new Error('reload')) }))
-  await waitFor(() => expect(result.current.disabled).toBe(false))
-  await act(async () => result.current.openModal())
+test('repairs projections without reopening Clear after canonical confirmation', async () => {
+  const failure = Object.assign(new Error('center failed'), { receiptId: 'receipt-clear' })
+  clearLeagueTeams.mockImplementation(async ({ onProgress }) => {
+    onProgress({ type: 'receiptOpened', receiptId: 'receipt-clear' })
+    onProgress({ type: 'stageCompleted', receiptId: 'receipt-clear', stageId: 'canonical' })
+    onProgress({ type: 'stageFailed', receiptId: 'receipt-clear', stageId: 'leaguesCenter' })
+    throw failure
+  })
+  getWriteActionReceipt
+    .mockResolvedValueOnce({
+      id: 'receipt-clear',
+      status: 'open',
+      executionStatus: 'failed',
+      recoveryRequired: true,
+      canonicalOutcome: 'confirmed',
+      progress: {
+        completedByStage: { canonical: true },
+        failed: { stageId: 'leaguesCenter' },
+      },
+    })
+    .mockResolvedValueOnce(succeededReceipt('receipt-clear'))
+  repairWriteActionReceipt.mockResolvedValue(succeededResult('receipt-clear'))
+  const { result } = renderHook(() => useClearLeagueTeamsFlow(buildProps()))
+
+  act(() => result.current.openModal())
   await act(async () => result.current.approve())
-  await act(async () => result.current.next())
-  await act(async () => result.current.next())
+
+  expect(result.current.status).toBe('failed')
+  expect(result.current.retryMode).toBe('repair')
+  expect(result.current.syncStages.find(stage => stage.id === 'canonical').state)
+    .toBe('completed')
+  expect(result.current.syncStages.find(stage => stage.id === 'leaguesCenter').state)
+    .toBe('failed')
+
+  await act(async () => result.current.retry())
+
+  expect(clearLeagueTeams).toHaveBeenCalledTimes(1)
+  expect(repairWriteActionReceipt).toHaveBeenCalledWith({ receiptId: 'receipt-clear' })
+  expect(result.current.status).toBe('succeeded')
+})
+
+test('reload failure after success does not turn Clear into failure', async () => {
+  const reload = jest.fn().mockRejectedValue(new Error('reload failed'))
+  const { result } = renderHook(() => useClearLeagueTeamsFlow(buildProps({ reload })))
+
+  act(() => result.current.openModal())
+  await act(async () => result.current.approve())
+
   expect(result.current.status).toBe('succeeded')
   expect(result.current.message).toContain('רענון התצוגה נכשל')
 })
 
-test('exposes the next safe team deletion action when League clear is blocked', async () => {
-  const error = new Error('Stats is not absent')
-  error.code = 'CLEAR_LEAGUE_STATS_PRESENT'
-  error.details = {
-    nextAction: 'stats',
-    birthTeamDocumentId: 'team-1',
-  }
-  prepareClearLeagueTeams.mockRejectedValue(error)
+test('disables Clear when the canonical season is already not loaded', () => {
+  const { result } = renderHook(() => useClearLeagueTeamsFlow(buildProps({
+    tableState: 'NOT_LOADED',
+  })))
 
-  const { result } = renderHook(() => useClearLeagueTeamsFlow(props))
-
-  expect(prepareClearLeagueTeams).not.toHaveBeenCalled()
-  await act(async () => result.current.openModal())
-  await waitFor(() => expect(result.current.nextDeleteAction).toBe('stats'))
-  expect(result.current.nextDeleteTargetId).toBe('team-1')
   expect(result.current.disabled).toBe(true)
-})
-
-test('disables League clear when the complete plan is already absent', async () => {
-  prepareClearLeagueTeams.mockResolvedValue({
-    identity: {},
-    operations: [],
-    state: 'absent',
-  })
-
-  const { result } = renderHook(() => useClearLeagueTeamsFlow(props))
-
-  expect(prepareClearLeagueTeams).not.toHaveBeenCalled()
-  await act(async () => result.current.openModal())
-  await waitFor(() => expect(result.current.alreadyCleared).toBe(true))
-  expect(result.current.disabled).toBe(true)
-  expect(result.current.disabledReason).toBe('קבוצות העונה כבר נמחקו.')
-})
-
- test('a failed step reloads server-backed state and remains retryable', async () => {
-  const reload = jest.fn().mockResolvedValue(undefined)
-  writeClearLeagueTeamsStep.mockRejectedValueOnce(new Error('partial failure'))
-  const { result } = renderHook(() => useClearLeagueTeamsFlow({ ...props, reload }))
-  await waitFor(() => expect(result.current.disabled).toBe(false))
-  await act(async () => result.current.openModal())
-  await act(async () => result.current.approve())
-  await act(async () => result.current.next())
-  expect(reload).toHaveBeenCalledTimes(1)
-  expect(result.current.status).toBe('failed')
+  expect(result.current.alreadyCleared).toBe(true)
+  expect(clearLeagueTeams).not.toHaveBeenCalled()
 })

@@ -32,12 +32,12 @@ const readPlayerSeasonRows = async playerIds => {
   const snapshots = await Promise.all(
     chunkValues(safeIds).map(idChunk => trackedGetDocs(
       query(
-        collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+        collection(db, PLAYERS_DATABASE_COLLECTIONS.playerSearchIndexes),
         where('playerId', 'in', idChunk)
       ),
       {
         feature: 'playersDatabase',
-        collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+        collection: PLAYERS_DATABASE_COLLECTIONS.playerSearchIndexes,
         action: 'player-identity-review',
         operationSubtype: 'player-history-query',
       }

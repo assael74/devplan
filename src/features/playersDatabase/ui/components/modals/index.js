@@ -1,17 +1,12 @@
 // src/features/playersDatabase/ui/components/modals/index.js
 
 export { default as ConfirmModal } from './ConfirmModal.js'
-export { default as CreateSeasonModal } from './CreateSeasonModal.js'
 export { default as PlayerRoleEditModal } from './PlayerRoleEditModal.js'
-export { default as PlayerDatabaseAuditModal } from './PlayerDatabaseAuditModal.js'
-export { default as PlayerScoutReviewModal } from './PlayerScoutReviewModal.js'
+export { default as PlayerDatabaseAuditModal } from './CanonicalAuditModal.js'
 export { default as RegularModal } from './RegularModal.js'
 export { default as ReportNameModal } from './ReportNameModal.js'
-export { default as SeasonDeleteConfirmModal } from './SeasonDeleteConfirmModal.js'
-export { default as WriteFlowReportModal } from './WriteFlowReportModal.js'
 
 export { default as LeagueImportModal } from './paste/LeagueImportModal.js'
-export { default as PasteModal } from './paste/PasteModal.js'
 
 export { default as TaskEditModal } from './workTask/TaskEditModal.js'
 export { default as WorkTaskModal } from './workTask/WorkTaskModal.js'

@@ -15,8 +15,6 @@ import {
   trackedGetDocs,
 } from '../../../../../services/firestore/usage/index.js'
 import { SCOUT_PROFILE_COMBINATIONS } from '../../../../../shared/scouting/players/index.js'
-import { SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT } from '../../../catalog/firestoreDocuments/searchIndexBirthTeamSeason.catalog.js'
-import { SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT } from '../../../catalog/firestoreDocuments/searchIndexPlayerSeason.catalog.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
 import { toNumberOrZero } from '../../../model/shared/value.model.js'
 
@@ -24,42 +22,32 @@ const DEFAULT_SEARCH_RESULTS_LIMIT = 250
 const FIRESTORE_IN_MAX_VALUES = 30
 
 const SEARCH_INDEX_FIELDS_BY_ENTITY = {
-  birthTeamSeason: new Set(Object.keys(SEARCHINDEX_BIRTH_TEAM_SEASON_GENERIC_OBJECT)),
-  playerSeason: new Set(Object.keys(SEARCHINDEX_PLAYER_SEASON_GENERIC_OBJECT)),
+  playerSeason: new Set([
+    'seasonId',
+    'birthYear',
+    'leagueId',
+    'leagueLevel',
+    'playerId',
+    'expectedLevelDelta',
+    'scoutEffectiveImmediacyStatus',
+    'scoutProfileIds',
+    'scoutCombinationIds',
+    'scoutProfileSearchIds',
+    'appearances',
+    'games',
+    'goals',
+    'minutes',
+    'starts',
+  ]),
 }
 
 const SEARCH_STAT_FIELD_MAP_BY_ENTITY = {
   playerSeason: {
-    appearances: 'projectedGames',
-    games: 'projectedGames',
-    goals: 'projectedGoals',
-    minutes: 'projectedMinutes',
-    starts: 'projectedStarts',
-    subIns: 'substituteIn',
-    subOuts: 'substitutedOut',
-  },
-  birthTeamSeason: {
-    appearances: 'projectedTeamGamePlayed',
-    games: 'projectedTeamGamePlayed',
-    teamGamePlayed: 'projectedTeamGamePlayed',
-    points: 'projectedPoints',
-    goalsFor: 'projectedGoalsFor',
-    goalsAgainst: 'projectedGoalsAgainst',
-    attackPerformance: 'attackPerformance',
-    attackPerformanceRate: 'attackPerformanceRate',
-    attackPriorityScore: 'attackScoutPriorityScore',
-    attackPriorityRate: 'attackScoutPriorityScore',
-    attackScoutPriorityScore: 'attackScoutPriorityScore',
-    attackScoutPriorityRate: 'attackScoutPriorityScore',
-    defensePerformance: 'defensePerformance',
-    defensePerformanceRate: 'defensePerformanceRate',
-    defensePriorityScore: 'defenseScoutPriorityScore',
-    defensePriorityRate: 'defenseScoutPriorityScore',
-    defenseScoutPriorityScore: 'defenseScoutPriorityScore',
-    defenseScoutPriorityRate: 'defenseScoutPriorityScore',
-    tableRank: 'tableRank',
-    tableAttackRank: 'tableAttackRank',
-    tableDefenseRank: 'tableDefenseRank',
+    appearances: 'games',
+    games: 'games',
+    goals: 'goals',
+    minutes: 'minutes',
+    starts: 'starts',
   },
 }
 
@@ -159,7 +147,12 @@ const matchesSearchCondition = ({ entityType, data = {}, condition = {} } = {}) 
   })
   const operator = clean(condition.operator)
   const expectedValue = Number(condition.value)
-  const actualValue = Number(data[field])
+  const projectedValue = data?.stats?.projected?.[field]
+  const actualValue = Number(
+    projectedValue === null || projectedValue === undefined
+      ? data?.stats?.actual?.[field]
+      : projectedValue
+  )
 
   if (!field || !hasSearchIndexField(entityType, field)) return true
   if (!Number.isFinite(expectedValue)) return true
@@ -187,11 +180,7 @@ const hasSearchConditions = filters => (
   (Array.isArray(filters.conditions) ? filters.conditions : []).length > 0
 )
 
-const getSearchEntityType = filters => (
-  clean(filters.searchContext) === 'team'
-    ? 'birthTeamSeason'
-    : 'playerSeason'
-)
+const getSearchEntityType = () => 'playerSeason'
 
 const EXPECTED_LEVEL_CHANGE_DIRECTIONS = new Set([
   'relegation',
@@ -275,15 +264,6 @@ const buildExactFilterConstraints = ({ entityType, filters }) => {
     ])
   }
 
-  if (entityType === 'birthTeamSeason') {
-    exactFields.push(
-      ['balanceReliability', clean(filters.teamBalanceReliability)],
-      ['balanceMinutesTop5Band', clean(filters.teamBalanceMinutesBand)],
-      ['balanceProductionTop1Band', clean(filters.teamBalanceProductionBand)],
-      ['balanceRotationStartsTop5Band', clean(filters.teamBalanceRotationBand)]
-    )
-  }
-
   exactFields.forEach(([field, value]) => {
     if (!hasSearchIndexField(entityType, field)) return
     if (value === '' || value === null || value === undefined) return
@@ -293,9 +273,7 @@ const buildExactFilterConstraints = ({ entityType, filters }) => {
   })
 
   const favoriteEntityIds = toUniqueCleanValues(filters.favoriteEntityIds)
-  const favoriteEntityField = entityType === 'birthTeamSeason'
-    ? 'birthTeamId'
-    : 'playerId'
+  const favoriteEntityField = 'playerId'
 
   if (filters.favoritesOnly && favoriteEntityIds.length
     && hasSearchIndexField(entityType, favoriteEntityField)) {
@@ -360,21 +338,6 @@ const buildSearchQueryVariants = filters => {
     values: toUniqueCleanValues(filters.leagues),
   })
 
-  if (clean(filters.searchContext) === 'team') {
-    const teamLevelFilters = [
-      ['attackPriorityLevel', filters.teamAttackPriorityLevels],
-      ['defensePriorityLevel', filters.teamDefensePriorityLevels],
-    ]
-
-    teamLevelFilters.forEach(([field, values]) => {
-      variants = expandVariantsByValues({
-        variants,
-        field,
-        values: toUniqueCleanValues(values),
-      })
-    })
-  }
-
   variants = expandVariantsByValues({
     variants,
     values: getExpectedLevelChangeDirections(filters),
@@ -411,7 +374,6 @@ const buildSearchQuery = ({
     filters: safeFilters,
   })
   const constraints = [
-    where('entityType', '==', entityType),
     ...buildExactFilterConstraints({
       entityType,
       filters: safeFilters,
@@ -429,7 +391,7 @@ const buildSearchQuery = ({
   }
 
   return query(
-    collection(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes),
+    collection(db, PLAYERS_DATABASE_COLLECTIONS.playerSearchIndexes),
     ...constraints
   )
 }
@@ -496,7 +458,7 @@ const getDocsForSearchVariant = async ({ filters = {}, includeLimit = false } = 
   const snapshot = await trackedGetDocs(searchQuery, {
     feature: 'playersDatabase',
     action: 'search-results-read',
-    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    collection: PLAYERS_DATABASE_COLLECTIONS.playerSearchIndexes,
     queryKey: entityType,
     meta: { includeLimit },
   })
@@ -520,7 +482,7 @@ const countSearchVariant = async filters => {
     const snapshot = await trackedGetDocs(searchQuery, {
       feature: 'playersDatabase',
       action: 'search-count-client-filter',
-      collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+      collection: PLAYERS_DATABASE_COLLECTIONS.playerSearchIndexes,
       queryKey: entityType,
     })
     return filterDocsBySearchVariant({
@@ -532,7 +494,7 @@ const countSearchVariant = async filters => {
   const snapshot = await trackedGetCountFromServer(searchQuery, {
     feature: 'playersDatabase',
     action: 'search-count',
-    collection: PLAYERS_DATABASE_COLLECTIONS.searchIndexes,
+    collection: PLAYERS_DATABASE_COLLECTIONS.playerSearchIndexes,
     queryKey: entityType,
   })
   return snapshot.data().count || 0

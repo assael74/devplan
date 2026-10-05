@@ -1,14 +1,13 @@
+// src/features/playersDatabase/model/team/page/teamPageSeason.model.js
+
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../catalog/leagues.catalog.js'
-import { PLAYERS_DATABASE_CURRENT_SEASON_KEY } from '../../../catalog/seasons.catalog.js'
 import { resolveAgeGroupLabel } from '../../../catalog/ageGroups.catalog.js'
 import { isSameSeason, normalizeSeasonIdentity, normalizeSeasonLookupKey } from '../../shared/season.model.js'
 import { normalizeTeamIdentity } from '../teamIdentity.model.js'
 import { cleanValue } from '../../shared/value.model.js'
 
-const TEAM_PAGE_FUTURE_SEASON_KEY = PLAYERS_DATABASE_CURRENT_SEASON_KEY
-
 const resolveSeasonStartYear = seasonKey => {
-  const match = cleanValue(seasonKey).match(/^(\d{2})[\/_-](\d{2})$/)
+  const match = cleanValue(seasonKey).match(/^(\d{2})[/_-](\d{2})$/)
   return match ? 2000 + Number(match[1]) : null
 }
 
@@ -46,7 +45,7 @@ const resolveLeagueOptionLabel = ({ season = {}, leagueId = '' } = {}) => {
 }
 
 const resolveSeasonSortValue = seasonKey => {
-  const match = cleanValue(seasonKey).match(/^(\d{2})[\/_-](\d{2})$/)
+  const match = cleanValue(seasonKey).match(/^(\d{2})[/_-](\d{2})$/)
   return match ? Number(match[1]) : 0
 }
 
@@ -72,11 +71,28 @@ const resolveOptionTeamName = ({ season = {}, teamDoc = {} } = {}) => cleanValue
   'קבוצה'
 )
 
+const getSeasonIdentity = season => normalizeSeasonIdentity({
+  season: {
+    seasonId: season?.identity?.seasonId || season?.seasonId,
+    seasonKey: season?.identity?.seasonKey || season?.seasonKey,
+  },
+})
+
 const buildSeasonOption = ({ season, target, leagueId = '', teamDoc = {} }) => {
-  const identity = normalizeSeasonIdentity({ season })
+  const identity = getSeasonIdentity(season)
   const seasonKey = normalizeSeasonLookupKey(identity.seasonKey || identity.seasonId)
-  const birthYear = Number(season?.birthYear || teamDoc?.birthYear || 0) || null
-  const resolvedLeagueId = cleanValue(season?.leagueId || leagueId)
+  const birthYear = Number(
+    season?.identity?.birthYear ||
+    season?.birthYear ||
+    teamDoc?.identity?.birthYear ||
+    teamDoc?.birthYear ||
+    0
+  ) || null
+  const resolvedLeagueId = cleanValue(season?.identity?.leagueId || season?.leagueId || leagueId)
+  const ageGroupId = cleanValue(
+    season?.identity?.ageGroupId ||
+    season?.ageGroupId
+  )
   const leagueName = resolveLeagueOptionLabel({
     season,
     leagueId: resolvedLeagueId,
@@ -84,7 +100,7 @@ const buildSeasonOption = ({ season, target, leagueId = '', teamDoc = {} }) => {
   const ageGroupLabel = resolveSeasonAgeGroupLabel({
     seasonKey,
     birthYear,
-    ageGroupId: season?.ageGroupId,
+    ageGroupId,
     ageGroupLabel: season?.ageGroupLabel,
   })
   const teamName = resolveOptionTeamName({
@@ -107,6 +123,7 @@ const buildSeasonOption = ({ season, target, leagueId = '', teamDoc = {} }) => {
     birthYear,
     leagueId: resolvedLeagueId,
     leagueName,
+    ageGroupId,
     ageGroupLabel,
     teamName,
     primaryLabel: [
@@ -121,11 +138,48 @@ const buildSeasonOption = ({ season, target, leagueId = '', teamDoc = {} }) => {
   }
 }
 
+const buildTeamPageTableRow = ([teamId, row]) => {
+  const key = cleanValue(teamId)
+  const officialTable = row.officialTable && typeof row.officialTable === 'object'
+    ? row.officialTable
+    : {}
+  const roster = row.roster && typeof row.roster === 'object'
+    ? row.roster
+    : {}
+  const stats = row.stats && typeof row.stats === 'object'
+    ? row.stats
+    : {}
+
+  return {
+    ...row,
+    teamId: key,
+    birthTeamId: key,
+    teamDocumentId: key,
+    birthTeamDocumentId: key,
+    rank: officialTable.rank,
+    teamStats: {
+      teamGamePlayed: officialTable.teamGamePlayed,
+      points: officialTable.points,
+      goalsFor: officialTable.goalsFor,
+      goalsAgainst: officialTable.goalsAgainst,
+    },
+    playersCount: roster.playersCount,
+    hasPlayers: Boolean(roster.hasPlayers),
+    hasStats: Boolean(stats.hasStats),
+    statsComplete: Boolean(stats.statsComplete),
+  }
+}
+
+export const buildTeamPageTableRows = season => Object.entries(
+  season?.table?.teamsById && typeof season.table.teamsById === 'object'
+    ? season.table.teamsById
+    : {}
+).map(buildTeamPageTableRow)
+
 export const findTeamPageTableRow = ({ season, teamId }) => {
-  const rows = Array.isArray(season?.tableRank) ? season.tableRank : []
   const key = cleanValue(teamId)
 
-  return rows.find(row => {
+  return buildTeamPageTableRows(season).find(row => {
     const identity = normalizeTeamIdentity({ team: row })
     return [
       identity.teamId,
@@ -143,6 +197,29 @@ const toLeagueDocuments = leagueDocumentsOrLeague => (
     : [leagueDocumentsOrLeague]
   ).filter(Boolean)
 )
+
+const getLeagueSeasonEntries = league => Object.entries(
+  league?.seasonsById && typeof league.seasonsById === 'object'
+    ? league.seasonsById
+    : {}
+).map(([seasonId, season]) => ({
+  season: {
+    ...season,
+    seasonId: cleanValue(season?.seasonId || seasonId),
+    leagueId: cleanValue(league?.leagueId || league?.id),
+    leagueName: cleanValue(
+      league?.names?.display ||
+      league?.names?.official ||
+      league?.leagueId ||
+      league?.id
+    ),
+    ageGroupId: cleanValue(season?.ageGroupId || league?.ageGroupId),
+    ageGroupLabel: cleanValue(season?.ageGroupLabel || league?.ageGroupLabel),
+  },
+  target: cleanValue(season?.seasonStatus).toLowerCase() === 'completed'
+    ? 'history'
+    : 'current',
+}))
 
 export const buildTeamPageSeasonOptions = (leagueDocumentsOrLeague, teamDoc = {}, teamSeasons = [], teamId = '') => {
   const options = []
@@ -165,10 +242,13 @@ export const buildTeamPageSeasonOptions = (leagueDocumentsOrLeague, teamDoc = {}
   }
 
   ;(Array.isArray(teamSeasons) ? teamSeasons : []).forEach(season => {
-    if (!season?.seasonId && !season?.seasonKey) return
+    const identity = getSeasonIdentity(season)
+    if (!identity.seasonId && !identity.seasonKey) return
     pushOption(buildSeasonOption({
       season,
-      target: cleanValue(season?.seasonStatus) === 'completed' ? 'history' : 'current',
+      target: cleanValue(
+        season?.identity?.seasonStatus || season?.seasonStatus
+      ).toLowerCase() === 'completed' ? 'history' : 'current',
       teamDoc,
     }))
   })
@@ -186,55 +266,14 @@ export const buildTeamPageSeasonOptions = (leagueDocumentsOrLeague, teamDoc = {}
   }
 
   toLeagueDocuments(leagueDocumentsOrLeague).forEach(league => {
-    if (league?.current?.seasonId || league?.current?.seasonKey) {
-      pushLeagueOption({
-        league,
-        season: league.current,
-        target: 'current',
-      })
-    }
-
-    const history = Array.isArray(league?.history) ? league.history : []
-    history.forEach(season => {
+    getLeagueSeasonEntries(league).forEach(({ season, target }) => {
       pushLeagueOption({
         league,
         season,
-        target: 'history',
+        target,
       })
     })
   })
-
-  const hasFutureSeason = options.some(option => (
-    option.seasonKey === TEAM_PAGE_FUTURE_SEASON_KEY
-  ))
-
-  if (expectedBirthYear && !hasFutureSeason) {
-    const routeLeagueId = cleanValue(
-      toLeagueDocuments(leagueDocumentsOrLeague)[0]?.leagueId ||
-      toLeagueDocuments(leagueDocumentsOrLeague)[0]?.id
-    )
-    const latestKnownOption = [...options]
-      .filter(option => option.seasonKey !== TEAM_PAGE_FUTURE_SEASON_KEY)
-      .sort((left, right) => (
-        resolveSeasonSortValue(right.seasonKey) - resolveSeasonSortValue(left.seasonKey)
-      ))[0]
-    const fallbackLeagueId = cleanValue(latestKnownOption?.leagueId || routeLeagueId)
-
-    pushOption(buildSeasonOption({
-      season: {
-        seasonId: TEAM_PAGE_FUTURE_SEASON_KEY,
-        seasonKey: TEAM_PAGE_FUTURE_SEASON_KEY,
-        birthYear: expectedBirthYear,
-        leagueId: fallbackLeagueId,
-        leagueName: latestKnownOption?.leagueName || 'ליגה טרם הוגדרה',
-        ageGroupId: latestKnownOption?.season?.ageGroupId || '',
-        ageGroupLabel: latestKnownOption?.ageGroupLabel || '',
-      },
-      target: 'future',
-      leagueId: fallbackLeagueId,
-      teamDoc,
-    }))
-  }
 
   return options
     .filter(option => option.seasonKey || option.seasonId)
@@ -251,7 +290,10 @@ export const findTeamPageSeasonDoc = ({ teamSeasons = [], selectedSeasonOption }
   if (!selectedSeasonOption) return null
 
   const rows = Array.isArray(teamSeasons) ? teamSeasons : []
-  return rows.find(row => isSameSeason(row, selectedSeasonOption)) || null
+  return rows.find(row => isSameSeason(
+    getSeasonIdentity(row),
+    selectedSeasonOption
+  )) || null
 }
 
 export const findTeamPageLeagueSeasonDoc = ({
@@ -269,26 +311,14 @@ export const findTeamPageLeagueSeasonDoc = ({
   ))
 
   for (const document of documents) {
-    const current = document?.current
-    if (
-      current &&
-      typeof current === 'object' &&
-      isSameSeason(current, selectedSeasonOption)
-    ) {
+    const matchingEntry = getLeagueSeasonEntries(document).find(({ season }) => (
+      isSameSeason(season, selectedSeasonOption)
+    ))
+    if (matchingEntry) {
       return {
         leagueDoc: document,
-        season: current,
-        target: 'current',
-      }
-    }
-
-    const history = Array.isArray(document?.history) ? document.history : []
-    const historySeason = history.find(row => isSameSeason(row, selectedSeasonOption))
-    if (historySeason) {
-      return {
-        leagueDoc: document,
-        season: historySeason,
-        target: 'history',
+        season: matchingEntry.season,
+        target: matchingEntry.target,
       }
     }
   }

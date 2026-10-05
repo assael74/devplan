@@ -2,11 +2,10 @@
 
 import * as React from 'react'
 
-import { buildClearStatsApprovedStateV2 } from '../../../../../../domain/statsV2/index.js'
 import {
-  executeClearStatsV2,
-  prepareClearStatsForUiV2,
-} from '../../../../../../services/writeV2/stats/index.js'
+  clearStats,
+  prepareStatsClear,
+} from '../../../../../../services/write/stats/index.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
@@ -16,7 +15,6 @@ export default function useClearStatsFlow({
   team,
   selectedSeasonOption,
   leagueId,
-  reload,
 }) {
   const [open, setOpen] = React.useState(false)
   const [status, setStatus] = React.useState(INITIAL_STATE)
@@ -26,11 +24,12 @@ export default function useClearStatsFlow({
   const [activeTarget, setActiveTarget] = React.useState(null)
 
   const buildTarget = React.useCallback(seasonOption => ({
-    birthTeamDocumentId: clean(
+    teamId: clean(
       team?.birthTeamDocumentId ||
       team?.teamDocumentId ||
       team?.id
     ),
+    seasonId: clean(seasonOption?.seasonId),
     seasonKey: clean(seasonOption?.seasonKey),
     leagueId: clean(seasonOption?.leagueId || leagueId),
   }), [leagueId, team])
@@ -57,7 +56,7 @@ export default function useClearStatsFlow({
     setError(null)
 
     try {
-      const plan = await prepareClearStatsForUiV2(target)
+      const plan = await prepareStatsClear({ input: target })
 
       setProposedPlan(plan)
       setStatus('ready')
@@ -68,7 +67,7 @@ export default function useClearStatsFlow({
   }, [activeTarget, defaultTarget])
 
   const openModal = React.useCallback(seasonOption => {
-    const requestedTarget = seasonOption?.seasonKey
+    const requestedTarget = seasonOption?.seasonId
       ? buildTarget(seasonOption)
       : defaultTarget
 
@@ -90,11 +89,12 @@ export default function useClearStatsFlow({
     setError(null)
 
     try {
-      const approvedState = buildClearStatsApprovedStateV2({
-        proposedPlan,
-        approvedAt: new Date().toISOString(),
+      const nextResult = await clearStats({
+        approvedState: proposedPlan,
+        display: {
+          teamName: clean(team?.teamName || team?.name),
+        },
       })
-      const nextResult = await executeClearStatsV2({ approvedState })
 
       setResult(nextResult)
       setStatus('succeeded')
@@ -104,12 +104,7 @@ export default function useClearStatsFlow({
       return
     }
 
-    try {
-      await reload?.()
-    } catch (reloadError) {
-      setError(reloadError)
-    }
-  }, [proposedPlan, reload, status])
+  }, [proposedPlan, status, team])
 
   const retry = React.useCallback(() => {
     loadPreview(activeTarget || defaultTarget)

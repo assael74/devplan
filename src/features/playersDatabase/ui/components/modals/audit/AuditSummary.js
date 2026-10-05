@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/components/modals/audit/AuditSummary.js
+
 import { Button, Sheet, Stack, Typography } from '@mui/joy'
 
 import { playerDatabaseAuditModalSx as sx } from '../sx/playerDatabaseAuditModal.sx.js'
@@ -7,22 +9,15 @@ const number = value => Number(value || 0)
 const systemSummaryLines = result => {
   const summary = result?.summary || {}
 
-  if (result?.flowType === 'system_structural') {
+  if (result?.flowType === 'system') {
     return [
       `ליגות: ${number(summary.checkedLeagues)}`,
-      `קבוצות: ${number(summary.checkedTeamRoots)}`,
+      `מסמכי קבוצה: ${number(summary.checkedTeamRoots)}`,
       `עונות קבוצה: ${number(summary.checkedTeamSeasons)}`,
-      `מועדונים: ${number(summary.checkedClubs)}`,
-    ]
-  }
-
-  if (result?.flowType === 'system_orphans') {
-    return [
-      `אינדקסי קבוצות: ${number(summary.checkedTeamSearchIndexes)}`,
+      `מסמכי שחקן: ${number(summary.checkedPlayerRoots)}`,
+      `עונות שחקן: ${number(summary.checkedPlayerSeasons)}`,
       `אינדקסי שחקנים: ${number(summary.checkedPlayerSearchIndexes)}`,
-      `עונות קבוצה: ${number(summary.checkedTeamSeasons)}`,
-      `מועדונים: ${number(summary.checkedClubs)}`,
-      `רשומות ClubsMaster: ${number(summary.checkedClubsMasterEntries)}`,
+      `מועדונים: ${number(summary.checkedClubProfiles)}`,
     ]
   }
 

@@ -1,3 +1,5 @@
+// src/features/playersDatabase/domain/validation/playerStatsLeague.validation.js
+
 import { resolvePlayersDatabaseLeagueGameTime } from '../../catalog/leagues.catalog.js'
 
 // This is a validation allowance for observed stoppage time only. It does not
@@ -67,7 +69,10 @@ export const validatePlayerStatsAgainstLeague = ({
     }
   }
 
-  const gameMinutes = resolvePlayersDatabaseLeagueGameTime(ageGroupId)
+  const providedGameMinutes = Number(teamPerformance?.gameDurationMinutes)
+  const gameMinutes = Number.isFinite(providedGameMinutes) && providedGameMinutes > 0
+    ? providedGameMinutes
+    : resolvePlayersDatabaseLeagueGameTime(ageGroupId)
   const effectiveGameMinutes = gameMinutes + STATS_LOAD_ADDED_TIME_ALLOWANCE_PER_GAME
   const canonicalPlayerMinutesLimit = teamGamePlayed * gameMinutes
   const playerMinutesLimit = teamGamePlayed * effectiveGameMinutes

@@ -16,15 +16,13 @@ import {
   buildClubSummaryModel,
 } from '../../../../model/pages/clubPresentation.model.js'
 import {
-  buildClubIntelligenceFromMaster,
+  buildAllClubIntelligencesFromCanonicalSources,
 } from '../../../../domain/clubIntelligence/index.js'
 import {
   PLAYERS_DATABASE_CURRENT_SEASON_KEY,
   PLAYERS_DATABASE_SEASONS_CATALOG,
 } from '../../../../catalog/seasons.catalog.js'
-import {
-  readClubsMasterDocument,
-} from '../../../../services/read/index.js'
+import { readClubsPageData } from '../../../../services/read/index.js'
 
 const currentSeason = PLAYERS_DATABASE_SEASONS_CATALOG.find(season => (
   season.target === 'current'
@@ -47,7 +45,7 @@ const CLUBS_PAGE_SEASON_OPTIONS = Object.freeze([
 ])
 
 export default function useClubsPage() {
-  const [clubsMasterDoc, setClubsMasterDoc] = useState(null)
+  const [clubsPageData, setClubsPageData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
@@ -61,11 +59,11 @@ export default function useClubsPage() {
     setError('')
 
     try {
-      const doc = await readClubsMasterDocument()
-      setClubsMasterDoc(doc)
-      return doc
+      const data = await readClubsPageData({ refresh: true })
+      setClubsPageData(data)
+      return data
     } catch (err) {
-      setClubsMasterDoc(null)
+      setClubsPageData(null)
       setError(err?.message || 'טעינת המועדונים נכשלה')
       throw err
     } finally {
@@ -77,19 +75,17 @@ export default function useClubsPage() {
     reload().catch(() => {})
   }, [reload])
 
-  const intelligencesByClubId = useMemo(() => new Map(
-    (Array.isArray(clubsMasterDoc?.clubs)
-      ? clubsMasterDoc.clubs
-      : [])
-      .map(club => [club?.clubId, buildClubIntelligenceFromMaster({ club })])
-      .filter(([clubId]) => Boolean(clubId))
-  ), [clubsMasterDoc])
+  const intelligencesByClubId = useMemo(() => (
+    buildAllClubIntelligencesFromCanonicalSources({
+      directory: clubsPageData?.directory,
+      centers: clubsPageData?.centers,
+    })
+  ), [clubsPageData])
 
   const allGroups = useMemo(() => buildClubsPageRows({
-    clubsMasterDoc,
     seasonView: 'current',
     intelligencesByClubId,
-  }), [clubsMasterDoc, intelligencesByClubId])
+  }), [intelligencesByClubId])
   const groups = useMemo(() => filterClubsPageRows({
     groups: allGroups,
     query,
@@ -116,15 +112,15 @@ export default function useClubsPage() {
 
   const clubLevelOptions = useMemo(() => {
     const levels = new Set(
-      (Array.isArray(clubsMasterDoc?.clubs) ? clubsMasterDoc.clubs : [])
-        .map(club => Number(club?.clubStrengthLevel || club?.clubLevel))
+      [...intelligencesByClubId.values()]
+        .map(item => Number(item?.club?.clubStrengthLevel || item?.club?.clubLevel))
         .filter(level => Number.isFinite(level) && level > 0)
     )
 
     return [...levels]
       .sort((left, right) => left - right)
       .map(level => ({ value: String(level), label: String(level) }))
-  }, [clubsMasterDoc])
+  }, [intelligencesByClubId])
 
   const toggleClubLevel = useCallback(value => {
     const normalizedValue = String(value)
@@ -159,7 +155,7 @@ export default function useClubsPage() {
   }, [])
 
   return {
-    clubsMasterDoc,
+    clubsPageData,
     loading,
     error,
     query,

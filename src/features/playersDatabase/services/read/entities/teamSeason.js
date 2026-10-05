@@ -75,7 +75,7 @@ export async function getTeamSeason({
   })
 }
 
-const getTeamSeasonByDocumentId = async teamSeasonDocumentId => {
+export const getTeamSeasonByDocumentId = async teamSeasonDocumentId => {
   const safeDocumentId = clean(teamSeasonDocumentId)
   if (!safeDocumentId) return null
 

@@ -1,31 +1,28 @@
 // src/features/playersDatabase/ui/pages/teamPage/roster/clear/useClearRosterFlow.js
 
 import * as React from 'react'
-import { prepareClearRoster } from '../../../../../services/writeV2/roster/clear/prepareClearRoster.js'
-import { buildClearRosterApprovedState } from '../../../../../domain/rosterV2/clear/clearRosterApprovedState.builder.js'
-import { writeClearRosterStep } from '../../../../../services/writeV2/roster/clear/writeClearRosterStep.js'
-import { CLEAR_ROSTER_STEPS, startClearRosterSession, reportClearRosterCanonical, reportClearRosterStep, reportClearRosterFailure, finishClearRosterSession } from '../../../../../services/writeV2/roster/clear/clearRosterSession.js'
+import { clearRoster, prepareRosterClear } from '../../../../../services/write/roster/index.js'
+import { retryWriteActionReceipt } from '../../../../../services/write/recovery/index.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
-export default function useClearRosterFlow({ team, selectedSeasonOption, leagueId, reload, refreshAfterStats }) {
-  const birthTeamDocumentId = team?.birthTeamDocumentId || team?.teamDocumentId || team?.id || ''
+
+export default function useClearRosterFlow({ team, selectedSeasonOption, leagueId, refreshAfterStats }) {
+  const teamId = clean(team?.teamId || team?.birthTeamDocumentId || team?.teamDocumentId || team?.id)
   const buildTarget = React.useCallback(seasonOption => ({
-    birthTeamDocumentId: clean(birthTeamDocumentId),
+    teamId,
+    seasonId: clean(seasonOption?.seasonId),
     seasonKey: clean(seasonOption?.seasonKey),
     leagueId: clean(seasonOption?.leagueId || leagueId),
-  }), [birthTeamDocumentId, leagueId])
-  const defaultTarget = React.useMemo(
-    () => buildTarget(selectedSeasonOption),
-    [buildTarget, selectedSeasonOption]
-  )
+  }), [leagueId, teamId])
+  const defaultTarget = React.useMemo(() => buildTarget(selectedSeasonOption), [buildTarget, selectedSeasonOption])
   const [activeTarget, setActiveTarget] = React.useState(null)
   const [open, setOpen] = React.useState(false)
   const [status, setStatus] = React.useState('idle')
   const [proposal, setProposal] = React.useState(null)
-  const [session, setSession] = React.useState(null)
   const [stepIndex, setStepIndex] = React.useState(0)
   const [counts, setCounts] = React.useState({})
   const [message, setMessage] = React.useState('')
+  const [receiptId, setReceiptId] = React.useState('')
   const busyRef = React.useRef(false)
 
   const prepareTarget = async requestedTarget => {
@@ -40,110 +37,102 @@ export default function useClearRosterFlow({ team, selectedSeasonOption, leagueI
     setCounts({})
     setMessage('')
     try {
-      setProposal(await prepareClearRoster(target))
+      const approvedState = await prepareRosterClear({ input: target })
+      setProposal({
+        approvedState,
+        impact: {
+          players: approvedState.impact?.players || 0,
+          playerIndexes: approvedState.impact?.playerIndexes || 0,
+          transfers: approvedState.impact?.transfers || 0,
+        },
+        identity: {
+          teamId: approvedState.teamId,
+          seasonId: approvedState.seasonId,
+          leagueId: approvedState.leagueId,
+          clubId: approvedState.clubId,
+        },
+      })
       setStatus('preview')
     } catch (error) {
       setStatus('failed')
-      setMessage(error.code === 'CLEAR_ROSTER_STATS_PRESENT'
-        ? 'יש למחוק תחילה את הסטטיסטיקה.'
-        : 'לא ניתן להכין את המחיקה. חסר מסמך נדרש או קיימת סתירה בנתוני הקבוצה. יש לבדוק את הנתונים לפני ניסיון נוסף.')
+      setMessage(
+        error.code === 'ROSTER_CLEAR_STATS_PRESENT'
+          ? 'יש למחוק תחילה את הסטטיסטיקה.'
+          : error.code === 'ROSTER_CLEAR_MOVEMENT_PRESENT'
+            ? 'לא ניתן למחוק סגל עם תנועות שחקנים פעילות.'
+            : error?.message || 'לא ניתן להכין את מחיקת הסגל.'
+      )
     } finally {
       busyRef.current = false
     }
   }
 
-  const openModal = seasonOption => prepareTarget(
-    seasonOption?.seasonKey ? buildTarget(seasonOption) : defaultTarget
-  )
-
-  const isDisabledFor = seasonOption => {
-    return refreshAfterStats === 'executing' ||
-      refreshAfterStats === 'loadingPreview' ||
-      seasonOption?.deleteAction !== 'roster'
-  }
-
-  const getDeleteActionFor = seasonOption => {
-    if (refreshAfterStats === 'executing' || refreshAfterStats === 'loadingPreview') return null
-    return seasonOption?.deleteAction || null
-  }
+  const openModal = seasonOption => prepareTarget(seasonOption?.seasonId ? buildTarget(seasonOption) : defaultTarget)
+  const isDisabledFor = seasonOption => refreshAfterStats === 'executing' || refreshAfterStats === 'loadingPreview' || seasonOption?.deleteAction !== 'roster'
+  const getDeleteActionFor = seasonOption => refreshAfterStats === 'executing' || refreshAfterStats === 'loadingPreview' ? null : seasonOption?.deleteAction || null
 
   const approve = async () => {
     if (busyRef.current || status !== 'preview') return
-    busyRef.current = true
-    setStatus('writing')
-    try {
-      const approvedState = buildClearRosterApprovedState(proposal)
-      const receiptId = await startClearRosterSession(approvedState)
-      setSession({ approvedState, receiptId })
-      setStatus('steps')
-    } catch (error) {
-      setStatus('failed')
-      setMessage('לא ניתן לפתוח או להמשיך את פעולת המחיקה. נתונים שנכתבו בניסיון קודם נשארים במקומם; יש לבדוק את הפעולה הפתוחה.')
-    } finally {
-      busyRef.current = false
-    }
+    setStatus('steps')
+    setStepIndex(0)
   }
 
   const next = async () => {
-    if (busyRef.current || status !== 'steps' || !session) return
+    if (busyRef.current || status !== 'steps' || !proposal?.approvedState) return
     busyRef.current = true
     setStatus('writing')
-    const step = CLEAR_ROSTER_STEPS[stepIndex]
     try {
-      if (step) {
-        await writeClearRosterStep({
-          approvedState: session.approvedState,
-          step: step.id,
-          onProgress: value => setCounts(previous => ({ ...previous, [step.id]: value })),
-        })
-        if (step.id === 'teamSeason') await reportClearRosterCanonical(session.receiptId, true)
-        await reportClearRosterStep(session.receiptId, step.id)
-        setStepIndex(index => index + 1)
-        setStatus('steps')
-      } else {
-        const audit = await finishClearRosterSession(session)
-        if (audit.result !== 'clean') {
-          const error = new Error('Audit findings')
-          const finding = audit.findings.find(item => item.documentId)
-          error.failedTarget = finding
-            ? { targetType: finding.target, documentId: finding.documentId }
-            : null
-          throw error
-        }
-        setStatus('succeeded')
-        setMessage('הסגל נמחק והביקורת הושלמה בהצלחה.')
-        try {
-          await reload?.()
-        } catch (reloadError) {
-          setMessage('הסגל נמחק והביקורת הושלמה, אך רענון התצוגה נכשל. יש לרענן את העמוד.')
-        }
+      const result = receiptId
+        ? await retryWriteActionReceipt({
+            receiptId,
+            approvedState: proposal.approvedState,
+          })
+        : await clearRoster({
+            approvedState: proposal.approvedState,
+            display: {
+              teamName: clean(team?.name || team?.displayName),
+              seasonKey: clean((activeTarget || defaultTarget)?.seasonKey),
+            },
+          })
+      setReceiptId(result.receiptId || '')
+      setCounts({
+        sync: {
+          processed: Object.keys(result.stageResults || {}).length,
+          total: Object.keys(result.stageResults || {}).length,
+        },
+      })
+      if (result.status !== 'closed' || result.audit?.coverage?.complete !== true || (result.audit?.findings?.length || 0) > 0) {
+        throw Object.assign(new Error('Roster Audit found differences'), { receiptId: result.receiptId })
       }
+      setStepIndex(1)
+      setStatus('succeeded')
+      setMessage('הסגל נמחק והביקורת הושלמה בהצלחה.')
     } catch (error) {
-      if (step?.id === 'teamSeason') {
-        try { await reportClearRosterCanonical(session.receiptId, false) } catch (receiptError) { /* Receipt remains open. */ }
-      }
-      let receiptFailure = false
-      try {
-        await reportClearRosterFailure(session.receiptId, step?.id || 'audit', error)
-      } catch (receiptError) {
-        receiptFailure = true
-      }
+      if (error?.receiptId) setReceiptId(error.receiptId)
       setStatus('failed')
-      setMessage(`הפעולה נעצרה בשלב ${step?.label || 'ביקורת הסנכרון'}. ניסיון נוסף דורש הכנה ואישור חדשים.${receiptFailure ? ' גם שמירת תיעוד הכשל נכשלה.' : ''}`)
+      setMessage(error?.message || 'מחיקת הסגל נכשלה. ניסיון נוסף יבנה מצב מאושר חדש ממקורות טריים.')
     } finally {
       busyRef.current = false
     }
   }
 
   return {
-    open, status, proposal, counts, message, stepIndex,
+    open,
+    status,
+    proposal,
+    counts,
+    message,
+    stepIndex,
     target: activeTarget || defaultTarget,
     disabled: isDisabledFor(selectedSeasonOption),
     isDisabledFor,
     getDeleteActionFor,
     deleteActionsError: '',
     disabledReason: 'הפעולה נקבעת לפי מצב הסטטיסטיקה והסגל במסמך העונה.',
-    openModal, retry: () => prepareTarget(activeTarget || defaultTarget), approve, next,
+    openModal,
+    retry: () => prepareTarget(activeTarget || defaultTarget),
+    approve,
+    next,
     close: () => {
       if (!busyRef.current && status !== 'steps') setOpen(false)
     },

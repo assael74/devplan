@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/entryPage/EntryPage.js
+// src/features/playersDatabase/ui/pages/entryPage/EntryPage.js
 
 import { Box } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
@@ -30,7 +30,10 @@ export default function EntryPage() {
   return (
     <PlayersDatabaseLayout>
       <Box sx={sx.page}>
-        <EntryHeader breadcrumbs={breadcrumbs} />
+        <EntryHeader
+          breadcrumbs={breadcrumbs}
+          onNavigateToDataOps={() => navigate(PLAYERS_DATABASE_UI_ROUTES.dataOps)}
+        />
 
         <EntryRouteCards
           onNavigateToLeagues={() => navigate(PLAYERS_DATABASE_UI_ROUTES.leagues())}
@@ -39,13 +42,19 @@ export default function EntryPage() {
         />
 
         <Box sx={sx.infoGrid}>
-          <InfoPanel title='סיכום מסמך האב'>
+          <InfoPanel title='סיכום מרכז הליגות'>
             <Box sx={sx.statsGrid}>
               <KpiCard
-                title='שחקנים'
-                value={formatCount(entry.summary.playersCount)}
-                caption='במסמך האב'
-                iconId='players'
+                title='ליגות'
+                value={formatCount(entry.summary.leaguesCount)}
+                caption='במרכז הליגות'
+                iconId='playersDatabase'
+              />
+              <KpiCard
+                title='עונות'
+                value={formatCount(entry.summary.seasonsCount)}
+                caption='בכל הליגות'
+                iconId='stats'
               />
               <KpiCard
                 title='קבוצות'
@@ -54,15 +63,9 @@ export default function EntryPage() {
                 iconId='teams'
               />
               <KpiCard
-                title='ליגות'
-                value={formatCount(entry.summary.leaguesCount)}
-                caption='בלשכה המרכזית'
-                iconId='playersDatabase'
-              />
-              <KpiCard
-                title='עם פרופיל סקאוט'
-                value={formatCount(entry.summary.playersWithScoutProfileCount)}
-                caption='לפחות אחד'
+                title='קבוצות עם סטטס'
+                value={formatCount(entry.summary.teamsWithStatsCount)}
+                caption='לפי מצב התיעוד'
                 iconId='stats'
               />
             </Box>

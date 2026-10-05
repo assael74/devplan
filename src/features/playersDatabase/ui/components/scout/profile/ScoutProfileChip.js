@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/components/scout/profile/ScoutProfileChip.js
+
 import { Box, Tooltip, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
@@ -69,7 +71,7 @@ export default function ScoutProfileChip({
         component={interactive ? 'button' : 'span'}
         type={interactive ? 'button' : undefined}
         onClick={onClick}
-        aria-label={`${model.fullLabel}, עומק התאמה ${model.depthPct}%`}
+        aria-label={`${model.fullLabel}, עומק התאמה ${model.depthPct}%${model.extraCount ? `, ועוד ${model.extraCount} פרופילים` : ''}`}
         sx={sx.root({
           interactive,
           compact,

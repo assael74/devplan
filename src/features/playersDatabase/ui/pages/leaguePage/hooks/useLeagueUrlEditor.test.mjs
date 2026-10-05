@@ -23,6 +23,7 @@ async function editorEnvironment(options = {}) {
   let props = {
     league: { id: 'l', name: 'League', level: 2 },
     selectedSeasonOption: {
+      seasonId: '2026_2027',
       seasonKey: '26/27',
       season: {
         seasonUrl: 'https://old',
@@ -83,7 +84,7 @@ async function editorEnvironment(options = {}) {
       return synthetic('snack', {
         SNACK_STATUS: { SUCCESS: 'success', ERROR: 'error' },
       })
-    if (specifier.includes('/writeV2/edits/')) {
+    if (specifier.includes('/write/league/edits/')) {
       const fileName = path.basename(specifier, '.js')
       const name = fileName === 'updateCompetitionRules'
         ? 'updateLeagueCompetitionRules'
@@ -135,6 +136,7 @@ test('URL save sends only URL identity and preserves the unsaved rules draft wit
   await env.render().saveUrl()
   env.replaceProps({
     selectedSeasonOption: {
+      seasonId: '2026_2027',
       seasonKey: '26/27',
       season: { seasonUrl: 'https://new', competitionRules: initialRules },
     },
@@ -145,7 +147,7 @@ test('URL save sends only URL identity and preserves the unsaved rules draft wit
       name: 'updateLeagueSeasonUrl',
       input: {
         leagueId: 'l',
-        seasonKey: '26/27',
+        seasonId: '2026_2027',
         seasonUrl: 'https://new',
       },
     },
@@ -177,7 +179,7 @@ test('Rules save sends no URL and preserves its unsaved draft', async () => {
   assert.deepEqual(Object.keys(env.calls[0].input).sort(), [
     'competitionRules',
     'leagueId',
-    'seasonKey',
+    'seasonId',
   ])
   assert.equal(env.render().urlDirty, true)
   assert.equal(env.render().draftUrl, 'https://draft')

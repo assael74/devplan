@@ -15,36 +15,21 @@ import { buildSearchColumns } from '../logic/search.columns.js'
 import SearchResultNotes from './SearchResultNotes.js'
 import SearchResultRole from './SearchResultRole.js'
 import SearchResultScoutProfiles from './SearchResultScoutProfiles.js'
-import SearchResultTeamUrl from './SearchResultTeamUrl.js'
 import { searchResultsSectionSx as sx } from './sx/searchResultsSection.sx.js'
 
 const renderExpandedRow = ({
   row,
   onNotesSave,
   onRoleEdit,
-  onTeamUrlEdit,
 }) => {
-  const isPlayer = row?.entityType !== 'birthTeamSeason'
-
   return (
-    <Box sx={[
-      sx.expandedDetails,
-      !isPlayer && sx.expandedNotesOnly,
-    ]}>
-      {isPlayer ? (
-        <Box sx={sx.expandedScoutProfiles}>
-          <SearchResultScoutProfiles row={row} />
-        </Box>
-      ) : null}
+    <Box sx={sx.expandedDetails}>
+      <Box sx={sx.expandedScoutProfiles}>
+        <SearchResultScoutProfiles row={row} />
+      </Box>
 
-      {isPlayer ? (
-        <>
-          <SearchResultNotes row={row} onSave={onNotesSave} />
-          <SearchResultRole row={row} onEdit={onRoleEdit} />
-        </>
-      ) : (
-        <SearchResultTeamUrl row={row} onEdit={onTeamUrlEdit} />
-      )}
+      <SearchResultNotes row={row} onSave={onNotesSave} />
+      <SearchResultRole row={row} onEdit={onRoleEdit} />
     </Box>
   )
 }
@@ -58,7 +43,6 @@ export default function SearchResultsSection({
   onFavoriteToggle,
   onNotesSave,
   onRoleEdit,
-  onTeamUrlEdit,
 }) {
   const columns = React.useMemo(() => buildSearchColumns({
     entityType,
@@ -67,7 +51,7 @@ export default function SearchResultsSection({
       Promise.resolve(onFavoriteToggle?.(row)).catch(() => {})
     },
   }), [entityType, onEntityOpen, onFavoriteToggle])
-  const entityLabel = entityType === 'team' ? 'קבוצות' : 'שחקנים'
+  const entityLabel = 'שחקנים'
   const entityColors = getEntityColors(entityType)
 
   return (
@@ -109,14 +93,13 @@ export default function SearchResultsSection({
           wrapSx={sx.tableWrap}
           tableSx={sx.table}
           defaultSort={{
-            key: entityType === 'team' ? 'teamName' : 'playerName',
+            key: 'playerName',
             direction: 'asc',
           }}
           renderExpandedRow={row => renderExpandedRow({
             row,
             onNotesSave,
             onRoleEdit,
-            onTeamUrlEdit,
           })}
         />
       )}

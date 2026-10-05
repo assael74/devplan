@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 
-import { updatePlayerLineClassification } from '../../../../services/writeV2/edits/player/updateLineClassification.js'
+import { updatePlayerRole } from '../../../../services/write/player/edits/updatePlayerRootManual.js'
 import { SNACK_STATUS } from '../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 
 const EMPTY_ROLE_DRAFT = {
@@ -16,7 +16,6 @@ export default function useTeamRoleEditor({
   team,
   selectedSeasonOption,
   notify,
-  reload,
 }) {
   const [row, setRow] = React.useState(null)
   const [draft, setDraft] = React.useState(EMPTY_ROLE_DRAFT)
@@ -43,20 +42,10 @@ export default function useTeamRoleEditor({
     setBusy(true)
 
     try {
-      await updatePlayerLineClassification({
-        league: leagueDoc || { id: leagueId },
-        season: {
-          ...(selectedSeasonOption.season || {}),
-          leagueId,
-          ageGroupId: team.ageGroupId,
-          seasonId: selectedSeasonOption.seasonId,
-          seasonKey: selectedSeasonOption.seasonKey,
-        },
-        team,
-        player: row,
+      await updatePlayerRole({
+        playerId: row.playerId,
         primaryPosition: draft.primaryPosition,
         positionLayer: draft.positionLayer,
-        numShirt: row.numShirt || row.number || '',
       })
 
       notify({
@@ -67,7 +56,6 @@ export default function useTeamRoleEditor({
 
       setRow(null)
       setDraft(EMPTY_ROLE_DRAFT)
-      void reload().catch(() => {})
     } catch (error) {
       notify({
         status: SNACK_STATUS.ERROR,
@@ -80,13 +68,9 @@ export default function useTeamRoleEditor({
   }, [
     draft.positionLayer,
     draft.primaryPosition,
-    leagueDoc,
-    leagueId,
     notify,
-    reload,
     row,
     selectedSeasonOption,
-    team,
   ])
 
   const changed = Boolean(

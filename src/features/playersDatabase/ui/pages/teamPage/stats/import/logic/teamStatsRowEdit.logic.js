@@ -107,15 +107,14 @@ export const applySystemCandidateApproval = ({ row, value }) => {
   const candidate = (Array.isArray(row.identityCandidates)
     ? row.identityCandidates
     : []).find(item => (
-    clean(item.candidateKey || item.playerDocumentId || item.playerId) === candidateKey
+    clean(item.candidateKey || item.playerId) === candidateKey
   ))
 
   if (!candidate || !clean(candidate.playerId)) return row
 
   return {
     ...row,
-    playerDocumentId: candidate.playerDocumentId,
-    approvedPlayerDocumentId: candidate.playerDocumentId,
+    playerId: candidate.playerId,
     approvedIdentityCandidateId: candidate.playerId,
     approvedCanonicalPlayerId: candidate.playerId,
     identityResolution: 'useSystemCandidate',

@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/teamPage/roster/import/hooks/useRosterIdentityReview.js
+// src/features/playersDatabase/ui/pages/teamPage/roster/import/hooks/useRosterIdentityReview.js
 
 import * as React from 'react'
 
@@ -88,7 +88,6 @@ export default function useRosterIdentityReview({
         return {
           ...row,
           playerId: candidate.playerId || '',
-          playerDocumentId: candidate.playerDocumentId || '',
           externalPlayerId: existingExternalPlayerId || row.externalPlayerId,
           playerUrl: playerUrl || candidate.playerUrl || '',
           identityResolution: 'useExisting',
@@ -104,7 +103,6 @@ export default function useRosterIdentityReview({
         return {
           ...row,
           playerId: '',
-          playerDocumentId: '',
           identityResolution: 'ignoreConflict',
           identityStatus: 'אושר כשחקן חדש',
           identityMessage: 'אושר כשחקן אחר למרות התאמת השם',

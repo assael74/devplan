@@ -5,7 +5,6 @@ import {
   Chip,
   IconButton,
   Stack,
-  Tooltip,
 } from '@mui/joy'
 
 import LeagueName from '../../../components/entities/LeagueName.js'
@@ -17,9 +16,7 @@ import { dataTableColumnsSx as columnSx } from '../../../components/tables/dataT
 import { dataTableActionsSx as actionSx } from '../../../components/tables/dataTable/sx/dataTableActions.sx.js'
 import { leagueCenterColumnsSx as sx } from '../sx/leagueCenter.columns.sx.js'
 
-const columnWidth = key => buildTableColumnWidth(
-  LEAGUE_CENTER_TABLE_WIDTHS[key]
-)
+const columnWidth = key => buildTableColumnWidth(LEAGUE_CENTER_TABLE_WIDTHS[key])
 
 const coverageLabel = ({ completeCount, targetCount }) => (
   `${Number(completeCount || 0)} / ${Number(targetCount || 0)}`
@@ -28,11 +25,7 @@ const coverageLabel = ({ completeCount, targetCount }) => (
 const coveragePill = ({ value, completeCount, targetCount }) => (
   <StatusPill
     value={value}
-    label={(
-      <span dir='ltr'>
-        {coverageLabel({completeCount, targetCount})}
-      </span>
-    )}
+    label={<span dir='ltr'>{coverageLabel({ completeCount, targetCount })}</span>}
   />
 )
 
@@ -43,12 +36,7 @@ const countPill = ({ count, targetCount }) => (
 )
 
 const statusSortValue = value => {
-  const sortValue = {
-    full: 2,
-    partial: 1,
-    missing: 0,
-  }[value]
-
+  const sortValue = { full: 2, partial: 1, missing: 0 }[value]
   return sortValue === undefined || sortValue === null ? -1 : sortValue
 }
 
@@ -57,40 +45,19 @@ const BASE_COLUMNS = [
     key: 'leagueName',
     label: 'ליגה',
     render: row => (
-      <LeagueName
-        value={row.leagueName}
-        level={row.level}
-        showLevel
-        fontSize={12}
-      />
+      <LeagueName value={row.leagueName} level={row.level} showLevel fontSize={12} />
     ),
   },
-  {
-    key: 'ageGroupLabel',
-    label: 'קבוצת גיל',
-    render: row => row.ageGroupLabel || row.ageGroup || '-',
-  },
-  {
-    key: 'birthYear',
-    label: 'שנתון',
-  },
-  {
-    key: 'seasonKey',
-    label: 'עונה',
-  },
-  {
-    key: 'teamsCount',
-    label: 'קבוצות',
-  },
+  { key: 'ageGroupLabel', label: 'קבוצת גיל', render: row => row.ageGroupLabel || row.ageGroup || '-' },
+  { key: 'birthYear', label: 'שנתון' },
+  { key: 'seasonKey', label: 'עונה' },
+  { key: 'teamsCount', label: 'קבוצות' },
   {
     key: 'tableStatus',
     label: 'טבלה',
     getSortValue: row => statusSortValue(row.tableStatus),
     render: row => (
-      <StatusPill
-        value={row.tableStatus}
-        label={row.tableStatus === 'full' ? 'מלא' : 'ריק'}
-      />
+      <StatusPill value={row.tableStatus} label={row.tableStatus === 'full' ? 'מלא' : 'ריק'} />
     ),
   },
   {
@@ -107,27 +74,18 @@ const BASE_COLUMNS = [
     key: 'offensePriorityStatus',
     label: 'עדיפות התקפית',
     getSortValue: row => Number(row.offensePriorityCount || 0),
-    render: row => countPill({
-      count: row.offensePriorityCount,
-      targetCount: row.offensePriorityTargetCount,
-    }),
+    render: row => countPill({ count: row.offensePriorityCount, targetCount: row.offensePriorityTargetCount }),
   },
   {
     key: 'defensePriorityStatus',
     label: 'עדיפות הגנתית',
     getSortValue: row => Number(row.defensePriorityCount || 0),
-    render: row => countPill({
-      count: row.defensePriorityCount,
-      targetCount: row.defensePriorityTargetCount,
-    }),
+    render: row => countPill({ count: row.defensePriorityCount, targetCount: row.defensePriorityTargetCount }),
   },
-  {
-    key: 'actions',
-    label: '',
-  },
+  { key: 'actions', label: '' },
 ]
 
-export const buildLeagueCenterColumns = ({ onCreateSeason, onOpenLeague, onDeleteSeason, deleteSeasonAvailability }) => (
+export const buildLeagueCenterColumns = ({ onOpenLeague, onDeleteLeagueSeason, getDeleteAvailability }) => (
   BASE_COLUMNS.map(column => {
     const widthSx = columnWidth(column.key)
 
@@ -135,78 +93,62 @@ export const buildLeagueCenterColumns = ({ onCreateSeason, onOpenLeague, onDelet
       return {
         ...column,
         sortable: false,
-        sx: {
-          ...columnSx.actionsColumn,
-          ...widthSx,
-        },
+        sx: { ...columnSx.actionsColumn, ...widthSx },
         headerSx: columnSx.centerColumn,
         cellSx: columnSx.centerColumn,
-        render: row => {
-          const deleteAvailability = deleteSeasonAvailability?.(row)
-          return <Stack direction='row' spacing={0.5} sx={actionSx.rowActions}>
-            {!row.hasSelectedSeason ? (
-              <Tooltip title='יצירת עונה'>
-                <Button
+        render: row => (
+          <Stack direction='row' spacing={0.5} sx={actionSx.rowActions}>
+            {row.hasSelectedSeason ? (
+              <>
+                <IconButton
                   size='sm'
-                  variant='outlined'
-                  sx={sx.createSeasonButton}
-                  startDecorator={iconUi({id: 'addSeason', size: 'sm'})}
-                  onClick={() => onCreateSeason(row)}
+                  variant='soft'
+                  sx={sx.openLeagueButton}
+                  aria-label='צפייה בליגה'
+                  onClick={() => onOpenLeague(row)}
                 >
-                  יצירת עונה
-                </Button>
-              </Tooltip>
-            ) : (
-              <IconButton
-                size='sm'
-                variant='soft'
-                disabled={!row.hasLeagueDoc}
-                sx={sx.openLeagueButton}
-                aria-label='צפייה בליגה'
-                onClick={() => onOpenLeague(row)}
-              >
-                {iconUi({id: 'viewLeague', size: 'sm'})}
-              </IconButton>
-            )}
-            {row.hasLeagueDoc && row.seasonKey && row.seasonKey !== 'all' && onDeleteSeason && !deleteAvailability?.hidden && <Tooltip title='מחיקת עונה'>
-              <span>
-                <IconButton size='sm' variant='outlined' color='danger'
-                  aria-label={deleteAvailability?.label || 'מחיקת עונה'}
-                  disabled={!deleteAvailability?.allowed}
-                  onClick={() => onDeleteSeason(row)}>
+                  {iconUi({id: 'viewLeague', size: 'sm'})}
+                </IconButton>
+                <IconButton
+                  size='sm'
+                  variant='plain'
+                  color='danger'
+                  aria-label='מחיקת עונת ליגה'
+                  title={getDeleteAvailability ? getDeleteAvailability(row).reason : ''}
+                  disabled={getDeleteAvailability ? !getDeleteAvailability(row).allowed : false}
+                  onClick={() => onDeleteLeagueSeason && onDeleteLeagueSeason(row)}
+                >
                   {iconUi({id: 'delete', size: 'sm'})}
                 </IconButton>
-              </span>
-            </Tooltip>}
+              </>
+            ) : (
+              <Button
+                size='sm'
+                variant='outlined'
+                sx={sx.createSeasonButton}
+                startDecorator={iconUi({id: 'addSeason', size: 'sm'})}
+                onClick={() => onOpenLeague(row)}
+              >
+                פתיחת ליגה
+              </Button>
+            )}
           </Stack>
-        },
+        ),
       }
     }
 
     if (column.key === 'leagueName') {
       return {
         ...column,
-        sx: {
-          ...columnSx.nameColumn,
-          ...widthSx,
-        },
-        headerSx: {
-          ...columnSx.nameHeader,
-          ...sx.leagueNameHeader,
-        },
-        cellSx: {
-          ...columnSx.nameCell,
-          ...sx.leagueNameCell,
-        },
+        sx: { ...columnSx.nameColumn, ...widthSx },
+        headerSx: { ...columnSx.nameHeader, ...sx.leagueNameHeader },
+        cellSx: { ...columnSx.nameCell, ...sx.leagueNameCell },
       }
     }
 
     return {
       ...column,
-      sx: {
-        ...columnSx.centerColumn,
-        ...widthSx,
-      },
+      sx: { ...columnSx.centerColumn, ...widthSx },
       headerSx: columnSx.centerColumn,
       cellSx: columnSx.centerColumn,
     }

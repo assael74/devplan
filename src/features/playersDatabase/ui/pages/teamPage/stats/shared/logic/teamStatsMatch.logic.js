@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/teamPage/stats/shared/logic/teamStatsMatch.logic.js
+// src/features/playersDatabase/ui/pages/teamPage/stats/shared/logic/teamStatsMatch.logic.js
 
 import { clean } from '../../../logic/teamPage.utils.js'
 import {
@@ -23,7 +23,6 @@ const buildRosterNameVariants = player => [
 ]
 
 export const getRosterPlayerOptionValue = player => clean(
-  player?.playerDocumentId ||
   player?.playerId ||
   player?.externalPlayerId ||
   player?.fullName
@@ -84,7 +83,6 @@ export const findStatsRosterMatch = (row, rosterLookup) => {
 const mergeRosterPlayerContext = ({ row, player }) => ({
   ...row,
   playerId: clean(player?.playerId),
-  playerDocumentId: clean(player?.playerDocumentId),
   externalPlayerId: clean(player?.externalPlayerId),
   identityMatchStatus: clean(player?.playerId) ? 'provided' : clean(row?.identityMatchStatus),
   identityKey: clean(player?.identityKey),
@@ -99,6 +97,23 @@ const mergeRosterPlayerContext = ({ row, player }) => ({
     : Array.isArray(row.positions)
       ? row.positions
       : [],
+  lineClassification: player?.lineClassification || row.lineClassification || null,
+  scoutProfiles: Array.isArray(player?.scoutProfiles)
+    ? player.scoutProfiles
+    : Array.isArray(row.scoutProfiles)
+      ? row.scoutProfiles
+      : [],
+  scoutSignals: Array.isArray(player?.scoutSignals)
+    ? player.scoutSignals
+    : Array.isArray(row.scoutSignals)
+      ? row.scoutSignals
+      : [],
+  scoutCombinations: Array.isArray(player?.scoutCombinations)
+    ? player.scoutCombinations
+    : Array.isArray(row.scoutCombinations)
+      ? row.scoutCombinations
+      : [],
+  scoutProfileDisplay: player?.scoutProfileDisplay || row.scoutProfileDisplay || {},
   clubLevel: pickDefinedValue(player?.clubLevel, row.clubLevel),
   birthTeamSlot: pickDefinedValue(player?.birthTeamSlot, player?.teamSlot, row.birthTeamSlot),
 })

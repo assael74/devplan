@@ -11,10 +11,7 @@
  * - Deduplicates concurrent reads.
  * - Prevents stale pending reads from repopulating the cache after a write.
  *
- * cacheInvalidation.js
- * - Invalidates the affected document keys after successful write actions.
  */
 
 export * from './cacheKeys.js'
 export * from './documentCache.js'
-export * from './cacheInvalidation.js'

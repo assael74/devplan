@@ -54,9 +54,13 @@ export const downloadTeamPageDocumentsJson = ({
   }
 
   ;(Array.isArray(teamSeasons) ? teamSeasons : []).forEach(teamSeason => {
+    const seasonFileKey = teamSeason?.identity?.seasonKey ||
+      teamSeason?.identity?.seasonId ||
+      teamSeason?.seasonKey ||
+      teamSeason?.seasonId
     downloadJson({
       data: teamSeason,
-      fileName: `team-season-${teamId}-${safeFilePart(teamSeason?.seasonKey || teamSeason?.seasonId)}.json`,
+      fileName: `team-season-${teamId}-${safeFilePart(seasonFileKey)}.json`,
     })
   })
 }

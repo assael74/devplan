@@ -88,13 +88,3 @@ export const normalizeTeamStats = (
   }
 }
 
-export const buildTeamStatsAliases = (teamStats = {}) => ({
-  games: toNumberOrZero(teamStats.gamesPlayed),
-  gamesPlayed: toNumberOrZero(teamStats.gamesPlayed),
-  teamGamesCount: toNumberOrZero(teamStats.gamesPlayed),
-  teamGamePlayed: toNumberOrZero(teamStats.gamesPlayed),
-  goalsFor: toNumberOrZero(teamStats.goalsFor),
-  leagueGoalsFor: toNumberOrZero(teamStats.goalsFor),
-  teamGoals: toNumberOrZero(teamStats.goalsFor),
-  goalsAgainst: toNumberOrZero(teamStats.goalsAgainst),
-})

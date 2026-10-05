@@ -17,9 +17,16 @@ import {
   buildTeamPageView,
 } from '../../../../model/team/page/teamPageView.model.js'
 import { buildTeamPageSeasonOptions, findTeamPageLeagueSeasonDoc, findTeamPageSeasonDoc } from '../../../../model/team/page/teamPageSeason.model.js'
-import { adaptTeamPagePlayerRow } from '../../../../model/team/page/teamPagePlayer.model.js'
+import {
+  buildTeamPagePlayerRows,
+  buildTeamPageSeasonView,
+} from '../../../../model/team/page/teamPagePlayer.model.js'
 import { PLAYERS_DATABASE_CURRENT_SEASON_KEY } from '../../../../catalog/seasons.catalog.js'
-import { readClubPageDocument, readTeamPageData } from '../../../../services/read/index.js'
+import {
+  CLUBS_DIRECTORY_STORE_KEY,
+  readTeamPageData,
+  subscribeTeamPageData,
+} from '../../../../services/read/index.js'
 import { buildTeamPageDataCacheKey } from '../../../../services/cache/index.js'
 import usePlayersDatabaseReadStoreEntry from '../../../hooks/usePlayersDatabaseReadStoreEntry.js'
 import { PLAYERS_DATABASE_UI_ROUTES } from '../../../logic/routeBuilders.js'
@@ -59,19 +66,28 @@ export function useTeamPage() {
   const fromClubs = searchParams.get('fromClubs') === '1'
   const pageStoreKey = buildTeamPageDataCacheKey({ leagueId, teamId })
   const pageEntry = usePlayersDatabaseReadStoreEntry(pageStoreKey)
+  const clubsDirectoryEntry = usePlayersDatabaseReadStoreEntry(
+    CLUBS_DIRECTORY_STORE_KEY
+  )
   const pageResult = pageEntry.data
   const leagueDoc = pageResult?.leagueDoc || null
-  const leagueDocuments = pageResult?.leagueDocuments || []
+  const leagueDocuments = useMemo(
+    () => pageResult?.leagueDocuments || [],
+    [pageResult?.leagueDocuments]
+  )
   const documentLoadState = pageResult?.documentLoadState || null
   const teamDoc = pageResult?.teamDoc || null
-  const teamSeasons = pageResult?.teamSeasons || []
+  const teamSeasons = useMemo(
+    () => pageResult?.teamSeasons || [],
+    [pageResult?.teamSeasons]
+  )
   const seasonSnapshots = pageResult?.teamPageData?.seasons.map(season => ({
     ...season.resolved,
     sources: season.sources,
     availability: season.availability,
   })) || pageResult?.seasonSnapshots || []
   const teamPageData = pageResult?.teamPageData || null
-  const [clubDoc, setClubDoc] = useState(null)
+  const [liveError, setLiveError] = useState('')
   const [selectedOptionKey, setSelectedOptionKey] = useState('')
   const loading = !pageResult && (
     pageEntry.status === 'idle' ||
@@ -79,7 +95,9 @@ export function useTeamPage() {
     pageEntry.status === 'refreshing'
   )
   const refreshing = Boolean(pageResult && pageEntry.status === 'refreshing')
-  const error = pageResult ? '' : (pageEntry.error?.message || '')
+  const error = pageResult ? liveError : (
+    liveError || pageEntry.error?.message || ''
+  )
   const refreshError = pageEntry.refreshError?.message || ''
 
   useEffect(() => {
@@ -105,28 +123,25 @@ export function useTeamPage() {
   ), [leagueId, teamId])
 
   useEffect(() => {
-    readTeamPageData({
+    setLiveError('')
+    return subscribeTeamPageData({
       leagueId,
       teamId,
-    }).catch(() => {})
+      onError: nextError => setLiveError(
+        nextError?.message || 'האזנה למסמכי הקבוצה נכשלה'
+      ),
+    })
   }, [leagueId, teamId])
 
   useEffect(() => {
     setSelectedOptionKey('')
   }, [leagueId, teamId])
 
-  useEffect(() => {
-    let active = true
-    const clubId = cleanValue(teamDoc?.clubId)
-    setClubDoc(null)
-    if (!clubId) return () => { active = false }
-
-    readClubPageDocument({ clubId })
-      .then(data => { if (active) setClubDoc(data || null) })
-      .catch(() => { if (active) setClubDoc(null) })
-
-    return () => { active = false }
-  }, [teamDoc?.clubId])
+  const clubDoc = useMemo(() => {
+    const clubId = cleanValue(teamDoc?.identity?.clubId)
+    const club = clubsDirectoryEntry.data?.clubsById?.[clubId]
+    return club ? { id: clubId, ...club } : null
+  }, [clubsDirectoryEntry.data, teamDoc?.identity?.clubId])
 
   const seasonOptions = useMemo(
     () => buildTeamPageSeasonOptions(
@@ -188,7 +203,7 @@ export function useTeamPage() {
     selectedSeasonOption,
   ])
   const selectedLeagueDocument = selectedLeagueSeason?.leagueDoc || leagueDoc
-  const selectedTeamSeason = useMemo(() => findTeamPageSeasonDoc({
+  const selectedTeamSeasonDocument = useMemo(() => findTeamPageSeasonDoc({
     teamDoc,
     teamSeasons,
     selectedSeasonOption,
@@ -196,6 +211,13 @@ export function useTeamPage() {
     teamDoc,
     teamSeasons,
     selectedSeasonOption,
+  ])
+  const selectedTeamSeason = useMemo(() => buildTeamPageSeasonView({
+    teamSeason: selectedTeamSeasonDocument,
+    selectedSeasonOption,
+  }), [
+    selectedSeasonOption,
+    selectedTeamSeasonDocument,
   ])
   const team = useMemo(() => buildTeamPageView({
     teamId,
@@ -214,23 +236,12 @@ export function useTeamPage() {
     selectedLeagueSeason,
     selectedTeamSeason,
   ])
-  const players = useMemo(() => {
-    if (!Array.isArray(selectedTeamSeason?.teamPlayers)) {
-      return []
-    }
-
-    return selectedTeamSeason.teamPlayers.map((player, index) => (
-      adaptTeamPagePlayerRow({
-        player,
-        index,
-        selectedSeasonOption,
-        teamSeason: team?.domain || team,
-      })
-    ))
-  }, [
+  const players = useMemo(() => buildTeamPagePlayerRows({
+    teamSeason: selectedTeamSeason,
+    selectedSeasonOption,
+  }), [
     selectedTeamSeason,
     selectedSeasonOption,
-    team,
   ])
 
   const changeSeason = useCallback(value => {

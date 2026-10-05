@@ -13,14 +13,10 @@ export default function useSearchPreviewCount({
   const favoriteEntityIds = React.useMemo(() => {
     if (!queryFilters.favoritesOnly) return []
 
-    return queryFilters.searchContext === 'team'
-      ? favorites.birthTeamFavorites.map(item => item.entityId)
-      : favorites.playerFavorites.map(item => item.entityId)
+    return favorites.playerFavorites.map(item => item.entityId)
   }, [
-    favorites.birthTeamFavorites,
     favorites.playerFavorites,
     queryFilters.favoritesOnly,
-    queryFilters.searchContext,
   ])
   const favoritesKey = React.useMemo(
     () => favoriteEntityIds.slice().sort().join('|'),

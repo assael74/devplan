@@ -4,98 +4,77 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useState,
 } from 'react'
 
-import {
-  readClubPageDocument,
-  readClubsMasterDocument,
-} from '../../../../services/read/index.js'
+import { readClubPageData } from '../../../../services/read/index.js'
 import { buildClubPageModel } from '../../../../model/pages/clubPresentation.model.js'
 import {
-  buildClubDocumentCacheKey,
-  buildClubsMasterCacheKey,
-} from '../../../../services/cache/index.js'
-import usePlayersDatabaseReadStoreEntry from '../../../hooks/usePlayersDatabaseReadStoreEntry.js'
-import {
-  buildClubIntelligenceFromMaster,
-  enrichClubIntelligenceFromClubDocument,
+  buildClubIntelligenceFromCanonicalSources,
 } from '../../../../domain/clubIntelligence/index.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
 export default function useClubPage({ clubId } = {}) {
   const normalizedClubId = clean(clubId)
-  const clubCacheKey = useMemo(
-    () => buildClubDocumentCacheKey(normalizedClubId),
-    [normalizedClubId]
-  )
-  const clubsMasterCacheKey = useMemo(
-    () => buildClubsMasterCacheKey(),
-    []
-  )
-  const clubStoreEntry = usePlayersDatabaseReadStoreEntry(clubCacheKey)
-  const masterStoreEntry = usePlayersDatabaseReadStoreEntry(clubsMasterCacheKey)
-  const clubsMasterDoc = useMemo(() => ({
-    masterDocument: masterStoreEntry.data,
-    clubDocument: clubStoreEntry.data,
-  }), [clubStoreEntry.data, masterStoreEntry.data])
-  const loading = (
-    masterStoreEntry.status === 'idle' ||
-    masterStoreEntry.status === 'loading' ||
-    clubStoreEntry.status === 'idle' ||
-    clubStoreEntry.status === 'loading'
-  )
-  const refreshing = (
-    masterStoreEntry.status === 'refreshing' ||
-    clubStoreEntry.status === 'refreshing'
-  )
-  const refreshError = (
-    masterStoreEntry.refreshError?.message ||
-    clubStoreEntry.refreshError?.message ||
-    ''
-  )
-  const entryError = masterStoreEntry.status === 'error'
-    ? masterStoreEntry.error
-    : clubStoreEntry.status === 'error'
-      ? clubStoreEntry.error
-      : null
-  const error = entryError?.message || ''
+  const [source, setSource] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState('')
+  const [refreshError, setRefreshError] = useState('')
 
-  const reload = useCallback(async () => {
-    const [masterDocument] = await Promise.all([
-      readClubsMasterDocument(),
-      readClubPageDocument({
+  const load = useCallback(async ({ refresh = false } = {}) => {
+    if (!normalizedClubId) {
+      setSource(null)
+      setLoading(false)
+      return null
+    }
+
+    if (refresh) {
+      setRefreshing(true)
+      setRefreshError('')
+    } else {
+      setLoading(true)
+      setError('')
+    }
+
+    try {
+      const nextSource = await readClubPageData({
         clubId: normalizedClubId,
-        refresh: true,
-      }),
-    ])
-    return masterDocument
+        refresh,
+      })
+      setSource(nextSource)
+      return nextSource
+    } catch (loadError) {
+      const message = loadError?.message || 'טעינת המועדון נכשלה'
+      if (refresh) setRefreshError(message)
+      else {
+        setSource(null)
+        setError(message)
+      }
+      throw loadError
+    } finally {
+      if (refresh) setRefreshing(false)
+      else setLoading(false)
+    }
   }, [normalizedClubId])
+
+  const reload = useCallback(() => load({ refresh: true }), [load])
 
   useEffect(() => {
-    Promise.all([
-      readClubsMasterDocument(),
-      readClubPageDocument({ clubId: normalizedClubId }),
-    ]).catch(() => {})
-  }, [normalizedClubId])
+    load().catch(() => {})
+  }, [load])
 
-  const clubMasterEntry = useMemo(() => (
-    (Array.isArray(clubsMasterDoc?.masterDocument?.clubs) ? clubsMasterDoc.masterDocument.clubs : [])
-      .find(item => clean(item?.clubId) === normalizedClubId) || null
-  ), [clubsMasterDoc, normalizedClubId])
-  const intelligence = useMemo(() => {
-    if (!clubMasterEntry) return null
-
-    const base = buildClubIntelligenceFromMaster({ club: clubMasterEntry })
-    return clubsMasterDoc?.clubDocument
-      ? enrichClubIntelligenceFromClubDocument({
-          intelligence: base,
-          clubDocument: clubsMasterDoc.clubDocument,
-        })
-      : base
-  }, [clubMasterEntry, clubsMasterDoc])
-  const club = intelligence?.club || clubMasterEntry || null
+  const intelligence = useMemo(() => (
+    source ? buildClubIntelligenceFromCanonicalSources(source) : null
+  ), [source])
+  const club = intelligence?.club?.clubId ? intelligence.club : null
   const page = useMemo(() => buildClubPageModel({ intelligence }), [intelligence])
+  const hasCanonicalSource = Boolean(
+    source?.profile ||
+    source?.directoryEntry ||
+    source?.centers?.some(item => item?.document?.clubsById?.[normalizedClubId])
+  )
 
   return {
     club,
@@ -106,10 +85,6 @@ export default function useClubPage({ clubId } = {}) {
     refreshing,
     error,
     refreshError,
-    notFound: Boolean(
-      masterStoreEntry.status === 'ready' &&
-      clubStoreEntry.status === 'ready' &&
-      !club
-    ),
+    notFound: Boolean(!loading && !error && !hasCanonicalSource),
   }
 }

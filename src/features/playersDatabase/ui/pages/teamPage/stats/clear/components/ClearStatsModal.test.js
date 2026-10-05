@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 
 import ClearStatsModal from './ClearStatsModal.js'
 
@@ -20,7 +20,7 @@ const controller = overrides => ({
   open: true,
   status: 'ready',
   proposedPlan: {
-    identity: { birthTeamDocumentId: 'team-1', seasonKey: '2026' },
+    identity: { teamId: 'team-1', seasonId: '2025_2026', seasonKey: '25/26' },
     currentStatsState: 'present',
     isIdempotent: false,
     impact: {
@@ -44,10 +44,10 @@ describe('ClearStatsModal', () => {
     render(<ClearStatsModal controller={value} teamName='קבוצה א' seasonKey='2026' />)
 
     expect(screen.queryByRole('button', { name: 'שמירה' })).not.toBeInTheDocument()
-    expect(screen.getByText('נתוני טבלה רשמיים או ביצועי קבוצה.', { exact: false }))
+    expect(screen.getByText('נתוני הטבלה הרשמיים וביצועי הקבוצה.', { exact: false }))
       .toBeInTheDocument()
-    expect(screen.getByText('שחקנים שפרופיל הסקאוט שלהם ינוקה')).toBeInTheDocument()
-    expect(screen.getByText('1')).toBeInTheDocument()
+    const scoutProfileCountLabel = screen.getByText('שחקנים שפרופיל הסקאוט שלהם ינוקה')
+    expect(within(scoutProfileCountLabel.parentElement).getByText('1')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'אישור מחיקה' }))
     expect(value.execute).toHaveBeenCalledTimes(1)
@@ -57,7 +57,7 @@ describe('ClearStatsModal', () => {
     render(<ClearStatsModal
       controller={controller({
         proposedPlan: {
-          identity: { birthTeamDocumentId: 'team-1', seasonKey: '2026' },
+          identity: { teamId: 'team-1', seasonId: '2025_2026', seasonKey: '25/26' },
           currentStatsState: 'absent',
           isIdempotent: true,
           impact: {
@@ -87,13 +87,13 @@ describe('ClearStatsModal', () => {
             writesCompleted: 3,
             writesSkipped: 1,
             targets: [
-              { targetType: 'playerDocument', status: 'written' },
-              { targetType: 'playerDocument', status: 'written' },
-              { targetType: 'playerSearchIndex', status: 'written' },
-              { targetType: 'league', status: 'skipped' },
+              { targetType: 'playerRoots', status: 'written' },
+              { targetType: 'playerRoots', status: 'written' },
+              { targetType: 'playerSearchIndexes', status: 'written' },
+              { targetType: 'leagueProjection', status: 'skipped' },
             ],
           },
-          audit: { status: 'passed' },
+          audit: { status: 'CLEAN' },
         },
         error: new Error('reload failed'),
       })}
@@ -113,41 +113,38 @@ describe('ClearStatsModal', () => {
       controller={controller({
         status: 'failed',
         error: Object.assign(new Error('audit failed'), {
-          code: 'CLEAR_STATS_AUDIT_FAILED',
+          code: 'STATS_CLEAR_AUDIT_FAILED',
           failedStep: 'audit',
           receiptId: 'receipt-failed-1',
           canonicalWrite: { writeSkipped: false, playersAffected: 2 },
           projectionWrite: {
             writesCompleted: 4,
             writesSkipped: 1,
-            targets: [{ targetType: 'playerDocument', status: 'written' }],
+            targets: [{ targetType: 'playerRoots', status: 'written' }],
             failedTarget: {
-              targetType: 'playerSearchIndex',
+              targetType: 'playerSearchIndexes',
               docId: 'hidden-player-index-id',
               status: 'failed',
-              code: 'CLEAR_STATS_PROJECTION_SOURCE_MISMATCH',
+              code: 'STATS_CLEAR_PROJECTION_SOURCE_MISMATCH',
             },
           },
           audit: {
-            status: 'failed',
-            failuresCount: 1,
-            checks: [{
-              targetType: 'playerSearchIndex',
-              check: 'setFields.primaryScoutProfileId',
-              status: 'failed',
-              reason: 'Approved field does not match actual state',
+            status: 'FINDINGS',
+            findings: [{
+              target: 'playerSearchIndex',
+              field: 'scoutProfileIds',
             }],
           },
         }),
       })}
     />)
 
-    expect(screen.getByText('בדיקת סנכרון')).toBeInTheDocument()
+    expect(screen.getAllByText('בדיקת סנכרון')).toHaveLength(2)
     expect(screen.getByText('מזהה תיעוד פעולה: receipt-failed-1')).toBeInTheDocument()
     expect(screen.getByText('פערים שנמצאו בבדיקת הסנכרון')).toBeInTheDocument()
-    expect(screen.getByText('נמצא פער ב־אינדקסי השחקנים')).toBeInTheDocument()
+    expect(screen.getByText('נמצא פער ב־תוצרי חיפוש השחקנים')).toBeInTheDocument()
     expect(screen.getByText('העדכון נעצר כאן')).toBeInTheDocument()
-    expect(screen.queryByText(/setFields.primaryScoutProfileId/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/scoutProfileIds/)).not.toBeInTheDocument()
     expect(screen.queryByText('hidden-player-index-id')).not.toBeInTheDocument()
   })
 })

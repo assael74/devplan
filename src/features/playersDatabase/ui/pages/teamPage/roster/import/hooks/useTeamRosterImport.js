@@ -1,34 +1,17 @@
-// features/playersDatabase/ui/pages/teamPage/roster/import/hooks/useTeamRosterImport.js
+// src/features/playersDatabase/ui/pages/teamPage/roster/import/hooks/useTeamRosterImport.js
 
 import * as React from 'react'
-import {
-  prepareRosterImportPlan,
-  syncRosterClubsMasterV2,
-  syncRosterClubsV2,
-  syncRosterCounterpartsV2,
-  syncRosterLeaguesMasterV2,
-  syncRosterPlayerIndexesV2,
-  syncRosterTeamProjectionV2,
-  writeRosterV2,
-} from '../../../../../../services/writeV2/roster/index.js'
-import {
-  WRITE_ACTION_V2_CANONICAL_STATUS,
-  WRITE_ACTION_V2_FLOW_TYPE,
-  closeWriteActionReceiptV2,
-  createWriteActionReceiptV2,
-  reportWriteActionCanonicalStatusV2,
-  saveWriteActionAuditSummaryV2,
-} from '../../../../../../services/writeV2/receipt/index.js'
-import { auditRosterV2 } from '../../../../../../services/auditV2/index.js'
-import { invalidateRosterImportCacheV2 } from '../../../../../../services/writeV2/roster/invalidateRosterImportCache.js'
-import { resolveTeamPlayerIdentityPreview } from '../../../../../../services/read/identity/playerIdentityPreview.read.js'
+import { loadRoster, prepareRosterLoad } from '../../../../../../services/write/roster/index.js'
+import { getWriteActionReceipt } from '../../../../../../services/write/receipt/index.js'
+import { repairWriteActionReceipt } from '../../../../../../services/write/recovery/index.js'
+import { resolveCanonicalTeamPlayerIdentityPreview } from '../../../../../../services/read/identity/canonicalPlayerIdentityPreview.read.js'
 import {
   listExistingTeamRootOptions,
   readTeamSeasonRosterHistory,
 } from '../../../../../../services/read/index.js'
-import { buildCleanApprovedRosterState } from '../../../../../../domain/builders/approvedRosterState.builder.js'
 import {
   ROSTER_IMPORT_MODE,
+  buildRosterSnapshotContentHash,
   mergeLocalAndResolvedPlayers,
   resolveRosterPlayersLocally,
 } from '../../../../../../domain/movement/index.js'
@@ -38,25 +21,18 @@ import {
   parsePlayerRosterRows,
   resolveRosterImportMetadata,
 } from '../logic/teamRosterImport.logic.js'
+import {
+  applyRosterSyncProgressEvent,
+  buildRosterSyncStages,
+  resolveRosterRetryMode,
+} from '../logic/rosterSyncProgress.model.js'
 import useRosterIdentityReview from './useRosterIdentityReview.js'
 import useRosterMovementReview from './useRosterMovementReview.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
-const ROSTER_SYNC_STAGE_IDS = [
-  'canonical',
-  'counterparts',
-  'playerIndexes',
-  'teamProjection',
-  'leaguesMaster',
-  'clubs',
-  'clubsMaster',
-  'audit',
-]
 const playerMatchKeys = player => [
   clean(player?.playerId),
   clean(player?.externalPlayerId),
-  clean(player?.identityKey),
-  clean(player?.fullName).toLowerCase(),
 ].filter(Boolean)
 const playerMatches = (left, right) => {
   const rightKeys = new Set(playerMatchKeys(right))
@@ -70,8 +46,8 @@ export default function useTeamRosterImport({
   team,
   seasonOptions = [],
   selectedSeasonOption: pageSelectedSeasonOption = null,
+  teamSeasons = [],
   notify,
-  reload,
 }) {
   const [open, setOpen] = React.useState(false)
   const [selectedSeasonOptionKey, setSelectedSeasonOptionKey] = React.useState('')
@@ -88,12 +64,17 @@ export default function useTeamRosterImport({
   const [rosterImportPlan, setRosterImportPlan] = React.useState(null)
   const [receiptId, setReceiptId] = React.useState('')
   const [auditResult, setAuditResult] = React.useState(null)
-  const [syncState, setSyncState] = React.useState({
-    activeStage: '',
-    completedStages: [],
-    error: null,
-    results: {},
-  })
+  const [executionReceipt, setExecutionReceipt] = React.useState(null)
+  const [executionStatus, setExecutionStatus] = React.useState('idle')
+  const [executionError, setExecutionError] = React.useState('')
+
+  const resetExecution = React.useCallback(() => {
+    setReceiptId('')
+    setAuditResult(null)
+    setExecutionReceipt(null)
+    setExecutionStatus('idle')
+    setExecutionError('')
+  }, [])
 
   const selectedSeasonOption = React.useMemo(() => (
     seasonOptions.find(option => option.optionKey === selectedSeasonOptionKey) || null
@@ -109,8 +90,8 @@ export default function useTeamRosterImport({
   const buildSeason = React.useCallback(() => ({
     ...(selectedSeasonOption?.season || {}),
     leagueId: actionLeagueId,
-    ageGroupId: team.ageGroupId,
-    birthYear: team.birthYear,
+    ageGroupId: selectedSeasonOption?.ageGroupId || team.ageGroupId,
+    birthYear: selectedSeasonOption?.birthYear || team.birthYear,
     seasonId: selectedSeasonOption?.seasonId,
     seasonKey: selectedSeasonOption?.seasonKey,
   }), [actionLeagueId, selectedSeasonOption, team.ageGroupId, team.birthYear])
@@ -122,8 +103,7 @@ export default function useTeamRosterImport({
     setTeamRootOptions([])
     setPasteValue('')
     setRosterImportPlan(null)
-    setReceiptId('')
-    setAuditResult(null)
+    resetExecution()
     const option = seasonOptions.find(item => item.optionKey === optionKey)
 
     if (!option) {
@@ -135,6 +115,7 @@ export default function useTeamRosterImport({
 
     readTeamSeasonRosterHistory({
       birthTeamDocumentId: resolveTeamLookupKey(team),
+      seasonId: option.seasonId,
       seasonKey: option.seasonKey,
     })
       .then(history => {
@@ -151,7 +132,7 @@ export default function useTeamRosterImport({
         console.error('[playersDatabase/previous-roster-preview]', error)
         setPreviousRoster({ loading: false, seasonKey: '', players: [] })
       })
-  }, [seasonOptions, team])
+  }, [resetExecution, seasonOptions, team])
 
   const openModal = React.useCallback(() => {
     const defaultOption = seasonOptions.find(option => (
@@ -176,6 +157,7 @@ export default function useTeamRosterImport({
       const season = buildSeason()
       const rosterHistory = await readTeamSeasonRosterHistory({
         birthTeamDocumentId: resolveTeamLookupKey(team),
+        seasonId: season.seasonId,
         seasonKey: season.seasonKey,
       })
       // Only a canonical roster membership confirms a player is already in
@@ -195,7 +177,7 @@ export default function useTeamRosterImport({
       })
       const unresolvedPlayers = localResolution.unresolved.map(entry => entry.player)
       const broadPreviewRows = unresolvedPlayers.length
-        ? await resolveTeamPlayerIdentityPreview({
+        ? await resolveCanonicalTeamPlayerIdentityPreview({
           players: unresolvedPlayers,
           season,
         })
@@ -237,9 +219,9 @@ export default function useTeamRosterImport({
         .filter(previousPlayer => !matchedPreviousPlayers.some(player => playerMatches(previousPlayer, player)))
         .map(player => ({ ...player, statsMovementTeam: null })))
       setTeamRootOptions(await listExistingTeamRootOptions({
-        seasonKey: season.seasonKey,
-        ageGroupId: team.ageGroupId,
-        birthYear: team.birthYear,
+        seasonId: season.seasonId,
+        ageGroupId: season.ageGroupId,
+        birthYear: season.birthYear,
         excludedBirthTeamDocumentId: resolveTeamLookupKey(team),
       }))
       return previewRowsWithRosterMembership
@@ -328,7 +310,8 @@ export default function useTeamRosterImport({
 
   React.useEffect(() => {
     setRosterImportPlan(null)
-  }, [rows, missingRosterPlayers])
+    resetExecution()
+  }, [missingRosterPlayers, resetExecution, rows])
 
   const clearPaste = React.useCallback(() => {
     if (busy) return
@@ -336,15 +319,8 @@ export default function useTeamRosterImport({
     setPasteValue('')
     setRows([])
     setRosterImportPlan(null)
-    setReceiptId('')
-    setAuditResult(null)
-    setSyncState({
-      activeStage: '',
-      completedStages: [],
-      error: null,
-      results: {},
-    })
-  }, [busy])
+    resetExecution()
+  }, [busy, resetExecution])
 
 
   const close = React.useCallback(() => {
@@ -352,38 +328,69 @@ export default function useTeamRosterImport({
     setOpen(false)
   }, [busy])
 
+  const buildActionInput = React.useCallback(() => {
+    const season = buildSeason()
+    const teamSlot = Number(team.teamSlot || team.birthTeamSlot)
+    if (!Number.isInteger(teamSlot) || teamSlot < 1) throw new Error('Missing canonical teamSlot')
+    const rosterMetadata = resolveRosterImportMetadata({ rows })
+    const teamId = resolveTeamLookupKey(team)
+    const basePlayers = rows.map(row => ({
+      ...row,
+      rosterStatus: clean(row.rosterStatus) === 'youngerAgeGroup' ? 'youngerAgeGroup' : 'regular',
+    }))
+    const retainedHistoricalPlayers = missingRosterPlayers
+      .filter(player => clean(player?.missingResolution) === 'olderAgeException')
+      .map(player => ({ ...player, rosterStatus: 'left' }))
+    const players = [...basePlayers, ...retainedHistoricalPlayers]
+    const contentHash = buildRosterSnapshotContentHash({
+      seasonKey: season.seasonKey,
+      birthTeamDocumentId: teamId,
+      players,
+    })
+    const sourceSnapshotKey = clean(rosterMetadata.sourceSnapshotKey) || contentHash
+    const participantDecisions = [
+      ...rows
+        .filter(row => ['joined', 'left', 'youngerAgeGroup'].includes(clean(row.statsMovementDecision)))
+        .map(row => ({
+          ...row,
+          decision: clean(row.statsMovementDecision),
+          team: row.statsMovementTeam || null,
+        })),
+      ...missingRosterPlayers
+        .filter(player => clean(player?.missingResolution) === 'left')
+        .map(player => ({ ...player, decision: 'left', team: player.statsMovementTeam || null })),
+      ...missingRosterPlayers
+        .filter(player => clean(player?.missingResolution) === 'unknown')
+        .map(player => ({ ...player, decision: 'unknown' })),
+    ]
+
+    return {
+      leagueId: actionLeagueId,
+      team: {
+        ...team,
+        clubId: clean(team.clubId),
+        ageGroupId: season.ageGroupId,
+        birthYear: Number(season.birthYear),
+        teamSlot,
+      },
+      season,
+      players,
+      participantDecisions,
+      rosterImport: {
+        mode: ROSTER_IMPORT_MODE.AUTHORITATIVE_SNAPSHOT,
+        sourceSnapshotKey,
+        contentHash,
+        effectiveAt: rosterMetadata.effectiveAt || null,
+      },
+      updatedAt: new Date().toISOString(),
+    }
+  }, [actionLeagueId, buildSeason, missingRosterPlayers, rows, team])
+
   const preparePlan = React.useCallback(async () => {
     if (!selectedSeasonOption || hasIdentityErrors || !hasMissingRosterApprovals) return null
-
     setBusy(true)
-
     try {
-      const rosterMetadata = resolveRosterImportMetadata({ rows })
-      const rawPlan = await prepareRosterImportPlan({
-        target: selectedSeasonOption.target,
-        league: {
-          ...(actionLeagueDoc || {}),
-          id: actionLeagueId,
-          leagueId: actionLeagueId,
-        },
-        season: buildSeason(),
-        team,
-        rosterImport: {
-          mode: ROSTER_IMPORT_MODE.AUTHORITATIVE_SNAPSHOT,
-          sourceSnapshotKey: rosterMetadata.sourceSnapshotKey || '',
-          sourceSnapshotKeyExplicit: Boolean(rosterMetadata.sourceSnapshotKey),
-          effectiveAt: rosterMetadata.effectiveAt || null,
-        },
-        players: rows,
-        missingPlayers: missingRosterPlayers
-          .filter(player => clean(player?.playerId))
-          .filter(player => (
-            clean(player?.missingResolution) === 'olderAgeException' ||
-            clean(player?.statsMovementTeam?.birthTeamDocumentId)
-          )),
-      })
-
-      const plan = buildCleanApprovedRosterState(rawPlan)
+      const plan = await prepareRosterLoad({ input: buildActionInput() })
       setRosterImportPlan(plan)
       return plan
     } catch (error) {
@@ -397,179 +404,140 @@ export default function useTeamRosterImport({
     } finally {
       setBusy(false)
     }
-  }, [
-    actionLeagueDoc,
-    actionLeagueId,
-    buildSeason,
-    hasIdentityErrors,
-    hasMissingRosterApprovals,
-    missingRosterPlayers,
-    notify,
-    rows,
-    selectedSeasonOption,
-    team,
-  ])
+  }, [buildActionInput, hasIdentityErrors, hasMissingRosterApprovals, notify, selectedSeasonOption])
 
   const enterSync = React.useCallback(() => {
     if (!selectedSeasonOption || !rosterImportPlan) return null
-    setSyncState({
-      activeStage: '',
-      completedStages: [],
-      error: null,
-      results: {},
-    })
+    resetExecution()
+    setExecutionStatus('ready')
 
     return { readyForSync: true }
-  }, [rosterImportPlan, selectedSeasonOption])
+  }, [resetExecution, rosterImportPlan, selectedSeasonOption])
 
-  const syncComplete = ROSTER_SYNC_STAGE_IDS.every(stageId => (
-    syncState.completedStages.includes(stageId)
-  ))
-
-
-  const runSyncStage = React.useCallback(async stageId => {
+  const executeApprovedImport = React.useCallback(async () => {
     if (!rosterImportPlan || busy) return null
-
-    const stageRunners = {
-      canonical: async () => {
-        let activeReceiptId = receiptId
-
-        if (!activeReceiptId) {
-          activeReceiptId = await createWriteActionReceiptV2({
-            flowType: WRITE_ACTION_V2_FLOW_TYPE.ROSTER,
-            label: 'טעינת סגל קבוצה',
-            auditTarget: {
-              birthTeamDocumentId: resolveTeamLookupKey(team),
-              seasonKey: rosterImportPlan.persistedSeason?.seasonKey,
+    if (receiptId && !executionReceipt) {
+      setExecutionStatus('failed')
+      setExecutionError('לא ניתן לקבוע את מצב הקבלה. יש לפתוח אותה בעמוד ניהול הדאטה.')
+      return null
+    }
+    setBusy(true)
+    setExecutionStatus('running')
+    setExecutionError('')
+    try {
+      const retryMode = resolveRosterRetryMode(executionReceipt)
+      if (retryMode === 'repair') {
+        setExecutionReceipt(current => applyRosterSyncProgressEvent({
+          receipt: current,
+          event: { type: 'repairStarted', receiptId },
+        }))
+      }
+      const executionPlan = retryMode === 'retry' && receiptId
+        ? await prepareRosterLoad({ input: buildActionInput() })
+        : rosterImportPlan
+      if (executionPlan !== rosterImportPlan) setRosterImportPlan(executionPlan)
+      const result = retryMode === 'repair'
+        ? await repairWriteActionReceipt({ receiptId })
+        : await loadRoster({
+            approvedState: executionPlan,
+            receiptId,
+            display: {
+              teamName: clean(team?.name || team?.displayName),
+              leagueName: clean(actionLeagueDoc?.names?.display || actionLeagueDoc?.name),
+            },
+            onProgress: event => {
+              setReceiptId(clean(event && event.receiptId))
+              setExecutionReceipt(current => applyRosterSyncProgressEvent({
+                receipt: current,
+                event,
+              }))
             },
           })
-          setReceiptId(activeReceiptId)
-        }
-
-        try {
-          const result = await writeRosterV2({
-            team,
-            persistedSeason: rosterImportPlan.persistedSeason,
-          })
-
-          await reportWriteActionCanonicalStatusV2({
-            receiptId: activeReceiptId,
-            canonicalStatus: WRITE_ACTION_V2_CANONICAL_STATUS.REPORTED,
-          })
-
-          return result
-        } catch (error) {
-          await reportWriteActionCanonicalStatusV2({
-            receiptId: activeReceiptId,
-            canonicalStatus: WRITE_ACTION_V2_CANONICAL_STATUS.FAILED_OR_UNKNOWN,
-          }).catch(() => null)
-
-          throw error
-        }
-      },
-      counterparts: () => syncRosterCounterpartsV2({
-        approvedCounterpartStates: rosterImportPlan.approvedCounterpartStates,
-      }),
-      playerIndexes: () => syncRosterPlayerIndexesV2({
-        approvedPlayerIndexState: rosterImportPlan.approvedPlayerIndexState,
-      }),
-      teamProjection: () => syncRosterTeamProjectionV2({
-        approvedTeamProjectionState: rosterImportPlan.approvedTeamProjectionState,
-      }),
-      leaguesMaster: () => syncRosterLeaguesMasterV2({
-        approvedLeaguesMasterState: rosterImportPlan.approvedLeaguesMasterState,
-      }),
-      clubs: () => syncRosterClubsV2({
-        approvedClubProjectionState: rosterImportPlan.approvedClubProjectionState,
-      }),
-      clubsMaster: () => syncRosterClubsMasterV2({
-        approvedClubsMasterState: rosterImportPlan.approvedClubsMasterState,
-      }),
-      audit: async () => {
-        if (!receiptId) throw new Error('Missing Roster WriteAction V2 receipt')
-
-        const result = await auditRosterV2({
-          birthTeamDocumentId: resolveTeamLookupKey(team),
-          seasonKey: rosterImportPlan.persistedSeason?.seasonKey,
-        })
-        const ranAt = new Date().toISOString()
-
-        await saveWriteActionAuditSummaryV2({
-          receiptId,
-          ranAt,
-          coverage: result.coverage?.complete ? 'complete' : 'partial',
-          findingsCount: result.findings?.length || 0,
-          checkedDomains: result.coverage?.coveredTargets || [],
-        })
-
-        setAuditResult(result)
+      const resolvedReceiptId = clean(result && result.receiptId)
+      setReceiptId(resolvedReceiptId)
+      setAuditResult(result.audit || null)
+      try {
+        setExecutionReceipt(await getWriteActionReceipt({ receiptId: resolvedReceiptId }))
+      } catch {
+        setExecutionReceipt(current => ({
+          ...current,
+          id: resolvedReceiptId,
+          status: result && result.status,
+          executionStatus: result && result.executionStatus,
+          recoveryRequired: Boolean(result && result.recoveryRequired),
+        }))
+      }
+      if (result && result.status === 'closed' && result.executionStatus === 'succeeded') {
+        setExecutionStatus('succeeded')
         return result
-      },
-    }
-    const runner = stageRunners[stageId]
-    if (!runner) return null
-
-    setBusy(true)
-    setSyncState(current => ({
-      ...current,
-      activeStage: stageId,
-      error: null,
-    }))
-
-    try {
-      const result = await runner()
-      setSyncState(current => ({
-        ...current,
-        activeStage: '',
-        completedStages: current.completedStages.includes(stageId)
-          ? current.completedStages
-          : [...current.completedStages, stageId],
-        error: null,
-        results: {
-          ...current.results,
-          [stageId]: result || {},
-        },
-      }))
+      }
+      setExecutionStatus('failed')
+      setExecutionError('הכתיבה הסתיימה אך בדיקת הסנכרון לא נסגרה כנקייה.')
       return result
     } catch (error) {
-      console.error('[playersDatabase/roster-v2-sync]', stageId, error)
-      setSyncState(current => ({
-        ...current,
-        activeStage: '',
-        error: {
-          stageId,
-          message: error?.message || 'הסנכרון נכשל',
-        },
-      }))
+      const failedReceiptId = clean(error && error.receiptId) || receiptId
+      if (failedReceiptId) {
+        setReceiptId(failedReceiptId)
+        try {
+          setExecutionReceipt(await getWriteActionReceipt({ receiptId: failedReceiptId }))
+        } catch {
+          setExecutionReceipt(null)
+        }
+      }
+      console.error('[playersDatabase/roster-sync]', error)
+      setExecutionStatus('failed')
+      setExecutionError(error?.message || 'הסנכרון נכשל')
       notify({
         status: SNACK_STATUS.ERROR,
-        title: 'שלב הסנכרון נכשל',
-        message: error?.message || 'ניתן לנסות שוב את אותו שלב',
+        title: 'סנכרון הסגל נכשל',
+        message: error?.message || 'ניתן להכין מחדש ולנסות שוב',
       })
       return null
     } finally {
       setBusy(false)
     }
-  }, [busy, notify, receiptId, rosterImportPlan, team])
+  }, [
+    actionLeagueDoc,
+    buildActionInput,
+    busy,
+    executionReceipt,
+    notify,
+    receiptId,
+    rosterImportPlan,
+    team,
+  ])
+
+  const syncStages = buildRosterSyncStages({ receipt: executionReceipt, busy })
+  const expectedRosterHash = clean(
+    rosterImportPlan?.canonical?.teamSeason?.roster?.rosterImport?.contentHash
+  )
+  const observedTeamSeason = teamSeasons.find(season => (
+    clean(season?.identity?.teamSeasonDocumentId || season?.id) ===
+    clean(rosterImportPlan?.teamSeasonDocumentId)
+  ))
+  const observedRosterHash = clean(
+    observedTeamSeason?.roster?.rosterImport?.contentHash
+  )
+  const listenerConfirmed = Boolean(
+    expectedRosterHash && observedRosterHash === expectedRosterHash
+  )
+  const syncComplete = executionStatus === 'succeeded' && listenerConfirmed && syncStages.every(stage => (
+    stage.state === 'completed'
+  ))
 
   const completeSync = React.useCallback(async () => {
-    if (busy || !syncComplete || !receiptId || !auditResult) return false
+    if (busy || executionStatus !== 'succeeded' || !syncComplete || !auditResult) return false
     if (auditResult.coverage?.complete !== true || (auditResult.findings?.length || 0) > 0) {
       notify({
         status: SNACK_STATUS.ERROR,
         title: 'בדיקת הסנכרון מצאה פערים',
-        message: 'הקבלה נשארה פתוחה. ניתן להריץ את Audit V2 מחדש לאחר בדיקת הנתונים.',
+        message: 'הקבלה נשארה פתוחה עד Audit נקי.',
       })
       return false
     }
-
-    await closeWriteActionReceiptV2({ receiptId })
-
-    invalidateRosterImportCacheV2({ plan: rosterImportPlan })
     setOpen(false)
-    if (typeof reload === 'function') void reload().catch(() => {})
     return true
-  }, [auditResult, busy, notify, receiptId, reload, rosterImportPlan, syncComplete])
+  }, [auditResult, busy, executionStatus, notify, syncComplete])
 
   return {
     open,
@@ -584,9 +552,14 @@ export default function useTeamRosterImport({
     rosterImportPlan,
     receiptId,
     auditResult,
+    listenerConfirmed,
     syncComplete,
     busy,
-    syncState,
+    syncStages,
+    executionReceipt,
+    executionStatus,
+    executionError,
+    retryMode: resolveRosterRetryMode(executionReceipt),
     hasIdentityErrors,
     hasMissingRosterApprovals,
     openModal,
@@ -607,7 +580,7 @@ export default function useTeamRosterImport({
     close,
     preparePlan,
     enterSync,
-    runSyncStage,
+    executeApprovedImport,
     completeSync,
   }
 }

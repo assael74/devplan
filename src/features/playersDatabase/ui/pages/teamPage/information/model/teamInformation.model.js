@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/pages/teamPage/information/model/teamInformation.model.js
+
 import { buildTeamLineInterpretationState } from '../../../../../domain/index.js'
 import {
   getTeamLineInterestPresentation,
@@ -122,7 +124,9 @@ export const buildTeamInformationView = ({
 
   return {
     team,
+    selectedTeamSeason,
     selectedSeasonKey: clean(selectedSeasonKey),
+    selectedSeasonOption,
     balance,
     structure,
     positionClassificationRows,

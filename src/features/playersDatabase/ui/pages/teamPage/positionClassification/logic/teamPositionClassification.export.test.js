@@ -1,5 +1,8 @@
+// src/features/playersDatabase/ui/pages/teamPage/positionClassification/logic/teamPositionClassification.export.test.js
+
 import {
   buildTeamPositionClassificationFileName,
+  buildTeamPositionClassificationExportRows,
   TEAM_POSITION_CLASSIFICATION_EXPORT_COLUMNS,
 } from './teamPositionClassification.export.js'
 
@@ -38,4 +41,48 @@ test('includes team birth year and age group in the Excel file name', () => {
     ageGroupLabel: 'נערים ב׳',
     seasonKey: '26-27',
   })).toBe('סיווג-עמדה-הפועל-דוגמה-שנתון-2010-נערים-ב׳-26-27')
+})
+
+test('adds transfer team names and keeps explicit roster statuses', () => {
+  const rows = buildTeamPositionClassificationExportRows({
+    rows: [
+      { id: 'joined-player', name: 'מצטרף', rosterStatus: 'regular' },
+      { id: 'young-player', name: 'צעיר', rosterStatus: 'youngerAgeGroup' },
+      { id: 'unknown-player', name: 'לא מסווג', rosterStatus: '' },
+    ],
+    seasonDoc: {
+      transfersIn: [{
+        playerId: 'joined-player',
+        fromClubId: 'maccabi-haifa',
+        fromBirthTeamSlot: 2,
+      }],
+      transfersOut: [{
+        playerId: 'unknown-player',
+        toClubId: 'hapoel-tel-aviv',
+        toBirthTeamSlot: 1,
+      }],
+      resolvedRosterAbsences: [{
+        playerId: 'older-player',
+        externalPlayerId: '998877',
+        fullName: 'חריג גיל',
+        resolution: 'olderAgeException',
+      }],
+    },
+    teamName: 'קבוצה נוכחית',
+  })
+
+  const joined = rows.find(row => row.id === 'joined-player')
+  const unknown = rows.find(row => row.id === 'unknown-player')
+  const older = rows.find(row => row.id === 'older-player')
+
+  expect(joined.transferFromTeamName).toContain('קבוצה 2')
+  expect(unknown.transferToTeamName).toBeTruthy()
+  expect(exportValue({ header: 'סטטוס סגל', row: joined })).toBe('בסגל')
+  expect(exportValue({ header: 'סטטוס סגל', row: rows[1] })).toBe('שנתון צעיר')
+  expect(exportValue({ header: 'סטטוס סגל', row: unknown })).toBe('לא ידוע')
+  expect(exportValue({ header: 'סטטוס סגל', row: older })).toBe('חריג גיל')
+  expect(exportValue({ header: 'קבוצה ממנה עבר', row: joined }))
+    .toBe(joined.transferFromTeamName)
+  expect(exportValue({ header: 'קבוצה אליה עבר', row: unknown }))
+    .toBe(unknown.transferToTeamName)
 })

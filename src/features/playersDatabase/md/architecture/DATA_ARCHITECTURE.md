@@ -12,9 +12,12 @@
 | League Document | טבלת הליגה, עונת הליגה וביצועי הקבוצות הרשמיים | טעינת League |
 | Team Root | זהות קבועה של קבוצת שנתון ו־`seasons[]` לניווט | זהות קנונית |
 | Team Season | מצב עונה יחיד: סגל, סטטיסטיקה, ביצועים, Balance ו־scout summary | League + Roster + Stats לפי תחום |
-| Player Document | היסטוריית שחקן ומצב מעקב/Scouting קומפקטי | Player/Stats domain |
-| SearchIndex | חיפוש ותצוגה בלבד | Projection מהמקורות הקנוניים |
-| Club / Clubs Master | Projection מ־League ומקבוצות העונה | League ו־Team identity |
+| Player Root | זהות שחקן, מעקב ומצב Scouting קומפקטי | Stats ומידע ידני לפי בעלות |
+| Player Season | מצב שחקן בעונה אחת | Roster + Stats לפי תחום |
+| Player SearchIndex | חיפוש ותצוגה בלבד | Projection מהמקורות הקנוניים |
+| ClubProfile | זהות מועדון ומידע ידני ארוך טווח | קלט המועדונים המאושר |
+| ClubsDirectory | ספריית מועדונים כללית | Projection מ־ClubProfile |
+| LeaguesCenter / ClubsCenter | ניווט ותצוגה עונתיים | Projection מליגה ומקבוצות עונה |
 
 `Team Season` הוא מקור האמת לעונת קבוצה אחת. `Team Root` אינו מחזיק payload
 עונתי נוסף; `seasons[]` שלו הוא אינדקס ניווט בלבד.
@@ -44,6 +47,22 @@
   של סכמת Firestore.
 - Repair מחייב אישור משתמש ומשתמש ב־canonical writers בלבד.
 
+## מבנים שאינם חלק ממצב היעד
+
+המבנים הבאים אינם נשמרים, אינם נבנים מחדש ואינם מקבלים תחליף בשם אחר:
+
+- `clubSeasonIdentityIndex`;
+- `dbClubsMaster`;
+- `dbLeaguesMaster`;
+- `dbFavorites` בשלב הנוכחי;
+- `dbWriteActionsV2`;
+- SearchIndex ישן מסוג `birthTeamSeason`;
+- `playerDocumentId`;
+- זהות שחקן המבוססת על שם.
+
+אין להפנות צרכן ישן למבנה חדש שאינו שקול. יש להעביר את הצרכן למקור הראשי
+המתאים או להסיר אותו כאשר הצורך עצמו אינו קיים במבנה היעד.
+
 ## כלל שינוי
 
 לפני שינוי persistence יש לבדוק לפי הסדר:
@@ -59,13 +78,14 @@ Architecture → Firestore Catalog → Domain builder → Writer → Projection 
 
 - playerUrl של שחקן בקבוצה ובעונה בבעלות רשומת Team Season; Player ואינדקס
   השחקן מכילים עותקים מסונכרנים. במסלול עריכה מעמוד Player שלושתם מחויבים.
-- seasonUrl בבעלות עונת League. leagueUrl העונתי ב־LeaguesMaster וקישור
-  העונה באינדקסים הם הקרנות; leagueUrl הכללי במאסטר אינו יעד של עריכה זו.
+- seasonUrl בבעלות עונת League. הקישור ב־LeaguesCenter וב־Player SearchIndex
+  הוא Projection בלבד.
 - teamUrl בבעלות שורת הקבוצה בעונת League, גם לפני יצירת Team Season.
   Team Season ואינדקסי הקבוצה והשחקנים הם עותקים; אין החזרת ערך מהם למקור.
-- Club.clubUrl הוא שדה קנוני ידני בתוך מסמך שיתר תחומיו נשארים בבעלותם.
+- ClubProfile.clubUrl הוא שדה קנוני ידני בתוך מסמך שיתר תחומיו נשארים בבעלותם.
   שדה קיים נשמר גם כשהוא ריק. אקסל/קטלוג רשאים לאתחל רק שדה חסר.
-  ClubsMaster מקרין אותו מ־Club. עריכת הקישור אינה משנה externalClubId.
+  ClubsDirectory ו־ClubsCenter מקרינים אותו מ־ClubProfile. עריכת הקישור אינה
+  משנה externalClubId.
 
 כללי פעולות העריכה: `../contracts/STANDALONE_EDITS_CONTRACT.md`.
 

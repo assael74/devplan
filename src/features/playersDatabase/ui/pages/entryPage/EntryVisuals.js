@@ -3,39 +3,46 @@
 import {
   Box,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/joy'
 
+import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
+import dataManagementImage from '../../../../../ui/core/images/dataManagement.png'
 import { entryVisualsSx as sx } from './sx/entryVisuals.sx.js'
 
-const PREVIEW_BAR_HEIGHTS = [18, 30, 44, 28]
-
-export function DataPreviewGraphic() {
+export function DataPreviewGraphic({ onOpenDataOps }) {
   return (
-    <Box aria-hidden='true' sx={sx.previewGraphic}>
-      <Box sx={sx.previewCircle} />
+    <Box sx={sx.previewGraphic}>
+      <Box aria-hidden='true' sx={sx.previewCircle} />
 
-      <Box sx={sx.previewChartCard}>
-        <Box sx={sx.previewChartBars}>
-          {PREVIEW_BAR_HEIGHTS.map((height, index) => (
-            <Box
-              key={index}
-              sx={[
-                sx.previewChartBar,
-                {
-                  height,
-                },
-              ]}
-            />
-          ))}
+      <Tooltip title='פתיחת ניהול הדאטה' placement='bottom'>
+        <Box
+          component='button'
+          type='button'
+          aria-label='פתיחת ניהול הדאטה'
+          onClick={onOpenDataOps}
+          sx={sx.previewChartCard}
+        >
+          <Box
+            component='img'
+            src={dataManagementImage}
+            alt=''
+            aria-hidden='true'
+            sx={sx.previewChartImage}
+          />
+          <Typography sx={sx.previewChartLabel}>
+            <Box component='span'>ניהול דאטה</Box>
+            {iconUi({ id: 'forward', sx: sx.previewChartArrow })}
+          </Typography>
         </Box>
-      </Box>
+      </Tooltip>
 
-      <Box sx={sx.previewLineCard}>
+      <Box aria-hidden='true' sx={sx.previewLineCard}>
         <Box sx={sx.previewLine} />
       </Box>
 
-      <Box sx={sx.previewPlayerCard}>
+      <Box aria-hidden='true' sx={sx.previewPlayerCard}>
         <Box sx={sx.previewPlayerAvatar} />
 
         <Stack spacing={0.4} sx={sx.previewPlayerContent}>

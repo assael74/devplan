@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/pages/teamPage/roster/import/components/RosterImportModal.js
+
 import * as React from 'react'
 import {
   Box,
@@ -34,17 +36,6 @@ import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 
 const STEPS = ['סגל קודם', 'הדבקת סגל', 'בדיקת זהות', 'בדיקת חסרים ואישור', 'תצוגה מקדימה', 'סנכרון']
-
-const ROSTER_SYNC_STAGES = [
-  { id: 'canonical', label: 'שמירת הסגל', description: 'Team Root + Team Season' },
-  { id: 'counterparts', label: 'סנכרון העברות', description: 'קבוצות היעד שהושפעו מהעברות' },
-  { id: 'playerIndexes', label: 'סנכרון אינדקס שחקנים', description: 'Replace scope של Team + Season' },
-  { id: 'teamProjection', label: 'סנכרון נתוני קבוצה', description: 'Team SearchIndex + League roster metadata' },
-  { id: 'leaguesMaster', label: 'סנכרון Leagues Master', description: 'עדכון אינדקס הליגות' },
-  { id: 'clubs', label: 'סנכרון מועדונים', description: 'המועדון הראשי ומועדונים שהושפעו מהעברות' },
-  { id: 'clubsMaster', label: 'סנכרון Clubs Master', description: 'עדכון אינדקס המועדונים' },
-  { id: 'audit', label: 'בדיקת סנכרון', description: 'Audit V2 מול מקורות האמת הקנוניים' },
-]
 
 const playerName = player => String(
   player?.fullName || player?.displayName || player?.name || ''
@@ -223,10 +214,10 @@ function PlayerIdentityMembership({ row }) {
 }
 
 function PreviousRosterPlayerCell({ player, team, controller }) {
-  const playerDocumentId = String(player?.playerDocumentId || '').trim()
-  const playerHref = playerDocumentId
+  const playerId = String(player?.playerId || '').trim()
+  const playerHref = playerId
     ? PLAYERS_DATABASE_UI_ROUTES.player({
-        playerId: playerDocumentId,
+        playerId,
         seasonKey: controller.selectedSeasonOption?.seasonKey,
         teamId: team?.birthTeamId || team?.id,
         leagueId: controller.selectedSeasonOption?.leagueId,
@@ -249,83 +240,108 @@ function PreviousRosterPlayerCell({ player, team, controller }) {
 }
 
 function RosterSyncStep({ controller }) {
-  const syncState = controller.syncState || {}
-  const completedStages = Array.isArray(syncState.completedStages)
-    ? syncState.completedStages
-    : []
-  const completedSet = new Set(completedStages)
-  const allCompleted = ROSTER_SYNC_STAGES.every(stage => completedSet.has(stage.id))
+  const stages = Array.isArray(controller.syncStages) ? controller.syncStages : []
   const auditFindingsCount = controller.auditResult?.findings?.length || 0
   const auditClean = controller.auditResult?.coverage?.complete === true && auditFindingsCount === 0
+  const failed = controller.executionStatus === 'failed'
+  const succeeded = controller.executionStatus === 'succeeded'
 
   return (
     <Box sx={sx.syncPanel}>
+      <Card variant='soft' color='primary'>
+        <Typography level='title-sm'>סדר עדכון המסמכים</Typography>
+        <Typography level='body-xs'>
+          לחיצה אחת מפעילה את כל השלבים לפי הסדר. כל שלב מעדכן את היעד
+          שבבעלותו ואת אותה קבלה, ובסיום מתבצעת בדיקת סנכרון.
+        </Typography>
+      </Card>
+
       <Box sx={sx.syncCards}>
-        {ROSTER_SYNC_STAGES.map((stage, index) => {
-          const completed = completedSet.has(stage.id)
-          const running = syncState.activeStage === stage.id
-          const previousCompleted = index === 0 || completedSet.has(ROSTER_SYNC_STAGES[index - 1].id)
-          const auditNeedsRerun = stage.id === 'audit' && completed && !auditClean
-          const enabled = previousCompleted && (!completed || auditNeedsRerun) && !controller.busy
-          const activeCard = running || (previousCompleted && (!completed || auditNeedsRerun))
-          const failed = syncState.error?.stageId === stage.id
-
-          return (
-            <Card
-              key={stage.id}
-              variant='outlined'
-              sx={[sx.syncCard, activeCard ? sx.syncCardActive : null]}
-            >
-              <Stack spacing={1} sx={sx.syncCardContent}>
-                <Box>
-                  <Stack direction='row' spacing={0.75} alignItems='center'>
-                    <Chip
-                      size='sm'
-                      variant='soft'
-                      color={completed ? 'success' : failed ? 'danger' : running ? 'primary' : 'neutral'}
-                    >
-                      {completed ? 'הושלם' : failed ? 'נכשל' : running ? 'בתהליך' : `${index + 1}`}
-                    </Chip>
-                    <Typography level='title-sm'>{stage.label}</Typography>
-                  </Stack>
-                  <Typography level='body-xs' sx={{ mt: 0.5 }}>
-                    {stage.description}
-                  </Typography>
-                  {failed ? (
-                    <Typography level='body-xs' color='danger' sx={{ mt: 0.5 }}>
-                      {syncState.error?.message || 'השלב נכשל. ניתן לנסות שוב.'}
-                    </Typography>
-                  ) : null}
-                </Box>
-
-                <Button
+        {stages.map((stage, index) => (
+          <Card
+            key={stage.id}
+            variant='outlined'
+            sx={[sx.syncCard, stage.state === 'running' ? sx.syncCardActive : null]}
+          >
+            <Stack spacing={1} sx={sx.syncCardContent}>
+              <Stack direction='row' spacing={0.75} alignItems='center'>
+                <Chip
                   size='sm'
-                  variant={completed ? 'soft' : 'solid'}
-                  color={completed ? 'success' : failed ? 'danger' : 'primary'}
-                  loading={running}
-                  disabled={!enabled}
-                  onClick={() => controller.runSyncStage(stage.id)}
-                  sx={sx.syncCardAction}
+                  variant='soft'
+                  color={stage.state === 'completed'
+                    ? 'success'
+                    : stage.state === 'failed'
+                      ? 'danger'
+                      : stage.state === 'running'
+                        ? 'primary'
+                        : 'neutral'}
                 >
-                  {auditNeedsRerun ? 'בדוק שוב' : completed ? 'הושלם' : failed ? 'נסה שוב' : 'בצע'}
-                </Button>
+                  {stage.state === 'completed'
+                    ? 'הושלם'
+                    : stage.state === 'failed'
+                      ? 'נכשל'
+                      : stage.state === 'running'
+                        ? 'בתהליך'
+                        : `${index + 1}`}
+                </Chip>
+                <Typography level='title-sm'>{stage.title}</Typography>
               </Stack>
-            </Card>
-          )
-        })}
+              <Typography level='body-xs'>{stage.target}</Typography>
+            </Stack>
+          </Card>
+        ))}
       </Box>
 
-      {allCompleted ? (
-        <Card variant='soft' color={auditClean ? 'success' : 'danger'}>
-          <Typography level='title-sm'>
-            {auditClean ? 'טעינת הסגל והבדיקה הושלמו' : 'בדיקת הסנכרון מצאה פערים'}
+      {controller.busy ? (
+        <Card variant='soft' color='primary'>
+          <Stack direction='row' spacing={1} alignItems='center'>
+            <CircularProgress size='sm' />
+            <Box>
+              <Typography level='title-sm'>טעינת הסגל מתבצעת</Typography>
+              <Typography level='body-xs'>אין לסגור את החלון עד לסיום הכתיבה והבדיקה.</Typography>
+            </Box>
+          </Stack>
+        </Card>
+      ) : null}
+
+      {failed ? (
+        <Card variant='soft' color='danger'>
+          <Typography level='title-sm'>טעינת הסגל לא הושלמה</Typography>
+          <Typography level='body-xs'>
+            {controller.executionError || 'הפעולה נעצרה בשלב שלא הושלם.'}
           </Typography>
           <Typography level='body-xs'>
-            {auditClean
-              ? 'הכיסוי מלא ולא נמצאו פערים. ניתן לסגור את התהליך.'
-              : `נמצאו ${auditFindingsCount} פערים. הקבלה נשארת פתוחה וניתן להריץ Audit מחדש מהאודיט הראשי.`}
+            {controller.retryMode === 'repair'
+              ? 'מקור האמת כבר אושר. הפעולה הבאה תתקן רק את התוצרים באותה קבלה.'
+              : 'מקור האמת לא אושר. ניסיון חוזר ישתמש בקלט המאושר ובאותה קבלה.'}
           </Typography>
         </Card>
+      ) : null}
+
+      {succeeded ? (
+        <Card
+          variant='soft'
+          color={auditClean && controller.listenerConfirmed ? 'success' : auditClean ? 'primary' : 'danger'}
+        >
+          <Typography level='title-sm'>
+            {auditClean && controller.listenerConfirmed
+              ? 'טעינת הסגל והבדיקה הושלמו'
+              : auditClean
+                ? 'ממתין לעדכון עמוד הקבוצה'
+                : 'בדיקת הסנכרון מצאה פערים'}
+          </Typography>
+          <Typography level='body-xs'>
+            {auditClean && controller.listenerConfirmed
+              ? 'הכיסוי מלא, לא נמצאו פערים והשינוי התקבל ב־listener. ניתן לסגור את התהליך.'
+              : auditClean
+                ? 'הקבלה תקינה. החלון יישאר פתוח עד שהמסמך הקנוני יופיע במצב העמוד.'
+                : `נמצאו ${auditFindingsCount} פערים. הקבלה נשארת פתוחה לתיקון.`}
+          </Typography>
+        </Card>
+      ) : null}
+
+      {controller.receiptId ? (
+        <Typography level='body-xs'>Receipt: {controller.receiptId}</Typography>
       ) : null}
     </Box>
   )
@@ -727,7 +743,9 @@ export default function RosterImportModal({
     if (activeStep === 0) return setActiveStep(1)
     if (activeStep === 1) return previewRoster()
     if (activeStep === 3) {
-      return controller.completeSync()
+      return controller.executionStatus === 'succeeded'
+        ? controller.completeSync()
+        : controller.executeApprovedImport()
     }
     if (reviewStep === 'present') {
       return setReviewStep('missing')
@@ -741,18 +759,16 @@ export default function RosterImportModal({
     if (result?.readyForSync) setActiveStep(3)
     return result
   }
-  const syncCompleted = ROSTER_SYNC_STAGES.every(stage => (
-    controller.syncState?.completedStages?.includes(stage.id)
-  ))
-  const hasSyncAttempt = Boolean(
-    controller.syncState?.activeStage ||
-    controller.syncState?.error ||
-    controller.syncState?.completedStages?.length
+  const syncCompleted = controller.syncComplete === true
+  const hasSyncAttempt = ['running', 'failed', 'succeeded'].includes(
+    controller.executionStatus
   )
   const auditClean = controller.auditResult?.coverage?.complete === true &&
     (controller.auditResult?.findings?.length || 0) === 0
   const disabled = activeStep === 3
-    ? !syncCompleted || !auditClean || controller.busy
+    ? controller.busy || (controller.executionStatus === 'succeeded' && (
+        !syncCompleted || !auditClean
+      ))
     : controller.busy || (
       activeStep === 0
       ? !controller.selectedSeasonOption
@@ -768,7 +784,11 @@ export default function RosterImportModal({
     : activeStep === 1
       ? 'הצג בדיקת זהות'
       : activeStep === 3
-        ? 'סגור'
+        ? controller.executionStatus === 'succeeded'
+          ? 'סגור'
+          : controller.executionStatus === 'failed'
+            ? controller.retryMode === 'repair' ? 'תקן תוצרים' : 'נסה שוב'
+            : 'בצע טעינת סגל'
         : reviewStep === 'present'
           ? 'המשך לבדיקת חסרים'
           : reviewStep === 'missing'
@@ -825,7 +845,9 @@ export default function RosterImportModal({
         description={description}
         iconId='addPlayers'
         confirmLabel={confirmLabel}
-        confirmIconId={activeStep === 2 && reviewStep === 'summary' ? 'upload' : 'next'}
+        confirmIconId={activeStep === 3 || (activeStep === 2 && reviewStep === 'summary')
+          ? 'upload'
+          : 'next'}
         confirmLoadingPosition='start'
         size='xl'
         busy={controller.busy}

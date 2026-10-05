@@ -2,7 +2,6 @@
 
 import { Box } from '@mui/joy'
 
-import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
 import { PlayerRoleEditModal } from '../../components/modals/index.js'
 import SearchQueryPanel from './query/SearchQueryPanel.js'
 import SearchResultsSection from './results/SearchResultsSection.js'
@@ -36,7 +35,6 @@ export default function SearchWorkspace({ search, onEntityOpen }) {
             onFavoriteToggle={search.toggleFavorite}
             onNotesSave={search.saveNotes}
             onRoleEdit={search.roleEditor.open}
-            onTeamUrlEdit={search.teamUrlEditor.open}
           />
 
           <SearchResultsSidebar
@@ -52,15 +50,6 @@ export default function SearchWorkspace({ search, onEntityOpen }) {
           />
         </Box>
       </Box>
-
-      <TeamUrlEditDrawer
-        open={Boolean(search.teamUrlEditor.row)}
-        row={search.teamUrlEditor.row}
-        seasonLabel={search.teamUrlEditor.row?.seasonKey || ''}
-        saving={search.teamUrlEditor.saving}
-        onSave={search.teamUrlEditor.save}
-        onClose={search.teamUrlEditor.close}
-      />
 
       <PlayerRoleEditModal
         open={Boolean(search.roleEditor.row)}

@@ -12,14 +12,13 @@ When an active document is added, removed, or changes status, update that router
 ## Canonical boundaries
 
 - `md/architecture/DATA_ARCHITECTURE.md` defines ownership and sources of truth.
-- `catalog/firestoreDocuments` defines the regular persisted document shapes.
-- `catalog/firestoreDocumentsV2` applies only to an explicit V2 flow.
+- `catalog/firestoreDocuments` defines all active persisted document shapes.
+- There is no parallel versioned document-catalog directory.
 - `md/contracts` defines domain flows.
-- `md/architecture/WRITE_V2_ARCHITECTURE.md` defines stable Write V2 principles.
-- `md/plans/WRITE_V2_PLAN_UPDATED.md` is read only for cross-cutting Write V2 or
-  Audit V2 behavior.
-- SearchIndex and Master documents are projections, never repair or migration
-  sources of truth.
+- `md/plans/DEFERRED_ISSUES_AND_TASKS.md` tracks only open follow-up work; it is
+  not a persistence or flow contract.
+- SearchIndex and Center documents are projections, never repair or migration
+  sources of truth. Legacy Master documents are not part of the target state.
 
 Before changing persistence, identify the source of truth, field owner,
 canonical builder, writer, and affected projections.
@@ -37,6 +36,8 @@ canonical builder, writer, and affected projections.
 - Audit checks lifecycle, explicit relations, and projection mismatches; it is
   not a runtime schema validator.
 - Repair uses canonical writers and requires user approval.
+- Keep the disconnected Favorites code, provider, cache keys, and tests until
+  the user explicitly approves their removal.
 
 ## Implementation and review
 

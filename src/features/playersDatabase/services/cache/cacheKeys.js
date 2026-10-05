@@ -7,7 +7,6 @@ const joinKey = (...parts) => parts.map(clean).filter(Boolean).join(':')
 export const PLAYERS_DATABASE_CACHE_PREFIXES = {
   leagues: 'leagues',
   league: 'league',
-  teams: 'teams',
   team: 'team',
   teamSeason: 'teamSeason',
   teamSeasonsByRoot: 'teamSeasonsByRoot',
@@ -15,9 +14,8 @@ export const PLAYERS_DATABASE_CACHE_PREFIXES = {
   player: 'player',
   favorite: 'favorite',
   club: 'club',
-  leaguesMaster: 'leaguesMaster',
-  clubsMaster: 'clubsMaster',
-  clubSeasonIdentity: 'clubSeasonIdentity',
+  clubsDirectory: 'clubsDirectory',
+  clubsCenter: 'clubsCenter',
 }
 
 export const buildLeaguesCollectionCacheKey = () => (
@@ -26,10 +24,6 @@ export const buildLeaguesCollectionCacheKey = () => (
 
 export const buildLeagueDocumentCacheKey = leagueId => (
   joinKey(PLAYERS_DATABASE_CACHE_PREFIXES.league, leagueId)
-)
-
-export const buildTeamsCollectionCacheKey = () => (
-  PLAYERS_DATABASE_CACHE_PREFIXES.teams
 )
 
 export const buildTeamDocumentCacheKey = teamId => (
@@ -64,18 +58,11 @@ export const buildClubDocumentCacheKey = clubId => (
   joinKey(PLAYERS_DATABASE_CACHE_PREFIXES.club, clubId)
 )
 
-export const buildLeaguesMasterCacheKey = () => (
-  joinKey(PLAYERS_DATABASE_CACHE_PREFIXES.leaguesMaster, 'all')
+export const buildClubsDirectoryCacheKey = () => (
+  joinKey(PLAYERS_DATABASE_CACHE_PREFIXES.clubsDirectory, 'all')
 )
 
-export const buildClubsMasterCacheKey = () => (
-  joinKey(PLAYERS_DATABASE_CACHE_PREFIXES.clubsMaster, 'all')
+export const buildClubsCenterCacheKey = seasonId => (
+  joinKey(PLAYERS_DATABASE_CACHE_PREFIXES.clubsCenter, seasonId)
 )
 
-export const buildClubSeasonIdentityIndexCacheKey = ({ seasonKey, birthYear } = {}) => (
-  joinKey(
-    PLAYERS_DATABASE_CACHE_PREFIXES.clubSeasonIdentity,
-    String(seasonKey || '').replaceAll('/', '-'),
-    Number(birthYear) || 0
-  )
-)

@@ -1,18 +1,10 @@
 // src/features/playersDatabase/ui/pages/searchPage/hooks/useSearchResults.js
 
 import * as React from 'react'
-import { doc } from 'firebase/firestore'
-import { db } from '../../../../../../services/firebase/firebase.js'
-import { trackedGetDocFromServer } from '../../../../../../services/firestore/usage/index.js'
-import { PLAYERS_DATABASE_COLLECTIONS } from '../../../../constants/pdb.constants.js'
 
 import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../../../constants/pdb.constants.js'
 import { readSearchPageRows } from '../../../../services/read/index.js'
 import { usePlayersDatabaseFavorites } from '../../../favorites/index.js'
-import {
-  adaptPlayerSearchIndexDocument,
-  adaptTeamSearchIndexDocument,
-} from '../../../../domain/index.js'
 import { normalizeSearchRows } from '../logic/search.model.js'
 import { buildSearchSummary } from '../logic/search.selectors.js'
 import {
@@ -23,13 +15,6 @@ import {
 } from '../logic/searchResultFilters.js'
 import { cloneSearchFilters } from './useSearchQueryFilters.js'
 import useSearchPlayerActions from './useSearchPlayerActions.js'
-import useSearchTeamUrlEditor from './useSearchTeamUrlEditor.js'
-
-const adaptSearchRow = row => (
-  row?.entityType === 'birthTeamSeason'
-    ? adaptTeamSearchIndexDocument(row)
-    : adaptPlayerSearchIndexDocument(row)
-)
 
 export default function useSearchResults({ queryFilters }) {
   const favorites = usePlayersDatabaseFavorites()
@@ -51,14 +36,10 @@ export default function useSearchResults({ queryFilters }) {
   const favoriteEntityIds = React.useMemo(() => {
     if (!loadedFilters?.favoritesOnly) return []
 
-    return loadedFilters.searchContext === 'team'
-      ? favorites.birthTeamFavorites.map(item => item.entityId)
-      : favorites.playerFavorites.map(item => item.entityId)
+    return favorites.playerFavorites.map(item => item.entityId)
   }, [
-    favorites.birthTeamFavorites,
     favorites.playerFavorites,
     loadedFilters?.favoritesOnly,
-    loadedFilters?.searchContext,
   ])
   const favoritesKey = React.useMemo(
     () => favoriteEntityIds.slice().sort().join('|'),
@@ -83,8 +64,7 @@ export default function useSearchResults({ queryFilters }) {
       .then(rows => {
         if (!active) return
 
-        const domainRows = rows.map(adaptSearchRow)
-        setLoadedRows(normalizeSearchRows(domainRows))
+        setLoadedRows(normalizeSearchRows(rows))
         setResultFilters(createSearchResultFilters())
         setLoadLoading(false)
         setLoadCompletedRevision(current => current + 1)
@@ -106,29 +86,12 @@ export default function useSearchResults({ queryFilters }) {
   const playerActions = useSearchPlayerActions({
     setLoadedRows,
   })
-  const reloadEditedTeam = React.useCallback(async id => {
-    const snapshot = await trackedGetDocFromServer(
-      doc(db, PLAYERS_DATABASE_COLLECTIONS.searchIndexes, id),
-      { feature: 'playersDatabase', action: 'reload-edited-team' },
-    )
-    const rows = snapshot.exists()
-      ? normalizeSearchRows([adaptSearchRow({ ...snapshot.data(), id: snapshot.id })])
-      : []
-    setLoadedRows(current => current.flatMap(item => (item.id === id ? rows : [item])))
-  }, [])
-  const teamUrlEditor = useSearchTeamUrlEditor({ reload: reloadEditedTeam })
 
   const rowsWithFavorites = React.useMemo(
     () => loadedRows.map(row => {
-      const favoriteType = row.entityType === 'birthTeamSeason'
-        ? PLAYERS_DATABASE_FAVORITE_TYPES.BIRTH_TEAM
-        : PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER
-      const entityId = favoriteType === PLAYERS_DATABASE_FAVORITE_TYPES.BIRTH_TEAM
-        ? row.birthTeamId
-        : row.playerId
-      const favorite = favoriteType === PLAYERS_DATABASE_FAVORITE_TYPES.BIRTH_TEAM
-        ? favorites.isBirthTeamFavorite(entityId)
-        : favorites.isPlayerFavorite(entityId)
+      const favoriteType = PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER
+      const entityId = row.playerId
+      const favorite = favorites.isPlayerFavorite(entityId)
 
       return {
         ...row,
@@ -138,7 +101,6 @@ export default function useSearchResults({ queryFilters }) {
       }
     }),
     [
-      favorites.birthTeamFavoritesMap,
       favorites.pendingKeysRevision,
       favorites.playerFavoritesMap,
       playerActions.getRowKey,
@@ -182,11 +144,8 @@ export default function useSearchResults({ queryFilters }) {
 
 
   const toggleFavorite = React.useCallback(async row => {
-    const isBirthTeam = row?.entityType === 'birthTeamSeason'
-    const favoriteType = isBirthTeam
-      ? PLAYERS_DATABASE_FAVORITE_TYPES.BIRTH_TEAM
-      : PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER
-    const entityId = isBirthTeam ? row?.birthTeamId : row?.playerId
+    const favoriteType = PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER
+    const entityId = row?.playerId
 
     if (!entityId) return null
 
@@ -197,7 +156,7 @@ export default function useSearchResults({ queryFilters }) {
     return favorites.addFavorite({
       favoriteType,
       entityId,
-      displayName: isBirthTeam ? row.teamName : row.playerName,
+      displayName: row.playerName,
       birthYear: row.birthYear,
     })
   }, [favorites])
@@ -224,7 +183,6 @@ export default function useSearchResults({ queryFilters }) {
     resetResultFilters,
     toggleFavorite,
     saveNotes: playerActions.saveNotes,
-    teamUrlEditor,
     roleEditor: playerActions.roleEditor,
     loadDocuments,
   }

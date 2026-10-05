@@ -15,7 +15,6 @@ export default function SearchResultNotes({
   row,
   onSave,
 }) {
-  const editable = row?.entityType !== 'birthTeamSeason'
   const [editing, setEditing] = React.useState(false)
   const [value, setValue] = React.useState(String(row?.notes || ''))
   const [saveError, setSaveError] = React.useState('')
@@ -53,8 +52,7 @@ export default function SearchResultNotes({
           <Typography level='title-sm' sx={sx.title}>הערות</Typography>
         </Box>
 
-        {editable ? (
-          <Box sx={sx.headerActions}>
+        <Box sx={sx.headerActions}>
             {editing ? (
               <>
                 <Button
@@ -95,8 +93,7 @@ export default function SearchResultNotes({
                 עריכה
               </Button>
             )}
-          </Box>
-        ) : null}
+        </Box>
       </Box>
 
       <Textarea

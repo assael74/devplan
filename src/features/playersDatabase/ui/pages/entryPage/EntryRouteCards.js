@@ -55,7 +55,11 @@ function ActionHeroCard({
   )
 }
 
-export default function EntryRouteCards({ onNavigateToLeagues, onNavigateToSearch, onNavigateToClubs }) {
+export default function EntryRouteCards({
+  onNavigateToLeagues,
+  onNavigateToSearch,
+  onNavigateToClubs,
+}) {
   return (
     <Box sx={sx.actionsGrid}>
       <ActionHeroCard

@@ -1,16 +1,12 @@
 // src/features/playersDatabase/model/team/page/teamPageView.model.js
 
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../catalog/clubs.catalog.js'
-import { resolveAgeGroupLabel } from '../../../catalog/ageGroups.catalog.js'
-import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../catalog/leagues.catalog.js'
-import { PLAYERS_DATABASE_CURRENT_SEASON_KEY } from '../../../catalog/seasons.catalog.js'
 import { buildTeamDisplayName } from '../../../catalog/teamDisplay.js'
 import {
   adaptBirthTeamDocumentSeason,
   adaptLeagueTableTeam,
   adaptTeamScoutEngineRow,
 } from '../../../domain/index.js'
-import { normalizeSeasonLookupKey } from '../../shared/season.model.js'
 import {
   normalizeTeamIdentity,
   resolveTeamLookupKey,
@@ -18,7 +14,10 @@ import {
 import { cleanValue } from '../../shared/value.model.js'
 import { buildTeamPerformanceViewModel } from '../teamPerformance.viewModel.js'
 import { formatPerGameRate } from '../../shared/rate.model.js'
-import { findTeamPageTableRow } from './teamPageSeason.model.js'
+import {
+  buildTeamPageTableRows,
+  findTeamPageTableRow,
+} from './teamPageSeason.model.js'
 import { PLAYER_STATS_STATUS } from '../../player/playerStats.model.js'
 import { countCurrentRosterPlayers } from '../rosterStatus.model.js'
 
@@ -119,9 +118,7 @@ export const buildTeamPageView = ({
     season: leagueSeason,
     teamId,
   }) || {}
-  const tableRank = Array.isArray(leagueSeason?.tableRank)
-    ? leagueSeason.tableRank
-    : []
+  const tableRank = buildTeamPageTableRows(leagueSeason)
   const teamIdentity = normalizeTeamIdentity({
     team: teamRow,
     fallback: {
@@ -242,6 +239,10 @@ export const buildTeamPageView = ({
     selectedSeasonOption,
     canonicalTeamSeason,
   })
+  const canonicalTeamSlot = Number(canonicalTeamSeason.identity.teamSlot)
+  const teamSlot = Number.isInteger(canonicalTeamSlot) && canonicalTeamSlot > 0
+    ? canonicalTeamSlot
+    : null
 
   return {
     ...canonicalTeamSeason,
@@ -251,8 +252,8 @@ export const buildTeamPageView = ({
     teamDocumentId: cleanValue(canonicalTeamSeason.identity.teamDocumentId),
     clubId,
     clubLevel: Number(club?.clubLevel || canonicalTeamSeason.clubLevel || 0),
-    birthTeamSlot: canonicalTeamSeason.identity.teamSlot || 1,
-    teamSlot: canonicalTeamSeason.identity.teamSlot || 1,
+    birthTeamSlot: teamSlot,
+    teamSlot,
     name: canonicalTeamSeason.identity.displayName,
     leagueId: cleanValue(selectedSeasonOption?.leagueId || canonicalTeamSeason.league.leagueId),
     leagueName: cleanValue(
@@ -262,7 +263,7 @@ export const buildTeamPageView = ({
       leagueDoc?.id ||
       '-'
     ),
-    ageGroupId: cleanValue(selectedSeasonOption?.season?.ageGroupId || canonicalTeamSeason.league.ageGroupId),
+    ageGroupId: cleanValue(selectedSeasonOption?.ageGroupId || canonicalTeamSeason.league.ageGroupId),
     ageGroupLabel: cleanValue(selectedSeasonOption?.ageGroupLabel || canonicalTeamSeason.league.ageGroupLabel),
     birthYear,
     seasonKey: canonicalTeamSeason.season.seasonKey || '-',

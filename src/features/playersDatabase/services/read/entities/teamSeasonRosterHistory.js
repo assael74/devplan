@@ -1,53 +1,61 @@
 // src/features/playersDatabase/services/read/entities/teamSeasonRosterHistory.js
 
-import { compareSeasonKeys } from '../../../domain/movement/index.js'
 import { getTeamById } from './team.js'
-import { getTeamSeason } from './teamSeason.js'
+import { getTeamSeasonByDocumentId } from './teamSeason.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
+const object = value => value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+
+const toRosterReadModel = teamSeason => {
+  if (!teamSeason) return null
+  const roster = object(teamSeason.roster)
+  const movement = object(teamSeason.movement)
+  return {
+    ...teamSeason,
+    seasonId: clean(teamSeason.identity?.seasonId),
+    seasonKey: clean(teamSeason.identity?.seasonKey),
+    teamPlayers: Object.values(object(roster.playersById)),
+    rosterImport: object(roster.rosterImport),
+    transfersIn: Object.values(object(movement.transfersInById)),
+    transfersOut: Object.values(object(movement.transfersOutById)),
+    pendingPlayers: Object.values(object(movement.pendingById)),
+  }
+}
 
 export async function readTeamSeasonRosterHistory({
   birthTeamDocumentId = '',
+  seasonId = '',
   seasonKey = '',
   bypassCache = false,
 } = {}) {
-  const safeTeamId = clean(birthTeamDocumentId)
-  const safeSeasonKey = clean(seasonKey)
-
-  if (!safeTeamId || !safeSeasonKey) {
-    return {
-      currentSeason: null,
-      previousSeason: null,
-      seasons: [],
-    }
+  const teamId = clean(birthTeamDocumentId)
+  const targetSeasonId = clean(seasonId)
+  const targetSeasonKey = clean(seasonKey)
+  if (!teamId || (!targetSeasonId && !targetSeasonKey)) {
+    return { currentSeason: null, previousSeason: null, seasons: [] }
   }
 
-  const team = await getTeamById(safeTeamId, { bypassCache })
-  const seasons = Array.isArray(team?.seasons) ? team.seasons : []
-  const previousCandidates = seasons
-    .filter(row => compareSeasonKeys(row.seasonKey, safeSeasonKey) < 0)
-    .sort((left, right) => compareSeasonKeys(right.seasonKey, left.seasonKey))
-  const previousSeasonKey = clean(previousCandidates[0]?.seasonKey)
+  const teamRoot = await getTeamById(teamId, { bypassCache })
+  const refs = Object.entries(object(teamRoot?.seasonRefsById)).map(([seasonId, ref]) => ({ seasonId, ...object(ref) }))
+  const currentRef = refs.find(ref => (
+    (targetSeasonId && clean(ref.seasonId) === targetSeasonId) ||
+    (!targetSeasonId && clean(ref.seasonKey) === targetSeasonKey)
+  )) || null
+  const ordered = refs.slice().sort((left, right) => clean(right.seasonId).localeCompare(clean(left.seasonId)))
+  const currentIndex = currentRef ? ordered.findIndex(ref => ref.seasonId === currentRef.seasonId) : -1
+  const previousRef = currentIndex >= 0
+    ? ordered[currentIndex + 1] || null
+    : ordered.find(ref => !targetSeasonId || clean(ref.seasonId) < targetSeasonId) || null
   const [currentSeason, previousSeason] = await Promise.all([
-    getTeamSeason({
-      birthTeamDocumentId: safeTeamId,
-      seasonKey: safeSeasonKey,
-      bypassCache,
-    }),
-    previousSeasonKey
-      ? getTeamSeason({
-        birthTeamDocumentId: safeTeamId,
-        seasonKey: previousSeasonKey,
-        bypassCache,
-      })
-      : Promise.resolve(null),
+    currentRef?.teamSeasonDocumentId ? getTeamSeasonByDocumentId(currentRef.teamSeasonDocumentId) : Promise.resolve(null),
+    previousRef?.teamSeasonDocumentId ? getTeamSeasonByDocumentId(previousRef.teamSeasonDocumentId) : Promise.resolve(null),
   ])
 
   return {
-    teamRoot: team || null,
-    currentSeason,
-    previousSeason,
-    previousSeasonKey,
-    seasons: previousSeasonKey ? [safeSeasonKey, previousSeasonKey] : [safeSeasonKey],
+    teamRoot: teamRoot || null,
+    currentSeason: toRosterReadModel(currentSeason),
+    previousSeason: toRosterReadModel(previousSeason),
+    previousSeasonKey: clean(previousRef?.seasonKey),
+    seasons: [currentRef?.seasonId, previousRef?.seasonId].filter(Boolean),
   }
 }

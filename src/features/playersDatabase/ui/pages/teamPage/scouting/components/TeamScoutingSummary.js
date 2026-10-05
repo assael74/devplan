@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/pages/teamPage/scouting/components/TeamScoutingSummary.js
+
 import { Box, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
@@ -108,13 +110,16 @@ const resolveItemState = ({ structure, item }) => {
 
 export default function TeamScoutingSummary({
   structure = null,
+  hasRosterPlayers = false,
   title = 'תמונת סקאוטינג',
   titleMeta = null,
   selectedFilter = null,
   onFilterChange,
 }) {
   const unavailableMessage = !structure
-    ? 'לא נטענו עדיין שחקנים לעונה זאת.'
+    ? hasRosterPlayers
+      ? 'הסגל נטען. ניתוח חלוקת הדקות יהיה זמין לאחר טעינת סטטיסטיקה.'
+      : 'לא נטענו עדיין שחקנים לעונה זאת.'
     : structure.availabilityReason === 'season_sample_insufficient'
       ? 'אין עדיין מספיק נתונים — ניתוח חלוקת הדקות יהיה זמין לאחר 8 משחקי ליגה.'
       : 'לא נטענו עדיין נתוני סטטיסטיקה לעונה זאת.'

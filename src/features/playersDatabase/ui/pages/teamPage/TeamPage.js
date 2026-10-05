@@ -50,8 +50,8 @@ import useTeamPageTasks from './hooks/useTeamPageTasks.js'
 import useTeamStatsColumns from './stats/table/hooks/useTeamStatsColumns.js'
 import useClearRosterFlow from './roster/clear/useClearRosterFlow.js'
 import ClearRosterModal from './roster/clear/ClearRosterModal.js'
+import { resolveNextTeamSeasonDeleteAction } from './roster/clear/rosterDeleteAction.model.js'
 import useClearStatsFlow from './stats/clear/hooks/useClearStatsFlow.js'
-import { resolveNextTeamSeasonDeleteAction } from '../../../services/writeV2/roster/clear/readClearRoster.js'
 import ClearStatsModal from './stats/clear/components/ClearStatsModal.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import useTeamReport from './report/useTeamReport.js'
@@ -59,9 +59,7 @@ import { pageCoreLayoutSx } from '../../components/page/sx/pageCoreLayout.sx.js'
 import { teamPageSx } from './sx/teamPage.sx.js'
 import {
   downloadTeamPageDocumentsJson,
-  downloadTeamPageIndexesJson,
 } from './logic/teamDocumentsJson.logic.js'
-import { readTeamSearchIndexesExport } from '../../../services/read/index.js'
 
 const sx = {
   ...pageCoreLayoutSx,
@@ -97,7 +95,6 @@ function TeamPageContent() {
     selectedLeagueSeason,
     selectedTeamSeason,
     setSelectedSeasonKey,
-    reload,
     loading,
     error,
     refreshError,
@@ -117,29 +114,26 @@ function TeamPageContent() {
   const handledStatsImportRequestRef = React.useRef('')
 
   const selectedLeagueDocument = selectedLeagueSeason?.leagueDoc || leagueDoc
-  const handleRosterSeasonSelect = React.useCallback(({ key, leagueId: rosterLeagueId } = {}) => {
-    const selectedOption = seasonOptions.find(option => (
-      option.seasonKey === key && option.leagueId === rosterLeagueId
-    )) || seasonOptions.find(option => option.seasonKey === key)
-
-    if (selectedOption) {
-      setSelectedSeasonKey(selectedOption.optionKey)
-    }
-  }, [seasonOptions, setSelectedSeasonKey])
+  const handleRosterSeasonSelect = React.useCallback(optionKey => {
+    setSelectedSeasonKey(optionKey)
+  }, [setSelectedSeasonKey])
 
   const sharedActionContext = {
     leagueId,
     leagueDoc: selectedLeagueDocument,
     leagueDocuments,
     team,
+    selectedTeamSeason,
     selectedSeasonOption,
     seasonOptions,
     notify,
-    reload,
   }
   const roleEditor = useTeamRoleEditor(sharedActionContext)
   const teamUrlEditor = useTeamPageUrlEditor(sharedActionContext)
-  const rosterImport = useTeamRosterImport(sharedActionContext)
+  const rosterImport = useTeamRosterImport({
+    ...sharedActionContext,
+    teamSeasons,
+  })
   const statsImport = useTeamStatsImport({
     ...sharedActionContext,
     teamDoc,
@@ -172,7 +166,6 @@ function TeamPageContent() {
     team,
     selectedSeasonOption,
     leagueId,
-    reload,
   })
   const deleteSeasonOptions = React.useMemo(() => {
     return seasonOptions.map(option => {
@@ -185,14 +178,10 @@ function TeamPageContent() {
       return {
         ...option,
         deleteAction: resolveNextTeamSeasonDeleteAction({
-          identity: {
-            birthTeamDocumentId: cleanKey(
-              team?.birthTeamDocumentId || team?.teamDocumentId || team?.id
-            ),
-            seasonKey: option.seasonKey,
-            leagueId: option.leagueId || leagueId,
-          },
-          season,
+          teamId: cleanKey(team?.birthTeamId || team?.teamId || team?.id),
+          seasonId: option.seasonId,
+          leagueId: option.leagueId || leagueId,
+          teamSeason: season,
         }),
       }
     }).filter(option => Boolean(option?.deleteAction))
@@ -201,7 +190,6 @@ function TeamPageContent() {
     team,
     selectedSeasonOption,
     leagueId,
-    reload,
     refreshAfterStats: statsDelete.status,
   })
   const teamPageTasks = useTeamPageTasks({
@@ -287,7 +275,7 @@ function TeamPageContent() {
     profileFilterKey === 'all'
       ? null
       : visiblePlayers.map(player => (
-        player.playerId || player.playerDocumentId || player.id
+        player.playerId || player.id
       )).filter(Boolean)
   ), [profileFilterKey, visiblePlayers])
   const teamInformationView = React.useMemo(() => buildTeamInformationView({
@@ -331,43 +319,6 @@ function TeamPageContent() {
     })
   }, [leagueDocuments, selectedLeagueDocument, teamDoc, teamSeasons])
 
-  const handleDownloadIndexesJson = React.useCallback(async () => {
-    const birthTeamId = cleanKey(
-      teamDoc?.id ||
-      teamDoc?.birthTeamDocumentId ||
-      team?.birthTeamDocumentId ||
-      team?.birthTeamId ||
-      team?.id
-    )
-    if (!birthTeamId || jsonDownloadBusy) return
-
-    setJsonDownloadBusy(true)
-
-    try {
-      const teamSearchIndexes = await readTeamSearchIndexesExport({ birthTeamId })
-      const downloadedCount = downloadTeamPageIndexesJson({
-        teamDocument: teamDoc || team,
-        teamSearchIndexes,
-      })
-
-      if (!downloadedCount) {
-        notify({
-          status: 'warning',
-          title: 'לא נמצאו אינדקסים להורדה',
-          message: 'לא קיימים מסמכי אינדקס לקבוצה הזו',
-        })
-      }
-    } catch {
-      notify({
-        status: 'error',
-        title: 'הורדת אינדקסי הקבוצה נכשלה',
-        message: 'לא ניתן היה לקרוא את מסמכי האינדקס',
-      })
-    } finally {
-      setJsonDownloadBusy(false)
-    }
-  }, [jsonDownloadBusy, notify, team, teamDoc])
-
   const handleBackToLeague = () => {
     navigate(leagueBackPath, {
       replace: true,
@@ -400,7 +351,7 @@ function TeamPageContent() {
   })
   const handlePlayerOpen = React.useCallback(row => {
     const source = row?.player || row || {}
-    const playerId = source.playerDocumentId || source.playerId || source.id
+    const playerId = source.playerId || source.id
     if (!playerId) return
 
     navigate(
@@ -461,7 +412,6 @@ function TeamPageContent() {
           team={team}
           clubUrl={clubDoc?.clubUrl || ''}
           seasonKey={selectedSeasonKey}
-          latestSeason={seasonSnapshots[0] || null}
           favorite={teamFavorite}
           favoritePending={teamFavoritePending}
           onFavoriteToggle={() => {
@@ -501,6 +451,7 @@ function TeamPageContent() {
               <TeamInformationOverview
                 view={teamInformationView}
                 seasonSnapshots={seasonSnapshots}
+                seasonOptions={seasonOptions}
                 onSeasonSelect={handleRosterSeasonSelect}
                 profileFilterKey={profileFilterKey}
                 profileFilterOptions={profileFilterOptions}
@@ -531,21 +482,11 @@ function TeamPageContent() {
             onReport={teamReport.openPreview}
             onTeamLink={teamUrlEditor.openDrawer}
             onDownloadJson={handleDownloadJson}
-            onDownloadIndexesJson={handleDownloadIndexesJson}
             jsonDownloadDisabled={Boolean(
               !selectedLeagueDocument &&
               !leagueDocuments.length &&
               !teamDoc &&
               !teamSeasons.length
-            )}
-            indexesDownloadDisabled={Boolean(
-              !cleanKey(
-                teamDoc?.id ||
-                teamDoc?.birthTeamDocumentId ||
-                team?.birthTeamDocumentId ||
-                team?.birthTeamId ||
-                team?.id
-              )
             )}
             jsonDownloadBusy={jsonDownloadBusy}
             tasks={teamPageTasks.tasks}

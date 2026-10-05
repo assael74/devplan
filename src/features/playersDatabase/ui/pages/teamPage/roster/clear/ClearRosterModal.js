@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/pages/teamPage/roster/clear/ClearRosterModal.js
+
 import { Alert, Box, Button, CircularProgress, Typography } from '@mui/joy'
 import RegularModal from '../../../../components/modals/RegularModal.js'
 import ModalStepper from '../../../../components/modals/ModalStepper.js'
@@ -11,18 +13,10 @@ import {
   resolveDeleteModalStep,
   normalizeDeleteModalMessage,
 } from '../../../../components/modals/DeleteModalPresentation.js'
-import { CLEAR_ROSTER_STEPS } from '../../../../../services/writeV2/roster/clear/clearRosterSession.js'
 import { clearRosterSx as sx } from './clearRoster.sx.js'
 
-const STEP_LABELS = {
-  teamSeason: 'נתוני הסגל בעונה',
-  playerIndex: 'אינדקסי השחקנים',
-  teamSearchIndex: 'אינדקס הקבוצה',
-  league: 'נתוני הליגה',
-  club: 'נתוני המועדון',
-  clubsMaster: 'מרכז המועדונים',
-  leaguesMaster: 'מרכז הליגות',
-}
+const CLEAR_ROSTER_STEPS = [{ id: 'sync', label: 'כתיבה וביקורת סנכרון' }]
+const STEP_LABELS = { sync: 'כתיבה וביקורת סנכרון' }
 
 export default function ClearRosterModal({ controller, seasonKey }) {
   const c = controller
@@ -48,7 +42,7 @@ export default function ClearRosterModal({ controller, seasonKey }) {
               { label: 'אינדקסי שחקנים', value: impact.playerIndexes },
               { label: 'מעברים לאיפוס', value: impact.transfers || 0 },
             ]} />
-            <DeleteModalPreserved>עונת הקבוצה וזהותה, נתוני הטבלה, הסטטיסטיקה, איזון הסגל ועונות אחרות. קבוצות אחרות שמופיעות במעברים לא ישתנו.</DeleteModalPreserved>
+            <DeleteModalPreserved>נתוני הליגה הרשמיים ועונות אחרות נשמרים. Team Season של העונה נמחק, ו-Movement במסמכי קבוצות אחרות אינו נמחק.</DeleteModalPreserved>
           </>
         ) : null}
 
@@ -56,8 +50,8 @@ export default function ClearRosterModal({ controller, seasonKey }) {
           <DeleteModalDetails>
             {CLEAR_ROSTER_STEPS.map(item => <DeleteModalProgressRow key={item.id} label={STEP_LABELS[item.id] || item.label} {...(c.counts[item.id] || {})} />)}
             <DeleteModalIds>
-              {identity.birthTeamDocumentId ? <Typography level='body-xs'>מזהה קבוצה: {identity.birthTeamDocumentId}</Typography> : null}
-              {identity.seasonKey ? <Typography level='body-xs'>מזהה עונה: {identity.seasonKey}</Typography> : null}
+              {identity.teamId ? <Typography level='body-xs'>מזהה קבוצה: {identity.teamId}</Typography> : null}
+              {identity.seasonId ? <Typography level='body-xs'>מזהה עונה: {identity.seasonId}</Typography> : null}
               {identity.leagueId ? <Typography level='body-xs'>מזהה ליגה: {identity.leagueId}</Typography> : null}
               {identity.clubId ? <Typography level='body-xs'>מזהה מועדון: {identity.clubId}</Typography> : null}
             </DeleteModalIds>

@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/pages/teamPage/positionClassification/model/teamPositionScoutProfile.presentation.js
+
 import { buildScoutProfileChipModel } from '../../../../components/scout/profile/scoutProfileChip.model.js'
 import { buildScoutCompactView } from '../../../../components/scout/shared/scoutDisplay.model.js'
 
@@ -51,7 +53,7 @@ const resolveProfileDepthPct = source => {
     source?.depth,
   ]
   const depth = depthCandidates.find(value => Number.isFinite(Number(value)))
-  return depth === undefined ? 0 : Number(depth) * 100
+  return depth === undefined ? null : Number(depth) * 100
 }
 
 export const buildTableScoutProfileChip = player => {
@@ -61,11 +63,11 @@ export const buildTableScoutProfileChip = player => {
   if (!primaryProfile) return null
 
   const isCombination = primaryProfile.type === 'combination'
-  const displayDepthPct = resolveProfileDepthPct(
-    isCombination
-      ? { profileStrength: profile.player?.scoutProfileDisplay?.profileStrength }
-      : primaryProfile.source
-  )
+  const sourceDepthPct = resolveProfileDepthPct(primaryProfile.source)
+  const displayDepthPctValue = Number(profile.player?.scoutProfileDisplay?.profileStrength)
+  const displayDepthPct = sourceDepthPct === null && Number.isFinite(displayDepthPctValue)
+    ? displayDepthPctValue
+    : sourceDepthPct
 
   const chipProps = {
     profileId: primaryProfile.id,

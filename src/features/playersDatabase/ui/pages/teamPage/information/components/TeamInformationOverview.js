@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/pages/teamPage/information/components/TeamInformationOverview.js
+
 import * as React from 'react'
 import {
   Box,
@@ -17,9 +19,11 @@ import TeamPerformanceContextBar from '../../performance/components/TeamPerforma
 import TeamPositionClassificationTable from '../../positionClassification/components/TeamPositionClassificationTable.js'
 import TeamScoutingSummary from '../../scouting/components/TeamScoutingSummary.js'
 import TeamStructureSection from '../../structure/components/TeamStructureSection.js'
-import LeagueName from '../../../../components/entities/LeagueName.js'
 import exportTeamPositionClassificationToXlsx from '../../positionClassification/logic/teamPositionClassification.export.js'
-import { TEAM_STRUCTURE_FILTER } from '../../structure/model/teamStructureFilter.model.js'
+import {
+  resolveDefaultTeamStructureFilter,
+} from '../../structure/model/teamStructureFilter.model.js'
+import { buildTeamSeasonTabs } from '../model/teamSeasonTabs.model.js'
 
 const Section = ({ iconId = 'players', title, titleMeta = null, action = null, children }) => (
   <Box sx={sx.section}>
@@ -38,6 +42,7 @@ const Section = ({ iconId = 'players', title, titleMeta = null, action = null, c
 export default function TeamInformationOverview({
   view,
   seasonSnapshots = [],
+  seasonOptions = [],
   onSeasonSelect,
   profileFilterKey = 'all',
   profileFilterOptions = [],
@@ -47,47 +52,36 @@ export default function TeamInformationOverview({
 }) {
   const hasInsufficientSeasonSample = view?.structure?.availabilityReason ===
     'season_sample_insufficient'
-  const defaultStructureFilter = (
-    view?.structure?.availabilityReason === 'stats_not_loaded' ||
-    hasInsufficientSeasonSample
-  )
-    ? TEAM_STRUCTURE_FILTER.ALL_SQUAD
-    : TEAM_STRUCTURE_FILTER.CLASSIFIED
+  const hasRosterPlayers = Boolean(view?.positionClassificationRows?.length)
+  const defaultStructureFilter = resolveDefaultTeamStructureFilter({
+    structure: view?.structure,
+    rows: view?.positionClassificationRows,
+  })
   const [structureFilter, setStructureFilter] = React.useState(defaultStructureFilter)
   const [showPerformanceContext, setShowPerformanceContext] = React.useState(false)
   const contentRef = React.useRef(null)
   const selectedProfileFilter = profileFilterOptions.find(option => (
     option.value === profileFilterKey
   )) || profileFilterOptions[0]
-  const rosterSeasonChips = React.useMemo(() => {
-    const seen = new Set()
-
-    return (Array.isArray(seasonSnapshots) ? seasonSnapshots : [])
-      .filter(season => {
-        const seasonKey = String(season?.seasonKey || season?.seasonId || '').trim()
-        if (!seasonKey || seen.has(seasonKey)) return false
-        seen.add(seasonKey)
-        return true
-      })
-      .map(season => ({
-        key: String(season?.seasonKey || season?.seasonId).trim(),
-        label: [
-          season?.seasonKey || season?.seasonId,
-          season?.ageGroupLabel || season?.ageGroupId,
-        ].filter(Boolean).join(' · '),
-        leagueName: season?.leagueName || season?.league?.leagueName || '',
-        leagueLevel: season?.leagueLevel || season?.league?.leagueLevel || null,
-        birthYear: season?.birthYear || '',
-        ageGroupLabel: season?.ageGroupLabel || season?.ageGroupId || '',
-        selected: String(season?.seasonKey || season?.seasonId || '').trim() === String(view.selectedSeasonKey || '').trim(),
-        leagueId: String(season?.leagueId || '').trim(),
-      }))
-  }, [seasonSnapshots, view.selectedSeasonKey])
+  const rosterSeasonChips = React.useMemo(() => buildTeamSeasonTabs({
+    seasonOptions,
+    seasonSnapshots,
+    selectedOptionKey: view.selectedSeasonOption?.optionKey,
+    selectedSeasonKey: view.selectedSeasonKey,
+  }), [
+    seasonOptions,
+    seasonSnapshots,
+    view.selectedSeasonKey,
+    view.selectedSeasonOption?.optionKey,
+  ])
   const performanceRef = React.useRef(null)
   useScrollToTopOnChange(contentRef, view.selectedSeasonKey)
   const renderSeasonChip = (season, interactive = true) => (
     <Chip
       key={season.key}
+      component={interactive ? 'button' : 'span'}
+      type={interactive ? 'button' : undefined}
+      aria-pressed={interactive ? season.selected : undefined}
       size='sm'
       variant='soft'
       color='neutral'
@@ -96,24 +90,10 @@ export default function TeamInformationOverview({
         season.selected && sx.rosterSeasonChipSelected,
         !interactive && sx.rosterSeasonChipStatic,
       ]}
-      onClick={interactive ? () => onSeasonSelect?.(season) : undefined}
+      onClick={interactive ? () => onSeasonSelect?.(season.optionKey) : undefined}
     >
       <Box sx={sx.rosterSeasonChipContent}>
         <Typography component='span' sx={sx.rosterSeasonChipText}>{season.label}</Typography>
-        {season.leagueName ? (
-          <>
-            <Typography component='span' sx={sx.rosterSeasonChipSeparator}>·</Typography>
-            <LeagueName
-              value={season.leagueName}
-              level={season.leagueLevel}
-              showLevel
-              fontSize={10}
-              levelFontSize={9}
-              nameSx={sx.rosterSeasonChipText}
-              levelSx={sx.rosterSeasonLeagueLevel}
-            />
-          </>
-        ) : null}
       </Box>
     </Chip>
   )
@@ -147,6 +127,7 @@ export default function TeamInformationOverview({
   const handlePositionClassificationExport = React.useCallback(() => {
     exportTeamPositionClassificationToXlsx({
       rows: view.positionClassificationRows,
+      seasonDoc: view.selectedTeamSeason,
       teamName: view.team?.name,
       seasonKey: view.selectedSeasonKey,
       birthYear: selectedSeasonChip?.birthYear || view.team?.birthYear,
@@ -156,6 +137,7 @@ export default function TeamInformationOverview({
     selectedSeasonChip?.ageGroupLabel,
     selectedSeasonChip?.birthYear,
     view.positionClassificationRows,
+    view.selectedTeamSeason,
     view.selectedSeasonKey,
     view.team?.birthYear,
     view.team?.name,
@@ -257,6 +239,7 @@ export default function TeamInformationOverview({
       <TeamScoutingSummary
         structure={view.structure}
         balance={view.balance}
+        hasRosterPlayers={hasRosterPlayers}
         title='איזון חלוקת הדקות'
         titleMeta={rosterSeasonChips.length ? renderSeasonChips() : null}
         selectedFilter={structureFilter}
@@ -265,6 +248,7 @@ export default function TeamInformationOverview({
 
       <TeamStructureSection
         structure={view.structure}
+        hasRosterPlayers={hasRosterPlayers}
         title='איזון מבנה העמדות'
         titleMeta={rosterSeasonChips.length ? renderSeasonChips() : null}
         seasonKey={view.selectedSeasonKey}
@@ -283,6 +267,7 @@ export default function TeamInformationOverview({
         ) : null}
         <TeamPositionClassificationTable
           rows={view.positionClassificationRows}
+          seasonDoc={view.selectedTeamSeason}
           teamName={view.team?.name}
           seasonKey={view.selectedSeasonKey}
           birthYear={selectedSeasonChip?.birthYear || view.team?.birthYear}

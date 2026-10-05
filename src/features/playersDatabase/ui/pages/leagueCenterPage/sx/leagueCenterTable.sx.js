@@ -47,6 +47,12 @@ export const leagueCenterTableSx = {
     maxHeight: 'none',
   },
 
+  openLeagueButton: {
+    minHeight: 28,
+    px: 1.25,
+    fontSize: 12,
+  },
+
   noRowHoverTable: {
     '& tbody tr:hover': {
       bgcolor: 'transparent',

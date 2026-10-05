@@ -14,6 +14,37 @@ const normalizeValue = value => String(value || '')
   .trim()
   .toLowerCase()
 
+const ATTACK_POSITION_VALUES = new Set([
+  's',
+  'am',
+  'attack',
+  'atmidfield',
+  'ar',
+  'ac',
+  'al',
+  'forward',
+  'striker',
+])
+
+const DEFENSE_MIDFIELD_POSITION_VALUES = new Set([
+  'd',
+  'dm',
+  'm',
+  'defense',
+  'dmmid',
+  'midfield',
+  'dr',
+  'dcr',
+  'dcl',
+  'dc',
+  'dl',
+  'dmr',
+  'dmc',
+  'dml',
+  'mcr',
+  'mcl',
+])
+
 const resolveTargetProfileId = ({ player = {} } = {}) => {
   const classification = player.lineClassification &&
     typeof player.lineClassification === 'object'
@@ -21,6 +52,14 @@ const resolveTargetProfileId = ({ player = {} } = {}) => {
     : {}
   const line = normalizeValue(classification.line)
   const position = normalizeValue(classification.position)
+  const knownPosition = [
+    player.positionLayer,
+    player.primaryPosition,
+    player.position,
+  ].map(normalizeValue).find(Boolean) || ''
+
+  if (ATTACK_POSITION_VALUES.has(knownPosition)) return 'attacking_support'
+  if (DEFENSE_MIDFIELD_POSITION_VALUES.has(knownPosition)) return 'last_station'
 
   if (line === 'attack' || position === 'attacking_midfielder') {
     return 'attacking_support'

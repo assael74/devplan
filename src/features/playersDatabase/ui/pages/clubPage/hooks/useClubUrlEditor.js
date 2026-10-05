@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { saveEditor } from '../../../hooks/saveEditor.js'
-import { updateClubUrl } from '../../../../services/writeV2/edits/club/updateUrl.js'
+import { updateClubUrl } from '../../../../services/write/club/edits/updateClubUrl.js'
 
 export default function useClubUrlEditor({ clubId, reload, notify }) {
   const [open, setOpen] = useState(false)

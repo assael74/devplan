@@ -1,0 +1,56 @@
+// src/features/playersDatabase/services/write/stats/writeStatsPlayerSeasons.js
+
+import { FieldPath, doc, setDoc } from 'firebase/firestore'
+
+import { db } from '../../../../../services/firebase/firebase.js'
+import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
+
+export const writeStatsPlayerSeasons = async ({ approvedState = {} } = {}) => {
+  const plans = Array.isArray(approvedState.playerSeasonPlans) ? approvedState.playerSeasonPlans : []
+
+  for (const plan of plans) {
+    const projection = plan.projection
+    const reference = doc(db, PLAYERS_DATABASE_COLLECTIONS.playerSeasons, plan.documentId)
+    const teamId = projection.teamId
+
+    if (!plan.exists) {
+      await setDoc(reference, {
+        identity: projection.identity,
+        teamsById: {
+          [teamId]: projection.team,
+        },
+        timestamps: {
+          createdAt: approvedState.updatedAt || null,
+          updatedAt: approvedState.updatedAt || null,
+        },
+      })
+      continue
+    }
+
+    await setDoc(reference, {
+      identity: {
+        seasonStatus: projection.identity.seasonStatus,
+      },
+      teamsById: {
+        [teamId]: {
+          stats: projection.team.stats,
+          scouting: projection.team.scouting,
+          updatedAt: projection.team.updatedAt,
+        },
+      },
+      timestamps: {
+        updatedAt: approvedState.updatedAt || null,
+      },
+    }, {
+      mergeFields: [
+        new FieldPath('identity', 'seasonStatus'),
+        new FieldPath('teamsById', teamId, 'stats'),
+        new FieldPath('teamsById', teamId, 'scouting'),
+        new FieldPath('teamsById', teamId, 'updatedAt'),
+        new FieldPath('timestamps', 'updatedAt'),
+      ],
+    })
+  }
+
+  return { written: plans.length }
+}

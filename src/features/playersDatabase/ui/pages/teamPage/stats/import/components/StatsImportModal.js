@@ -23,7 +23,7 @@ import TeamSeasonChoiceCards from '../../../../../components/modals/paste/TeamSe
 import { importModalChromeSx as chromeSx } from '../../../../../components/modals/paste/sx/importModalChrome.sx.js'
 import { pasteModalSx as pasteSx } from '../../../../../components/modals/paste/sx/pasteModal.sx.js'
 import { statsImportModalSx as sx } from '../sx/statsImportModal.sx.js'
-import StatsV2FinalSyncPanel from './StatsV2FinalSyncPanel.js'
+import StatsFinalSyncPanel from './StatsFinalSyncPanel.js'
 
 const STEPS = ['הקשר טעינה', 'קליטת נתונים', 'זיהוי ואישור', 'סנכרון']
 
@@ -208,6 +208,7 @@ export default function StatsImportModal({
   const finalConfirmDisabled = (
     !hasTeamPlayers ||
     controller.hasInvalidRows ||
+    controller.validation.valid !== true ||
     controller.movementPreview.requiresDecision ||
     controller.approvedStatsPlanPreparing ||
     !controller.approvedStatsPlan ||
@@ -216,10 +217,7 @@ export default function StatsImportModal({
   )
   const syncComplete = (
     activeStep === 3 &&
-    controller.finalSync?.receiptClosed === true &&
-    controller.finalSync?.stages?.every(
-      stage => controller.finalSync.results?.[stage]?.status === 'completed'
-    )
+    controller.finalSync?.syncComplete === true
   )
   const confirmDisabled = activeStep === 3
     ? !syncComplete
@@ -284,7 +282,8 @@ export default function StatsImportModal({
   }
   const handleClose = () => {
     if (controller.busy) return
-    if (activeStep === 3 && controller.finalSync?.stages?.some(stage => controller.finalSync.results?.[stage]?.status !== 'completed')) return
+    if (activeStep === 3 && controller.finalSync?.status === 'writing') return
+    if (activeStep === 3 && controller.finalSync?.syncComplete !== true) return
 
     controller.clearPaste()
     controller.close()
@@ -330,35 +329,7 @@ export default function StatsImportModal({
         ) : null}
 
         {activeStep === 2 ? (
-          <>
-            {controller.approvedStatsPlanError ? (
-              <Stack spacing={1} alignItems='flex-start'>
-                <Typography level='body-sm' color='danger'>
-                  הכנת תוכנית הטעינה נכשלה. אפשר לנסות שוב ללא שינוי הנתונים.
-                </Typography>
-                <Button
-                  size='sm'
-                  color='danger'
-                  variant='soft'
-                  loading={controller.approvedStatsPlanPreparing}
-                  onClick={controller.rebuildApprovedStatsPlan}
-                >
-                  בנה מחדש
-                </Button>
-              </Stack>
-            ) : null}
-            {controller.reloadDecisionState?.missingPlayers?.length ? (
-              <Stack spacing={1}>
-                <Typography level='title-sm'>שחקנים שהיו בסטטיסטיקה הקודמת ואינם מופיעים בטעינה החדשה</Typography>
-                {controller.reloadDecisionState.missingPlayers.map(entry => (
-                  <Stack key={entry.playerKey} direction='row' spacing={1} alignItems='center'>
-                    <Typography level='body-sm' sx={{ flex: 1 }}>{entry.player?.fullName || entry.playerKey}</Typography>
-                    <Button size='sm' variant={controller.reloadDecisions?.[entry.playerKey] === 'preserveStats' ? 'solid' : 'soft'} onClick={() => controller.setReloadDecision(entry.playerKey, 'preserveStats')}>שמור סטטס קודם</Button>
-                    <Button size='sm' variant={controller.reloadDecisions?.[entry.playerKey] === 'removeStats' ? 'solid' : 'soft'} color='warning' onClick={() => controller.setReloadDecision(entry.playerKey, 'removeStats')}>הסר סטטס</Button>
-                  </Stack>
-                ))}
-              </Stack>
-            ) : null}
+          <Box sx={sx.reviewStep}>
             <PreviewTable
               columns={columns}
               rows={controller.rows}
@@ -390,11 +361,45 @@ export default function StatsImportModal({
                 })),
               ]}
             />
-          </>
+            {controller.approvedStatsPlanError || controller.reloadDecisionState?.missingPlayers?.length ? (
+              <Stack spacing={1} sx={sx.reviewIssues}>
+                {controller.approvedStatsPlanError ? (
+                  <Stack direction='row' spacing={1} alignItems='center'>
+                    <Typography level='body-sm' color='danger' sx={{ flex: 1 }}>
+                      {controller.validation.groupIssues?.find(issue => (
+                        issue.code === controller.approvedStatsPlanError.code
+                      ))?.message || 'הכנת תוכנית הטעינה נכשלה. אפשר לנסות שוב ללא שינוי הנתונים.'}
+                    </Typography>
+                    <Button
+                      size='sm'
+                      color='danger'
+                      variant='soft'
+                      loading={controller.approvedStatsPlanPreparing}
+                      onClick={controller.rebuildApprovedStatsPlan}
+                    >
+                      בנה מחדש
+                    </Button>
+                  </Stack>
+                ) : null}
+                {controller.reloadDecisionState?.missingPlayers?.length ? (
+                  <Stack spacing={1}>
+                    <Typography level='title-sm'>שחקנים שהיו בסטטיסטיקה הקודמת ואינם מופיעים בטעינה החדשה</Typography>
+                    {controller.reloadDecisionState.missingPlayers.map(entry => (
+                      <Stack key={entry.playerKey} direction='row' spacing={1} alignItems='center'>
+                        <Typography level='body-sm' sx={{ flex: 1 }}>{entry.player?.fullName || entry.playerKey}</Typography>
+                        <Button size='sm' variant={controller.reloadDecisions?.[entry.playerKey] === 'preserveStats' ? 'solid' : 'soft'} onClick={() => controller.setReloadDecision(entry.playerKey, 'preserveStats')}>שמור סטטס קודם</Button>
+                        <Button size='sm' variant={controller.reloadDecisions?.[entry.playerKey] === 'removeStats' ? 'solid' : 'soft'} color='warning' onClick={() => controller.setReloadDecision(entry.playerKey, 'removeStats')}>הסר סטטס</Button>
+                      </Stack>
+                    ))}
+                  </Stack>
+                ) : null}
+              </Stack>
+            ) : null}
+          </Box>
         ) : null}
 
         {activeStep === 3 ? (
-          <StatsV2FinalSyncPanel controller={controller.finalSync} />
+          <StatsFinalSyncPanel controller={controller.finalSync} />
         ) : null}
       </Box>
     </RegularModal>

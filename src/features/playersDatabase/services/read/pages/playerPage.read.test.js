@@ -79,126 +79,74 @@ beforeEach(() => {
   clearPlayersDatabaseDocumentCache()
 })
 
-test('legacy player id and canonical document id share one Store entry', async () => {
-  trackedGetDoc.mockImplementation(async ref => ({
-    exists: () => ref.id === 'external__12345',
-    id: ref.id,
-    data: () => ({
-      playerDocumentId: 'external__12345',
-      playerId: 'player__2010__12345',
-      externalPlayerId: '12345',
-      fullName: 'Player',
-      current: [],
-      history: [],
-    }),
-  }))
-
-  const first = await readPlayerPageData({ playerId: 'player__2010__12345' })
-  const second = await readPlayerPageData({ playerId: 'external__12345' })
-
-  expect(first).toEqual(second)
-  expect(trackedGetDoc).toHaveBeenCalledTimes(1)
-  expect(getDocumentCacheResolvedKey(
-    buildPlayerDocumentCacheKey('player__2010__12345')
-  )).toBe(buildPlayerDocumentCacheKey('external__12345'))
-})
-
-test('missing Player Document uses SearchIndex scopes before legacy Team Seasons scan', async () => {
+test('reads the canonical Player Root by its exact id without alias fallback', async () => {
   trackedGetDoc.mockResolvedValue({
-    exists: () => false,
-  })
-  trackedGetDocs.mockImplementation(async (queryRef, meta) => {
-    if (meta?.action !== 'player-fallback-search-index-lookup') {
-      throw new Error(`unexpected read: ${meta?.action}`)
-    }
-
-    return {
-      docs: meta?.meta?.field === 'externalPlayerId' && meta?.meta?.value === '12345'
-        ? [{
-            id: 'index-1',
-            data: () => ({
-              entityType: 'playerSeason',
-              playerDocumentId: 'external__12345',
-              playerId: 'player__2010__12345',
-              externalPlayerId: '12345',
-              birthTeamDocumentId: 'team-root-1',
-              seasonKey: '26/27',
-            }),
-          }]
-        : [],
-    }
-  })
-  getTeamSeason.mockResolvedValue({
-    id: 'team-root-1__26_27',
-    birthTeamDocumentId: 'team-root-1',
-    seasonKey: '26/27',
-    seasonStatus: 'active',
-    teamPlayers: [{
-      playerDocumentId: 'external__12345',
-      playerId: 'player__2010__12345',
-      externalPlayerId: '12345',
-      fullName: 'Player',
-      birthYear: 2010,
-    }],
+    exists: () => true,
+    id: 'player__2010__12345',
+    data: () => ({
+      identity: {
+        playerId: 'player__2010__12345',
+        externalPlayerId: '12345',
+        fullName: 'Player',
+      },
+      seasonRefsById: {},
+    }),
   })
 
   const result = await readPlayerPageData({ playerId: 'player__2010__12345' })
 
-  expect(result?.identity?.playerDocumentId).toBe('external__12345')
-  expect(trackedGetDocs.mock.calls[0]?.[1]?.meta).toEqual(expect.objectContaining({
-    field: 'playerDocumentId',
-    value: 'external__12345',
-  }))
-  expect(trackedGetDocs.mock.calls.map(([, meta]) => meta?.meta?.field)).toEqual([
-    'playerDocumentId',
-    'playerId',
-    'externalPlayerId',
-  ])
-  expect(getTeamSeason).toHaveBeenCalledTimes(1)
-  expect(getTeamSeason).toHaveBeenCalledWith({
-    birthTeamDocumentId: 'team-root-1',
-    seasonKey: '26/27',
-  })
-  expect(trackedGetDocs.mock.calls.some(([, meta]) => (
-    meta?.action === 'player-legacy-fallback-team-seasons-scan'
-  ))).toBe(false)
+  expect(result.identity.playerId).toBe('player__2010__12345')
+  expect(trackedGetDoc).toHaveBeenCalledTimes(1)
+  expect(trackedGetDocs).not.toHaveBeenCalled()
 })
 
-
-test('Player SearchIndex lookup stops after the deterministic playerDocumentId query succeeds', async () => {
-  trackedGetDoc.mockResolvedValue({ exists: () => false })
-  trackedGetDocs.mockImplementation(async (queryRef, meta) => ({
-    docs: meta?.meta?.field === 'playerDocumentId' && meta?.meta?.value === 'external__12345'
-      ? [{
-          id: 'index-primary',
-          data: () => ({
-            playerDocumentId: 'external__12345',
-            playerId: 'player__2010__12345',
-            externalPlayerId: '12345',
-            birthTeamDocumentId: 'team-root-1',
-            seasonKey: '26/27',
-          }),
-        }]
-      : [],
-  }))
-  getTeamSeason.mockResolvedValue({
-    birthTeamDocumentId: 'team-root-1',
-    seasonKey: '26/27',
-    seasonStatus: 'active',
-    teamPlayers: [{
-      playerDocumentId: 'external__12345',
-      playerId: 'player__2010__12345',
-      externalPlayerId: '12345',
-      fullName: 'Player',
-      birthYear: 2010,
-    }],
+test('keeps a missing Player Root missing without SearchIndex or Team Season fallback', async () => {
+  trackedGetDoc.mockResolvedValue({
+    exists: () => false,
   })
 
-  await readPlayerPageData({ playerId: 'player__2010__12345' })
+  const result = await readPlayerPageData({ playerId: 'player__2010__12345' })
 
-  expect(trackedGetDocs).toHaveBeenCalledTimes(1)
-  expect(trackedGetDocs.mock.calls[0]?.[1]?.meta).toEqual(expect.objectContaining({
-    field: 'playerDocumentId',
-    value: 'external__12345',
-  }))
+  expect(result).toBe(null)
+  expect(trackedGetDoc).toHaveBeenCalledTimes(1)
+  expect(trackedGetDocs).not.toHaveBeenCalled()
+  expect(getTeamSeason).not.toHaveBeenCalled()
+})
+
+test('reads only Player Seasons referenced by the canonical Player Root', async () => {
+  trackedGetDoc.mockImplementation(async reference => {
+    if (reference.collectionName === 'dbPlayers') {
+      return {
+        exists: () => true,
+        id: 'player__2010__12345',
+        data: () => ({
+          identity: { playerId: 'player__2010__12345', fullName: 'Player' },
+          seasonRefsById: {
+            '2026_2027': {
+              playerSeasonDocumentId: 'playerSeason__player__2010__12345__2026_2027',
+            },
+          },
+        }),
+      }
+    }
+    return {
+      exists: () => true,
+      id: reference.id,
+      data: () => ({
+        identity: {
+          seasonId: '2026_2027',
+          seasonKey: '26/27',
+          seasonStatus: 'active',
+        },
+        teamId: 'team-1',
+        team: { clubId: 'club-1', leagueId: 'league-1' },
+      }),
+    }
+  })
+
+  const result = await readPlayerPageData({ playerId: 'player__2010__12345' })
+
+  expect(result.seasons).toHaveLength(1)
+  expect(trackedGetDoc).toHaveBeenCalledTimes(2)
+  expect(trackedGetDocs).not.toHaveBeenCalled()
 })

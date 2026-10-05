@@ -13,7 +13,7 @@ import {
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
 const teamDocRef = teamId =>
-  doc(db, PLAYERS_DATABASE_COLLECTIONS.teams, clean(teamId))
+  doc(db, PLAYERS_DATABASE_COLLECTIONS.teamRoots, clean(teamId))
 
 export async function getTeamById(teamId, { bypassCache = false } = {}) {
   const safeTeamId = clean(teamId)
@@ -23,7 +23,7 @@ export async function getTeamById(teamId, { bypassCache = false } = {}) {
     const snapshot = await trackedGetDoc(teamDocRef(safeTeamId), {
         feature: 'playersDatabase',
       action: 'team-read',
-      collection: PLAYERS_DATABASE_COLLECTIONS.teams,
+      collection: PLAYERS_DATABASE_COLLECTIONS.teamRoots,
     })
     if (!snapshot.exists()) return null
 

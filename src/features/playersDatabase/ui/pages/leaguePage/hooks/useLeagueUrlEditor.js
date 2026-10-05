@@ -1,8 +1,8 @@
 // src/features/playersDatabase/ui/pages/leaguePage/hooks/useLeagueUrlEditor.js
 
 import * as React from 'react'
-import { updateLeagueSeasonUrl } from '../../../../services/writeV2/edits/league/updateSeasonUrl.js'
-import { updateLeagueCompetitionRules } from '../../../../services/writeV2/edits/league/updateCompetitionRules.js'
+import { updateLeagueSeasonUrl } from '../../../../services/write/league/edits/updateLeagueSeasonUrl.js'
+import { updateLeagueCompetitionRules } from '../../../../services/write/league/edits/updateLeagueCompetitionRules.js'
 import { SNACK_STATUS } from '../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import {
   buildCompetitionRules,
@@ -48,6 +48,7 @@ export default function useLeagueUrlEditor({
       leagueId: league.id,
       leagueName: league.name || league.leagueName || '',
       seasonKey: selectedSeasonOption.seasonKey,
+      seasonId: selectedSeasonOption.seasonId,
       isTopLeague: Number(league.level) === 1,
       teamCount: Array.isArray(season.tableRank) ? season.tableRank.length : 0,
     })
@@ -95,7 +96,7 @@ export default function useLeagueUrlEditor({
       write: () =>
         updateLeagueSeasonUrl({
           leagueId: context.leagueId,
-          seasonKey: context.seasonKey,
+          seasonId: context.seasonId,
           seasonUrl: submitted,
         }),
       setSection: setUrl,
@@ -111,7 +112,7 @@ export default function useLeagueUrlEditor({
       write: () =>
         updateLeagueCompetitionRules({
           leagueId: context.leagueId,
-          seasonKey: context.seasonKey,
+          seasonId: context.seasonId,
           competitionRules: buildCompetitionRules({
             draft: submitted,
             teamCount: context.teamCount,

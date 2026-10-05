@@ -4,7 +4,10 @@ import {
   Box,
   Button,
   Chip,
-  IconButton,
+  Dropdown,
+  Menu,
+  MenuButton,
+  MenuItem,
   Stack,
   Tooltip,
   Typography,
@@ -22,7 +25,11 @@ import {
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import ClubsCollection from './components/ClubsCollection.js'
 import ClubsFilters from './components/ClubsFilters.js'
-import { downloadClubsMasterJson } from './logic/clubsMasterJson.logic.js'
+import {
+  buildClubsPageJsonOptions,
+  downloadAllClubsPageJsonOptions,
+  downloadClubsPageJsonOption,
+} from './logic/clubsPageJson.logic.js'
 import { clubsPageSx as sx } from './sx/clubsPage.sx.js'
 
 export default function ClubsPage() {
@@ -30,6 +37,11 @@ export default function ClubsPage() {
   const model = useClubsPage()
   const [expandedClubId, setExpandedClubId] = useState(null)
   const [onlyClubsWithSignals, setOnlyClubsWithSignals] = useState(false)
+  const jsonOptions = buildClubsPageJsonOptions({
+    directory: model.clubsPageData?.directory,
+    centers: model.clubsPageData?.centers,
+  })
+  const availableJsonCount = jsonOptions.filter(option => option.available).length
 
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     { label: 'מועדונים' },
@@ -88,20 +100,40 @@ export default function ClubsPage() {
         </Chip>
       </Tooltip>
 
-      <Tooltip title='הורדת Clubs Master כ־JSON'>
-        <span>
-          <IconButton
-            size='sm'
-            variant='outlined'
-            color='neutral'
-            aria-label='הורדת Clubs Master כ־JSON'
-            disabled={model.loading || !model.clubsMasterDoc}
-            onClick={() => downloadClubsMasterJson(model.clubsMasterDoc)}
+      <Dropdown>
+        <Tooltip title='הורדת מסמכי JSON'>
+          <span>
+            <MenuButton
+              size='sm'
+              variant='outlined'
+              color='neutral'
+              aria-label='בחירת מסמכי מועדונים להורדה'
+              disabled={model.loading || !model.clubsPageData}
+            >
+              {iconUi({ id: 'download', size: 'sm' })}
+            </MenuButton>
+          </span>
+        </Tooltip>
+
+        <Menu placement='bottom-end'>
+          {jsonOptions.map(option => (
+            <MenuItem
+              key={option.id}
+              disabled={!option.available}
+              onClick={() => downloadClubsPageJsonOption(option)}
+            >
+              {option.available ? option.label : `${option.label} · לא קיים`}
+            </MenuItem>
+          ))}
+
+          <MenuItem
+            disabled={!availableJsonCount}
+            onClick={() => downloadAllClubsPageJsonOptions(jsonOptions)}
           >
-            {iconUi({ id: 'download', size: 'sm' })}
-          </IconButton>
-        </span>
-      </Tooltip>
+            הורדת כל מסמכי העמוד ({availableJsonCount})
+          </MenuItem>
+        </Menu>
+      </Dropdown>
     </Stack>
   )
 

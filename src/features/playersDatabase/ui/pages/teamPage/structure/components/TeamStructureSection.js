@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/pages/teamPage/structure/components/TeamStructureSection.js
+
 import { Box, Button, Tooltip, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
@@ -175,6 +177,7 @@ const CoverageStrip = ({ structure, selectedFilter, onFilterChange }) => {
 
 export default function TeamStructureSection({
   structure = null,
+  hasRosterPlayers = false,
   title = 'מבנה הסגל',
   titleMeta = null,
   seasonKey = '',
@@ -194,7 +197,11 @@ export default function TeamStructureSection({
             {titleMeta}
           </Box>
         </Box>
-        <Typography sx={sx.coverageText}>לא נטענו עדיין שחקנים לעונה זאת.</Typography>
+        <Typography sx={sx.coverageText}>
+          {hasRosterPlayers
+            ? 'הסגל נטען. ניתוח מבנה הסגל יהיה זמין לאחר טעינת סטטיסטיקה.'
+            : 'לא נטענו עדיין שחקנים לעונה זאת.'}
+        </Typography>
       </Box>
     )
   }

@@ -4,7 +4,7 @@ import * as React from 'react'
 import { useSnackbar } from '../../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import { saveEditor } from '../../../hooks/saveEditor.js'
 
-import { updateTeamSeasonUrl } from '../../../../services/writeV2/edits/team/updateSeasonUrl.js'
+import { updateTeamSeasonUrl } from '../../../../services/write/league/edits/updateTeamSeasonUrl.js'
 
 export default function useSearchTeamUrlEditor({ reload }) {
   const { notify } = useSnackbar()
@@ -24,16 +24,14 @@ export default function useSearchTeamUrlEditor({ reload }) {
   const save = React.useCallback(
     async teamUrl => {
       if (!row || saving) return
-      const identity = row.identity || {}
       await saveEditor({
         write: () =>
           updateTeamSeasonUrl({
             leagueId: row.league?.id || row.league?.leagueId || row.leagueId,
-            birthTeamId:
-              identity.birthTeamId || identity.teamId || row.birthTeamId,
-            birthTeamDocumentId:
-              identity.birthTeamDocumentId || identity.teamDocumentId,
-            seasonKey: row.season?.seasonKey || row.seasonKey,
+            teamId: row.team?.teamId || row.teamId,
+            teamSeasonDocumentId:
+              row.references?.teamSeasonDocumentId || row.teamSeasonDocumentId,
+            seasonId: row.seasonId,
             teamUrl,
           }),
         reload: () => reload(row.id),

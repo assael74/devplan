@@ -1,28 +1,24 @@
 // src/features/playersDatabase/ui/components/modals/paste/LeagueImportModal.js
 
 import * as React from 'react'
-
 import {
+  Alert,
   Box,
-  Button,
-  Chip,
   CircularProgress,
-
   FormControl,
+  FormLabel,
+  Input,
   RadioGroup,
-  Stack,
   Typography,
 } from '@mui/joy'
 
 import ImportActionArea from '../ImportActionArea.js'
 import ConfirmModal from '../ConfirmModal.js'
-import JsonViewerModal from '../JsonViewerModal.js'
 import ModalStepper from '../ModalStepper.js'
 import RegularModal from '../RegularModal.js'
 import leagueActiveImage from '../../../../../../ui/core/images/modals/leagueActive.png'
 import leagueCompletedImage from '../../../../../../ui/core/images/modals/leagueCompleted.png'
 import leagueUpcomingImage from '../../../../../../ui/core/images/modals/leagueUpcoming.png'
-import { downloadLeagueIdentityIndexJson } from '../../../pages/leaguePage/logic/leagueIdentityIndexJson.logic.js'
 import PasteArea from './PasteArea.js'
 import ImportChoiceCard from './ImportChoiceCard.js'
 import PreviewTable from './PreviewTable.js'
@@ -48,21 +44,15 @@ const SEASON_STATUS_OPTIONS = [
   {
     value: 'completed',
     label: 'ליגה הסתיימה',
-    description: 'נתוני העונה הסופיים יישמרו כהיסטוריה.',
+    description: 'נתוני העונה הסופיים יישמרו בעונה הקנונית.',
     image: leagueCompletedImage,
   },
 ]
 
-const FOOTER_BUTTON_SX = {
-  minHeight: 36,
-}
-
 const TOOL_BUTTON_SX = {
-  ...FOOTER_BUTTON_SX,
+  minHeight: 36,
   minWidth: 112,
 }
-
-
 
 export default function LeagueImportModal({
   league = {},
@@ -71,7 +61,6 @@ export default function LeagueImportModal({
   placeholder = '',
 }) {
   const [activeStep, setActiveStep] = React.useState(0)
-  const [identityJsonOpen, setIdentityJsonOpen] = React.useState(false)
   const [structuralConfirmOpen, setStructuralConfirmOpen] = React.useState(false)
   const previewAdvanceRequestedRef = React.useRef(false)
   const leagueContext = [
@@ -82,17 +71,19 @@ export default function LeagueImportModal({
   ].filter(Boolean).join(' · ')
   const hasPreviewRows = Array.isArray(leagueImport.rows) && leagueImport.rows.length > 0
   const resolvedRowsCount = hasPreviewRows
-    ? leagueImport.rows.filter(row => row?.valid !== false).length
+    ? leagueImport.rows.filter(row => row && row.valid !== false).length
     : 0
   const attentionRowsCount = hasPreviewRows ? leagueImport.rows.length - resolvedRowsCount : 0
   const seasonStatusReady = Boolean(leagueImport.seasonStatus)
-  const hasSyncAttempt = Object.values(leagueImport.syncState || {}).some(state => (
-    ['running', 'completed', 'failed'].includes(state?.status)
-  ))
+  const executionReady = leagueImport.executionStatus === 'ready'
+  const executionFailed = leagueImport.executionStatus === 'failed'
+  const executionSucceeded = leagueImport.executionStatus === 'succeeded'
+
   const getLeagueImportRowStatus = React.useCallback(row => ({
-    valid: row?.valid !== false,
-    message: Array.isArray(row?.errors) ? row.errors.filter(Boolean).join(' ') : '',
+    valid: row && row.valid !== false,
+    message: Array.isArray(row && row.errors) ? row.errors.filter(Boolean).join(' ') : '',
   }), [])
+
   React.useEffect(() => {
     if (leagueImport.open) {
       previewAdvanceRequestedRef.current = false
@@ -103,135 +94,83 @@ export default function LeagueImportModal({
 
   React.useEffect(() => {
     if (!previewAdvanceRequestedRef.current || !hasPreviewRows) return
-
     previewAdvanceRequestedRef.current = false
     setActiveStep(2)
   }, [hasPreviewRows])
 
-  const seasonStatusControl = (
-    <FormControl required sx={sx.seasonStatusField}>
-      <Typography level='title-md' sx={sx.stepTitle}>
-        מצב הליגה
-      </Typography>
-
-      <Typography level='body-sm' sx={sx.stepDescription}>
-        בחר את מצב הליגה המתאים לטעינה.
-      </Typography>
-
-      <RadioGroup
-        value={leagueImport.seasonStatus || ''}
-        sx={sx.seasonStatusGroup}
-        onChange={event => leagueImport.setSeasonStatus(event.target.value)}
-      >
-        {SEASON_STATUS_OPTIONS.map(option => {
-          const disabled = option.value === 'not_started' && leagueImport.hasStartedData
-          const selected = option.value === leagueImport.seasonStatus
-
-          return (
-            <ImportChoiceCard
-              key={option.value}
-              value={option.value}
-              label={option.label}
-              description={option.description}
-              image={option.image}
-              selected={selected}
-              disabled={disabled}
-              disabledHint={disabled
-                ? 'לא ניתן לבחור מצב זה לאחר שנקלטו נתוני עונה פעילים.'
-                : ''}
-              cardSx={[
-                selected ? sx.seasonStatusOptionSelected : null,
-              ]}
-            />
-          )
-        })}
-      </RadioGroup>
-    </FormControl>
-  )
   const confirmDisabled = activeStep === 0
-    ? !seasonStatusReady
+    ? !seasonStatusReady || !leagueImport.gameDurationValid
     : activeStep === 1
       ? !leagueImport.pasteValue || !leagueImport.seasonStatus
       : activeStep === 2
         ? !leagueImport.canConfirm
-        : !leagueImport.syncComplete
+        : leagueImport.busy || (!executionReady && !executionFailed && !executionSucceeded)
+
   const footerActions = activeStep === 1 ? (
     <ImportActionArea
-      actions={[
-        {
-          id: 'back',
-          label: 'חזרה למצב ליגה',
-          iconId: 'back',
-          presentationRole: 'back',
-          disabled: leagueImport.busy,
-          sx: chromeSx.backButton,
-          onClick: () => setActiveStep(0),
-        },
-      ]}
+      actions={[{
+        id: 'back',
+        label: 'חזרה למצב ליגה',
+        iconId: 'back',
+        presentationRole: 'back',
+        disabled: leagueImport.busy,
+        sx: chromeSx.backButton,
+        onClick: () => setActiveStep(0),
+      }]}
     />
   ) : activeStep === 2 ? (
     <ImportActionArea
-      actions={[
-        {
-          id: 'back',
-          label: 'חזרה לקליטת נתונים',
-          iconId: 'back',
-          presentationRole: 'back',
-          disabled: leagueImport.busy,
-          sx: chromeSx.backButton,
-          onClick: () => setActiveStep(1),
-        },
-      ]}
+      actions={[{
+        id: 'back',
+        label: 'חזרה לקליטת נתונים',
+        iconId: 'back',
+        presentationRole: 'back',
+        disabled: leagueImport.busy,
+        sx: chromeSx.backButton,
+        onClick: () => setActiveStep(1),
+      }]}
     />
-  ) : activeStep === 3 ? (
+  ) : activeStep === 3 && executionReady ? (
     <ImportActionArea
-      actions={[
-        {
-          id: 'back',
-          label: 'חזרה לזיהוי ואישור',
-          iconId: 'back',
-          presentationRole: 'back',
-          disabled: leagueImport.busy || hasSyncAttempt,
-          sx: chromeSx.backButton,
-          onClick: () => setActiveStep(2),
-        },
-      ]}
+      actions={[{
+        id: 'back',
+        label: 'חזרה לזיהוי ואישור',
+        iconId: 'back',
+        presentationRole: 'back',
+        disabled: leagueImport.busy,
+        sx: chromeSx.backButton,
+        onClick: () => setActiveStep(2),
+      }]}
     />
   ) : null
+
   const oppositeFooterActions = activeStep === 1 && leagueImport.pasteValue ? (
     <ImportActionArea
-      actions={[
-        {
-          id: 'clear',
-          label: 'התחל מחדש',
-          iconId: 'reset',
-          presentationRole: 'secondary',
-          disabled: leagueImport.busy,
-          sx: TOOL_BUTTON_SX,
-          onClick: () => {
-            if (leagueImport.busy) return
-
-            leagueImport.handleClear()
-            setActiveStep(0)
-          },
+      actions={[{
+        id: 'clear',
+        label: 'התחל מחדש',
+        iconId: 'reset',
+        presentationRole: 'secondary',
+        disabled: leagueImport.busy,
+        sx: TOOL_BUTTON_SX,
+        onClick: () => {
+          if (leagueImport.busy) return
+          leagueImport.handleClear()
+          setActiveStep(0)
         },
-      ]}
-    />
-  ) : activeStep === 2 && leagueImport.identityIndexDocument ? (
-    <ImportActionArea
-      actions={[
-        {
-          id: 'identity-json',
-          label: 'מסמך זיהוי',
-          iconId: 'dataShow',
-          presentationRole: 'secondary',
-          sx: TOOL_BUTTON_SX,
-          onClick: () => setIdentityJsonOpen(true),
-        },
-      ]}
+      }]}
     />
   ) : null
-  const handleConfirm = () => {
+
+  const approveAndAdvance = () => {
+    if (leagueImport.structuralChanges && leagueImport.structuralChanges.hasChanges && !leagueImport.structuralAcknowledged) {
+      setStructuralConfirmOpen(true)
+      return
+    }
+    if (leagueImport.handleApproveForSync()) setActiveStep(3)
+  }
+
+  const handleConfirm = async () => {
     if (activeStep === 0) {
       setActiveStep(1)
       return
@@ -243,44 +182,48 @@ export default function LeagueImportModal({
         leagueImport.handlePreview()
         return
       }
-
       setActiveStep(2)
       return
     }
 
     if (activeStep === 2) {
-      if (leagueImport.structuralChanges?.hasChanges && !leagueImport.structuralAcknowledged) {
-        setStructuralConfirmOpen(true)
-        return
-      }
-      if (leagueImport.handleApproveForSync()) setActiveStep(3)
+      approveAndAdvance()
       return
     }
 
-    if (activeStep === 3 && leagueImport.syncComplete) {
+    if (executionSucceeded) {
       leagueImport.finishLeagueImport()
+      return
     }
+
+    await leagueImport.executeApprovedImport()
   }
+
   const handleClose = () => {
     if (leagueImport.busy) return
-
     leagueImport.handleClear()
     leagueImport.handleClose()
   }
+
   const confirmStructuralChanges = () => {
     leagueImport.setStructuralAcknowledged(true)
     setStructuralConfirmOpen(false)
     if (leagueImport.handleApproveForSync()) setActiveStep(3)
   }
+
   const confirmLabel = activeStep === 0
     ? 'המשך לטעינת נתונים'
     : activeStep === 1
       ? hasPreviewRows ? 'המשך לזיהוי ואישור' : 'המשך לבדיקת נתונים'
       : activeStep === 2
         ? 'אישור ומעבר לסנכרון'
-        : leagueImport.auditResult?.coverage?.complete === false
-          ? 'סגור עם Audit חלקי'
-          : 'סגור'
+        : executionSucceeded
+          ? 'סגור'
+          : executionFailed
+            ? leagueImport.retryMode === 'repair'
+              ? 'תקן תוצרים'
+              : 'נסה שוב'
+            : 'בצע טעינה'
 
   return (
     <>
@@ -292,7 +235,7 @@ export default function LeagueImportModal({
         busy={leagueImport.busy}
         disabled={confirmDisabled}
         confirmLabel={confirmLabel}
-        confirmIconId={activeStep === 2 ? 'upload' : 'forward'}
+        confirmIconId={activeStep === 2 || activeStep === 3 ? 'upload' : 'forward'}
         confirmLoadingPosition='start'
         size='xl'
         contentSx={pasteSx.modalContent}
@@ -306,16 +249,57 @@ export default function LeagueImportModal({
         <Box sx={pasteSx.content}>
           <ModalStepper activeStep={activeStep} steps={STEPS} compact />
 
-          {activeStep === 0 ? seasonStatusControl : null}
+          {activeStep === 0 ? (
+            <Box>
+              <FormControl required sx={sx.seasonStatusField}>
+                <Typography level='title-md' sx={sx.stepTitle}>מצב הליגה</Typography>
+                <Typography level='body-sm' sx={sx.stepDescription}>בחר את מצב הליגה המתאים לטעינה.</Typography>
+                <RadioGroup
+                  value={leagueImport.seasonStatus || ''}
+                  sx={sx.seasonStatusGroup}
+                  onChange={event => leagueImport.setSeasonStatus(event.target.value)}
+                >
+                  {SEASON_STATUS_OPTIONS.map(option => {
+                    const disabled = option.value === 'not_started' && leagueImport.hasStartedData
+                    return (
+                      <ImportChoiceCard
+                        key={option.value}
+                        value={option.value}
+                        label={option.label}
+                        description={option.description}
+                        image={option.image}
+                        selected={option.value === leagueImport.seasonStatus}
+                        disabled={disabled}
+                        disabledHint={disabled ? 'לא ניתן לבחור מצב זה לאחר שנקלטו נתוני עונה פעילים.' : ''}
+                      />
+                    )
+                  })}
+                </RadioGroup>
+              </FormControl>
+              <FormControl required sx={{ mt: 2, maxWidth: 240 }}>
+                <FormLabel>משך משחק בדקות — לקריאה בלבד</FormLabel>
+                <Input
+                  type='number'
+                  slotProps={{ input: { min: 1, step: 1, readOnly: true } }}
+                  value={leagueImport.gameDurationMinutes}
+                />
+                <Typography level='body-xs' sx={{ mt: 0.5 }}>
+                  הערך נקבע אוטומטית לפי קבוצת הגיל.
+                </Typography>
+              </FormControl>
+            </Box>
+          ) : null}
 
           {activeStep === 1 ? (
-            <PasteArea
-              value={leagueImport.pasteValue}
-              placeholder={placeholder}
-              onChange={leagueImport.setPasteValue}
-              inputVariant='tall'
-              templateText={placeholder}
-            />
+            <Box>
+              <PasteArea
+                value={leagueImport.pasteValue}
+                placeholder={placeholder}
+                onChange={leagueImport.setPasteValue}
+                inputVariant='tall'
+                templateText={placeholder}
+              />
+            </Box>
           ) : null}
 
           {activeStep === 2 ? (
@@ -327,16 +311,8 @@ export default function LeagueImportModal({
               showSummaryCounts={false}
               hoverRow={false}
               summary={[
-                {
-                  key: 'teams',
-                  label: `${leagueImport.rows.length} קבוצות`,
-                  color: 'neutral',
-                },
-                {
-                  key: 'resolved',
-                  label: `${resolvedRowsCount} זוהו`,
-                  color: 'success',
-                },
+                { key: 'teams', label: `${leagueImport.rows.length} קבוצות`, color: 'neutral' },
+                { key: 'resolved', label: `${resolvedRowsCount} זוהו`, color: 'success' },
                 ...(attentionRowsCount > 0 ? [{
                   key: 'attention',
                   label: `${attentionRowsCount} לטיפול`,
@@ -346,135 +322,106 @@ export default function LeagueImportModal({
               onCellChange={leagueImport.handleCellChange}
               getRowStatus={getLeagueImportRowStatus}
             />
-
-
           ) : null}
 
           {activeStep === 3 ? (
             <Box sx={sx.syncStepArea}>
               <Box sx={sx.syncPanel}>
-
-              <Stack spacing={1}>
-                {[
-                  {
-                    key: 'league',
-                    title: 'שמירת טבלת הליגה',
-                    description: 'שמירת מסמך הליגה הקנוני והעונה שאושרה.',
-                    action: leagueImport.syncLeagueCanonical,
-                    enabled: true,
-                  },
-                  {
-                    key: 'leaguesMaster',
-                    title: 'סנכרון אינדקס הליגות',
-                    description: 'בנייה מחדש של Leagues Master ממסמכי הליגה הקנוניים.',
-                    action: leagueImport.syncLeaguesMaster,
-                    enabled: leagueImport.syncState.league?.status === 'completed',
-                  },
-                  {
-                    key: 'identity',
-                    title: 'סנכרון אינדקס הזיהוי',
-                    description: 'עדכון זהויות הקבוצות של הליגה ושמירת ליגות אחרות ללא שינוי.',
-                    action: leagueImport.syncLeagueIdentity,
-                    enabled: leagueImport.syncState.leaguesMaster?.status === 'completed',
-                  },
-                  {
-                    key: 'teams',
-                    title: 'סנכרון קבוצות',
-                    description: 'עדכון ביצועים ב־Team Season קיים וב־Team SearchIndex.',
-                    action: leagueImport.syncLeagueTeams,
-                    enabled: leagueImport.syncState.identity?.status === 'completed',
-                  },
-                  {
-                    key: 'clubs',
-                    title: 'סנכרון מועדונים',
-                    description: 'עדכון Club projections וניקוי stale data בתחום הליגה הנוכחית.',
-                    action: leagueImport.syncLeagueClubs,
-                    enabled: leagueImport.syncState.teams?.status === 'completed',
-                  },
-                  {
-                    key: 'clubsMaster',
-                    title: 'סנכרון אינדקס המועדונים',
-                    description: 'בנייה מחדש של Clubs Master ממסמכי המועדונים הקנוניים.',
-                    action: leagueImport.syncClubsMaster,
-                    enabled: leagueImport.syncState.clubs?.status === 'completed',
-                  },
-                  {
-                    key: 'audit',
-                    title: 'בדיקת סנכרון',
-                    description: 'השוואת ההקרנות הקיימות למקורות האמת הקנוניים ושמירת סיכום הבדיקה ב־Receipt.',
-                    action: leagueImport.runLeagueAudit,
-                    enabled: leagueImport.syncState.clubsMaster?.status === 'completed',
-                  },
-                ].map((step, index) => {
-                  const state = leagueImport.syncState[step.key] || {}
-                  const completed = state.status === 'completed'
-                  const running = state.status === 'running'
-                  const failed = state.status === 'failed'
-
-                  return (
-                    <Box key={step.key} sx={sx.syncStep}>
-                      <Box sx={sx.syncStepNumber}>{completed ? '✓' : index + 1}</Box>
-                      <Box sx={sx.syncStepContent}>
-                        <Stack direction='row' spacing={1} alignItems='center'>
-                          <Typography level='title-sm'>{step.title}</Typography>
-                          {completed ? <Chip size='sm' color='success' variant='soft'>הושלם</Chip> : null}
-                          {failed ? <Chip size='sm' color='danger' variant='soft'>נכשל</Chip> : null}
-                        </Stack>
-                        <Typography level='body-xs' sx={sx.syncScopeHint}>
-                          {step.description}
-                        </Typography>
-                        {failed && state.error ? (
-                          <Typography level='body-xs' color='danger' sx={sx.syncError}>
-                            {state.error}
-                          </Typography>
-                        ) : null}
-                      </Box>
-                      <Button
-                        size='sm'
-                        variant={completed ? 'soft' : 'solid'}
-                        color={failed ? 'danger' : completed ? 'success' : 'primary'}
-                        disabled={!step.enabled || leagueImport.busy || completed}
-                        startDecorator={running ? <CircularProgress size='sm' /> : null}
-                        onClick={step.action}
-                      >
-                        {running ? 'מבצע...' : failed ? 'נסה שוב' : completed ? 'הושלם' : 'בצע'}
-                      </Button>
-                    </Box>
-                  )
-                })}
-              </Stack>
-
-              {leagueImport.syncComplete ? (
-                <Box sx={sx.syncComplete}>
-                  <Typography level='title-md' color='success'>
-                    כל שלבי טעינת הליגה הושלמו
+                <Box sx={sx.syncHeader}>
+                  <Typography level='title-md' sx={sx.syncTitle}>
+                    סדר עדכון המסמכים
                   </Typography>
-                  <Typography level='body-sm' sx={sx.syncScopeHint}>
-                    {leagueImport.auditResult?.coverage?.complete === false
-                      ? 'הסנכרון הסתיים. כיסוי ה־Audit עדיין חלקי; סגירה מהכפתור למטה מהווה אישור מפורש לסגור במצב זה.'
-                      : 'הסנכרון והבדיקה הסתיימו. כעת נשאר רק לסגור את המודאל.'}
+                  <Typography level='body-sm' sx={sx.syncDescription}>
+                    לחיצה אחת מפעילה את כל השלבים לפי הסדר. כל שלב מעדכן את
+                    היעד שבבעלותו, ובסיום מתבצעת בדיקה והקבלה נסגרת.
                   </Typography>
                 </Box>
-              ) : null}
-            </Box>
+
+                <Box sx={sx.syncScope}>
+                  {leagueImport.syncStages.map((stage, index) => (
+                    <Box key={stage.id} sx={sx.syncStep}>
+                      <Box sx={sx.syncStepNumber}>{index + 1}</Box>
+                      <Box sx={sx.syncStepContent}>
+                        <Typography level='title-sm'>{stage.title}</Typography>
+                        <Typography level='body-xs' sx={sx.syncScopeHint}>
+                          {stage.target}
+                        </Typography>
+                      </Box>
+                      <Typography level='body-xs' color={
+                        stage.state === 'completed'
+                          ? 'success'
+                          : stage.state === 'failed'
+                            ? 'danger'
+                            : stage.state === 'running'
+                              ? 'primary'
+                              : 'neutral'
+                      }>
+                        {stage.state === 'completed'
+                          ? 'הושלם'
+                          : stage.state === 'failed'
+                            ? 'נכשל'
+                            : stage.state === 'running'
+                              ? 'בתהליך'
+                              : 'ממתין'}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+
+                {leagueImport.busy ? (
+                  <Box sx={sx.syncProgress}>
+                    <CircularProgress size='sm' />
+                    <Box>
+                      <Typography level='title-sm'>טעינת הליגה מתבצעת</Typography>
+                      <Typography level='body-xs' sx={sx.syncScopeHint}>
+                        אין לסגור את החלון עד לסיום הכתיבה והבדיקה.
+                      </Typography>
+                    </Box>
+                  </Box>
+                ) : null}
+
+                {executionReady ? (
+                  <Alert color='primary' variant='soft'>
+                    הנתונים אושרו. לחיצה על „בצע טעינה” תעדכן את היעדים המוצגים
+                    לפי הסדר כפעולה מאושרת אחת.
+                  </Alert>
+                ) : null}
+
+                {executionFailed ? (
+                  <Alert color='danger' variant='soft'>
+                    <Box>
+                      <Typography level='body-sm'>
+                        {leagueImport.executionError || 'הפעולה לא הושלמה.'}
+                      </Typography>
+                      <Typography level='body-xs' sx={{ mt: 0.5 }}>
+                        {leagueImport.retryMode === 'repair'
+                          ? 'מקור האמת כבר אושר. הפעולה הבאה תתקן רק את התוצרים באותה קבלה.'
+                          : 'מקור האמת לא אושר. ניסיון חוזר ישתמש בקלט המאושר ובאותה קבלה.'}
+                      </Typography>
+                    </Box>
+                  </Alert>
+                ) : null}
+
+                {executionSucceeded ? (
+                  <Alert color='success' variant='soft'>
+                    טעינת הליגה, התוצרים הנגזרים והבדיקה הושלמו בהצלחה.
+                  </Alert>
+                ) : null}
+
+                {leagueImport.receiptId ? (
+                  <Typography level='body-xs'>Receipt: {leagueImport.receiptId}</Typography>
+                ) : null}
+              </Box>
             </Box>
           ) : null}
         </Box>
       </RegularModal>
-      <JsonViewerModal
-        open={identityJsonOpen}
-        title='אינדקס זיהוי קבוצות · JSON'
-        description='זהו מסמך ה־JSON שנקרא בפועל לצורך זיהוי הופעת מועדון בליגה אחרת באותה עונה ושנתון.'
-        data={leagueImport.identityIndexDocument || {}}
-        onClose={() => setIdentityJsonOpen(false)}
-        onDownload={() => downloadLeagueIdentityIndexJson(leagueImport.identityIndexDocument || {})}
-      />
+
       <ConfirmModal
         open={structuralConfirmOpen}
-        title='אישור שינויי מבנה בליגה'
-        message={`זוהו שינויים במבנה הליגה: נוספו ${leagueImport.structuralChanges?.added.length || 0}, הוסרו ${leagueImport.structuralChanges?.removed.length || 0}, שונו ${leagueImport.structuralChanges?.changed.length || 0}.`}
-        confirmLabel='מאשר וממשיך לסנכרון'
-        cancelLabel='חזרה לעריכה'
+        title='אישור שינוי מבני בליגה'
+        description='נמצאו קבוצות שנוספו, הוסרו או שינו שיוך. האם להמשיך עם הנתונים שאושרו?'
+        confirmLabel='אישור והמשך'
         onConfirm={confirmStructuralChanges}
         onClose={() => setStructuralConfirmOpen(false)}
       />

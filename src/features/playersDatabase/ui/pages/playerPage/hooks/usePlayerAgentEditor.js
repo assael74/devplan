@@ -1,11 +1,10 @@
 import * as React from 'react'
 
-import { updatePlayerAgent } from '../../../../services/writeV2/edits/player/updateAgent.js'
+import { updatePlayerAgent } from '../../../../services/write/player/edits/updatePlayerRootManual.js'
 
 export default function usePlayerAgentEditor({
   player,
   notify,
-  reload,
 }) {
   const [open, setOpen] = React.useState(false)
   const [saving, setSaving] = React.useState(false)
@@ -24,8 +23,7 @@ export default function usePlayerAgentEditor({
     setSaving(true)
     try {
       await updatePlayerAgent({
-        playerDocumentId:
-          player.domain?.identity?.playerDocumentId || player.id,
+        playerId: player.playerId,
         agent,
       })
       notify({
@@ -33,7 +31,6 @@ export default function usePlayerAgentEditor({
         message: 'פרטי הסוכן נשמרו.',
       })
       setOpen(false)
-      void reload().catch(() => {})
     } catch (error) {
       notify({
         status: 'error',
@@ -42,7 +39,7 @@ export default function usePlayerAgentEditor({
     } finally {
       setSaving(false)
     }
-  }, [notify, player, reload, saving])
+  }, [notify, player, saving])
 
   return {
     open,
