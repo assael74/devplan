@@ -3,6 +3,7 @@
 import * as React from 'react'
 
 import { updateTeamSeasonUrl } from '../../services/write/league/edits/updateTeamSeasonUrl.js'
+import { buildTeamSeasonDocumentId } from '../../domain/identity/index.js'
 import { saveEditor } from './saveEditor.js'
 
 export default function useTeamUrlEditor({
@@ -31,7 +32,10 @@ export default function useTeamUrlEditor({
           updateTeamSeasonUrl({
             leagueId: selectedSeasonOption.leagueId || leagueId,
             teamId: row.teamId,
-            teamSeasonDocumentId: row.teamSeasonDocumentId,
+            teamSeasonDocumentId: row.teamSeasonDocumentId || buildTeamSeasonDocumentId({
+              teamId: row.teamId,
+              seasonId: selectedSeasonOption.seasonId,
+            }),
             seasonId: selectedSeasonOption.seasonId,
             teamUrl,
           }),

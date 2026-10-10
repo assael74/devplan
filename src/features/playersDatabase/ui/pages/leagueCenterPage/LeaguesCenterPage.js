@@ -15,7 +15,7 @@ import {
 } from '../../logic/routeBuilders.js'
 import LeagueCenterHeader from './LeagueCenterHeader.js'
 import OpenLeagueModal from './OpenLeagueModal.js'
-import LeagueCenterKpiOverview from './LeagueCenterKpiOverview.js'
+import LeagueCenterContext from './LeagueCenterContext.js'
 import LeagueCenterTable from './LeagueCenterTable.js'
 import LeagueCenterSidePanel from './LeagueCenterSidePanel.js'
 import {
@@ -30,6 +30,7 @@ import { readLeaguePageData } from '../../../services/read/index.js'
 import { openLeagueSeason } from '../../../services/write/league/index.js'
 import { hasLeagueCenterSeason } from '../../../model/league/center/leagueCenterOptions.model.js'
 import { leaguesCenterPageSx as sx } from './sx/leaguesCenterPage.sx.js'
+import usePageSidePanelCollapsed from '../../components/page/usePageSidePanelCollapsed.js'
 
 const EMPTY_OPEN_LEAGUE_ACTION = {
   busy: false,
@@ -48,6 +49,9 @@ export default function LeaguesCenterPage() {
   const [openLeagueModal, setOpenLeagueModal] = React.useState(false)
   const [openLeagueAction, setOpenLeagueAction] = React.useState(EMPTY_OPEN_LEAGUE_ACTION)
   const [editTask, setEditTask] = React.useState(null)
+  const [sidePanelCollapsed, setSidePanelCollapsed] = usePageSidePanelCollapsed(
+    'playersDatabase:leagueCenterSidePanelCollapsed'
+  )
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     { label: 'ניהול נתוני ליגות' },
   ])
@@ -77,9 +81,11 @@ export default function LeaguesCenterPage() {
           seasonKey: leagueSeasonKey,
           birthYear: row.birthYear || model.birthYear,
           level: row.level || model.leagueLevel,
-          centerSeasonKey: model.seasonKey,
-          centerBirthYear: model.birthYear,
+          centerSeasonKey: model.seasonKeys.join(','),
+          centerBirthYear: model.birthYears.join(','),
+          centerAgeGroup: model.ageGroupId,
           centerLevel: model.leagueLevel,
+          centerStatus: model.leagueStatuses.join(','),
         }
       )
 
@@ -88,9 +94,13 @@ export default function LeaguesCenterPage() {
   }), [
     deleteLeagueSeasonFlow.availability,
     deleteLeagueSeasonFlow.open,
+    model.ageGroupId,
     model.birthYear,
+    model.birthYears,
     model.leagueLevel,
+    model.leagueStatuses,
     model.seasonKey,
+    model.seasonKeys,
     navigate,
   ])
 
@@ -159,7 +169,7 @@ export default function LeaguesCenterPage() {
             seasonKey: option.seasonKey,
             seasonStatus: 'not_started',
             birthYear: option.birthYear,
-            seasonUrl: '',
+            seasonUrl: option.seasonUrl,
             leagueTotalRound: null,
             gameDurationMinutes: option.gameDurationMinutes,
             competitionRules: { configured: false },
@@ -229,9 +239,9 @@ export default function LeaguesCenterPage() {
           onNavigateToEntry={() => navigate(PLAYERS_DATABASE_UI_ROUTES.entry)}
         />
 
-        <Box sx={sx.contentGrid}>
+        <Box sx={[sx.contentGrid, sidePanelCollapsed && sx.contentGridCollapsed]}>
           <Box sx={sx.mainColumn}>
-            <LeagueCenterKpiOverview summary={model.summary} />
+            <LeagueCenterContext model={model} />
             <LeagueCenterTable
               columns={columns}
               model={model}
@@ -240,7 +250,9 @@ export default function LeaguesCenterPage() {
           </Box>
 
           <LeagueCenterSidePanel
-            model={model}
+            collapsible
+            collapsed={sidePanelCollapsed}
+            onCollapsedChange={setSidePanelCollapsed}
             tasks={tasksModel.tasks}
             loading={tasksModel.loading}
             onOpenTask={() => setTaskModalOpen(true)}

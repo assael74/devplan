@@ -151,12 +151,17 @@ export const updatePlayerSeasonGoalDistribution = input => {
       const teamPlayerManual = teamManual.playersById?.[identity.playerId] || {}
       const playerTeam = playerSeason.teamsById[identity.teamId]
       const current = teamPlayerManual.goalDistribution || {}
-      if (equal(
+      const canonicalMatches = equal(
         { scoringGames: current.scoringGames, distributionPct: current.distributionPct },
         { scoringGames: goalDistribution.scoringGames, distributionPct: goalDistribution.distributionPct },
-      )) return []
-      return [
-        {
+      )
+      const projected = playerTeam.manual?.goalDistribution || {}
+      const projectionMatches = equal(
+        { scoringGames: projected.scoringGames, distributionPct: projected.distributionPct },
+        { scoringGames: goalDistribution.scoringGames, distributionPct: goalDistribution.distributionPct },
+      )
+      const changes = []
+      if (!canonicalMatches) changes.push({
           ref: targets.teamSeasonRef,
           patch: {
             manual: {
@@ -172,8 +177,8 @@ export const updatePlayerSeasonGoalDistribution = input => {
               updatedAt,
             },
           },
-        },
-        {
+        })
+      if (!projectionMatches) changes.push({
           ref: targets.playerSeasonRef,
           patch: {
             teamsById: {
@@ -185,8 +190,8 @@ export const updatePlayerSeasonGoalDistribution = input => {
               },
             },
           },
-        },
-      ]
+        })
+      return changes
     },
   })
 }

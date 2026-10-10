@@ -27,6 +27,27 @@ export const writeStatsPlayerSeasons = async ({ approvedState = {} } = {}) => {
       continue
     }
 
+    if (!plan.teamExists) {
+      await setDoc(reference, {
+        identity: {
+          seasonStatus: projection.identity.seasonStatus,
+        },
+        teamsById: {
+          [teamId]: projection.team,
+        },
+        timestamps: {
+          updatedAt: approvedState.updatedAt || null,
+        },
+      }, {
+        mergeFields: [
+          new FieldPath('identity', 'seasonStatus'),
+          new FieldPath('teamsById', teamId),
+          new FieldPath('timestamps', 'updatedAt'),
+        ],
+      })
+      continue
+    }
+
     await setDoc(reference, {
       identity: {
         seasonStatus: projection.identity.seasonStatus,

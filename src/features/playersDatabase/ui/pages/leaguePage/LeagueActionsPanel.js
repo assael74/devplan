@@ -22,6 +22,9 @@ import { WorkTaskList } from '../../components/modals/index.js'
 import { leagueActionsPanelSx as sx } from './sx/leagueActionsPanel.sx.js'
 
 export default function LeagueActionsPanel({
+  collapsible = false,
+  collapsed = false,
+  onCollapsedChange,
   selectedSeasonKey,
   seasonOptions = [],
   onSeasonChange,
@@ -62,7 +65,11 @@ export default function LeagueActionsPanel({
   }
 
   return (
-    <PageSidePanel>
+    <PageSidePanel
+      collapsible={collapsible}
+      collapsed={collapsed}
+      onCollapsedChange={onCollapsedChange}
+    >
       <Box sx={sx.actionSelectorsRow}>
         <Box sx={sx.actionSeasonBox}>
           <Typography level='body-xs' sx={sx.actionSeasonLabel}>
@@ -175,13 +182,6 @@ export default function LeagueActionsPanel({
           </Menu>
         </Dropdown>
       </Box>
-
-      {deleteTeamsDisabled && deleteTeamsDisabledReason && (
-        <Box>
-          <Typography level='body-xs'>{deleteTeamsDisabledReason}</Typography>
-          <Button size='sm' variant='plain' onClick={onRecheckDeleteTeams}>בדיקה מחדש מהשרת</Button>
-        </Box>
-      )}
 
       <Box sx={sx.secondaryActionsRow}>
         <Tooltip title='הורדת מסמך הליגה כ־JSON'>

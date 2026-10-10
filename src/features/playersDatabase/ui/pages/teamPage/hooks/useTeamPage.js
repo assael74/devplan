@@ -29,7 +29,10 @@ import {
 } from '../../../../services/read/index.js'
 import { buildTeamPageDataCacheKey } from '../../../../services/cache/index.js'
 import usePlayersDatabaseReadStoreEntry from '../../../hooks/usePlayersDatabaseReadStoreEntry.js'
-import { PLAYERS_DATABASE_UI_ROUTES } from '../../../logic/routeBuilders.js'
+import {
+  PLAYERS_DATABASE_QUERY_KEYS as queryKeys,
+  PLAYERS_DATABASE_UI_ROUTES,
+} from '../../../logic/routeBuilders.js'
 
 function cleanValue(value) {
   return String(value || '').trim()
@@ -60,10 +63,10 @@ export function useTeamPage() {
   const { leagueId = '', teamId = '' } = useParams()
   const [searchParams] = useSearchParams()
   const fromLeague = cleanValue(
-    searchParams.get('fromLeague')
+    searchParams.get(queryKeys.fromLeague) || searchParams.get('fromLeague')
   )
   const auditSeasonKey = cleanValue(searchParams.get('auditSeason'))
-  const fromClubs = searchParams.get('fromClubs') === '1'
+  const fromClubs = (searchParams.get(queryKeys.fromClubs) || searchParams.get('fromClubs')) === '1'
   const pageStoreKey = buildTeamPageDataCacheKey({ leagueId, teamId })
   const pageEntry = usePlayersDatabaseReadStoreEntry(pageStoreKey)
   const clubsDirectoryEntry = usePlayersDatabaseReadStoreEntry(
@@ -142,6 +145,7 @@ export function useTeamPage() {
     const club = clubsDirectoryEntry.data?.clubsById?.[clubId]
     return club ? { id: clubId, ...club } : null
   }, [clubsDirectoryEntry.data, teamDoc?.identity?.clubId])
+  const clubsDirectory = clubsDirectoryEntry.data || null
 
   const seasonOptions = useMemo(
     () => buildTeamPageSeasonOptions(
@@ -286,6 +290,7 @@ export function useTeamPage() {
     seasonSnapshots,
     teamPageData,
     clubDoc,
+    clubsDirectory,
     players,
     hasTeamPlayers: players.length > 0,
     seasonOptions,

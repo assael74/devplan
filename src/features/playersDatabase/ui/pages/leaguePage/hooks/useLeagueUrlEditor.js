@@ -43,17 +43,21 @@ export default function useLeagueUrlEditor({
     if (saving || !selectedSeasonOption) return
     const season = selectedSeasonOption.season || {}
     const seasonUrl = String(season.seasonUrl || '').trim()
-    const draft = buildRulesDraft(season)
+    const originalRules = buildRulesDraft(season)
+    const isTopLeague = Number(league.level) === 1
+    const draft = isTopLeague
+      ? { ...originalRules, promotionDirectPlaces: '0', promotionPlayoffPlaces: '0' }
+      : originalRules
     setContext({
       leagueId: league.id,
       leagueName: league.name || league.leagueName || '',
       seasonKey: selectedSeasonOption.seasonKey,
       seasonId: selectedSeasonOption.seasonId,
-      isTopLeague: Number(league.level) === 1,
-      teamCount: Array.isArray(season.tableRank) ? season.tableRank.length : 0,
+      isTopLeague,
+      teamCount: Object.keys(season.table?.teamsById || {}).length,
     })
     setUrl({ original: seasonUrl, draft: seasonUrl, saving: false, error: '' })
-    setRules({ original: draft, draft, saving: false, error: '' })
+    setRules({ original: originalRules, draft, saving: false, error: '' })
     setOpen(true)
   }
 
@@ -72,7 +76,7 @@ export default function useLeagueUrlEditor({
       notify({ status: SNACK_STATUS.ERROR, title: `שמירת ${label} נכשלה`, message })
     }
     try {
-      if (!saved) await reload()
+      if (!saved && reload) await reload()
     } catch (error) {
       const message = 'רענון התצוגה נכשל'
       setSection(current => ({
@@ -89,9 +93,10 @@ export default function useLeagueUrlEditor({
     }
   }
 
-  const saveUrl = async () => {
-    if (!open || !context || saving || !urlDirty || !urlValid) return
-    const submitted = url.draft.trim()
+  const saveUrl = async (value = url.draft) => {
+    const submitted = String(value || '').trim()
+    if (!open || !context || saving || submitted === url.original || !isValidSeasonUrl(submitted)) return
+    setUrl(current => ({ ...current, draft: submitted }))
     await saveSection({
       write: () =>
         updateLeagueSeasonUrl({

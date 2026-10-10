@@ -116,10 +116,10 @@ export const leagueActionsPanelSx = {
   secondaryActionsRow: {
     width: '100%',
     display: 'grid',
-    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+    gridTemplateColumns: 'repeat(3, 54px)',
     gap: 0.5,
     alignItems: 'stretch',
-    flexWrap: 'nowrap',
+    justifyContent: 'start',
   },
 
   sideLoadButton: {
@@ -144,9 +144,10 @@ export const leagueActionsPanelSx = {
   },
 
   sideLinkButton: {
-    width: '100%',
-    minWidth: 0,
-    minHeight: 38,
+    width: 54,
+    minWidth: 54,
+    minHeight: 34,
+    height: 34,
     color: devPlanColors.primary,
     bgcolor: '#fff',
     borderColor: devPlanColors.primary,
@@ -158,9 +159,10 @@ export const leagueActionsPanelSx = {
   },
 
   sideDownloadButton: {
-    width: '100%',
-    minWidth: 0,
-    minHeight: 38,
+    width: 54,
+    minWidth: 54,
+    minHeight: 34,
+    height: 34,
     color: devPlanColors.primary,
     bgcolor: '#fff',
     borderColor: devPlanColors.primary,
@@ -172,9 +174,10 @@ export const leagueActionsPanelSx = {
   },
 
   sideReportButton: {
-    width: '100%',
-    minWidth: 0,
-    minHeight: 38,
+    width: 54,
+    minWidth: 54,
+    minHeight: 34,
+    height: 34,
     color: devPlanColors.tertiaryDark,
     bgcolor: devPlanColors.tertiaryLight,
     borderColor: devPlanColors.tertiary,

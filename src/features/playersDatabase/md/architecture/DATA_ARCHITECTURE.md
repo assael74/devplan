@@ -22,6 +22,10 @@
 `Team Season` הוא מקור האמת לעונת קבוצה אחת. `Team Root` אינו מחזיק payload
 עונתי נוסף; `seasons[]` שלו הוא אינדקס ניווט בלבד.
 
+ב־`ClubsCenter` זהות המסמך משותפת לעונה הטכנית, אך `seasonStatus` שייך לכל
+ליגה ונשמר תחת `leaguesById[leagueId]`; אין סטטוס lifecycle יחיד לכל הליגות
+שבמסמך העונתי.
+
 ## ביצועי קבוצה
 
 נתוני League הם המקור היחיד ל־`teamGamePlayed`,‏ `goalsFor`,‏
@@ -41,6 +45,9 @@
 
 - Roster Load כותב סגל, מצב תנועה ומטא־דאטה של הסגל; הוא אינו יוצר Player
   Document רק מפני ששחקן הופיע בסגל.
+- עריכת עמדה או הערה ידנית ומפורשת רשאית ליצור Player Root חסר לשחקן מזוהה מתוך
+  רשומת הסגל הקנונית ב־Team Season, באותה עסקה עם עדכון ההיטלים. היא אינה
+  יוצרת תמונת סקאוט עונתית חסרה.
 - Stats Load כותב `playerStats`,‏ Team Balance, scouting ו־Player projections.
 - SearchIndex לעולם אינו מקור לתיקון, Migration או חישוב Expected.
 - Audit בודק lifecycle, relations ו־projection mismatch; הוא אינו validator

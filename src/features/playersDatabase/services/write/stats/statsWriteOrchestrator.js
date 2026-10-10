@@ -46,6 +46,15 @@ const withReceiptId = ({ error, receiptId }) => {
   return result
 }
 
+const emitProgress = ({ onProgress, event }) => {
+  if (typeof onProgress !== 'function') return
+  try {
+    onProgress(event)
+  } catch {
+    // UI progress reporting must not interrupt the persisted write flow.
+  }
+}
+
 export const prepareStatsLoad = async ({ input = {} } = {}) => {
   const actionInput = requireInput(input)
   const sources = await readStatsLoadSources({
@@ -65,7 +74,7 @@ export const prepareStatsLoad = async ({ input = {} } = {}) => {
   })
 }
 
-const runStage = async ({ stageId, approvedState, receiptId }) => {
+const runStage = async ({ stageId, approvedState, receiptId, onProgress }) => {
   const writers = {
     canonical: writeStatsCanonical,
     counterparts: writeStatsCounterparts,
@@ -82,6 +91,10 @@ const runStage = async ({ stageId, approvedState, receiptId }) => {
   try {
     const result = await writer({ approvedState })
     await completeWriteActionStage({ receiptId, stageId })
+    emitProgress({
+      onProgress,
+      event: { type: 'stageCompleted', receiptId, stageId },
+    })
     return result
   } catch (error) {
     const stageError = withReceiptId({ error, receiptId })
@@ -90,11 +103,25 @@ const runStage = async ({ stageId, approvedState, receiptId }) => {
       documentId: approvedState.teamSeasonDocumentId,
     }
     await failWriteActionStage({ receiptId, stageId, error: stageError }).catch(() => null)
+    emitProgress({
+      onProgress,
+      event: {
+        type: 'stageFailed',
+        receiptId,
+        stageId,
+        errorCode: clean(stageError.code || stageError.message),
+      },
+    })
     throw stageError
   }
 }
 
-export const loadStats = async ({ approvedState = null, receiptId = '', display = {} } = {}) => {
+export const loadStats = async ({
+  approvedState = null,
+  receiptId = '',
+  display = {},
+  onProgress,
+} = {}) => {
   if (!approvedState || approvedState.actionType !== 'statsLoad') {
     throw new Error('Stats Load requires an approved state')
   }
@@ -122,6 +149,10 @@ export const loadStats = async ({ approvedState = null, receiptId = '', display 
   } catch (error) {
     throw withReceiptId({ error, receiptId: resolvedReceiptId || receiptId })
   }
+  emitProgress({
+    onProgress,
+    event: { type: 'receiptOpened', receiptId: resolvedReceiptId },
+  })
 
   const stageResults = {}
   for (const stageId of STAGES) {
@@ -129,6 +160,7 @@ export const loadStats = async ({ approvedState = null, receiptId = '', display 
       stageId,
       approvedState,
       receiptId: resolvedReceiptId,
+      onProgress,
     })
   }
 
@@ -145,6 +177,15 @@ export const loadStats = async ({ approvedState = null, receiptId = '', display 
       receiptId: resolvedReceiptId,
       audit,
     })
+    emitProgress({
+      onProgress,
+      event: {
+        type: receiptState.executionStatus === 'succeeded' ? 'stageCompleted' : 'stageFailed',
+        receiptId: resolvedReceiptId,
+        stageId: 'audit',
+        receiptState,
+      },
+    })
   } catch (error) {
     const auditError = withReceiptId({ error, receiptId: resolvedReceiptId })
     auditError.failedTarget = auditError.failedTarget || {
@@ -156,6 +197,15 @@ export const loadStats = async ({ approvedState = null, receiptId = '', display 
       stageId: 'audit',
       error: auditError,
     }).catch(() => null)
+    emitProgress({
+      onProgress,
+      event: {
+        type: 'stageFailed',
+        receiptId: resolvedReceiptId,
+        stageId: 'audit',
+        errorCode: clean(auditError.code || auditError.message),
+      },
+    })
     throw auditError
   }
 

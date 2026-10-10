@@ -15,11 +15,10 @@ import {
 } from '@mui/joy'
 
 import RosterIdentityModal from './RosterIdentityModal.js'
-import RegularModal from '../../../../../components/modals/RegularModal.js'
+import SteppedModal from '../../../../../components/modals/SteppedModal.js'
 import ImportActionArea from '../../../../../components/modals/ImportActionArea.js'
 import ClubSlotSelect from '../../../../../components/modals/components/ClubSlotSelect.js'
 import ImportModalContextDescription from '../../../../../components/modals/ImportModalContextDescription.js'
-import ModalStepper from '../../../../../components/modals/ModalStepper.js'
 import { PLAYER_ROSTER_COLUMNS, PLAYER_ROSTER_PLACEHOLDER } from '../logic/rosterImport.constants.js'
 import PasteArea from '../../../../../components/modals/paste/PasteArea.js'
 import PreviewTable from '../../../../../components/modals/paste/PreviewTable.js'
@@ -27,6 +26,8 @@ import StatusCell from '../../../../../components/modals/paste/StatusCell.js'
 import TeamSeasonChoiceCards from '../../../../../components/modals/paste/TeamSeasonChoiceCards.js'
 import { importModalChromeSx as chromeSx } from '../../../../../components/modals/paste/sx/importModalChrome.sx.js'
 import { pasteModalSx as pasteSx } from '../../../../../components/modals/paste/sx/pasteModal.sx.js'
+import SyncStageCards from '../../../../../components/sync/SyncStageCards.js'
+import SyncStatusHeader from '../../../../../components/sync/SyncStatusHeader.js'
 import { rosterImportModalSx as sx } from '../sx/rosterImportModal.sx.js'
 import PlayerNameLink from '../../../../../components/playerMeta/PlayerNameLink.js'
 import { resolvePlayerUrl } from '../../../../../components/playerMeta/playerUrl.presentation.js'
@@ -50,6 +51,15 @@ function RosterImportSummary({ controller, onBackToMissing }) {
   const plan = controller.rosterImportPlan
   const preview = plan?.preview || {}
   const counterparts = Array.isArray(plan?.counterpartStates) ? plan.counterpartStates : []
+  const persistedPlayers = Array.isArray(plan?.persistedSeason?.teamPlayers)
+    ? plan.persistedSeason.teamPlayers
+    : []
+  const isEmptyPreview = !persistedPlayers.length &&
+    !(preview.transfersInCount || 0) &&
+    !(preview.transfersOutCount || 0) &&
+    !(preview.pendingPlayersCount || 0) &&
+    !preview.teamBalance &&
+    !counterparts.length
 
   if (!plan) {
     return controller.busy ? (
@@ -69,23 +79,25 @@ function RosterImportSummary({ controller, onBackToMissing }) {
   }
 
   return (
-    <Stack spacing={1.5} sx={{ minHeight: 0, overflow: 'auto' }}>
-      <Card variant='soft'>
+    <Stack
+      className='dpScrollThin'
+      spacing={isEmptyPreview ? 0.75 : 1}
+      sx={sx.summaryPanel}
+    >
+      <Card variant='soft' sx={[sx.summaryLeadCard, isEmptyPreview ? sx.summaryLeadCardEmpty : null]}>
         <Typography level='title-md'>סיכום לפני טעינה</Typography>
         <Typography level='body-sm'>
           {preview.playersCount || 0} שחקנים בסגל · {preview.transfersInCount || 0} הצטרפו · {preview.transfersOutCount || 0} עזבו · {preview.pendingPlayersCount || 0} ממתינים
         </Typography>
       </Card>
 
-      <Card variant='outlined'>
+      <Card variant='outlined' sx={[sx.summaryCard, !persistedPlayers.length ? sx.summaryCardEmpty : null]}>
         <Typography level='title-sm'>הסגל הסופי</Typography>
-        <Typography level='body-xs' sx={{ mb: 1 }}>
+        <Typography level='body-xs' sx={{ mb: persistedPlayers.length ? 1 : 0 }}>
           זה הסגל שיישמר במקור האמת לאחר האישור.
         </Typography>
         <Stack spacing={0.5}>
-          {(Array.isArray(plan.persistedSeason?.teamPlayers)
-            ? plan.persistedSeason.teamPlayers
-            : []).map((player, index) => (
+          {persistedPlayers.map((player, index) => (
             <Typography
               key={player.playerId || `${playerName(player)}-${index}`}
               level='body-sm'
@@ -96,7 +108,7 @@ function RosterImportSummary({ controller, onBackToMissing }) {
         </Stack>
       </Card>
 
-      <Card variant='outlined'>
+      <Card variant='outlined' sx={[sx.summaryCard, !preview.teamBalance ? sx.summaryCardEmpty : null]}>
         <Typography level='title-sm'>איזון הסגל לאחר העדכון</Typography>
         {preview.teamBalance ? (
           <Stack spacing={0.5} sx={{ mt: 0.75 }}>
@@ -113,7 +125,7 @@ function RosterImportSummary({ controller, onBackToMissing }) {
       </Card>
 
       {counterparts.length ? (
-        <Card variant='outlined'>
+        <Card variant='outlined' sx={sx.summaryCard}>
           <Typography level='title-sm'>מעברים ומסמכים מקבילים</Typography>
           <Stack spacing={1} sx={{ mt: 1 }}>
             {counterparts.map((row, index) => (
@@ -132,7 +144,7 @@ function RosterImportSummary({ controller, onBackToMissing }) {
         </Card>
       ) : null}
 
-      <Card variant='outlined'>
+      <Card variant='outlined' sx={[sx.summaryCard, isEmptyPreview ? sx.summaryCardEmpty : null]}>
         <Typography level='title-sm'>השפעה על המערכת</Typography>
         <Typography level='body-xs'>
           מקור האמת יעודכן ראשון. לאחר מכן יסונכרנו מעברים, אינדקסי שחקנים, נתוני ליגה, אינדקס הקבוצה ונתוני המועדון.
@@ -245,68 +257,31 @@ function RosterSyncStep({ controller }) {
   const auditClean = controller.auditResult?.coverage?.complete === true && auditFindingsCount === 0
   const failed = controller.executionStatus === 'failed'
   const succeeded = controller.executionStatus === 'succeeded'
-
   return (
-    <Box sx={sx.syncPanel}>
-      <Card variant='soft' color='primary'>
-        <Typography level='title-sm'>סדר עדכון המסמכים</Typography>
-        <Typography level='body-xs'>
-          לחיצה אחת מפעילה את כל השלבים לפי הסדר. כל שלב מעדכן את היעד
-          שבבעלותו ואת אותה קבלה, ובסיום מתבצעת בדיקת סנכרון.
-        </Typography>
-      </Card>
-
-      <Box sx={sx.syncCards}>
-        {stages.map((stage, index) => (
-          <Card
-            key={stage.id}
-            variant='outlined'
-            sx={[sx.syncCard, stage.state === 'running' ? sx.syncCardActive : null]}
-          >
-            <Stack spacing={1} sx={sx.syncCardContent}>
-              <Stack direction='row' spacing={0.75} alignItems='center'>
-                <Chip
-                  size='sm'
-                  variant='soft'
-                  color={stage.state === 'completed'
-                    ? 'success'
-                    : stage.state === 'failed'
-                      ? 'danger'
-                      : stage.state === 'running'
-                        ? 'primary'
-                        : 'neutral'}
-                >
-                  {stage.state === 'completed'
-                    ? 'הושלם'
-                    : stage.state === 'failed'
-                      ? 'נכשל'
-                      : stage.state === 'running'
-                        ? 'בתהליך'
-                        : `${index + 1}`}
-                </Chip>
-                <Typography level='title-sm'>{stage.title}</Typography>
-              </Stack>
-              <Typography level='body-xs'>{stage.target}</Typography>
-            </Stack>
-          </Card>
-        ))}
-      </Box>
+    <Box className='dpScrollThin' sx={sx.syncPanel}>
+      <SyncStageCards stages={stages} />
 
       {controller.busy ? (
         <Card variant='soft' color='primary'>
           <Stack direction='row' spacing={1} alignItems='center'>
             <CircularProgress size='sm' />
-            <Box>
-              <Typography level='title-sm'>טעינת הסגל מתבצעת</Typography>
+            <Box sx={sx.syncStatusContent}>
+              <SyncStatusHeader
+                title='טעינת הסגל מתבצעת'
+                receiptId={controller.receiptId}
+              />
               <Typography level='body-xs'>אין לסגור את החלון עד לסיום הכתיבה והבדיקה.</Typography>
             </Box>
           </Stack>
         </Card>
       ) : null}
 
-      {failed ? (
+      {!controller.busy && failed ? (
         <Card variant='soft' color='danger'>
-          <Typography level='title-sm'>טעינת הסגל לא הושלמה</Typography>
+          <SyncStatusHeader
+            title='טעינת הסגל לא הושלמה'
+            receiptId={controller.receiptId}
+          />
           <Typography level='body-xs'>
             {controller.executionError || 'הפעולה נעצרה בשלב שלא הושלם.'}
           </Typography>
@@ -318,18 +293,19 @@ function RosterSyncStep({ controller }) {
         </Card>
       ) : null}
 
-      {succeeded ? (
+      {!controller.busy && succeeded ? (
         <Card
           variant='soft'
           color={auditClean && controller.listenerConfirmed ? 'success' : auditClean ? 'primary' : 'danger'}
         >
-          <Typography level='title-sm'>
-            {auditClean && controller.listenerConfirmed
+          <SyncStatusHeader
+            title={auditClean && controller.listenerConfirmed
               ? 'טעינת הסגל והבדיקה הושלמו'
               : auditClean
                 ? 'ממתין לעדכון עמוד הקבוצה'
                 : 'בדיקת הסנכרון מצאה פערים'}
-          </Typography>
+            receiptId={controller.receiptId}
+          />
           <Typography level='body-xs'>
             {auditClean && controller.listenerConfirmed
               ? 'הכיסוי מלא, לא נמצאו פערים והשינוי התקבל ב־listener. ניתן לסגור את התהליך.'
@@ -338,10 +314,6 @@ function RosterSyncStep({ controller }) {
                 : `נמצאו ${auditFindingsCount} פערים. הקבלה נשארת פתוחה לתיקון.`}
           </Typography>
         </Card>
-      ) : null}
-
-      {controller.receiptId ? (
-        <Typography level='body-xs'>Receipt: {controller.receiptId}</Typography>
       ) : null}
     </Box>
   )
@@ -730,8 +702,12 @@ export default function RosterImportModal({
     }
   }, [controller.open])
 
+  const syncLocked = activeStep === 3 && !['failed', 'succeeded'].includes(
+    controller.executionStatus
+  )
+
   const close = () => {
-    if (controller.busy) return
+    if (controller.busy || syncLocked) return
     controller.clearPaste()
     controller.close()
   }
@@ -839,8 +815,10 @@ export default function RosterImportModal({
 
   return (
     <>
-      <RegularModal
+      <SteppedModal
         open={controller.open}
+        activeStep={activeStep === 3 ? 5 : reviewStep === 'summary' ? 4 : reviewStep === 'missing' ? 3 : activeStep}
+        steps={STEPS}
         title={hasTeamPlayers ? 'טעינת סגל מעודכן' : 'טעינת סגל'}
         description={description}
         iconId='addPlayers'
@@ -851,31 +829,17 @@ export default function RosterImportModal({
         confirmLoadingPosition='start'
         size='xl'
         busy={controller.busy}
+        persistent={syncLocked}
         disabled={disabled}
         contentSx={pasteSx.modalContent}
+        layoutSx={sx.stepLayout}
         headerIconSx={chromeSx.modalHeaderIcon}
         footerSx={chromeSx.footer}
         footerActions={footerActions}
         onConfirm={confirm}
         onClose={close}
       >
-        <Box sx={{
-          display: 'grid',
-          minWidth: 0,
-          gap: 1.5,
-          ...(activeStep === 0 || activeStep === 2 || activeStep === 3 ? {
-            height: 'min(720px, calc(100dvh - 230px))',
-            minHeight: 0,
-            gridTemplateRows: 'auto minmax(0, 1fr)',
-            overflow: 'hidden',
-          } : {}),
-        }}>
-          <ModalStepper
-            activeStep={activeStep === 3 ? 5 : reviewStep === 'summary' ? 4 : reviewStep === 'missing' ? 3 : activeStep}
-            steps={STEPS}
-          />
-
-          {activeStep === 0 ? (
+        {activeStep === 0 ? (
             <PreviousRosterStep
               controller={controller}
               activeSeasonOptionKey={activeSeasonOptionKey}
@@ -917,8 +881,7 @@ export default function RosterImportModal({
           {activeStep === 3 ? (
             <RosterSyncStep controller={controller} />
           ) : null}
-        </Box>
-      </RegularModal>
+      </SteppedModal>
 
       <RosterIdentityModal
         open={controller.identityReview.open}

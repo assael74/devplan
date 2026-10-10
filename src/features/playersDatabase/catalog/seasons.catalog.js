@@ -16,8 +16,6 @@ export const PLAYERS_DATABASE_SEASONS_CATALOG = Object.freeze([
   buildSeason('2026_2027', '26/27', 'current'),
   buildSeason('2025_2026', '25/26', 'history'),
   buildSeason('2024_2025', '24/25', 'history'),
-  buildSeason('2023_2024', '23/24', 'history'),
-  buildSeason('2022_2023', '22/23', 'history'),
 ])
 
 export const PLAYERS_DATABASE_CURRENT_SEASON_KEY =

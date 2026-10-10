@@ -237,6 +237,33 @@ describe('roster target write plan', () => {
   test('rebuilds counterpart writes from canonical Movement during projection repair', () => {
     const loadPlan = buildLoad()
     const counterpartTeamSeasonDocumentId = `club-b_2010_1__${seasonId}`
+    const counterpartTeamId = 'club-b_2010_1'
+    const counterpartTeamRow = {
+      clubId: 'club-b',
+      birthYear: 2010,
+      teamSlot: 1,
+      officialTable: {
+        rank: 2,
+        points: 10,
+        goalsFor: 8,
+        goalsAgainst: 5,
+        teamGamePlayed: 5,
+      },
+    }
+    const counterpartLeague = {
+      ...league,
+      seasonsById: {
+        [seasonId]: {
+          ...league.seasonsById[seasonId],
+          table: {
+            teamsById: {
+              ...league.seasonsById[seasonId].table.teamsById,
+              [counterpartTeamId]: counterpartTeamRow,
+            },
+          },
+        },
+      },
+    }
     const fact = {
       movementId: 'movement-repair-1',
       playerId,
@@ -265,11 +292,32 @@ describe('roster target write plan', () => {
       },
       existingCounterpartTeamSeasonsById: {
         [counterpartTeamSeasonDocumentId]: {
-          identity: { teamSeasonDocumentId: counterpartTeamSeasonDocumentId },
+          identity: {
+            teamSeasonDocumentId: counterpartTeamSeasonDocumentId,
+            teamId: counterpartTeamId,
+            seasonId,
+            leagueId: 'league-1',
+            clubId: 'club-b',
+            teamSlot: 1,
+          },
           movement: {},
         },
       },
-      league,
+      counterpartProjectionSourcesByDocumentId: {
+        [counterpartTeamSeasonDocumentId]: {
+          league: counterpartLeague,
+          season: counterpartLeague.seasonsById[seasonId],
+          teamRow: counterpartTeamRow,
+          clubProfile: {
+            clubId: 'club-b',
+            names: { display: 'Club B', short: 'B' },
+            clubLevel: 2,
+            clubStrengthLevel: 2,
+          },
+          previousTeamProjection: null,
+        },
+      },
+      league: counterpartLeague,
       clubProfile,
       updatedAt,
     })
@@ -426,6 +474,52 @@ describe('roster target write plan', () => {
     })).toThrow('does not match approved local Movement state')
   })
 
+  test('groups multiple Movement facts for one counterpart into a single write', () => {
+    const counterpartDocumentId = `club-b_2010_1__${seasonId}`
+    const secondPlayerId = 'player__2010__67890'
+    const buildFact = targetPlayerId => ({
+      movementId: `movement-${targetPlayerId}`,
+      playerId: targetPlayerId,
+      fromTeamId: 'club-b_2010_1',
+      fromTeamSeasonDocumentId: counterpartDocumentId,
+      fromClubId: 'club-b',
+      toTeamId: teamId,
+      toTeamSeasonDocumentId: teamSeasonDocumentId,
+      toClubId: 'club-a',
+      scope: 'external',
+      levelDirection: 'lateral',
+      timing: 'UNKNOWN',
+      effectiveAt: null,
+    })
+    const facts = [buildFact(playerId), buildFact(secondPlayerId)]
+    const plan = buildRosterMovementPlan({
+      movement: {
+        transfersInById: Object.fromEntries(facts.map(fact => [fact.movementId, fact])),
+      },
+      teamId,
+      teamSeasonDocumentId,
+      clubId: 'club-a',
+      playersById: {
+        [playerId]: { ...player, playerId },
+        [secondPlayerId]: { ...player, playerId: secondPlayerId },
+      },
+      counterpartRequests: facts.map(fact => ({
+        teamSeasonDocumentId: counterpartDocumentId,
+        side: 'transfersOutById',
+        fact,
+      })),
+      existingCounterpartTeamSeasonsById: {
+        [counterpartDocumentId]: {
+          identity: { teamSeasonDocumentId: counterpartDocumentId },
+          movement: {},
+        },
+      },
+    })
+
+    expect(plan.counterparts).toHaveLength(1)
+    expect(Object.keys(plan.counterparts[0].movement.transfersOutById)).toHaveLength(2)
+  })
+
   test('Roster Clear removes the local season and leaves counterparts untouched', () => {
     const first = buildLoad()
     const clear = buildRosterClearWritePlan({
@@ -516,10 +610,10 @@ describe('roster target write plan', () => {
     expect(clear.playerSearchIndexes.deletes).toEqual(['stale-projection-only-index'])
   })
 
-  test('Roster Clear refuses to orphan existing Movement counterparts', () => {
+  test('Roster Clear removes only local Movement and leaves the opposite team untouched', () => {
     const first = buildLoad()
 
-    expect(() => buildRosterClearWritePlan({
+    const clear = buildRosterClearWritePlan({
       teamId,
       seasonId,
       existingTeamRoot: first.canonical.teamRoot,
@@ -533,7 +627,11 @@ describe('roster target write plan', () => {
       league,
       clubProfile,
       updatedAt,
-    })).toThrow('לא ניתן למחוק סגל עם תנועות שחקנים פעילות.')
+    })
+
+    expect(clear.canonical.teamSeasonOperation).toBe('DELETE')
+    expect(clear.counterparts).toEqual([])
+    expect(clear.impact.transfers).toBe(1)
   })
 
   test('supports Stats Clear, roster update, Roster Clear and a fresh roster reload', () => {

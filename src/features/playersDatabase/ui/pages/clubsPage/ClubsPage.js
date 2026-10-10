@@ -25,6 +25,7 @@ import {
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import ClubsCollection from './components/ClubsCollection.js'
 import ClubsFilters from './components/ClubsFilters.js'
+import usePageSidePanelCollapsed from '../../components/page/usePageSidePanelCollapsed.js'
 import {
   buildClubsPageJsonOptions,
   downloadAllClubsPageJsonOptions,
@@ -37,6 +38,9 @@ export default function ClubsPage() {
   const model = useClubsPage()
   const [expandedClubId, setExpandedClubId] = useState(null)
   const [onlyClubsWithSignals, setOnlyClubsWithSignals] = useState(false)
+  const [sidePanelCollapsed, setSidePanelCollapsed] = usePageSidePanelCollapsed(
+    'playersDatabase:clubsSidePanelCollapsed'
+  )
   const jsonOptions = buildClubsPageJsonOptions({
     directory: model.clubsPageData?.directory,
     centers: model.clubsPageData?.centers,
@@ -155,7 +159,7 @@ export default function ClubsPage() {
           </Box>
         </PageHeader>
 
-        <Box sx={sx.contentGrid}>
+        <Box sx={[sx.contentGrid, sidePanelCollapsed && sx.contentGridCollapsed]}>
           <Box sx={[sx.mainColumn, sx.clubsMainColumn]}>
             <PageContentPanel
               title='רשימת כל המועדונים'
@@ -178,7 +182,12 @@ export default function ClubsPage() {
             </PageContentPanel>
           </Box>
 
-          <ClubsFilters model={model} />
+          <ClubsFilters
+            model={model}
+            collapsible
+            collapsed={sidePanelCollapsed}
+            onCollapsedChange={setSidePanelCollapsed}
+          />
         </Box>
 
       </Box>

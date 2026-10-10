@@ -3,7 +3,6 @@
 import * as React from 'react'
 
 import {
-  LEAGUE_PAGE_ROUTE,
   clean,
   isPositivePriority,
   uniqueValues,

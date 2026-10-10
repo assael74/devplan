@@ -11,6 +11,16 @@ export const ROSTER_SYNC_STAGES = Object.freeze([
   Object.freeze({ id: 'audit', title: 'בדיקת סנכרון וסגירת קבלה', target: 'dbWriteActions' }),
 ])
 
+export const ROSTER_CLEAR_SYNC_STAGES = Object.freeze([
+  ROSTER_SYNC_STAGES[0],
+  ROSTER_SYNC_STAGES[2],
+  ROSTER_SYNC_STAGES[3],
+  ROSTER_SYNC_STAGES[4],
+  ROSTER_SYNC_STAGES[5],
+  ROSTER_SYNC_STAGES[6],
+  ROSTER_SYNC_STAGES[7],
+])
+
 const object = value => (
   value && typeof value === 'object' && !Array.isArray(value) ? value : {}
 )
@@ -87,16 +97,21 @@ export const applyRosterSyncProgressEvent = ({ receipt = null, event = {} } = {}
   return receipt
 }
 
-export const buildRosterSyncStages = ({ receipt = null, busy = false } = {}) => {
+export const buildRosterSyncStages = ({
+  receipt = null,
+  busy = false,
+  stages = ROSTER_SYNC_STAGES,
+} = {}) => {
   const source = object(receipt)
   const progress = object(source.progress)
   const completedByStage = object(progress.completedByStage)
   const failedStageId = String(object(progress.failed).stageId || '').trim()
-  const firstPendingIndex = ROSTER_SYNC_STAGES.findIndex(stage => (
+  const safeStages = Array.isArray(stages) ? stages : ROSTER_SYNC_STAGES
+  const firstPendingIndex = safeStages.findIndex(stage => (
     !completedByStage[stage.id] && failedStageId !== stage.id
   ))
 
-  return ROSTER_SYNC_STAGES.map((stage, index) => {
+  return safeStages.map((stage, index) => {
     let state = 'pending'
     if (failedStageId === stage.id) state = 'failed'
     else if (completedByStage[stage.id]) state = 'completed'

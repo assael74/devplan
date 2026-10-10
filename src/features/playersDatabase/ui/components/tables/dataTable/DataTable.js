@@ -15,6 +15,20 @@ import {
 } from './dataTable.sort.js'
 import exportDataTableRowsToXlsx from './dataTable.export.js'
 
+function DataTableColumnGroup({ columns }) {
+  return (
+    <colgroup>
+      {columns.map(column => (
+        <Box
+          component='col'
+          key={column.key}
+          sx={{ width: column.sx?.width }}
+        />
+      ))}
+    </colgroup>
+  )
+}
+
 export default function DataTable({
   columns = [],
   rows = [],
@@ -116,6 +130,8 @@ export default function DataTable({
     />
   )
 
+  const columnGroup = <DataTableColumnGroup columns={columns} />
+
   const body = (
     <DataTableBody
       columns={columns}
@@ -177,6 +193,7 @@ export default function DataTable({
             size='sm'
             sx={headerTableSx}
           >
+            {columnGroup}
             {header}
           </Table>
         </Box>
@@ -190,6 +207,7 @@ export default function DataTable({
             size='sm'
             sx={bodyTableSx}
           >
+            {columnGroup}
             {body}
           </Table>
         </Box>
@@ -208,6 +226,7 @@ export default function DataTable({
         size='sm'
         sx={regularTableSx}
       >
+        {columnGroup}
         {header}
         {body}
       </Table>

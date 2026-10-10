@@ -42,8 +42,15 @@ canonical → counterparts → playerSeasons → playerSearchIndexes
 ## Movement
 
 - `transfersIn` ו־`transfersOut` הם עובדות קנוניות של Team Season.
+- שני צדי המעבר עצמאיים: כל Team Season בעלים רק על צד המעבר
+  שנשמר בו.
+- Roster Clear מוחק רק את ה־Team Season של הקבוצה שהפעילה את
+  המחיקה. Movement אינו חסם למחיקת סגל, ואין למחוק או לעדכן את
+  צד המעבר שנשמר ב־Team Season הנגדי.
 - `pendingPlayers` מכיל היעדרויות פתוחות ולא פתורות בלבד.
 - counterpart נכתב אוטומטית רק כאשר Team Season המקביל כבר קיים.
+- כל עובדות ה־Movement לאותו counterpart מאוחדות לכתיבה אחת, ולאחר עדכון
+  ה־Team Season נבנה מחדש גם ה־ClubsCenter של הקבוצה המקבילה.
 - אין ליצור Team Root או Team Season כדי להשלים counterpart.
 - `unknown` הוא החלטה ידנית שהושלמה והופכת את השחקן ל־`pendingPlayers`, בלי
   להמציא תנועה.

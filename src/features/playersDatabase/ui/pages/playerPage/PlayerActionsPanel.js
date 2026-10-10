@@ -18,6 +18,9 @@ import { WorkTaskList } from '../../components/modals/index.js'
 import { playerActionsPanelSx as sx } from './sx/playerActionsPanel.sx.js'
 
 export default function PlayerActionsPanel({
+  collapsible = false,
+  collapsed = false,
+  onCollapsedChange,
   tasks = [],
   tasksLoading,
   onAction = () => {},
@@ -29,7 +32,11 @@ export default function PlayerActionsPanel({
   downloadBusy = false,
 }) {
   return (
-    <PageSidePanel>
+    <PageSidePanel
+      collapsible={collapsible}
+      collapsed={collapsed}
+      onCollapsedChange={onCollapsedChange}
+    >
       <Box sx={sx.recommendedBox}>
         <Box sx={sx.sectionHeading}>
           <Box sx={sx.sectionIcon}>

@@ -1,43 +1,107 @@
 // src/features/playersDatabase/ui/pages/teamPage/stats/import/components/StatsFinalSyncPanel.js
 
-import * as React from 'react'
-import { Button, Chip, Stack, Typography } from '@mui/joy'
+import { Alert, Box, Card, CircularProgress, Stack, Typography } from '@mui/joy'
+
+import SyncStageCards from '../../../../../components/sync/SyncStageCards.js'
+import SyncStatusHeader from '../../../../../components/sync/SyncStatusHeader.js'
+import { statsImportModalSx as sx } from '../sx/statsImportModal.sx.js'
 
 export default function StatsFinalSyncPanel({ controller }) {
-  const status = controller?.status || 'idle'
+  const executionStatus = controller?.executionStatus || controller?.status || 'idle'
+  const stages = Array.isArray(controller?.syncStages) ? controller.syncStages : []
   const audit = controller?.auditResult
   const findingsCount = Array.isArray(audit?.findings) ? audit.findings.length : 0
+  const auditClean = audit?.coverage?.complete === true && findingsCount === 0
+  const receiptId = controller?.receiptId ||
+    controller?.executionReceipt?.id ||
+    controller?.result?.receiptId ||
+    ''
 
   return (
-    <Stack spacing={1.5}>
-      <Typography level='title-lg'>סנכרון סופי</Typography>
-      <Typography level='body-sm'>הכתיבה, ההקרנות, הבדיקה וסגירת הקבלה מבוצעות בתוך פעולת Stats Load אחת.</Typography>
+    <Box sx={sx.syncPanel}>
+      <Box sx={sx.syncHeading}>
+        <Typography level='title-md'>סדר עדכון המסמכים</Typography>
+      </Box>
 
-      {status === 'writing' ? (
-        <Chip color='primary' variant='soft'>כותב ובודק את הנתונים...</Chip>
+      <Box sx={sx.syncCardsArea}>
+        <SyncStageCards stages={stages} compact />
+      </Box>
+
+      {executionStatus === 'ready' ? (
+        <Alert color='primary' variant='soft' sx={sx.syncStatusNotice}>
+          הנתונים אושרו ומוכנים לטעינה. הפעולה תתחיל רק לאחר לחיצה על הכפתור הראשי.
+        </Alert>
       ) : null}
-      {status === 'success' ? (
-        controller?.listenerConfirmed ? (
-          <Chip color='success' variant='soft'>הסנכרון הושלם והעמוד התעדכן בזמן אמת</Chip>
-        ) : (
-          <Chip color='primary' variant='soft'>הקבלה נסגרה. ממתין לעדכון עמוד הקבוצה...</Chip>
-        )
+
+      {executionStatus === 'writing' ? (
+        <Card variant='soft' color='primary'>
+          <Stack direction='row' spacing={1} alignItems='center'>
+            <CircularProgress size='sm' />
+            <Box sx={sx.syncStatusContent}>
+              <SyncStatusHeader
+                title='טעינת הסטטיסטיקות מתבצעת'
+                receiptId={receiptId}
+              />
+              <Typography level='body-xs'>אין לסגור את החלון עד לסיום הכתיבה והבדיקה.</Typography>
+            </Box>
+          </Stack>
+        </Card>
       ) : null}
-      {status === 'audit_failed' ? (
-        <>
-          <Chip color='warning' variant='soft'>{`הבדיקה אינה נקייה · ${findingsCount} ממצאים`}</Chip>
-          <Button size='sm' variant='soft' color='warning' onClick={controller.retry}>נסה שוב</Button>
-        </>
+
+      {executionStatus === 'failed' ? (
+        <Alert color='danger' variant='soft' sx={sx.syncStatusNotice}>
+          <Box sx={sx.syncStatusContent}>
+            <SyncStatusHeader
+              title='טעינת הסטטיסטיקות לא הושלמה'
+              receiptId={receiptId}
+            />
+            <Typography level='body-sm'>
+              {controller?.executionError || 'הפעולה לא הושלמה.'}
+            </Typography>
+            <Typography level='body-xs' sx={{ mt: 0.5 }}>
+              {controller?.retryMode === 'repair'
+                ? 'מקור האמת כבר אושר. הפעולה הבאה תתקן רק את התוצרים באותה קבלה.'
+                : 'מקור האמת לא אושר. ניסיון חוזר ישתמש בקלט המאושר ובאותה קבלה.'}
+            </Typography>
+          </Box>
+        </Alert>
       ) : null}
-      {status === 'failed' ? (
-        <>
-          <Typography level='body-sm' color='danger'>{controller.error?.message || 'טעינת הסטטיסטיקות נכשלה'}</Typography>
-          <Button size='sm' variant='soft' color='danger' onClick={controller.retry}>נסה שוב</Button>
-        </>
+
+      {executionStatus === 'audit_failed' ? (
+        <Alert color='warning' variant='soft' sx={sx.syncStatusNotice}>
+          <Box sx={sx.syncStatusContent}>
+            <SyncStatusHeader
+              title='בדיקת הסנכרון אינה נקייה'
+              receiptId={receiptId}
+            />
+            <Typography level='body-xs'>
+              {`${findingsCount} ממצאים. ניתן לנסות שוב עם אותה קבלה.`}
+            </Typography>
+          </Box>
+        </Alert>
       ) : null}
-      {controller?.receiptId ? (
-        <Typography level='body-xs'>{`Receipt: ${controller.receiptId}`}</Typography>
+
+      {executionStatus === 'success' ? (
+        <Alert
+          color={auditClean && controller?.listenerConfirmed ? 'success' : auditClean ? 'primary' : 'danger'}
+          variant='soft'
+          sx={sx.syncStatusNotice}
+        >
+          <Box sx={sx.syncStatusContent}>
+            <SyncStatusHeader
+              title={auditClean ? 'טעינת הסטטיסטיקות והבדיקה הושלמו' : 'בדיקת הסנכרון מצאה פערים'}
+              receiptId={receiptId}
+            />
+            <Typography level='body-xs'>
+              {auditClean && controller?.listenerConfirmed
+                ? 'העמוד התעדכן בזמן אמת.'
+                : auditClean
+                  ? 'הקבלה תקינה. ממתין לעדכון עמוד הקבוצה.'
+                  : `נמצאו ${findingsCount} פערים.`}
+            </Typography>
+          </Box>
+        </Alert>
       ) : null}
-    </Stack>
+    </Box>
   )
 }

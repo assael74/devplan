@@ -21,14 +21,14 @@ async function editorEnvironment(options = {}) {
   const notices = []
   let reloads = 0
   let props = {
-    league: { id: 'l', name: 'League', level: 2 },
+    league: { id: 'l', name: 'League', level: options.leagueLevel || 2 },
     selectedSeasonOption: {
       seasonId: '2026_2027',
       seasonKey: '26/27',
       season: {
         seasonUrl: 'https://old',
         competitionRules: options.initialRules || initialRules,
-        tableRank: [{}, {}, {}, {}],
+        table: { teamsById: { a: {}, b: {}, c: {}, d: {} } },
       },
     },
     notify: value => notices.push(structuredClone(value)),
@@ -159,6 +159,14 @@ test('URL save sends only URL identity and preserves the unsaved rules draft wit
   assert.equal(env.reloads(), 0)
 })
 
+test('URL drawer can submit its current value without waiting for hook state', async () => {
+  const env = await editorEnvironment()
+  await env.render().saveUrl('https://new-from-drawer')
+  assert.equal(env.calls.length, 1)
+  assert.equal(env.calls[0].input.seasonUrl, 'https://new-from-drawer')
+  assert.equal(env.render().draftUrl, 'https://new-from-drawer')
+})
+
 test('Invalid rule input cannot block a valid URL save', async () => {
   const env = await editorEnvironment()
   env.render().changeRule('promotionDirectPlaces', '-1')
@@ -181,11 +189,21 @@ test('Rules save sends no URL and preserves its unsaved draft', async () => {
     'leagueId',
     'seasonId',
   ])
+  assert.deepEqual(env.calls[0].input.competitionRules.promotion.directPlaces, [1, 2])
+  assert.deepEqual(env.calls[0].input.competitionRules.relegation.directPlaces, [4])
   assert.equal(env.render().urlDirty, true)
   assert.equal(env.render().draftUrl, 'https://draft')
   assert.equal(env.render().rulesDirty, false)
   await env.render().saveRules()
   assert.equal(env.calls.length, 1)
+})
+
+test('top league can clear existing promotion rules from the settings drawer', async () => {
+  const env = await editorEnvironment({ leagueLevel: 1 })
+  assert.equal(env.render().draftRules.promotionDirectPlaces, '0')
+  assert.equal(env.render().rulesDirty, true)
+  await env.render().saveRules()
+  assert.deepEqual(env.calls[0].input.competitionRules.promotion.directPlaces, [])
 })
 
 test('Rules failure leaves successful URL state and messages intact', async () => {

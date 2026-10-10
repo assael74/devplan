@@ -1,6 +1,5 @@
 import { Box, Tooltip, Typography } from '@mui/joy'
 
-import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import { CollapseBox } from '../../../../../../../ui/patterns/collapseBox/index.js'
 import {
   LINE_DISTRIBUTION_COLORS,

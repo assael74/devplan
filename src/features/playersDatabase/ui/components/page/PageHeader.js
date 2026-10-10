@@ -18,7 +18,7 @@ export default function PageHeader({
   sx: externalSx,
 }) {
   const location = useLocation()
-  const showDataOpsAccess = location.pathname !== PLAYERS_DATABASE_UI_ROUTES.dataOps
+  const showDataOpsAccess = !location.pathname.startsWith(PLAYERS_DATABASE_UI_ROUTES.dataOps)
 
   return (
     <Box sx={[sx.header, externalSx]}>

@@ -115,6 +115,46 @@ const getTeamRows = season => Object.entries(object(season?.teamsById)).map(([te
   ...object(team),
 }))
 
+const DOCUMENTATION_STATES = [
+  'NO_ROSTER',
+  'ROSTER_ONLY',
+  'STATS_LOADED',
+  'STATS_FINAL',
+]
+
+const dateValue = value => {
+  if (!value) return 0
+  if (typeof value?.toDate === 'function') return value.toDate().getTime()
+  if (Number.isFinite(Number(value?.seconds))) return Number(value.seconds) * 1000
+  const timestamp = new Date(value).getTime()
+  return Number.isFinite(timestamp) ? timestamp : 0
+}
+
+const buildDocumentationSummary = teamRows => {
+  const counts = DOCUMENTATION_STATES.reduce((result, state) => ({
+    ...result,
+    [state]: 0,
+  }), {})
+  let latestUpdatedAt = null
+  let latestUpdatedAtValue = 0
+
+  teamRows.forEach(team => {
+    const state = clean(team.documentationState).toUpperCase() || 'NO_ROSTER'
+    if (counts[state] !== undefined) counts[state] += 1
+
+    const updatedAtValue = dateValue(team.documentationStateUpdatedAt)
+    if (updatedAtValue > latestUpdatedAtValue) {
+      latestUpdatedAt = team.documentationStateUpdatedAt
+      latestUpdatedAtValue = updatedAtValue
+    }
+  })
+
+  return {
+    counts,
+    latestUpdatedAt,
+  }
+}
+
 const coverageStatus = ({ completeCount, targetCount }) => {
   if (!targetCount) return 'full'
   if (completeCount >= targetCount) return 'full'
@@ -143,11 +183,21 @@ const buildLeagueCenterRow = ({
   const season = selected?.season || null
   const teamRows = getTeamRows(season)
   const teamsCount = teamRows.length
+  const documentationSummary = buildDocumentationSummary(teamRows)
   const statsCompleteCount = teamRows.filter(team => (
     ['STATS_LOADED', 'STATS_FINAL'].includes(clean(team.documentationState).toUpperCase())
   )).length
   const offensePriorityCount = teamRows.filter(team => Boolean(team?.teamTaskSignals?.offense)).length
   const defensePriorityCount = teamRows.filter(team => Boolean(team?.teamTaskSignals?.defense)).length
+  const combinedPriorityCount = teamRows.filter(team => (
+    Boolean(team?.teamTaskSignals?.offense) && Boolean(team?.teamTaskSignals?.defense)
+  )).length
+  const offenseOnlyPriorityCount = teamRows.filter(team => (
+    Boolean(team?.teamTaskSignals?.offense) && !Boolean(team?.teamTaskSignals?.defense)
+  )).length
+  const defenseOnlyPriorityCount = teamRows.filter(team => (
+    !Boolean(team?.teamTaskSignals?.offense) && Boolean(team?.teamTaskSignals?.defense)
+  )).length
   const tableStatus = tableStatusFromState(season?.tableState)
   const playersStatsStatus = coverageStatus({
     completeCount: statsCompleteCount,
@@ -173,6 +223,13 @@ const buildLeagueCenterRow = ({
     seasonKey: seasonKey || selectedSeasonKey,
     seasonId: clean(selected?.seasonId || season?.seasonId),
     seasonStatus: clean(season?.seasonStatus).toLowerCase(),
+    seasonWorkStatus: teamsCount === 0
+      ? 'no_teams'
+      : clean(season?.seasonStatus).toLowerCase() || 'not_started',
+    seasonUrl: clean(season?.seasonUrl),
+    tableState: clean(season?.tableState).toUpperCase() || 'NOT_LOADED',
+    tableImportedAt: season?.tableImportedAt || null,
+    seasonUpdatedAt: season?.updatedAt || null,
     selectedTarget: selected?.target || 'missing',
     teamsCount,
     tableStatus,
@@ -183,6 +240,13 @@ const buildLeagueCenterRow = ({
     offensePriorityTargetCount: teamsCount,
     defensePriorityCount,
     defensePriorityTargetCount: teamsCount,
+    offenseOnlyPriorityCount,
+    defenseOnlyPriorityCount,
+    combinedPriorityCount,
+    documentationCounts: documentationSummary.counts,
+    latestDocumentationUpdatedAt: documentationSummary.latestUpdatedAt,
+    requiresReview: teamsCount > 0 && documentationSummary.counts.NO_ROSTER > 0,
+    hasProfessionalPriority: offensePriorityCount > 0 || defensePriorityCount > 0,
     dataStatus: tableStatus === 'full' && playersStatsStatus === 'full'
       ? 'full'
       : tableStatus === 'missing'

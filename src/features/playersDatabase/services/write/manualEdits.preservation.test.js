@@ -47,6 +47,7 @@ const patchFor = (result, path) => (
 )
 
 beforeEach(() => {
+  jest.clearAllMocks()
   Object.keys(mockSnapshots).forEach(key => delete mockSnapshots[key])
   mockIndexRefs.splice(0)
   executeManualEdit.mockImplementation(async ({ refs, build }) => ({
@@ -183,6 +184,7 @@ test('Team URL edit preserves League performance, Team Season state and SearchIn
       teamSeasonDocumentId: 'club-a_2011_1__2026_2027',
       teamId: 'club-a_2011_1',
       seasonId: '2026_2027',
+      leagueId: 'league-a',
     },
     competitionSnapshot: {
       teamUrl: 'https://old.test/team',
@@ -195,6 +197,7 @@ test('Team URL edit preserves League performance, Team Season state and SearchIn
   mockSnapshots[indexRef.path] = snapshot({
     playerId: 'player-a',
     seasonId: '2026_2027',
+    leagueId: 'league-a',
     team: {
       teamId: 'club-a_2011_1',
       teamUrl: 'https://old.test/team',
@@ -235,6 +238,74 @@ test('Team URL edit preserves League performance, Team Season state and SearchIn
     name: 'Team A',
     officialTable: { rank: 1 },
   }))
+})
+
+test('Team URL edit rejects a mismatched season document id', async () => {
+  await expect(updateTeamSeasonUrl({
+    leagueId: 'league-a',
+    teamId: 'team-a',
+    teamSeasonDocumentId: 'another-team__2026_2027',
+    seasonId: '2026_2027',
+    teamUrl: 'https://new.test/team',
+  })).rejects.toThrow('מזהה עונת הקבוצה סותר')
+  expect(executeManualEdit).not.toHaveBeenCalled()
+})
+
+test('Team URL edit leaves another league search index untouched', async () => {
+  const otherIndexRef = { path: 'playerSearchIndexes/other-league' }
+  mockIndexRefs.push(otherIndexRef)
+  mockSnapshots['leagues/league-a'] = snapshot({
+    leagueId: 'league-a',
+    seasonsById: {
+      '2026_2027': {
+        table: { teamsById: { 'team-a': { teamUrl: 'https://old.test/team' } } },
+      },
+    },
+  })
+  mockSnapshots['teamSeasons/team-a__2026_2027'] = snapshot({}, false)
+  mockSnapshots[otherIndexRef.path] = snapshot({
+    playerId: 'player-a',
+    leagueId: 'league-b',
+    seasonId: '2026_2027',
+    team: { teamId: 'team-a', teamUrl: 'https://other.test/team' },
+  })
+
+  const result = await updateTeamSeasonUrl({
+    leagueId: 'league-a',
+    teamId: 'team-a',
+    teamSeasonDocumentId: 'team-a__2026_2027',
+    seasonId: '2026_2027',
+    teamUrl: 'https://new.test/team',
+  })
+  expect(patchFor(result, otherIndexRef.path)).toBeUndefined()
+  expect(patchFor(result, 'leagues/league-a')).toBeDefined()
+})
+
+test('Team URL edit refuses an existing Team Season from another league', async () => {
+  mockSnapshots['leagues/league-a'] = snapshot({
+    leagueId: 'league-a',
+    seasonsById: {
+      '2026_2027': {
+        table: { teamsById: { 'team-a': { teamUrl: 'https://old.test/team' } } },
+      },
+    },
+  })
+  mockSnapshots['teamSeasons/team-a__2026_2027'] = snapshot({
+    identity: {
+      teamSeasonDocumentId: 'team-a__2026_2027',
+      teamId: 'team-a',
+      seasonId: '2026_2027',
+      leagueId: 'league-b',
+    },
+  })
+
+  await expect(updateTeamSeasonUrl({
+    leagueId: 'league-a',
+    teamId: 'team-a',
+    teamSeasonDocumentId: 'team-a__2026_2027',
+    seasonId: '2026_2027',
+    teamUrl: 'https://new.test/team',
+  })).rejects.toThrow('זהות עונת הקבוצה סותרת')
 })
 
 test('Player Root edits preserve fields outside notes, agent and professional role', async () => {
@@ -301,6 +372,188 @@ test('Player Root edits preserve fields outside notes, agent and professional ro
     primaryPosition: 'DM',
     positionLayer: 'midfield',
   }))
+})
+
+test('Explicit role edit creates Player Root from canonical roster without requiring scouting', async () => {
+  const indexRef = { path: 'playerSearchIndexes/roster-only' }
+  mockIndexRefs.push(indexRef)
+  mockSnapshots['playerRoots/player__2012__12345'] = snapshot({}, false)
+  mockSnapshots[indexRef.path] = snapshot({
+    playerId: 'player__2012__12345',
+    references: { teamSeasonDocumentId: 'team-a__2026_2027' },
+    player: { primaryPosition: '', positionLayer: '' },
+  })
+  mockSnapshots['teamSeasons/team-a__2026_2027'] = snapshot({
+    identity: { seasonId: '2026_2027', seasonKey: '26/27', seasonStatus: 'active' },
+    roster: {
+      playersById: {
+        'player__2012__12345': {
+          externalPlayerId: '12345',
+          fullName: 'שחקן',
+          normalizedName: 'שחקן',
+        },
+      },
+    },
+    scouting: { playersById: {} },
+  })
+
+  const result = await updatePlayerRole({
+    playerId: 'player__2012__12345',
+    primaryPosition: 'CB',
+    positionLayer: 'defense',
+  })
+  const rootChange = result.changes.find(change => (
+    change.ref.path === 'playerRoots/player__2012__12345'
+  ))
+  expect(rootChange.document.identity.externalPlayerId).toBe('12345')
+  expect(rootChange.document.primaryPosition).toBe('CB')
+  expect(rootChange.document.seasonRefsById['2026_2027'].seasonKey).toBe('26/27')
+  expect(patchFor(result, 'teamSeasons/team-a__2026_2027')).toBeUndefined()
+  expect(patchFor(result, indexRef.path).player.primaryPosition).toBe('CB')
+})
+
+test('Player role edit rebuilds classification, Team Balance and Player Season projection', async () => {
+  const playerId = 'player__2012__229642'
+  const teamId = 'team-a'
+  const seasonId = '2025_2026'
+  const teamSeasonDocumentId = `${teamId}__${seasonId}`
+  const playerSeasonDocumentId = `playerSeason__${playerId}__${seasonId}`
+  const indexRef = { path: 'playerSearchIndexes/player-role' }
+  mockIndexRefs.push(indexRef)
+  mockSnapshots[`playerRoots/${playerId}`] = snapshot({
+    identity: { playerId },
+    primaryPosition: 'CB',
+    positionLayer: 'defense',
+  })
+  mockSnapshots[indexRef.path] = snapshot({
+    playerId,
+    references: { teamSeasonDocumentId, playerSeasonDocumentId },
+    player: { primaryPosition: 'CB', positionLayer: 'defense' },
+  })
+  mockSnapshots[`teamSeasons/${teamSeasonDocumentId}`] = snapshot({
+    identity: {
+      teamSeasonDocumentId,
+      teamId,
+      seasonId,
+      seasonKey: '25/26',
+      seasonStatus: 'completed',
+      leagueId: 'league-a',
+    },
+    competitionSnapshot: {
+      officialTable: { teamGamePlayed: 24 },
+    },
+    roster: {
+      playersById: {
+        [playerId]: { playerId, rosterStatus: 'regular' },
+      },
+    },
+    stats: {
+      playersById: {
+        [playerId]: {
+          statsStatus: 'loaded',
+          playerStats: {
+            games: 21,
+            goals: 0,
+            minutes: 1412,
+            starts: 18,
+            teamGamePlayed: 24,
+          },
+          lineClassification: { line: 'DEFENSE' },
+        },
+      },
+    },
+    scouting: {
+      playersById: {
+        [playerId]: {
+          primaryPosition: 'CB',
+          positionLayer: 'defense',
+          professionalProfileIds: [],
+        },
+      },
+    },
+  })
+  mockSnapshots['leagues/league-a'] = snapshot({
+    id: 'league-a',
+    seasonsById: {
+      [seasonId]: {
+        seasonKey: '25/26',
+        seasonStatus: 'completed',
+        gameDurationMinutes: 80,
+        table: {
+          teamsById: {
+            [teamId]: {
+              clubId: 'club-a',
+              officialTable: {
+                teamGamePlayed: 24,
+                goalsFor: 40,
+                goalsAgainst: 20,
+              },
+              performance: {
+                offense: { priorityLevel: 'elite' },
+                defense: { priorityLevel: 'high' },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  mockSnapshots[`playerSeasons/${playerSeasonDocumentId}`] = snapshot({
+    teamsById: {
+      [teamId]: {
+        teamSeasonDocumentId,
+        stats: { lineClassification: { line: 'DEFENSE' } },
+      },
+    },
+  })
+
+  const result = await updatePlayerRole({
+    playerId,
+    primaryPosition: 'GK',
+    positionLayer: 'goalkeeper',
+  })
+  const teamSeasonPatch = patchFor(result, `teamSeasons/${teamSeasonDocumentId}`)
+  const playerSeasonPatch = patchFor(result, `playerSeasons/${playerSeasonDocumentId}`)
+
+  expect(teamSeasonPatch[`stats.playersById.${playerId}`].lineClassification.line).toBe('')
+  expect(teamSeasonPatch['stats.teamBalance'].lineStructure.goalkeeperPlayersCount).toBe(1)
+  expect(playerSeasonPatch[`teamsById.${teamId}`].stats.lineClassification.line).toBe('')
+  expect(patchFor(result, 'leagues/league-a')[
+    `seasonsById.${seasonId}.table.teamsById.${teamId}.scouting.teamTaskSignals`
+  ]).toEqual({ offense: true, defense: true, updatedAt: 'updated-time' })
+})
+
+test('Explicit note edit creates a missing Player Root from canonical roster', async () => {
+  const indexRef = { path: 'playerSearchIndexes/roster-only' }
+  mockIndexRefs.push(indexRef)
+  mockSnapshots['playerRoots/player__2012__12345'] = snapshot({}, false)
+  mockSnapshots[indexRef.path] = snapshot({
+    playerId: 'player__2012__12345',
+    references: { teamSeasonDocumentId: 'team-a__2026_2027' },
+    player: { notes: '' },
+  })
+  mockSnapshots['teamSeasons/team-a__2026_2027'] = snapshot({
+    identity: { seasonId: '2026_2027', seasonKey: '26/27', seasonStatus: 'active' },
+    roster: {
+      playersById: {
+        'player__2012__12345': {
+          externalPlayerId: '12345',
+          fullName: 'שחקן',
+          normalizedName: 'שחקן',
+        },
+      },
+    },
+  })
+
+  const result = await updatePlayerNotes({
+    playerId: 'player__2012__12345',
+    notes: 'הערה חדשה',
+  })
+  const rootChange = result.changes.find(change => (
+    change.ref.path === 'playerRoots/player__2012__12345'
+  ))
+  expect(rootChange.document.notes).toBe('הערה חדשה')
+  expect(patchFor(result, indexRef.path).player.notes).toBe('הערה חדשה')
 })
 
 test('Player Season edits preserve roster, Stats, Movement and neighboring manual fields', async () => {
@@ -394,4 +647,35 @@ test('Player Season edits preserve roster, Stats, Movement and neighboring manua
     note: 'keep',
     goalDistribution: expect.objectContaining({ scoringGames: 2, distributionPct: 20 }),
   }))
+})
+
+test('Goal distribution re-syncs Player Season when canonical value is unchanged', async () => {
+  const teamSeasonDocumentId = 'team-a__2026_2027'
+  const searchIndexId = 'playerSeason__player-a__team-a__2026_2027'
+  mockSnapshots[`teamSeasons/${teamSeasonDocumentId}`] = snapshot({
+    identity: { teamSeasonDocumentId, teamId: 'team-a', seasonId: '2026_2027' },
+    roster: { playersById: { 'player-a': {} } },
+    stats: { playersById: { 'player-a': { playerStats: { games: 10, goals: 4 } } } },
+    manual: { playersById: { 'player-a': { goalDistribution: { scoringGames: 2, distributionPct: 20 } } } },
+  })
+  mockSnapshots['playerSeasons/playerSeason__player-a__2026_2027'] = snapshot({
+    identity: { playerId: 'player-a', seasonId: '2026_2027' },
+    teamsById: { 'team-a': { manual: { goalDistribution: { scoringGames: 1, distributionPct: 10 } } } },
+  })
+  mockSnapshots[`playerSearchIndexes/${searchIndexId}`] = snapshot({
+    playerId: 'player-a',
+    seasonId: '2026_2027',
+    references: { teamSeasonDocumentId },
+  })
+
+  const result = await updatePlayerSeasonGoalDistribution({
+    playerId: 'player-a',
+    teamId: 'team-a',
+    teamSeasonDocumentId,
+    seasonId: '2026_2027',
+    scoringGames: 2,
+  })
+  expect(patchFor(result, `teamSeasons/${teamSeasonDocumentId}`)).toBeUndefined()
+  expect(patchFor(result, 'playerSeasons/playerSeason__player-a__2026_2027'))
+    .toBeDefined()
 })

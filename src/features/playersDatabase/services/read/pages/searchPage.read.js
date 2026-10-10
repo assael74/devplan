@@ -4,7 +4,6 @@ import { chunkValues } from '../../shared/chunkValues.js'
 import {
   collection,
   limit,
-  or,
   query,
   where,
 } from 'firebase/firestore'
@@ -87,21 +86,6 @@ const buildArrayContainsAnyConstraint = (field, values) => {
   if (!values.length) return null
 
   return where(field, 'array-contains-any', values.slice(0, FIRESTORE_IN_MAX_VALUES))
-}
-
-const buildAnyFieldConstraint = ({ entityType, fields = [], values = [] } = {}) => {
-  const safeFields = fields.filter(field => hasSearchIndexField(entityType, field))
-  const safeValues = values.slice(0, FIRESTORE_IN_MAX_VALUES)
-  if (!safeFields.length || !safeValues.length) return null
-
-  const constraints = safeFields
-    .map(field => buildValueConstraint(field, safeValues))
-    .filter(Boolean)
-
-  if (!constraints.length) return null
-  if (constraints.length === 1) return constraints[0]
-
-  return or(...constraints)
 }
 
 const normalizeSearchConditionField = ({ entityType, field } = {}) => (

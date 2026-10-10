@@ -39,6 +39,25 @@ export default function DataTableBody({
           }
 
           if (row?.fullWidthMessage) {
+            if (row.fullWidthMessageFullRow) {
+              return (
+                <Box component='tr' key={rowKey} sx={row.fullWidthRowSx}>
+                  <Box
+                    component='td'
+                    colSpan={columns.length || 1}
+                    sx={row.fullWidthCellSx}
+                  >
+                    <Typography
+                      level='body-sm'
+                      sx={[sx.fullWidthMessage, row.fullWidthMessageSx]}
+                    >
+                      {row.fullWidthMessage}
+                    </Typography>
+                  </Box>
+                </Box>
+              )
+            }
+
             return (
               <tr key={rowKey} data-full-width-message='true'>
                 <DataTableCell

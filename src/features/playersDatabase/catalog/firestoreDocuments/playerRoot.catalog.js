@@ -57,6 +57,7 @@ export const PLAYER_ROOT_DOCUMENT = {
 
   writeModel: [
     'Player Root is written only for identified players with externalPlayerId.',
+    'An explicit manual role or notes edit may create a missing Player Root from a canonical Team Season roster player; Roster Load alone never creates it.',
     'playerId is deterministic and is also the Firestore document id.',
     'Long-lived manual/professional player state is written here.',
     'Seasonal roster, stats, scouting evidence, movement and seasonal manual fields are not written here.',

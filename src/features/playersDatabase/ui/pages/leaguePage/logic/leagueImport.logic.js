@@ -2,7 +2,11 @@
 
 import { formatLtrNumber } from '../../../../../../shared/format/direction.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
-import { resolvePlayersDatabaseLeagueGameTime } from '../../../../catalog/leagues.catalog.js'
+import {
+  PLAYERS_DATABASE_LEAGUES_CATALOG,
+  resolvePlayersDatabaseLeagueGameTime,
+} from '../../../../catalog/leagues.catalog.js'
+import { buildTeamId } from '../../../../domain/identity/index.js'
 import { buildLeagueTablePastePreview } from '../../../../import/logic/leagueTablePastePreview.js'
 
 import { pickDefinedValue } from '../../../../model/shared/value.model.js'
@@ -63,6 +67,90 @@ const getClubById = clubId =>
   PLAYERS_DATABASE_CLUBS_CATALOG.find(club => club.id === clean(clubId)) || null
 
 const getClubNameById = clubId => getClubById(clubId)?.name || ''
+
+const getLeagueNameById = leagueId => {
+  const league = PLAYERS_DATABASE_LEAGUES_CATALOG.find(item => clean(item && item.id) === clean(leagueId))
+  return clean(league && league.name) || clean(leagueId)
+}
+
+const list = value => (Array.isArray(value) ? value : [])
+
+const resetTeamOwnerConflict = row => {
+  const previousMessage = clean(row && row.teamOwnerConflictMessage)
+  const errors = list(row && row.errors).filter(error => clean(error) !== previousMessage)
+  const validBeforeConflict = Object.prototype.hasOwnProperty.call(
+    row || {},
+    'validBeforeTeamOwnerCheck'
+  )
+    ? Boolean(row.validBeforeTeamOwnerCheck)
+    : row && row.valid !== false
+
+  return {
+    ...row,
+    errors,
+    valid: validBeforeConflict,
+    validBeforeTeamOwnerCheck: validBeforeConflict,
+    requiresTeamSlotResolution: false,
+    identityWarningMessage: '',
+    teamOwnerConflictMessage: '',
+  }
+}
+
+export const applyLeagueTeamOwnerConflicts = ({
+  rows = [],
+  otherLeagueIdsByTeamId = {},
+  birthYear = 0,
+} = {}) => {
+  const preparedRows = list(rows).map(resetTeamOwnerConflict)
+  const rowCountByTeamId = new Map()
+
+  preparedRows.forEach(row => {
+    try {
+      const teamId = buildTeamId({
+        clubId: row && row.clubId,
+        birthYear,
+        teamSlot: row && row.teamSlot,
+      })
+      rowCountByTeamId.set(teamId, (rowCountByTeamId.get(teamId) || 0) + 1)
+    } catch {
+      // Base row validation owns missing or invalid identity fields.
+    }
+  })
+
+  return preparedRows.map(row => {
+    let teamId = ''
+    try {
+      teamId = buildTeamId({
+        clubId: row && row.clubId,
+        birthYear,
+        teamSlot: row && row.teamSlot,
+      })
+    } catch {
+      return row
+    }
+
+    const ownerLeagueIds = list(otherLeagueIdsByTeamId && otherLeagueIdsByTeamId[teamId])
+      .map(clean)
+      .filter(Boolean)
+    const duplicatedInImport = (rowCountByTeamId.get(teamId) || 0) > 1
+    if (!ownerLeagueIds.length && !duplicatedInImport) return row
+
+    const teamSlot = Number(row && row.teamSlot) || 1
+    const ownerText = ownerLeagueIds.map(getLeagueNameById).join(', ')
+    const message = duplicatedInImport
+      ? `קבוצה ${teamSlot} מופיעה יותר מפעם אחת בטבלה הנוכחית. בחר זהות נפרדת לכל קבוצה.`
+      : `קבוצה ${teamSlot} כבר קיימת בעונה זו בליגה: ${ownerText}. אם זו קבוצה נוספת, בחר מספר קבוצה אחר.`
+
+    return {
+      ...row,
+      valid: false,
+      requiresTeamSlotResolution: true,
+      identityWarningMessage: '',
+      teamOwnerConflictMessage: message,
+      errors: [...row.errors, message],
+    }
+  })
+}
 
 export const buildServiceLeague = ({ league = {}, leagueDoc = {} } = {}) => ({
   leagueId: clean(leagueDoc.leagueId || league.id),

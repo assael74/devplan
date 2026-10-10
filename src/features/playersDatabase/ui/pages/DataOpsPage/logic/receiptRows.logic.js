@@ -11,7 +11,6 @@ const ACTION_LABELS = Object.freeze({
   rosterClear: 'מחיקת סגל',
   statsLoad: 'טעינת סטטיסטיקות',
   statsClear: 'מחיקת סטטיסטיקות',
-  clubsBootstrap: 'אתחול מועדונים',
 })
 
 const DOMAIN_LABELS = Object.freeze({
@@ -30,7 +29,7 @@ const toDate = value => {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
-export const formatReceiptTime = value => {
+const formatReceiptTime = value => {
   const date = toDate(value)
   if (!date) return '—'
 
@@ -60,10 +59,10 @@ const buildStatus = receipt => {
 
   if (executionStatus === 'running') return { label: 'בביצוע', tone: 'info' }
   if (executionStatus === 'failed') return { label: 'נעצר', tone: 'danger' }
+  if (receipt && receipt.recoveryRequired) return { label: 'דורש תיקון', tone: 'warning' }
   if (status === 'closed' || executionStatus === 'succeeded') {
     return { label: 'הושלם', tone: 'success' }
   }
-  if (receipt && receipt.recoveryRequired) return { label: 'דורש תיקון', tone: 'warning' }
   return { label: 'פתוח', tone: 'warning' }
 }
 

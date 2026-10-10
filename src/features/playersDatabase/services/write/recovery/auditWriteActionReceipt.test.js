@@ -1,11 +1,9 @@
 // src/features/playersDatabase/services/write/recovery/auditWriteActionReceipt.test.js
 
 import { auditWriteActionReceipt } from './auditWriteActionReceipt.js'
-import { auditClubBootstrap } from '../../audit/club/index.js'
 import { auditLeague } from '../../audit/league/index.js'
 import { auditRoster } from '../../audit/roster/index.js'
 import { auditStats } from '../../audit/stats/index.js'
-import { buildClubBootstrapExpectedState } from '../../../domain/club/bootstrapClubCatalog.builder.js'
 import { getWriteActionReceipt } from '../receipt/index.js'
 import {
   prepareRosterReceiptState,
@@ -13,14 +11,9 @@ import {
   requireWriteActionReceiptTarget,
 } from './repairWriteAction.js'
 
-jest.mock('../../audit/club/index.js', () => ({ auditClubBootstrap: jest.fn() }))
 jest.mock('../../audit/league/index.js', () => ({ auditLeague: jest.fn() }))
 jest.mock('../../audit/roster/index.js', () => ({ auditRoster: jest.fn() }))
 jest.mock('../../audit/stats/index.js', () => ({ auditStats: jest.fn() }))
-jest.mock('../../../catalog/clubs.catalog.js', () => ({ PLAYERS_DATABASE_CLUBS_CATALOG: [] }))
-jest.mock('../../../domain/club/bootstrapClubCatalog.builder.js', () => ({
-  buildClubBootstrapExpectedState: jest.fn(),
-}))
 jest.mock('../receipt/index.js', () => ({ getWriteActionReceipt: jest.fn() }))
 jest.mock('./repairWriteAction.js', () => ({
   prepareRosterReceiptState: jest.fn(),
@@ -72,23 +65,15 @@ describe('auditWriteActionReceipt', () => {
     expect(auditRoster).toHaveBeenCalledWith({ approvedState })
   })
 
-  test('checks Stats and Club receipts without changing receipt progress', async () => {
+  test('checks a Stats receipt without changing receipt progress', async () => {
     const statsState = { kind: 'statsProjectionRepair' }
     const statsAudit = { status: 'CLEAN', findings: [] }
-    getWriteActionReceipt
-      .mockResolvedValueOnce({ id: 'receipt-3', actionType: 'statsClear', target })
-      .mockResolvedValueOnce({ id: 'receipt-4', actionType: 'clubsBootstrap', target: {} })
+    getWriteActionReceipt.mockResolvedValue({ id: 'receipt-3', actionType: 'statsClear', target })
     prepareStatsReceiptState.mockResolvedValue(statsState)
     auditStats.mockResolvedValue(statsAudit)
-    buildClubBootstrapExpectedState.mockReturnValue({ kind: 'clubBootstrapApprovedState' })
-    auditClubBootstrap.mockResolvedValue({ status: 'CLEAN', findings: [] })
 
     await auditWriteActionReceipt({ receiptId: 'receipt-3' })
-    await auditWriteActionReceipt({ receiptId: 'receipt-4' })
 
     expect(auditStats).toHaveBeenCalledWith({ ...target, approvedState: statsState })
-    expect(auditClubBootstrap).toHaveBeenCalledWith({
-      approvedState: { kind: 'clubBootstrapApprovedState' },
-    })
   })
 })

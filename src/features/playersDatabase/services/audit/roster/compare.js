@@ -92,6 +92,27 @@ export const compareRosterAudit = ({ actual = {}, expectedState = {}, approvedSt
     compareField({ findings, target: 'counterpart', documentId: row.documentId, field: 'movement', expected: row.movement, actual: current && current.movement })
   })
 
+  list(expected.counterpartClubsCenterProjections).forEach(projection => {
+    list(object(projection).clubWrites).forEach(clubWrite => {
+      const clubId = clean(clubWrite && clubWrite.clubId)
+      Object.entries(object(clubWrite && clubWrite.upsertTeamsById))
+        .forEach(([teamId, expectedTeam]) => {
+          compareField({
+            findings,
+            target: 'clubsCenter',
+            documentId: clean(projection && projection.seasonId),
+            field: `clubsById.${clubId}.teamsById.${teamId}`,
+            expected: expectedTeam,
+            actual: getClubsCenterTeam({
+              clubsCenter: actual.clubsCenter,
+              clubId,
+              teamId,
+            }),
+          })
+        })
+    })
+  })
+
   list(expected.playerSeasons).forEach(row => {
     const current = object(actual.playerSeasons)[row.documentId]
     if (row.operation === 'DELETE') {

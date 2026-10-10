@@ -18,7 +18,7 @@ export const WRITE_ACTION_DOCUMENT = {
   canonicalOutcome: 'pending',
 
   target: {
-    domain: '', // clubs | league | roster | stats
+    domain: '', // league | roster | stats
 
     leagueId: '',
     clubId: '',
@@ -154,10 +154,6 @@ export const WRITE_ACTION_DOCUMENT = {
       'audit',
     ],
 
-    clubsBootstrap: [
-      'clubProfilesAndDirectory',
-      'audit',
-    ],
   },
 
   writeModel: [
@@ -177,6 +173,7 @@ export const WRITE_ACTION_DOCUMENT = {
     'After canonical state is confirmed as written, failure keeps the receipt open and recoveryRequired remains true until a complete clean audit closes it.',
     'When a post-receipt stage throws, the surfaced error should include receiptId whenever that id is known so the UI can expose the recovery action.',
     'Closed receipts may be hard-deleted only when recoveryRequired is false.',
+    'DataOps receipt cleanup additionally requires executionStatus succeeded, an explicit age cutoff, a fresh read and user approval.',
   ],
 
   invariants: [

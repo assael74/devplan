@@ -40,6 +40,7 @@ export const animatedModalSx = {
     p: 0,
     display: 'grid',
     gridTemplateRows: 'auto minmax(0, 1fr) auto',
+    rowGap: 0,
     overflow: 'hidden',
     borderRadius: 18,
     bgcolor: '#FFFFFF',
@@ -84,7 +85,10 @@ export const animatedModalSx = {
 
   dialogContent: {
     minHeight: 0,
+    boxSizing: 'border-box',
+    m: 0,
     p: 0,
+    pb: 0,
     display: 'flex',
     flexDirection: 'column',
   },
@@ -105,6 +109,14 @@ export const animatedModalSx = {
     gap: 1,
     borderTop: '1px solid #D9E2E8',
     bgcolor: '#FFFFFF',
+  },
+
+  footerText: {
+    order: 1,
+    flex: '1 1 auto',
+    minWidth: 0,
+    color: devPlanColors.secondary,
+    lineHeight: 1.35,
   },
 
   confirmButton: {

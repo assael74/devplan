@@ -9,49 +9,33 @@ export default function LeagueCenterKpiOverview({ summary }) {
   return (
     <Box sx={sx.kpiGrid}>
       <KpiCard
-        title='ליגות בהקשר'
-        value={summary.totalLeagues}
-        caption='לפי שנתון, רמה ועונה'
+        title='ליגות פעילות'
+        value={summary.activeLeagues}
+        caption='נדרשת בהן עבודה שוטפת'
         iconId='playersDatabase'
-        tone='info'
-        sx={sx.summaryCard}
-      />
-      <KpiCard
-        title='מלאות'
-        value={summary.fullData}
-        caption='טבלה וכיסוי קבוצות היעד'
-        iconId='defensive'
         tone='success'
         sx={sx.summaryCard}
       />
       <KpiCard
-        title='חלקיות'
-        value={summary.partialData}
-        caption='מידע קיים אך חלקי'
+        title='ללא קבוצות'
+        value={summary.leaguesWithoutTeams}
+        caption='עונות שנפתחו ועדיין ריקות'
         iconId='warning'
         tone='warning'
         sx={sx.summaryCard}
       />
       <KpiCard
-        title='שחקנים בסגל'
-        value={summary.playersCount}
-        caption='בכל הליגות המוצגות'
-        iconId='playersDatabase'
-        tone='info'
+        title='לבדיקה'
+        value={summary.leaguesRequiringReview}
+        caption='יש לפחות קבוצה ללא סגל'
+        iconId='warning'
+        tone='warning'
         sx={sx.summaryCard}
       />
       <KpiCard
-        title='שחקנים עם פרופיל'
-        value={summary.playersWithScoutProfileCount}
-        caption='בכל הליגות המוצגות'
-        iconId='scouting'
-        tone='success'
-        sx={sx.summaryCard}
-      />
-      <KpiCard
-        title='פרופילים'
-        value={summary.scoutProfilesCount}
-        caption='בכל הליגות המוצגות'
+        title='עדיפות מקצועית'
+        value={summary.leaguesWithProfessionalPriority}
+        caption='כוללות משימות התקפה או הגנה'
         iconId='scouting'
         tone='info'
         sx={sx.summaryCard}

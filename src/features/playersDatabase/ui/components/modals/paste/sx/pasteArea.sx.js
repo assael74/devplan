@@ -14,6 +14,13 @@ export const pasteAreaSx = {
     boxShadow: 'none',
   },
 
+  panelFill: {
+    height: '100%',
+    minHeight: 0,
+    gridTemplateRows: 'auto minmax(0, 1fr) auto',
+    alignContent: 'stretch',
+  },
+
   header: {
     minWidth: 0,
     display: 'flex',
@@ -85,6 +92,12 @@ export const pasteAreaSx = {
   inputCompact: {
     minHeight: 42,
     maxHeight: 54,
+  },
+
+  inputFill: {
+    height: '100%',
+    minHeight: 0,
+    resize: 'none',
   },
 
   inputVariant: {

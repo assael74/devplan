@@ -4,6 +4,7 @@ import { act, renderHook } from '@testing-library/react'
 import useClearRosterFlow from './useClearRosterFlow.js'
 import { clearRoster, prepareRosterClear } from '../../../../../services/write/roster/index.js'
 import { retryWriteActionReceipt } from '../../../../../services/write/recovery/index.js'
+import { getWriteActionReceipt } from '../../../../../services/write/receipt/index.js'
 
 jest.mock('../../../../../services/write/roster/index.js', () => ({
   clearRoster: jest.fn(),
@@ -11,6 +12,9 @@ jest.mock('../../../../../services/write/roster/index.js', () => ({
 }))
 jest.mock('../../../../../services/write/recovery/index.js', () => ({
   retryWriteActionReceipt: jest.fn(),
+}))
+jest.mock('../../../../../services/write/receipt/index.js', () => ({
+  getWriteActionReceipt: jest.fn(),
 }))
 
 test('retry rebuilds the approved state from fresh sources and reuses the existing receipt', async () => {
@@ -30,6 +34,10 @@ test('retry rebuilds the approved state from fresh sources and reuses the existi
   }
   prepareRosterClear.mockResolvedValueOnce(firstApprovedState).mockResolvedValueOnce(secondApprovedState)
   clearRoster.mockRejectedValueOnce(Object.assign(new Error('offline'), { receiptId: 'receipt-1' }))
+  getWriteActionReceipt.mockResolvedValue({
+    id: 'receipt-1',
+    canonicalOutcome: 'confirmed',
+  })
   retryWriteActionReceipt.mockResolvedValueOnce({
     receiptId: 'receipt-1',
     status: 'closed',
@@ -64,13 +72,13 @@ test('retry rebuilds the approved state from fresh sources and reuses the existi
 
   await act(async () => result.current.approve())
   await act(async () => result.current.next())
-  expect(clearRoster).toHaveBeenCalledWith({
+  expect(clearRoster).toHaveBeenCalledWith(expect.objectContaining({
     approvedState: firstApprovedState,
     display: {
       teamName: 'Team',
       seasonKey: '25/26',
     },
-  })
+  }))
   expect(result.current.status).toBe('failed')
 
   await act(async () => result.current.retry())

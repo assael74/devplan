@@ -30,6 +30,7 @@ export default function ClubSlotSelect({
   rootSx = null,
   clubSx = null,
   slotSx = null,
+  hideSlotIndicator = false,
 }) {
   const value = String(clubValue || '').trim()
   const selectedClub = clubOptions.find(option => getClubValue(option) === value) || null
@@ -63,6 +64,7 @@ export default function ClubSlotSelect({
         placeholder={slotPlaceholder}
         disabled={disabled || !slotOptions.length}
         color={slotColor}
+        indicator={hideSlotIndicator ? null : undefined}
         sx={[sx.slotSelect, resolvedSlotStyle, slotSx]}
         onChange={(event, nextSlotValue) => onSlotChange?.(nextSlotValue || '')}
       >

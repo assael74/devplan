@@ -31,6 +31,7 @@ import usePlayerGoalDistributionEditor from './hooks/usePlayerGoalDistributionEd
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { usePlayerReport } from './report/index.js'
 import { pageCoreLayoutSx as sx } from '../../components/page/sx/pageCoreLayout.sx.js'
+import usePageSidePanelCollapsed from '../../components/page/usePageSidePanelCollapsed.js'
 import { playerPageSx } from './sx/playerPage.sx.js'
 import {
   readPlayerSearchIndexesExport,
@@ -67,6 +68,9 @@ function PlayerPageContent() {
   const tasksModel = usePlayersDatabaseTasks()
   const taskActions = usePlayersDatabaseTaskActions()
   const [downloadBusy, setDownloadBusy] = React.useState(false)
+  const [sidePanelCollapsed, setSidePanelCollapsed] = usePageSidePanelCollapsed(
+    'playersDatabase:playerSidePanelCollapsed'
+  )
   const playerId = String(player.playerId || '').trim()
   const playerFavorite = favorites.isPlayerFavorite(playerId)
   const playerFavoriteLoading = favorites.isFavoritePending(
@@ -278,7 +282,7 @@ function PlayerPageContent() {
           clubUrl={clubDoc?.clubUrl || ''}
         />
 
-        <Box sx={sx.contentGrid}>
+        <Box sx={[sx.contentGrid, sidePanelCollapsed && sx.contentGridCollapsed]}>
           <Box className='dpScrollThin' sx={[sx.mainColumn, playerPageSx.mainColumn]}>
             <PlayerDecisionContent
               player={player}
@@ -288,6 +292,9 @@ function PlayerPageContent() {
           </Box>
 
           <PlayerActionsPanel
+            collapsible
+            collapsed={sidePanelCollapsed}
+            onCollapsedChange={setSidePanelCollapsed}
             tasks={playerPageTasks.tasks}
             tasksLoading={tasksModel.loading}
             onAction={handleAction}

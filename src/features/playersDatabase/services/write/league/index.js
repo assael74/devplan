@@ -6,3 +6,5 @@ export {
   loadLeague,
   openLeagueSeason,
 } from './leagueWriteOrchestrator.js'
+
+export { readOtherLeagueTeamOwners } from './readLeagueWriteSources.js'

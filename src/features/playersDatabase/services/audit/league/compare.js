@@ -309,12 +309,10 @@ const compareClubsCenter = ({ expected, actual, findings }) => {
     expected: {
       seasonId: expected.clubsCenter.seasonId,
       seasonKey: expected.clubsCenter.seasonKey,
-      seasonStatus: expected.clubsCenter.seasonStatus,
     },
     actual: {
       seasonId: clean(actual.seasonId),
       seasonKey: clean(actual.seasonKey),
-      seasonStatus: clean(actual.seasonStatus),
     },
     reason: 'ClubsCenter season identity does not match canonical League season.',
   })
@@ -340,6 +338,7 @@ const compareClubsCenter = ({ expected, actual, findings }) => {
         displayName: clean(actualLeague.displayName),
         ageGroupLabel: clean(actualLeague.ageGroupLabel),
         leagueLevel: actualLeague.leagueLevel === undefined ? null : actualLeague.leagueLevel,
+        seasonStatus: clean(actualLeague.seasonStatus),
         tableImportedAt: actualLeague.tableImportedAt || null,
       },
       reason: 'ClubsCenter League metadata does not match canonical League.',

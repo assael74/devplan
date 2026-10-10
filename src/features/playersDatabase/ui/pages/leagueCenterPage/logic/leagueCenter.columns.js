@@ -4,35 +4,88 @@ import {
   Button,
   Chip,
   IconButton,
+  Link,
   Stack,
+  Typography,
 } from '@mui/joy'
 
 import LeagueName from '../../../components/entities/LeagueName.js'
-import StatusPill from '../../../components/page/StatusPill.js'
 import { buildTableColumnWidth } from '../../../components/tables/tableWidths.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { LEAGUE_CENTER_TABLE_WIDTHS } from './leagueCenterTableWidths.js'
 import { dataTableColumnsSx as columnSx } from '../../../components/tables/dataTable/sx/dataTableColumns.sx.js'
 import { dataTableActionsSx as actionSx } from '../../../components/tables/dataTable/sx/dataTableActions.sx.js'
 import { leagueCenterColumnsSx as sx } from '../sx/leagueCenter.columns.sx.js'
+import { getFullDateIl } from '../../../../../../shared/format/dateUtils.js'
 
 const columnWidth = key => buildTableColumnWidth(LEAGUE_CENTER_TABLE_WIDTHS[key])
 
-const coverageLabel = ({ completeCount, targetCount }) => (
-  `${Number(completeCount || 0)} / ${Number(targetCount || 0)}`
-)
+const seasonStatusPresentation = value => ({
+  active: { label: 'פעילה', color: 'success', iconId: 'active' },
+  not_started: { label: 'לא החלה', color: 'neutral', iconId: 'planned' },
+  completed: { label: 'הסתיימה', color: 'primary', iconId: 'completed' },
+  no_teams: { label: 'אין קבוצות', color: 'warning', iconId: 'noData' },
+}[value] || { label: 'לא הוגדר', color: 'neutral', iconId: 'noData' })
 
-const coveragePill = ({ value, completeCount, targetCount }) => (
-  <StatusPill
-    value={value}
-    label={<span dir='ltr'>{coverageLabel({ completeCount, targetCount })}</span>}
-  />
-)
+const documentationFacts = row => {
+  const counts = row.documentationCounts || {}
+  const rosterCount = Number(row.teamsCount || 0) - Number(counts.NO_ROSTER || 0)
+  const statsCount = Number(counts.STATS_LOADED || 0) + Number(counts.STATS_FINAL || 0)
 
-const countPill = ({ count, targetCount }) => (
-  <Chip size='sm' variant='soft' color='neutral'>
-    <span dir='ltr'>{coverageLabel({ completeCount: count, targetCount })}</span>
-  </Chip>
+  return (
+    <Stack direction='row' spacing={0.35} sx={sx.factsChips}>
+      <Chip
+        size='sm'
+        variant='outlined'
+        color='neutral'
+        title='קבוצות עם סגל'
+        startDecorator={iconUi({ id: 'addPlayers', size: 'sm' })}
+      >
+        {rosterCount}
+      </Chip>
+      <Chip
+        size='sm'
+        variant='outlined'
+        color='success'
+        title='קבוצות עם סטטיסטיקה'
+        startDecorator={iconUi({ id: 'stats', size: 'sm' })}
+      >
+        {statsCount}
+      </Chip>
+    </Stack>
+  )
+}
+
+const professionalPriorityFacts = row => (
+  <Stack direction='row' spacing={0.35} sx={sx.priorityFacts}>
+    <Chip
+      size='sm'
+      variant='outlined'
+      color='warning'
+      title='משימות התקפה'
+      startDecorator={iconUi({ id: 'attack', size: 'sm' })}
+    >
+      {row.offenseOnlyPriorityCount || 0}
+    </Chip>
+    <Chip
+      size='sm'
+      variant='outlined'
+      color='success'
+      title='משימות הגנה'
+      startDecorator={iconUi({ id: 'defense', size: 'sm' })}
+    >
+      {row.defenseOnlyPriorityCount || 0}
+    </Chip>
+    <Chip
+      size='sm'
+      variant='outlined'
+      color='primary'
+      title='משימות משולבות'
+      startDecorator={iconUi({ id: 'transitions', size: 'sm' })}
+    >
+      {row.combinedPriorityCount || 0}
+    </Chip>
+  </Stack>
 )
 
 const statusSortValue = value => {
@@ -44,43 +97,63 @@ const BASE_COLUMNS = [
   {
     key: 'leagueName',
     label: 'ליגה',
-    render: row => (
-      <LeagueName value={row.leagueName} level={row.level} showLevel fontSize={12} />
-    ),
+    render: row => row.seasonUrl ? (
+      <Link
+        href={row.seasonUrl}
+        target='_blank'
+        rel='noreferrer'
+        aria-label={`פתיחת מקור הליגה ${row.leagueName}`}
+        sx={sx.leagueLink}
+      >
+        <LeagueName value={row.leagueName} level={row.level} showLevel fontSize={12} />
+      </Link>
+    ) : <LeagueName value={row.leagueName} level={row.level} showLevel fontSize={12} />,
   },
   { key: 'ageGroupLabel', label: 'קבוצת גיל', render: row => row.ageGroupLabel || row.ageGroup || '-' },
   { key: 'birthYear', label: 'שנתון' },
   { key: 'seasonKey', label: 'עונה' },
-  { key: 'teamsCount', label: 'קבוצות' },
   {
-    key: 'tableStatus',
-    label: 'טבלה',
-    getSortValue: row => statusSortValue(row.tableStatus),
-    render: row => (
-      <StatusPill value={row.tableStatus} label={row.tableStatus === 'full' ? 'מלא' : 'ריק'} />
-    ),
+    key: 'seasonWorkStatus',
+    label: 'מצב עונה',
+    getSortValue: row => row.seasonWorkStatus,
+    render: row => {
+      const presentation = seasonStatusPresentation(row.seasonWorkStatus)
+      return (
+        <Chip
+          size='sm'
+          variant='outlined'
+          color={presentation.color}
+          startDecorator={iconUi({ id: presentation.iconId, size: 'sm' })}
+          sx={sx.statusChip}
+        >
+          {presentation.label}
+        </Chip>
+      )
+    },
   },
   {
     key: 'playersStatsStatus',
-    label: 'שחקנים + סטטס',
+    label: 'סגל וסטטס',
     getSortValue: row => statusSortValue(row.playersStatsStatus),
-    render: row => coveragePill({
-      value: row.playersStatsStatus,
-      completeCount: row.playersStatsCompleteCount,
-      targetCount: row.playersStatsTargetCount,
-    }),
+    render: documentationFacts,
   },
   {
-    key: 'offensePriorityStatus',
-    label: 'עדיפות התקפית',
-    getSortValue: row => Number(row.offensePriorityCount || 0),
-    render: row => countPill({ count: row.offensePriorityCount, targetCount: row.offensePriorityTargetCount }),
+    key: 'professionalPriority',
+    label: 'עדיפות מקצועית',
+    getSortValue: row => Number(row.offensePriorityCount || 0) + Number(row.defensePriorityCount || 0),
+    render: professionalPriorityFacts,
   },
   {
-    key: 'defensePriorityStatus',
-    label: 'עדיפות הגנתית',
-    getSortValue: row => Number(row.defensePriorityCount || 0),
-    render: row => countPill({ count: row.defensePriorityCount, targetCount: row.defensePriorityTargetCount }),
+    key: 'tableImportedAt',
+    label: 'טעינה אחרונה',
+    getSortValue: row => row.tableImportedAt || '',
+    render: row => (
+      <Typography level='body-xs' sx={sx.dateFact}>
+        {row.tableImportedAt
+          ? getFullDateIl(row.tableImportedAt)
+          : '-'}
+      </Typography>
+    ),
   },
   { key: 'actions', label: '' },
 ]
@@ -143,6 +216,15 @@ export const buildLeagueCenterColumns = ({ onOpenLeague, onDeleteLeagueSeason, g
         sx: { ...columnSx.nameColumn, ...widthSx },
         headerSx: { ...columnSx.nameHeader, ...sx.leagueNameHeader },
         cellSx: { ...columnSx.nameCell, ...sx.leagueNameCell },
+      }
+    }
+
+    if (column.key === 'birthYear') {
+      return {
+        ...column,
+        sx: { ...columnSx.centerColumn, ...widthSx },
+        headerSx: { ...columnSx.centerColumn, ...sx.birthYearHeader },
+        cellSx: columnSx.centerColumn,
       }
     }
 

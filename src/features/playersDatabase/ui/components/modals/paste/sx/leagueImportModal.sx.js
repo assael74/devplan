@@ -38,12 +38,16 @@ export const leagueImportModalSx = {
 
   syncPanel: {
     width: '100%',
-    maxWidth: 760,
+    height: '100%',
+    flex: 1,
+    minHeight: 0,
+    maxWidth: 'none',
     p: {
       xs: 2,
       md: 3,
     },
-    display: 'grid',
+    display: 'flex',
+    flexDirection: 'column',
     gap: 1.5,
     border: `1px solid ${devPlanColors.border}`,
     borderRadius: 14,
@@ -52,31 +56,28 @@ export const leagueImportModalSx = {
   },
 
   syncStepArea: {
+    height: '100%',
+    flex: 1,
     minHeight: 0,
     overflowX: 'hidden',
     overflowY: 'auto',
-    display: 'grid',
-    justifyItems: 'center',
-    alignContent: 'start',
+    display: 'flex',
+    flexDirection: 'column',
     px: {
       xs: 0,
       md: 1,
     },
-    pb: 1,
+    pb: 0,
+  },
+
+  syncContent: {
+    display: 'flex',
+    flexDirection: 'column',
   },
 
   syncHeading: {
     display: 'grid',
     gap: 0.45,
-  },
-
-  syncDescription: {
-    color: devPlanColors.secondary,
-  },
-
-  syncScope: {
-    display: 'grid',
-    gap: 0.5,
   },
 
   syncScopeHint: {
@@ -102,16 +103,6 @@ export const leagueImportModalSx = {
     color: devPlanColors.primaryDark,
   },
 
-  syncStep: {
-    display: 'grid',
-    gridTemplateColumns: '36px minmax(0, 1fr) auto',
-    gap: 1.25,
-    alignItems: 'center',
-    p: 1.25,
-    borderRadius: 10,
-    bgcolor: devPlanColors.secondaryLight,
-  },
-
   syncProgress: {
     display: 'grid',
     gridTemplateColumns: '36px minmax(0, 1fr)',
@@ -122,22 +113,13 @@ export const leagueImportModalSx = {
     bgcolor: devPlanColors.secondaryLight,
   },
 
-  syncStepNumber: {
-    width: 32,
-    height: 32,
-    display: 'grid',
-    placeItems: 'center',
-    borderRadius: '50%',
-    bgcolor: devPlanColors.surface,
-    color: devPlanColors.primary,
-    fontWeight: 700,
-    border: `1px solid ${devPlanColors.border}`,
+  syncStatusNotice: {
+    mt: 'auto',
   },
 
-  syncStepContent: {
+  syncStatusContent: {
+    width: '100%',
     minWidth: 0,
-    display: 'grid',
-    gap: 0.35,
   },
 
   syncComplete: {

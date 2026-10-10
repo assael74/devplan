@@ -5,9 +5,38 @@ import { importModalChromeSx } from '../../../../../components/modals/paste/sx/i
 import { leagueImportModalSx } from '../../../../../components/modals/paste/sx/leagueImportModal.sx.js'
 
 export const statsImportModalSx = {
+  stepLayout: {
+    height: {
+      xs: 'min(540px, calc(100dvh - 290px))',
+      md: 'min(660px, calc(100dvh - 310px))',
+    },
+  },
+
   // Keep the background-sync step visually identical to League import.
-  syncPanel: leagueImportModalSx.syncPanel,
+  syncPanel: {
+    ...leagueImportModalSx.syncPanel,
+    p: {
+      xs: 1,
+      md: 1.5,
+    },
+    gap: 0.75,
+  },
+
+  syncStep: {
+    width: '100%',
+    height: '100%',
+    minHeight: 0,
+    overflow: 'hidden',
+  },
+
+  syncCardsArea: {
+    height: 282,
+    flex: '0 0 282px',
+    overflow: 'hidden',
+  },
+
   syncHeading: leagueImportModalSx.syncHeading,
+  syncStatusContent: { width: '100%', minWidth: 0 },
   syncDescription: leagueImportModalSx.syncDescription,
   syncScope: leagueImportModalSx.syncScope,
   syncScopeHint: leagueImportModalSx.syncScopeHint,

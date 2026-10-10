@@ -1,12 +1,11 @@
 // src/features/playersDatabase/services/write/recovery/retryWriteAction.js
 
-import { bootstrapClubs } from '../club/index.js'
 import {
   clearLeagueTeams,
   deleteLeagueSeason,
 } from '../league/index.js'
 import { clearRoster, prepareRosterClear } from '../roster/index.js'
-import { clearStats } from '../stats/index.js'
+import { clearStats, prepareStatsClear } from '../stats/index.js'
 import { getWriteActionReceipt } from '../receipt/index.js'
 import { repairWriteActionReceipt } from './repairWriteAction.js'
 
@@ -17,7 +16,6 @@ export const DIRECT_RECEIPT_RETRY_ACTIONS = Object.freeze([
   'leagueSeasonDelete',
   'rosterClear',
   'statsClear',
-  'clubsBootstrap',
 ])
 
 export const canRetryWriteActionFromReceipt = actionType => (
@@ -38,10 +36,7 @@ export const retryWriteActionReceipt = async ({ receiptId = '', approvedState = 
   if (!id) throw new Error('חסר מזהה קבלה')
 
   const receipt = requireOpenReceipt(await getWriteActionReceipt({ receiptId: id }))
-  if (
-    clean(receipt.actionType) !== 'clubsBootstrap' &&
-    clean(receipt.canonicalOutcome) === 'confirmed'
-  ) {
+  if (clean(receipt.canonicalOutcome) === 'confirmed') {
     return repairWriteActionReceipt({ receiptId: id })
   }
   const target = receipt.target || {}
@@ -58,11 +53,8 @@ export const retryWriteActionReceipt = async ({ receiptId = '', approvedState = 
     return clearRoster({ approvedState: resolvedApprovedState, receiptId: id, display })
   }
   if (receipt.actionType === 'statsClear') {
-    return clearStats({ input: target, receiptId: id, display })
+    const resolvedApprovedState = approvedState || await prepareStatsClear({ input: target })
+    return clearStats({ approvedState: resolvedApprovedState, receiptId: id, display })
   }
-  if (receipt.actionType === 'clubsBootstrap') {
-    return bootstrapClubs({ receiptId: id })
-  }
-
   throw new Error('סוג הקבלה אינו נתמך לניסיון חוזר ישיר')
 }

@@ -10,7 +10,6 @@ import {
 } from './scoutDisplay.constants.js'
 import {
   cleanScoutDisplayValue,
-  resolveScoutDisplayLabel,
 } from './scoutDisplay.utils.js'
 import {
   buildScoutProfileTooltipFromFields,

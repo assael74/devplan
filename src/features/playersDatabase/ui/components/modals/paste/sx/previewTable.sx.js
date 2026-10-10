@@ -9,6 +9,7 @@ export const previewTableSx = {
     p: 0,
     display: 'grid',
     gridTemplateRows: 'auto minmax(0, 1fr)',
+    gap: 0,
     overflow: 'hidden',
     borderRadius: 10,
     border: '1px solid #dbe5f4',
@@ -80,7 +81,6 @@ export const previewTableSx = {
     height: '100%',
     pt: 0,
     overflow: 'auto',
-    mt: -1.5,
   },
 
   table: {

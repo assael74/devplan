@@ -37,6 +37,7 @@ export const readStatsAuditActual = async ({
   seasonId = '',
   counterpartDocumentIds = [],
   playerIds = [],
+  scopedPlayerIds = [],
 } = {}) => {
   const resolvedLeagueId = clean(leagueId)
   const resolvedTeamId = clean(teamId)
@@ -67,10 +68,15 @@ export const readStatsAuditActual = async ({
   ])
 
   const rosterPlayers = object(teamSeason && teamSeason.roster && teamSeason.roster.playersById)
-  const resolvedPlayerIds = Array.from(new Set([
-    ...Object.keys(rosterPlayers),
-    ...(Array.isArray(playerIds) ? playerIds : []),
-  ].map(clean).filter(Boolean)))
+  const requestedPlayerIds = Array.from(new Set(
+    (Array.isArray(scopedPlayerIds) ? scopedPlayerIds : []).map(clean).filter(Boolean)
+  ))
+  const resolvedPlayerIds = requestedPlayerIds.length
+    ? requestedPlayerIds
+    : Array.from(new Set([
+        ...Object.keys(rosterPlayers),
+        ...(Array.isArray(playerIds) ? playerIds : []),
+      ].map(clean).filter(Boolean)))
   const [playerRoots, playerSeasons, playerSearchIndexes, counterpartTeamSeasons] = await Promise.all([
     Promise.all(resolvedPlayerIds.map(playerId => readDocument({
       collectionName: PLAYERS_DATABASE_COLLECTIONS.playerRoots,

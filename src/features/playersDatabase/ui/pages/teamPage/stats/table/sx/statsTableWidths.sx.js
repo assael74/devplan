@@ -7,7 +7,7 @@ export const TEAM_STATS_IMPORT_TABLE_WIDTHS = {
   },
 
   fullName: {
-    width: '17%',
+    width: '15%',
   },
 
   identityStatus: {
@@ -15,7 +15,7 @@ export const TEAM_STATS_IMPORT_TABLE_WIDTHS = {
   },
 
   rosterStatus: {
-    width: '20%',
+    width: '22%',
   },
 
   scoutProfiles: {

@@ -205,6 +205,7 @@ export function StatsRosterStatusControl({
             rootSx={sx.statusMovementTeamPicker}
             clubSx={sx.statusMovementTeamSelect}
             slotSx={sx.statusMovementSlotSelect}
+            hideSlotIndicator
           />
         </>
       ) : null}

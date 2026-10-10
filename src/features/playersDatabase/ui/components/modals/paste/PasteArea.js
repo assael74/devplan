@@ -21,6 +21,8 @@ export default function PasteArea({
   templateText = '',
   templateLabel = 'העתק תבנית',
   showClearAction = true,
+  showFooterHint = true,
+  fillHeight = false,
   inputVariant = 'default',
   inputSx = null,
 }) {
@@ -36,7 +38,7 @@ export default function PasteArea({
   }
 
   return (
-    <Card sx={sx.panel}>
+    <Card sx={[sx.panel, fillHeight ? sx.panelFill : null]}>
       <Box sx={sx.header}>
         <Box>
           <Typography level='title-md' sx={sx.title}>
@@ -101,11 +103,12 @@ export default function PasteArea({
           sx.input,
           sx.inputVariant[inputVariant] || null,
           compact ? sx.inputCompact : null,
+          fillHeight ? sx.inputFill : null,
           inputSx,
         ]}
       />
 
-      {!compact ? (
+      {!compact && showFooterHint ? (
         <Typography level='body-xs' sx={sx.hint}>
           השורה הראשונה יכולה לשמש כשורת כותרות.
         </Typography>

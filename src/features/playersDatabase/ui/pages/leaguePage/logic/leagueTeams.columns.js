@@ -24,8 +24,6 @@ const toCount = value => {
   return Number.isFinite(nextValue) ? nextValue : 0
 }
 
-const clean = value => String(value || '').trim()
-
 const toNumericValue = value => {
   if (value === null || value === undefined || value === '') {
     return null

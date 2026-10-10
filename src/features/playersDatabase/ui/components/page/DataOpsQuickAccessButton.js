@@ -9,7 +9,7 @@ import {
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import {
   buildDataOpsNavigationState,
-  PLAYERS_DATABASE_UI_ROUTES,
+  resolveDataOpsAuditRoute,
 } from '../../logic/routeBuilders.js'
 
 export default function DataOpsQuickAccessButton() {
@@ -22,7 +22,7 @@ export default function DataOpsQuickAccessButton() {
       variant='solid'
       startDecorator={iconUi({ id: 'data', size: 'sm' })}
       onClick={() => navigate(
-        PLAYERS_DATABASE_UI_ROUTES.dataOps,
+        resolveDataOpsAuditRoute(location),
         { state: buildDataOpsNavigationState(location) }
       )}
       sx={{

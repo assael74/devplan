@@ -131,6 +131,8 @@ describe('buildStatsClearApprovedState', () => {
     })
 
     expect(approved.playerRootPlans).toEqual([])
+    expect(approved.playerSeasonPlans.find(plan => plan.playerId === playerId).teamExists)
+      .toBe(false)
     expect(approved.impact.playerRootsDeleted).toBe(0)
     expect(approved.playerSearchIndexPlans[0].projection.player.primaryPosition).toBe('')
   })

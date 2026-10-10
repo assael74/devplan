@@ -125,6 +125,9 @@ export const buildStatsClearApprovedState = ({
     playerId,
     documentId: buildPlayerSeasonDocumentId({ playerId, seasonId: resolvedSeasonId }),
     exists: Boolean(object(sources.playerSeasonsById)[playerId]),
+    teamExists: Boolean(
+      object(object(object(sources.playerSeasonsById)[playerId]).teamsById)[resolvedTeamId]
+    ),
     projection: buildPlayerSeasonProjection({
       playerId,
       playerRoot: effectivePlayerRootsById[playerId] || null,

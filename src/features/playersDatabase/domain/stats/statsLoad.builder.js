@@ -3,9 +3,9 @@
 import { buildScoutProfilesSummary } from '../../model/scout/scoutProfilesSummary.model.js'
 import { buildPlayerLineClassificationState } from '../orchestration/buildPlayerLineClassificationState.js'
 import { buildPlayerScoutState } from '../orchestration/buildPlayerScoutState.js'
-import { buildTeamBalanceState } from '../orchestration/buildTeamBalanceState.js'
 import { buildTeamPlayerScoutProjection } from '../projections/playerScout.projection.js'
 import { buildRosterMovementPlan } from '../roster/index.js'
+import { buildPlayerRootDocument } from '../playerRoot.builder.js'
 import {
   buildPlayerId,
   buildPlayerSeasonDocumentId,
@@ -21,6 +21,7 @@ import {
   buildStatsLeagueContext,
   validateStatsRowsAgainstLeague,
 } from './validation.js'
+import { buildTeamBalanceFromTeamSeason } from './teamBalance.builder.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 const object = value => (value && typeof value === 'object' && !Array.isArray(value) ? value : {})
@@ -380,34 +381,6 @@ export const buildStatsPlayerPreviewState = ({
   }
 }
 
-const buildTeamBalance = ({ teamSeason, statsPlayersById, scoutingPlayersById, leagueContext }) => {
-  const rosterPlayers = object(object(teamSeason.roster).playersById)
-  const teamPlayers = Object.entries(rosterPlayers)
-    .filter(([, rosterPlayer]) => clean(rosterPlayer && rosterPlayer.rosterStatus) === 'regular')
-    .map(([playerId, rosterPlayer]) => ({
-      ...rosterPlayer,
-      ...object(object(statsPlayersById)[playerId]).playerStats,
-      playerId,
-      playerStats: { ...object(object(statsPlayersById)[playerId]).playerStats },
-      statsStatus: clean(object(statsPlayersById)[playerId] && object(statsPlayersById)[playerId].statsStatus),
-      lineClassification: { ...object(object(statsPlayersById)[playerId] && object(statsPlayersById)[playerId].lineClassification) },
-      professionalScoutProfileIds: array(object(scoutingPlayersById)[playerId] && object(scoutingPlayersById)[playerId].professionalProfileIds),
-    }))
-
-  return buildTeamBalanceState({
-    teamDocument: { id: teamSeason.identity.teamId },
-    seasonDocument: {
-      seasonId: teamSeason.identity.seasonId,
-      seasonKey: teamSeason.identity.seasonKey,
-      seasonStatus: teamSeason.identity.seasonStatus,
-      teamStats: {
-        teamGamePlayed: leagueContext.teamGamePlayed,
-      },
-      teamPlayers,
-    },
-  })
-}
-
 const buildPlayerRootPlan = ({
   playerId,
   rosterPlayer,
@@ -445,37 +418,12 @@ const buildPlayerRootPlan = ({
   return {
     playerId,
     action: 'create',
-    document: {
-      identity: {
-        playerId,
-        externalPlayerId: clean(rosterPlayer.externalPlayerId),
-        fullName: clean(rosterPlayer.fullName),
-        normalizedName: clean(rosterPlayer.normalizedName),
-        aliases: array(rosterPlayer.aliases),
-        birthYear: Number(String(playerId).split('__')[1]),
-        birthDate: null,
-      },
-      primaryPosition: '',
-      positionLayer: '',
-      notes: '',
-      agent: {},
-      tracking: {},
-      verification: {},
-      manualImmediacyDecision: {
-        actionStatus: '',
-        reason: '',
-        note: '',
-        decidedAt: null,
-        profileIds: [],
-      },
-      seasonRefsById: {
-        [seasonId]: seasonRef,
-      },
-      timestamps: {
-        createdAt: updatedAt || null,
-        updatedAt: updatedAt || null,
-      },
-    },
+    document: buildPlayerRootDocument({
+      playerId,
+      rosterPlayer,
+      seasonRefsById: { [seasonId]: seasonRef },
+      updatedAt,
+    }),
   }
 }
 
@@ -620,11 +568,12 @@ export const buildStatsLoadApprovedState = ({
     if (scouting) nextScoutingPlayers[playerId] = scouting
   })
 
-  const teamBalance = buildTeamBalance({
+  const teamBalance = buildTeamBalanceFromTeamSeason({
     teamSeason: existingTeamSeason,
     statsPlayersById: nextStatsPlayers,
     scoutingPlayersById: nextScoutingPlayers,
     leagueContext,
+    updatedAt,
   })
   const scoutedRows = Object.entries(rosterPlayersById)
     .map(([playerId, rosterPlayer]) => ({
@@ -709,6 +658,9 @@ export const buildStatsLoadApprovedState = ({
     playerId,
     documentId: buildPlayerSeasonDocumentId({ playerId, seasonId: resolvedSeasonId }),
     exists: Boolean(object(sources.playerSeasonsById)[playerId]),
+    teamExists: Boolean(
+      object(object(object(sources.playerSeasonsById)[playerId]).teamsById)[resolvedTeamId]
+    ),
     projection: buildPlayerSeasonProjection({
       playerId,
       playerRoot: effectivePlayerRootsById[playerId] || null,
@@ -866,6 +818,9 @@ export const buildStatsProjectionRepairApprovedState = ({
     playerId,
     documentId: buildPlayerSeasonDocumentId({ playerId, seasonId: resolvedSeasonId }),
     exists: Boolean(object(sources.playerSeasonsById)[playerId]),
+    teamExists: Boolean(
+      object(object(object(sources.playerSeasonsById)[playerId]).teamsById)[resolvedTeamId]
+    ),
     projection: buildPlayerSeasonProjection({
       playerId,
       playerRoot: effectivePlayerRootsById[playerId] || null,

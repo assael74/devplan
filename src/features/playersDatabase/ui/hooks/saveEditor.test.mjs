@@ -63,3 +63,31 @@ test('failed write still performs recovery reload', async () => {
   })
   assert.equal(reloads, 1)
 })
+
+test('successful write reloads a page that has no realtime listener', async () => {
+  const saveEditor = await loadSaveEditor()
+  let reloads = 0
+  await saveEditor({
+    write: async () => ({ completed: true }),
+    reload: async () => { reloads += 1 },
+    notify: () => {},
+    close: () => {},
+    setSaving: () => {},
+    title: 'saved',
+  })
+  assert.equal(reloads, 1)
+})
+
+test('an editor with a realtime listener does not require a reload callback', async () => {
+  const saveEditor = await loadSaveEditor()
+  let closed = false
+  await saveEditor({
+    write: async () => ({ completed: true }),
+    reloadAfterSuccess: false,
+    notify: () => {},
+    close: () => { closed = true },
+    setSaving: () => {},
+    title: 'saved',
+  })
+  assert.equal(closed, true)
+})

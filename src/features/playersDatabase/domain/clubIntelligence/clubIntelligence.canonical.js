@@ -66,7 +66,7 @@ const buildTeam = ({
   teamSlot: positiveNumberOrNull(team && team.teamSlot),
   seasonId: clean(season && season.seasonId),
   seasonKey: clean(season && season.seasonKey),
-  seasonStatus: clean(season && season.seasonStatus),
+  seasonStatus: clean(league && league.seasonStatus),
   league: {
     leagueId: clean(team && team.leagueId),
     leagueName: clean(league && league.displayName),
@@ -132,7 +132,6 @@ const buildCanonicalTeams = ({ clubId, centers }) => (
     const seasonContext = {
       seasonId: clean(document && document.seasonId || season && season.seasonId),
       seasonKey: clean(document && document.seasonKey || season && season.seasonKey),
-      seasonStatus: clean(document && document.seasonStatus),
       target: season && season.target === 'current' ? 'current' : 'previous',
     }
 

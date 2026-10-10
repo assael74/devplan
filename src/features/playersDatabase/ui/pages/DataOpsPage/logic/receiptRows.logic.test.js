@@ -3,33 +3,6 @@
 import { buildReceiptDetails, buildReceiptRow } from './receiptRows.logic.js'
 
 describe('DataOps receipt rows', () => {
-  test('maps a completed Club bootstrap receipt to the visible table contract', () => {
-    const row = buildReceiptRow({
-      id: 'receipt-1',
-      actionType: 'clubsBootstrap',
-      targetKey: 'clubs:bootstrap',
-      target: { domain: 'clubs' },
-      display: {
-        actionLabel: 'אתחול מועדונים',
-        targetLabel: 'כל המועדונים',
-      },
-      status: 'closed',
-      executionStatus: 'succeeded',
-      timestamps: {
-        updatedAt: { toDate: () => new Date('2026-10-03T08:30:00.000Z') },
-      },
-    })
-
-    expect(row).toMatchObject({
-      id: 'receipt-1',
-      scope: 'כל המועדונים',
-      action: 'אתחול מועדונים',
-      status: 'הושלם',
-      tone: 'success',
-    })
-    expect(row.time).not.toBe('—')
-  })
-
   test('shows a failed receipt as stopped', () => {
     expect(buildReceiptRow({
       id: 'receipt-2',
@@ -56,6 +29,19 @@ describe('DataOps receipt rows', () => {
     })).toMatchObject({
       action: 'פתיחת ליגה',
       status: 'הושלם',
+    })
+  })
+
+  test('does not label a recovery receipt as complete even when execution succeeded', () => {
+    expect(buildReceiptRow({
+      id: 'receipt-recovery',
+      actionType: 'statsLoad',
+      status: 'open',
+      executionStatus: 'succeeded',
+      recoveryRequired: true,
+    })).toMatchObject({
+      status: 'דורש תיקון',
+      tone: 'warning',
     })
   })
 

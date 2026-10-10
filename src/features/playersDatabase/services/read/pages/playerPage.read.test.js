@@ -16,9 +16,7 @@ import {
   normalizePlayerEventsState,
 } from '../../../domain/index.js'
 import {
-  buildPlayerDocumentCacheKey,
   clearPlayersDatabaseDocumentCache,
-  getDocumentCacheResolvedKey,
 } from '../../cache/index.js'
 import { getTeamSeason } from '../entities/teamSeason.js'
 import { readPlayerPageData } from './playerPage.read.js'

@@ -21,6 +21,7 @@ export const clubSlotSelectSx = {
     minHeight: 32,
     gridArea: 'club',
     textAlign: 'right',
+    borderRadius: 6,
   },
 
   slotSelect: {
@@ -29,6 +30,7 @@ export const clubSlotSelectSx = {
     minHeight: 32,
     gridArea: 'slot',
     textAlign: 'center',
+    borderRadius: 6,
   },
 
   listbox: {

@@ -5,7 +5,9 @@ import {
   Alert,
   Box,
   FormControl,
+  FormHelperText,
   FormLabel,
+  Input,
   Option,
   Select,
   Stack,
@@ -19,6 +21,21 @@ import {
 } from '../../../catalog/seasons.catalog.js'
 import { resolvePlayersDatabaseLeagueGameTime } from '../../../catalog/leagues.catalog.js'
 import { resolveSeasonBirthYear } from '../../../model/shared/season.model.js'
+import { importModalChromeSx as chromeSx } from '../../components/modals/paste/sx/importModalChrome.sx.js'
+
+const clean = value => String(value === null || value === undefined ? '' : value).trim()
+
+const isValidSeasonUrl = value => {
+  const url = clean(value)
+  if (!url) return true
+
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:'
+  } catch {
+    return false
+  }
+}
 
 export default function OpenLeagueModal({
   open,
@@ -33,6 +50,7 @@ export default function OpenLeagueModal({
   const [leagueId, setLeagueId] = React.useState('')
   const [seasonKey, setSeasonKey] = React.useState(PLAYERS_DATABASE_CURRENT_SEASON_KEY)
   const [gameDurationMinutes, setGameDurationMinutes] = React.useState(90)
+  const [seasonUrl, setSeasonUrl] = React.useState('')
   const seasonOptions = getSeasonCatalogOptions()
   const ageGroupOptions = Array.from(new Map(options.map(option => [
     option.ageGroupId,
@@ -59,9 +77,12 @@ export default function OpenLeagueModal({
     setLeagueId('')
     setSeasonKey(PLAYERS_DATABASE_CURRENT_SEASON_KEY)
     setGameDurationMinutes(90)
+    setSeasonUrl('')
   }, [open])
 
   const handleConfirm = () => {
+    if (!isValidSeasonUrl(seasonUrl)) return
+
     const selected = options.find(option => option.value === leagueId)
     if (selected && selectedSeason && onConfirm) {
       onConfirm({
@@ -70,6 +91,7 @@ export default function OpenLeagueModal({
         seasonKey,
         birthYear,
         gameDurationMinutes: Number(gameDurationMinutes),
+        seasonUrl: clean(seasonUrl),
       })
     }
   }
@@ -86,6 +108,8 @@ export default function OpenLeagueModal({
           ? 'פותח ליגה'
           : 'פתיחת ליגה'}
       confirmIconId='addSeason'
+      headerIconSx={chromeSx.modalHeaderIcon}
+      hideCancel
       busy={busy}
       disabled={
         !leagueId
@@ -93,6 +117,7 @@ export default function OpenLeagueModal({
         || seasonAlreadyExists
         || !Number.isFinite(Number(gameDurationMinutes))
         || Number(gameDurationMinutes) <= 0
+        || !isValidSeasonUrl(seasonUrl)
       }
       onConfirm={handleConfirm}
       onClose={onClose}
@@ -111,6 +136,28 @@ export default function OpenLeagueModal({
             הקבלה נפתחה. מקור האמת והתוצרים מתעדכנים לפי הסדר.
           </Alert>
         ) : null}
+
+        <FormControl required disabled={busy}>
+          <FormLabel>עונה</FormLabel>
+          <Select
+            value={seasonKey || null}
+            placeholder='בחר עונה'
+            onChange={(event, value) => setSeasonKey(value || '')}
+          >
+            {seasonOptions.map(option => (
+              <Option
+                key={option.seasonKey}
+                value={option.seasonKey}
+                disabled={Boolean(
+                  selectedLeague
+                  && selectedLeague.existingSeasonIds.includes(option.seasonId)
+                )}
+              >
+                {option.label}
+              </Option>
+            ))}
+          </Select>
+        </FormControl>
 
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'minmax(10rem, 0.8fr) minmax(14rem, 1.2fr)' }, gap: 1.5 }}>
           <FormControl required disabled={busy}>
@@ -150,9 +197,17 @@ export default function OpenLeagueModal({
                   && currentSeason
                   && nextLeague.existingSeasonIds.includes(currentSeason.seasonId)
                 )
+                const selectedSeasonExists = Boolean(
+                  nextLeague
+                  && selectedSeason
+                  && nextLeague.existingSeasonIds.includes(selectedSeason.seasonId)
+                )
+                const nextSeasonKey = selectedSeasonExists
+                  ? (currentSeasonExists ? '' : PLAYERS_DATABASE_CURRENT_SEASON_KEY)
+                  : seasonKey
 
                 setLeagueId(nextLeagueId)
-                setSeasonKey(currentSeasonExists ? '' : PLAYERS_DATABASE_CURRENT_SEASON_KEY)
+                setSeasonKey(nextSeasonKey)
               }}
             >
               {leagueOptions.map(option => (
@@ -164,26 +219,22 @@ export default function OpenLeagueModal({
           </FormControl>
         </Box>
 
-        <FormControl required disabled={busy || !leagueId}>
-          <FormLabel>עונה</FormLabel>
-          <Select
-            value={seasonKey || null}
-            placeholder='בחר עונה'
-            onChange={(event, value) => setSeasonKey(value || '')}
-          >
-            {seasonOptions.map(option => (
-              <Option
-                key={option.seasonKey}
-                value={option.seasonKey}
-                disabled={Boolean(
-                  selectedLeague
-                  && selectedLeague.existingSeasonIds.includes(option.seasonId)
-                )}
-              >
-                {option.label}
-              </Option>
-            ))}
-          </Select>
+        <FormControl
+          disabled={busy || !leagueId || !seasonKey}
+          error={!isValidSeasonUrl(seasonUrl)}
+        >
+          <FormLabel>קישור לעונה</FormLabel>
+          <Input
+            type='url'
+            value={seasonUrl}
+            placeholder='https://...'
+            onChange={event => setSeasonUrl(event.target.value)}
+          />
+          <FormHelperText>
+            {isValidSeasonUrl(seasonUrl)
+              ? 'אופציונלי — יוצג כמקור הליגה לאחר הפתיחה.'
+              : 'יש להזין קישור תקין שמתחיל ב־http:// או https://'}
+          </FormHelperText>
         </FormControl>
 
         <Box
@@ -210,11 +261,6 @@ export default function OpenLeagueModal({
             הנתונים נקבעים אוטומטית לפי קבוצת הגיל והעונה ואינם ניתנים לשינוי.
           </Typography>
         </Box>
-
-        <Typography level='body-sm' color='neutral'>
-          הפעולה תיצור ליגה ועונה במצב `NOT_LOADED`, ללא קבוצות. החלון ייסגר
-          רק לאחר שהעונה תופיע במרכז הליגות, וניתן יהיה לטעון קבוצות מאוחר יותר.
-        </Typography>
       </Stack>
     </RegularModal>
   )

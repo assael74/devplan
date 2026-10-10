@@ -29,7 +29,11 @@ import {
   PlayerProfilePage,
   PlayersDatabaseClubsPage,
   PlayersDatabaseClubPage,
+  PlayersDatabaseDataOpsLayout,
   PlayersDatabaseDataOpsPage,
+  PlayersDatabaseDataOpsAuditPage,
+  PlayersDatabaseDataOpsReceiptsPage,
+  PlayersDatabaseDataOpsSystemAuditPage,
   PlayersDatabaseLeaguePage,
   PlayersDatabaseLeaguesCenterPage,
   PlayersDatabasePage,
@@ -70,7 +74,12 @@ function renderAdminRoutes() {
         <Route path={ADMIN_ROUTES.playersDatabase} element={lazyRoute(<PlayersDatabasePage />)} />
         <Route path={ADMIN_ROUTES.playersDatabaseLeagues} element={lazyRoute(<PlayersDatabaseLeaguesCenterPage />)} />
         <Route path={ADMIN_ROUTES.playersDatabaseSearch} element={lazyRoute(<PlayersDatabaseSearchPage />)} />
-        <Route path={ADMIN_ROUTES.playersDatabaseDataOps} element={lazyRoute(<PlayersDatabaseDataOpsPage />)} />
+        <Route path={ADMIN_ROUTES.playersDatabaseDataOps} element={lazyRoute(<PlayersDatabaseDataOpsLayout />)}>
+          <Route index element={lazyRoute(<PlayersDatabaseDataOpsPage />)} />
+          <Route path={ADMIN_ROUTES.playersDatabaseDataOpsAudit} element={lazyRoute(<PlayersDatabaseDataOpsAuditPage />)} />
+          <Route path={ADMIN_ROUTES.playersDatabaseDataOpsReceipts} element={lazyRoute(<PlayersDatabaseDataOpsReceiptsPage />)} />
+          <Route path={ADMIN_ROUTES.playersDatabaseDataOpsSystemAudit} element={lazyRoute(<PlayersDatabaseDataOpsSystemAuditPage />)} />
+        </Route>
         <Route path={ADMIN_ROUTES.playersDatabaseClubs} element={lazyRoute(<PlayersDatabaseClubsPage />)} />
         <Route path={ADMIN_ROUTES.playersDatabaseClub} element={lazyRoute(<PlayersDatabaseClubPage />)} />
         <Route path={ADMIN_ROUTES.playersDatabaseProfiles} element={lazyRoute(<PlayersDatabaseProfilesPage />)} />

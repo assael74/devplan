@@ -85,12 +85,25 @@ describe('statsWriteOrchestrator', () => {
     }
 
     const plan = await prepareStatsLoad({ input })
-    await loadStats({ approvedState: plan, receiptId: 'receipt-1' })
+    const onProgress = jest.fn()
+    await loadStats({ approvedState: plan, receiptId: 'receipt-1', onProgress })
 
     expect(readStatsLoadSources).toHaveBeenCalledTimes(1)
     expect(buildStatsLoadApprovedState).toHaveBeenCalledTimes(1)
     writers.forEach(writer => expect(writer).toHaveBeenCalledTimes(1))
     expect(auditStats).toHaveBeenCalledTimes(1)
+    expect(onProgress.mock.calls.map(([event]) => [event.type, event.stageId || ''])).toEqual([
+      ['receiptOpened', ''],
+      ['stageCompleted', 'canonical'],
+      ['stageCompleted', 'counterparts'],
+      ['stageCompleted', 'playerRoots'],
+      ['stageCompleted', 'playerSeasons'],
+      ['stageCompleted', 'playerSearchIndexes'],
+      ['stageCompleted', 'leagueProjection'],
+      ['stageCompleted', 'leaguesCenter'],
+      ['stageCompleted', 'clubsCenter'],
+      ['stageCompleted', 'audit'],
+    ])
   })
 
   test('rejects execution without an Approved State', async () => {

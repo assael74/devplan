@@ -29,3 +29,23 @@ test('audits approved non-roster player projections as well as roster players', 
     playerIds: ['player-1', 'player-2'],
   }))
 })
+
+test('passes a focused player scope through the read and expected phases', async () => {
+  readStatsAuditActual.mockResolvedValue({})
+  buildStatsAuditExpected.mockReturnValue({ complete: true, reason: '', expected: {} })
+  compareStatsAudit.mockReturnValue([])
+
+  await auditStats({
+    leagueId: 'league-1',
+    teamId: 'team-1',
+    seasonId: '2026_2027',
+    scopedPlayerIds: ['player-1'],
+  })
+
+  expect(readStatsAuditActual).toHaveBeenCalledWith(expect.objectContaining({
+    scopedPlayerIds: ['player-1'],
+  }))
+  expect(buildStatsAuditExpected).toHaveBeenCalledWith(expect.objectContaining({
+    scopedPlayerIds: ['player-1'],
+  }))
+})

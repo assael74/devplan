@@ -31,12 +31,28 @@ export const pageCoreLayoutSx = {
       xl: 'minmax(0, 1fr) 270px',
     },
     gap: 1.25,
+    transition: 'grid-template-columns 220ms ease, gap 220ms ease',
     alignItems: 'stretch',
     overflow: 'hidden',
 
     '& > *': {
       minWidth: 0,
       minHeight: 0,
+    },
+  },
+
+  contentGridCollapsed: {
+    gridTemplateColumns: {
+      xs: '1fr',
+      xl: 'minmax(0, 1fr) 0px',
+    },
+    gap: 0,
+    overflow: 'visible',
+
+    '& > :last-child': {
+      position: 'relative',
+      zIndex: 1000,
+      overflow: 'visible',
     },
   },
 

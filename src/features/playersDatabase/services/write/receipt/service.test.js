@@ -44,14 +44,6 @@ describe('target WriteAction contract', () => {
     ])
   })
 
-  test('exposes the atomic Club bootstrap stage', () => {
-    expect(getWriteActionStages({ actionType: 'clubsBootstrap' })).toEqual([
-      'clubProfilesAndDirectory',
-      'audit',
-    ])
-    expect(buildWriteActionTargetKey({ domain: 'clubs' })).toBe('clubs:bootstrap')
-  })
-
   test('separates League, Roster and Stats target keys', () => {
     expect(buildWriteActionTargetKey({
       leagueId: 'league-1',

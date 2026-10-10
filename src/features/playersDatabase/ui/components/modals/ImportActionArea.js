@@ -55,7 +55,10 @@ export default function ImportActionArea({ actions = [] }) {
             variant={action.variant || presentation.variant}
             disabled={action.disabled === true || action.busy === true}
             loading={loading}
-            startDecorator={!loading && action.iconId
+            startDecorator={!loading && action.iconId && action.iconPosition !== 'end'
+              ? iconUi({ id: action.iconId, size: 'sm' })
+              : null}
+            endDecorator={!loading && action.iconId && action.iconPosition === 'end'
               ? iconUi({ id: action.iconId, size: 'sm' })
               : null}
             onClick={action.onClick}

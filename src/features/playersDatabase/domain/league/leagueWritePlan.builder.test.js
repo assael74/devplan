@@ -264,8 +264,10 @@ describe('leagueWritePlan.builder', () => {
       teamsById: {},
     })
     expect(openedSeason.tableImportedAt).toBeNull()
+    expect(openedSeason.seasonUrl).toBe(input.season.seasonUrl)
     expect(plan.teamSeasonCompetitionSnapshots).toEqual([])
     expect(plan.leaguesCenterProjection.season.tableState).toBe('NOT_LOADED')
+    expect(plan.leaguesCenterProjection.season.seasonUrl).toBe(input.season.seasonUrl)
     expect(plan.leaguesCenterProjection.season.teamsById).toEqual({})
     expect(plan.clubsCenterProjection.clubWrites).toEqual([])
   })
@@ -327,6 +329,40 @@ describe('leagueWritePlan.builder', () => {
     expect(() => buildLeagueLoadWritePlan(input)).toThrow(
       'Missing ClubProfile for League club club-b'
     )
+  })
+
+  test('Load rejects a team that already belongs to another canonical League', () => {
+    const input = loadInput()
+    input.otherLeagueIdsByTeamId = {
+      'club-a_2010_1': ['league-other'],
+    }
+
+    expect(() => buildLeagueLoadWritePlan(input)).toThrow(
+      'Team club-a_2010_1 already belongs to another League in this season'
+    )
+  })
+
+  test('Load preserves a removed Team projection owned by another canonical League', () => {
+    const input = loadInput()
+    input.existingLeague = buildExistingLeague({
+      teamsById: {
+        'club-a_2010_1': row({ clubId: 'club-a', teamSlot: 1 }),
+      },
+    })
+    input.rows = [row({ clubId: 'club-a', teamSlot: 2 })]
+    input.existingTeamSeasons = [
+      buildTeamSeason({ teamId: 'club-a_2010_1', clubId: 'club-a' }),
+    ]
+    input.previousClubsCenterTeamLocations = []
+    input.otherLeagueIdsByTeamId = {
+      'club-a_2010_1': ['league-other'],
+    }
+
+    const plan = buildLeagueLoadWritePlan(input)
+    const club = plan.clubsCenterProjection.clubWrites.find(item => item.clubId === 'club-a')
+
+    expect(club.upsertTeamsById).toHaveProperty('club-a_2010_2')
+    expect(club.deleteTeamIds).not.toContain('club-a_2010_1')
   })
 
   test('Load repair rebuilds projections from the current canonical League only', () => {
@@ -406,6 +442,28 @@ describe('leagueWritePlan.builder', () => {
     expect(plan.clubsCenterProjection.clubWrites[0].deleteTeamIds).toEqual(['club-a_2010_1'])
   })
 
+  test('Clear preserves a Team projection owned by another canonical League', () => {
+    const existingLeague = buildExistingLeague({
+      teamsById: {
+        'club-a_2010_1': { clubId: 'club-a', teamSlot: 1 },
+      },
+    })
+
+    const plan = buildLeagueTeamsClearWritePlan({
+      leagueId,
+      seasonId,
+      existingLeague,
+      existingTeamSeasons: [],
+      previousClubsCenterTeamLocations: [],
+      otherLeagueIdsByTeamId: {
+        'club-a_2010_1': ['league-other'],
+      },
+      updatedAt,
+    })
+
+    expect(plan.clubsCenterProjection.clubWrites).toEqual([])
+  })
+
   test('Delete removes Center projections and resets existing Team Season snapshots', () => {
     const existingLeague = buildExistingLeague({
       teamsById: {
@@ -429,6 +487,28 @@ describe('leagueWritePlan.builder', () => {
     expect(plan.clubsCenterProjection.leagueOperation).toBe('DELETE')
     expect(plan.teamSeasonCompetitionSnapshots).toHaveLength(1)
     expect(plan.clubsCenterProjection.clubWrites[0].deleteTeamIds).toEqual(['club-a_2010_1'])
+  })
+
+  test('Delete preserves a Team projection owned by another canonical League', () => {
+    const existingLeague = buildExistingLeague({
+      teamsById: {
+        'club-a_2010_1': { clubId: 'club-a', teamSlot: 1 },
+      },
+    })
+
+    const plan = buildLeagueSeasonDeleteWritePlan({
+      leagueId,
+      seasonId,
+      existingLeague,
+      existingTeamSeasons: [],
+      previousClubsCenterTeamLocations: [],
+      otherLeagueIdsByTeamId: {
+        'club-a_2010_1': ['league-other'],
+      },
+      updatedAt,
+    })
+
+    expect(plan.clubsCenterProjection.clubWrites).toEqual([])
   })
 
   test('Delete retry after canonical removal remains a complete projection cleanup plan', () => {

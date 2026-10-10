@@ -42,6 +42,11 @@ test('Historical team season sends its own leagueId instead of route leagueId', 
         updateTeamSeasonUrl: async input => { calls.push(structuredClone(input)); return { completed: true } },
       })
     }
+    if (specifier.includes('/domain/identity/index.js')) {
+      return synthetic('identity', {
+        buildTeamSeasonDocumentId: ({ teamId, seasonId }) => `${teamId}__${seasonId}`,
+      })
+    }
     if (specifier === './saveEditor.js') {
       return synthetic('saveEditor', {
         saveEditor: async options => {

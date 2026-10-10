@@ -1,7 +1,5 @@
 // features/playersDatabase/ui/components/tables/dataTable/dataTable.export.js
 
-import * as XLSX from 'xlsx'
-
 const clean = value => {
   const safeValue = value === null || value === undefined
     ? ''
@@ -32,7 +30,7 @@ const buildExportRows = ({ rows = [], columns = [] } = {}) => {
   })
 }
 
-export default function exportDataTableRowsToXlsx({
+export default async function exportDataTableRowsToXlsx({
   rows = [],
   columns = [],
   fileName = 'table-export',
@@ -47,6 +45,7 @@ export default function exportDataTableRowsToXlsx({
     rows,
     columns: safeColumns,
   })
+  const XLSX = await import('xlsx')
   const worksheet = XLSX.utils.json_to_sheet(exportRows)
   const workbook = XLSX.utils.book_new()
 

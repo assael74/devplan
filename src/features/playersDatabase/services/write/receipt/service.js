@@ -4,6 +4,9 @@ import { serverTimestamp } from 'firebase/firestore'
 
 import {
   createWriteActionReference,
+  deleteOldClosedWriteActionReceipts,
+  listOldClosedWriteActionReceipts,
+  listProblemWriteActionReceipts,
   listRecentWriteActionReceipts,
   listWriteActionReceiptsByTargetKey,
   patchWriteActionReceipt,
@@ -80,10 +83,6 @@ const ACTION_STAGES = Object.freeze({
     'clubsCenter',
     'audit',
   ]),
-  clubsBootstrap: Object.freeze([
-    'clubProfilesAndDirectory',
-    'audit',
-  ]),
 })
 
 const ACTION_LABELS = Object.freeze({
@@ -95,7 +94,6 @@ const ACTION_LABELS = Object.freeze({
   rosterClear: 'מחיקת סגל',
   statsLoad: 'טעינת סטטיסטיקות',
   statsClear: 'מחיקת סטטיסטיקות',
-  clubsBootstrap: 'אתחול מועדונים',
 })
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
@@ -124,7 +122,6 @@ const requireActionType = value => {
 }
 
 const actionDomain = actionType => {
-  if (actionType === 'clubsBootstrap') return 'clubs'
   if (actionType.startsWith('league')) return 'league'
   if (actionType.startsWith('roster')) return 'roster'
   if (actionType.startsWith('stats')) return 'stats'
@@ -139,16 +136,6 @@ const requireTarget = ({ value, actionType }) => {
   const teamId = clean(target.teamId)
   const seasonId = clean(target.seasonId)
 
-  if (domain === 'clubs') {
-    return {
-      domain,
-      leagueId: '',
-      clubId: '',
-      teamId: '',
-      seasonId: '',
-      playerId: '',
-    }
-  }
   if (!leagueId || !seasonId) throw new Error('Missing WriteAction League target')
   if (domain !== 'league' && !teamId) throw new Error('Missing WriteAction Team target')
 
@@ -172,7 +159,6 @@ export const buildWriteActionTargetKey = ({
   const resolvedLeagueId = clean(leagueId)
   const resolvedTeamId = clean(teamId)
   const resolvedSeasonId = clean(seasonId)
-  if (resolvedDomain === 'clubs') return 'clubs:bootstrap'
   if (!resolvedLeagueId || !resolvedSeasonId) {
     throw new Error('Missing WriteAction target key identity')
   }
@@ -428,6 +414,22 @@ export const getWriteActionReceipt = ({ receiptId = '' } = {}) => readWriteActio
 
 export const listWriteActionReceipts = ({ maxResults = 20 } = {}) => (
   listRecentWriteActionReceipts({ maxResults })
+)
+
+export const listWriteActionReceiptHistory = ({ maxResults = 20, fromDate = null } = {}) => (
+  listRecentWriteActionReceipts({ maxResults, fromDate })
+)
+
+export const listProblemReceipts = ({ maxResults = 20 } = {}) => (
+  listProblemWriteActionReceipts({ maxResults })
+)
+
+export const listOldClosedReceipts = ({ beforeDate, maxResults = 50 } = {}) => (
+  listOldClosedWriteActionReceipts({ beforeDate, maxResults })
+)
+
+export const deleteOldClosedReceipts = ({ receiptIds, beforeDate } = {}) => (
+  deleteOldClosedWriteActionReceipts({ receiptIds, beforeDate })
 )
 
 export const getWriteActionStages = ({ actionType = '' } = {}) => [

@@ -4,7 +4,6 @@ const documentCache = new Map()
 const pendingRequests = new Map()
 const subscribersByKey = new Map()
 const aliases = new Map()
-let cacheRevision = 0
 
 const EMPTY_SNAPSHOT = Object.freeze({
   data: null,
@@ -218,7 +217,6 @@ export const updateDocumentCacheValue = ({ key, updater }) => {
 
 export const deleteDocumentCacheValue = key => {
   const canonicalKey = resolveCacheKey(key)
-  cacheRevision += 1
   documentCache.delete(canonicalKey)
   pendingRequests.delete(canonicalKey)
   notifySubscribers(canonicalKey)
@@ -228,7 +226,6 @@ export const deleteDocumentCacheValue = key => {
 export const invalidateDocumentCacheValueKeepingSnapshot = key => {
   const canonicalKey = resolveCacheKey(key)
   const current = documentCache.get(canonicalKey)
-  cacheRevision += 1
   pendingRequests.delete(canonicalKey)
 
   if (!current?.hasValue) {
@@ -264,7 +261,6 @@ export const invalidateDocumentCacheByPrefix = prefix => {
   const safePrefix = String(prefix === undefined || prefix === null ? '' : prefix).trim()
   if (!safePrefix) return
 
-  cacheRevision += 1
   const invalidatedKeys = new Set()
 
   Array.from(documentCache.keys()).forEach(key => {
@@ -285,7 +281,6 @@ export const invalidateDocumentCacheByPrefix = prefix => {
 }
 
 export const clearPlayersDatabaseDocumentCache = () => {
-  cacheRevision += 1
   const keys = new Set([
     ...documentCache.keys(),
     ...pendingRequests.keys(),

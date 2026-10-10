@@ -5,9 +5,13 @@ export {
   buildWriteActionTargetKey,
   completeWriteActionAudit,
   completeWriteActionStage,
+  deleteOldClosedReceipts,
   failWriteActionStage,
   getWriteActionReceipt,
   getWriteActionStages,
+  listOldClosedReceipts,
   listWriteActionReceipts,
+  listWriteActionReceiptHistory,
+  listProblemReceipts,
   openWriteActionReceipt,
 } from './service.js'

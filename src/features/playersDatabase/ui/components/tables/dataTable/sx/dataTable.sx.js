@@ -23,8 +23,22 @@ export const dataTableSx = {
 
   headerWrap: {
     minWidth: 0,
-    overflow: 'hidden',
+    overflowX: 'hidden',
+    overflowY: 'scroll',
     borderBottom: '1px solid #dbe5f4',
+    // Reserve the same scrollbar gutter as the scrollable body table.
+    // Without it, the split header has a few pixels more width and its
+    // column boundaries drift from the body in RTL layouts.
+    scrollbarWidth: 'thin',
+    scrollbarColor: 'transparent transparent',
+
+    '&::-webkit-scrollbar': {
+      width: 6,
+    },
+
+    '&::-webkit-scrollbar-track, &::-webkit-scrollbar-thumb': {
+      background: 'transparent',
+    },
   },
 
   bodyWrap: {

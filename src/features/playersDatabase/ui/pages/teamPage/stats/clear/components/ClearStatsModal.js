@@ -8,14 +8,14 @@ import {
   Typography,
 } from '@mui/joy'
 
-import RegularModal from '../../../../../components/modals/RegularModal.js'
-import ModalStepper from '../../../../../components/modals/ModalStepper.js'
+import SteppedModal from '../../../../../components/modals/SteppedModal.js'
 import {
   DELETE_MODAL_STEPS,
   DeleteModalIds,
-  DeleteModalPreserved,
   resolveDeleteModalStep,
 } from '../../../../../components/modals/DeleteModalPresentation.js'
+import SyncStageCards from '../../../../../components/sync/SyncStageCards.js'
+import SyncStatusHeader from '../../../../../components/sync/SyncStatusHeader.js'
 import { clearStatsModalSx as sx } from '../sx/clearStatsModal.sx.js'
 
 const ERROR_MESSAGES = {
@@ -168,22 +168,54 @@ export default function ClearStatsModal({
   const auditFailures = Array.isArray(error?.audit?.findings)
     ? error.audit.findings
     : []
+  const syncStages = Array.isArray(controller?.syncStages)
+    ? controller.syncStages
+    : []
+  const receiptId = controller?.executionReceipt?.id ||
+    result?.receiptId ||
+    error?.receiptId ||
+    ''
+  const syncStarted = status === 'executing' || Boolean(
+    controller?.executionReceipt || result?.receiptId || error?.receiptId
+  )
+  const footerContent = (
+    <Box sx={sx.actions}>
+      {status === 'ready' ? (
+        <Button color={noWork ? 'primary' : 'danger'} onClick={execute}>
+          {noWork ? 'בדיקת סנכרון וסיום' : 'אישור מחיקה'}
+        </Button>
+      ) : null}
+      {status === 'failed' ? <Button color='danger' onClick={retry}>נסה שוב</Button> : null}
+      <Button variant='plain' color='neutral' disabled={busy} onClick={close}>
+        {status === 'ready' && !noWork ? 'ביטול' : 'סגירה'}
+      </Button>
+    </Box>
+  )
 
   return (
-    <RegularModal
+    <SteppedModal
       open={open}
+      activeStep={resolveDeleteModalStep(status)}
+      steps={DELETE_MODAL_STEPS}
+      compactStepper
       title='מחיקת נתוני סטטיסטיקה'
+      description={`${teamName || 'קבוצה'} · עונה ${seasonKey || proposedPlan?.identity?.seasonKey || '—'}`}
       iconId='delete'
       appearance='destructive'
       busy={busy}
       persistent={busy}
-      hideFooter
-      contentSx={sx.content}
+      size='xl'
       onClose={close}
+      footerContent={footerContent}
     >
       <Box sx={sx.body}>
-        <Typography level='title-md'>{teamName || 'הקבוצה'} · עונה {seasonKey || proposedPlan?.identity?.seasonKey || '—'}</Typography>
-        <ModalStepper steps={DELETE_MODAL_STEPS} activeStep={resolveDeleteModalStep(status)} compact />
+        {syncStarted ? (
+          <Box sx={sx.syncPanel}>
+            <Typography level='title-md'>סדר עדכון המסמכים</Typography>
+            <SyncStageCards stages={syncStages} compact />
+          </Box>
+        ) : null}
+
         {status === 'loadingPreview' ? (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <CircularProgress size='sm' />
@@ -196,8 +228,6 @@ export default function ClearStatsModal({
             <Typography level='body-sm'>
               הפעולה תנקה את נתוני הסטטיסטיקה ואת נתוני הסקאוטינג שנגזרו מהם עבור הקבוצה והעונה שנבחרו.
             </Typography>
-            <DeleteModalPreserved>שחקנים, הסגל, תנועות שחקנים, מסמכי שחקנים, נתוני הטבלה הרשמיים וביצועי הקבוצה.</DeleteModalPreserved>
-
             {noWork ? (
               <Alert color='success' variant='soft'>
                 נתוני הסטטיסטיקה כבר נקיים. הפעולה תבנה מחדש את התוצרים הנגזרים ותבדוק את תקינותם.
@@ -216,29 +246,31 @@ export default function ClearStatsModal({
                 <SummaryItem label='עדכון מסמך הקבוצה והעונה' value={proposedPlan?.isIdempotent ? 'לא נדרש' : 'נדרש'} />
               </Box>
             )}
-
-            <Box sx={sx.actions}>
-              <Button color={noWork ? 'primary' : 'danger'} onClick={execute}>
-                {noWork ? 'בדיקת סנכרון וסיום' : 'אישור מחיקה'}
-              </Button>
-              <Button variant='plain' color='neutral' onClick={close}>
-                {noWork ? 'סגירה' : 'ביטול'}
-              </Button>
-            </Box>
           </>
         ) : null}
 
         {status === 'executing' ? (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={sx.executingNotice}>
             <CircularProgress size='sm' />
-            <Typography level='body-sm'>מנקה ומאמת את הנתונים...</Typography>
+            <Box>
+              <SyncStatusHeader
+                title='מחיקת הנתונים מתבצעת'
+                receiptId={receiptId}
+              />
+              <Typography level='body-xs'>אין לסגור את החלון עד לסיום הסנכרון והבדיקה.</Typography>
+            </Box>
           </Box>
         ) : null}
 
         {status === 'succeeded' ? (
           <>
             <Alert color='success' variant='soft'>
-              {noWork ? 'נתוני הסטטיסטיקה נקיים והביקורת הושלמה בהצלחה' : 'נתוני הסטטיסטיקה נמחקו בהצלחה'}
+              <SyncStatusHeader
+                title={noWork
+                  ? 'נתוני הסטטיסטיקה נקיים והביקורת הושלמה בהצלחה'
+                  : 'נתוני הסטטיסטיקה נמחקו בהצלחה'}
+                receiptId={receiptId}
+              />
             </Alert>
             {error ? (
               <Alert color='warning' variant='soft'>
@@ -255,11 +287,7 @@ export default function ClearStatsModal({
             <DeleteModalIds>
               {proposedPlan?.identity?.teamId ? <Typography level='body-xs'>מזהה קבוצה: {proposedPlan.identity.teamId}</Typography> : null}
               {proposedPlan?.identity?.seasonId ? <Typography level='body-xs'>מזהה עונה: {proposedPlan.identity.seasonId}</Typography> : null}
-              {result?.receiptId ? <Typography level='body-xs'>מזהה תיעוד פעולה: {result.receiptId}</Typography> : null}
             </DeleteModalIds>
-            <Box sx={sx.actions}>
-              <Button variant='plain' color='neutral' onClick={close}>סגירה</Button>
-            </Box>
           </>
         ) : null}
 
@@ -267,7 +295,10 @@ export default function ClearStatsModal({
           <>
             <Alert color='danger' variant='soft'>
               <Box>
-                <Typography level='title-sm'>מחיקת נתוני הסטטיסטיקה לא הושלמה</Typography>
+                <SyncStatusHeader
+                  title='מחיקת נתוני הסטטיסטיקה לא הושלמה'
+                  receiptId={receiptId}
+                />
                 <Typography level='body-sm'>
                   {ERROR_MESSAGES[error?.code] || 'אירעה שגיאה במהלך הפעולה. ניתן לנסות שוב.'}
                 </Typography>
@@ -301,7 +332,6 @@ export default function ClearStatsModal({
               </Alert>
             ) : null}
             <DeleteModalIds>
-              {error?.receiptId ? <Typography level='body-xs'>מזהה תיעוד פעולה: {error.receiptId}</Typography> : null}
               {error?.code ? <Typography level='body-xs'>קוד תקלה: {error.code}</Typography> : null}
               {error?.projectionWrite?.failedTarget?.documentId || error?.projectionWrite?.failedTarget?.docId ? (
                 <Typography level='body-xs'>
@@ -312,13 +342,9 @@ export default function ClearStatsModal({
             <Typography level='body-sm'>
               הנתונים לא ימשיכו להימחק אוטומטית. ניסיון נוסף יבנה תוכנית חדשה לפי המצב הנוכחי.
             </Typography>
-            <Box sx={sx.actions}>
-              <Button color='danger' onClick={retry}>נסה שוב</Button>
-              <Button variant='plain' color='neutral' onClick={close}>סגירה</Button>
-            </Box>
           </>
         ) : null}
       </Box>
-    </RegularModal>
+    </SteppedModal>
   )
 }

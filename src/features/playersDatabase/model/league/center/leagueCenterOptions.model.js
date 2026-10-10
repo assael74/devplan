@@ -10,6 +10,41 @@ import { getLeagueSeasons, LEAGUE_CENTER_ALL_SEASONS_KEY } from './leagueCenterR
 const clean = cleanValue
 const toNumber = toNumberOrZero
 
+const FILTER_FIELD_BY_KEY = {
+  birthYear: 'birthYear',
+  seasonKey: 'seasonKey',
+  ageGroupId: 'ageGroupId',
+  leagueLevel: 'level',
+  leagueStatus: 'seasonWorkStatus',
+}
+
+const matchesFilter = (row, value, field) => {
+  if (Array.isArray(value)) {
+    return value.length === 0 || value.includes(String(row[field] || ''))
+  }
+
+  return value === 'all' || String(row[field] || '') === value
+}
+
+const filterFacetRows = (rows, filters, excludedKey) => (
+  rows.filter(row => Object.entries(FILTER_FIELD_BY_KEY).every(([key, field]) => (
+    key === excludedKey || matchesFilter(row, filters[key], field)
+  )))
+)
+
+const buildFacetCounts = (rows, field) => {
+  const counts = { all: rows.length }
+
+  rows.forEach(row => {
+    const value = String(row[field] || '')
+    if (!value) return
+
+    counts[value] = (counts[value] || 0) + 1
+  })
+
+  return counts
+}
+
 export const buildLeagueCenterSeasonOptions = leagueDocs => {
   const keys = new Set([
     LEAGUE_CENTER_ALL_SEASONS_KEY,
@@ -33,6 +68,49 @@ export const buildLeagueCenterBirthYearOptions = rows => {
     .sort((a, b) => b - a)
 
   return Array.from(new Set(years))
+}
+
+export const buildLeagueCenterFilterCounts = ({
+  allRows,
+  rowsForSelectedSeason,
+  birthYears = [],
+  seasonKeys = [],
+  ageGroupId,
+  leagueLevel,
+  leagueStatuses = [],
+}) => {
+  const filters = {
+    birthYear: birthYears,
+    seasonKey: seasonKeys,
+    ageGroupId,
+    leagueLevel,
+    leagueStatus: leagueStatuses,
+  }
+  const rows = Array.isArray(rowsForSelectedSeason) ? rowsForSelectedSeason : []
+  const allSeasonRows = Array.isArray(allRows) ? allRows : []
+
+  return {
+    birthYear: buildFacetCounts(
+      filterFacetRows(rows, filters, 'birthYear'),
+      FILTER_FIELD_BY_KEY.birthYear
+    ),
+    seasonKey: buildFacetCounts(
+      filterFacetRows(allSeasonRows, filters, 'seasonKey'),
+      FILTER_FIELD_BY_KEY.seasonKey
+    ),
+    ageGroupId: buildFacetCounts(
+      filterFacetRows(rows, filters, 'ageGroupId'),
+      FILTER_FIELD_BY_KEY.ageGroupId
+    ),
+    leagueLevel: buildFacetCounts(
+      filterFacetRows(rows, filters, 'leagueLevel'),
+      FILTER_FIELD_BY_KEY.leagueLevel
+    ),
+    leagueStatus: buildFacetCounts(
+      filterFacetRows(rows, filters, 'leagueStatus'),
+      FILTER_FIELD_BY_KEY.leagueStatus
+    ),
+  }
 }
 
 export const buildLeagueCenterAgeGroupOptions = rows => {
@@ -96,10 +174,7 @@ export const buildLeagueCenterOpenOptions = leagueDocs => {
       ageGroupLabel: clean(league.ageGroupLabel),
       name: clean(league.name),
       region: clean(league.region),
-      label: [
-        clean(league.name),
-        clean(league.region),
-      ].filter(Boolean).join(' · '),
+      label: clean(league.name),
       level: toNumber(league.level) || '',
       existingSeasonIds: Object.keys(
         projectionsByLeagueId.get(clean(league.id))?.seasonsById || {}

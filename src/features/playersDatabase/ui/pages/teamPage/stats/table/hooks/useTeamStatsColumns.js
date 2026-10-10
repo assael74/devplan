@@ -27,7 +27,6 @@ import { teamStatsColumnsSx as sx } from '../sx/useTeamStatsColumns.sx.js'
 import {
   IdentityResolutionPopover,
   NameMatchPopover,
-  ROSTER_STATUS_SHORT_LABELS,
   StatsRosterStatusControl,
   TableHeaderIcon,
   getIdentityColor,
@@ -40,8 +39,6 @@ import {
   getMinutesPctMark,
   toFiniteNumber,
 } from '../logic/teamStatsScoutMarks.logic.js'
-import { clean } from '../../../logic/teamPage.utils.js'
-
 export default function useTeamStatsColumns({
   players,
   rosterLookup,

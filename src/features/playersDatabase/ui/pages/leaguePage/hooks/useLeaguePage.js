@@ -22,6 +22,7 @@ import { normalizeSeasonLookupKey } from '../../../../model/shared/season.model.
 import { subscribeLeaguePageData } from '../../../../services/read/index.js'
 import { buildLeagueDocumentCacheKey } from '../../../../services/cache/index.js'
 import usePlayersDatabaseReadStoreEntry from '../../../hooks/usePlayersDatabaseReadStoreEntry.js'
+import { PLAYERS_DATABASE_QUERY_KEYS as queryKeys } from '../../../logic/routeBuilders.js'
 
 function isSameSeasonKey(left, right) {
   const leftKey = normalizeSeasonLookupKey(left)
@@ -33,9 +34,9 @@ export function useLeaguePage() {
   const location = useLocation()
   const { leagueId = '' } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
-  const querySeasonKey = normalizeSeasonLookupKey(searchParams.get('season'))
-  const centerSeasonKey = normalizeSeasonLookupKey(searchParams.get('centerSeason'))
-  const requestedBirthYear = Number(searchParams.get('birthYear')) || 0
+  const querySeasonKey = normalizeSeasonLookupKey(searchParams.get(queryKeys.season) || searchParams.get('season'))
+  const centerSeasonKey = normalizeSeasonLookupKey(searchParams.get(queryKeys.centerSeason) || searchParams.get('centerSeason'))
+  const requestedBirthYear = Number(searchParams.get(queryKeys.birthYear) || searchParams.get('birthYear')) || 0
   const requestedSeasonKey = querySeasonKey || (
     centerSeasonKey && centerSeasonKey !== 'all' ? centerSeasonKey : ''
   )
@@ -94,7 +95,8 @@ export function useLeaguePage() {
     if (!resolvedSeasonKey || isSameSeasonKey(querySeasonKey, resolvedSeasonKey)) return
 
     const nextSearchParams = new URLSearchParams(searchParams)
-    nextSearchParams.set('season', resolvedSeasonKey)
+    nextSearchParams.delete('season')
+    nextSearchParams.set(queryKeys.season, resolvedSeasonKey)
 
     setSearchParams(nextSearchParams, {
       replace: true,
@@ -118,7 +120,8 @@ export function useLeaguePage() {
     if (!nextSeasonKey) return
 
     const nextSearchParams = new URLSearchParams(searchParams)
-    nextSearchParams.set('season', nextSeasonKey)
+    nextSearchParams.delete('season')
+    nextSearchParams.set(queryKeys.season, nextSeasonKey)
 
     setSearchParams(nextSearchParams, {
       replace: true,

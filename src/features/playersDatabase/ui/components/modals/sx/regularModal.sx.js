@@ -19,6 +19,18 @@ export const regularModalSx = {
     borderColor: 'danger.200',
   },
 
+  destructiveFooter: {
+    bgcolor: '#FFF8F8',
+    borderTopColor: 'danger.200',
+  },
+
+  destructiveContent: {
+    height: {
+      xs: 'min(380px, calc(100dvh - 210px))',
+      md: 'min(460px, calc(100dvh - 250px))',
+    },
+  },
+
   content: {
     minWidth: 0,
   },

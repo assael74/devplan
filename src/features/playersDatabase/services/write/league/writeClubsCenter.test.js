@@ -84,6 +84,7 @@ const buildLeague = () => ({
   displayName: 'League One',
   ageGroupLabel: 'U16',
   leagueLevel: 2,
+  seasonStatus: 'active',
   tableImportedAt: '2026-10-02T10:00:00.000Z',
 })
 
@@ -95,7 +96,6 @@ const buildApprovedState = overrides => ({
   clubsCenterProjection: {
     seasonId: '2025_2026',
     seasonKey: '25/26',
-    seasonStatus: 'active',
     leagueId: 'league-1',
     leagueOperation: 'UPSERT',
     league: buildLeague(),
@@ -208,7 +208,19 @@ describe('writeClubsCenter', () => {
     expect(data.seasonId).toBe('2025_2026')
     expect(options.mergeFields).toContain('seasonId')
     expect(options.mergeFields).toContain('seasonKey')
-    expect(options.mergeFields).toContain('seasonStatus')
+    expect(options.mergeFields).not.toContain('seasonStatus')
+    expect(data).not.toHaveProperty('seasonStatus')
+  })
+
+  test('moves a legacy top-level season status into the League projection', async () => {
+    const approvedState = buildApprovedState({ seasonStatus: 'active' })
+    delete approvedState.clubsCenterProjection.league.seasonStatus
+
+    await writeClubsCenter({ approvedState })
+
+    const [, data] = setDoc.mock.calls[0]
+    expect(data.leaguesById['league-1'].seasonStatus).toBe('active')
+    expect(data).not.toHaveProperty('seasonStatus')
   })
 
   test('does not access Firestore when no ClubsCenter write is required', async () => {

@@ -6,6 +6,7 @@ import { getWriteActionReceipt } from '../../../../../../services/write/receipt/
 import { repairWriteActionReceipt } from '../../../../../../services/write/recovery/index.js'
 import { resolveCanonicalTeamPlayerIdentityPreview } from '../../../../../../services/read/identity/canonicalPlayerIdentityPreview.read.js'
 import {
+  buildMovementTeamOptions,
   listExistingTeamRootOptions,
   readTeamSeasonRosterHistory,
 } from '../../../../../../services/read/index.js'
@@ -47,6 +48,7 @@ export default function useTeamRosterImport({
   seasonOptions = [],
   selectedSeasonOption: pageSelectedSeasonOption = null,
   teamSeasons = [],
+  clubsDirectory = null,
   notify,
 }) {
   const [open, setOpen] = React.useState(false)
@@ -218,9 +220,15 @@ export default function useTeamRosterImport({
         .filter(player => clean(player?.rosterStatus || 'regular') === 'regular')
         .filter(previousPlayer => !matchedPreviousPlayers.some(player => playerMatches(previousPlayer, player)))
         .map(player => ({ ...player, statsMovementTeam: null })))
-      setTeamRootOptions(await listExistingTeamRootOptions({
+      const existingTeamOptions = await listExistingTeamRootOptions({
         seasonId: season.seasonId,
         ageGroupId: season.ageGroupId,
+        birthYear: season.birthYear,
+        excludedBirthTeamDocumentId: resolveTeamLookupKey(team),
+      })
+      setTeamRootOptions(buildMovementTeamOptions({
+        clubsDirectory,
+        existingOptions: existingTeamOptions,
         birthYear: season.birthYear,
         excludedBirthTeamDocumentId: resolveTeamLookupKey(team),
       }))
@@ -243,6 +251,7 @@ export default function useTeamRosterImport({
     buildSeason,
     pasteValue,
     selectedSeasonOption,
+    clubsDirectory,
     team,
   ])
 

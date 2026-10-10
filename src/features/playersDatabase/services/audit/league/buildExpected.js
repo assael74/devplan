@@ -165,11 +165,11 @@ const buildClubsCenterExpected = ({
   return {
     seasonId,
     seasonKey: clean(season.seasonKey),
-    seasonStatus: clean(season.seasonStatus),
     league: {
       displayName: resolveLeagueName(league.names),
       ageGroupLabel: clean(league.ageGroupLabel),
       leagueLevel: toNullableNumber(league.level),
+      seasonStatus: clean(season.seasonStatus),
       tableImportedAt: season.tableImportedAt || null,
     },
     clubsById,

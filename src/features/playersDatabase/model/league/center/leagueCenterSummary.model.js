@@ -5,6 +5,11 @@ const toNumber = toNumberOrZero
 
 export const buildLeagueCenterSummary = rows => ({
   totalLeagues: rows.length,
+  activeLeagues: rows.filter(row => row.seasonWorkStatus === 'active').length,
+  notStartedLeagues: rows.filter(row => row.seasonWorkStatus === 'not_started').length,
+  leaguesWithoutTeams: rows.filter(row => row.seasonWorkStatus === 'no_teams').length,
+  leaguesRequiringReview: rows.filter(row => row.requiresReview).length,
+  leaguesWithProfessionalPriority: rows.filter(row => row.hasProfessionalPriority).length,
   openedLeagues: rows.filter(row => row.hasLeagueDoc).length,
   unopenedCatalogLeagues: rows.filter(row => (
     row.catalogLeagueId && !row.hasLeagueDoc

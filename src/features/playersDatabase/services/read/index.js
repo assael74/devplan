@@ -11,10 +11,14 @@ export {
 export {
   getTeamById,
 } from './entities/team.js'
-export { listExistingTeamRootOptions } from './entities/teamRoots.read.js'
+export {
+  buildMovementTeamOptions,
+  listExistingTeamRootOptions,
+} from './entities/teamRoots.read.js'
 
 export {
   getTeamSeason,
+  getTeamSeasonByDocumentId,
   listTeamSeasons,
 } from './entities/teamSeason.js'
 
@@ -31,6 +35,7 @@ export {
   subscribeLeaguePageData,
 } from './pages/leaguePage.read.js'
 export {
+  LEAGUES_CENTER_STORE_KEY,
   readLeagueCenterData,
   subscribeLeagueCenterData,
 } from './pages/leagueCenter.read.js'

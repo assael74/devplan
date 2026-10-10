@@ -1,6 +1,7 @@
 // src/features/playersDatabase/services/write/league/edits/updateTeamSeasonUrl.js
 
 import { clean, requireValue, urlValue } from '../../../../domain/edits/editIdentity.js'
+import { buildTeamSeasonDocumentId } from '../../../../domain/identity/index.js'
 import {
   executeManualEdit,
   manualEditRef,
@@ -19,6 +20,10 @@ export const updateTeamSeasonUrl = async ({
   const team = requireValue(clean(teamId), 'מזהה קבוצה חסר')
   const season = requireValue(clean(seasonId), 'מזהה עונה טכני חסר')
   const teamSeasonId = requireValue(clean(teamSeasonDocumentId), 'מזהה עונת קבוצה חסר')
+  requireValue(
+    teamSeasonId === buildTeamSeasonDocumentId({ teamId: team, seasonId: season }),
+    'מזהה עונת הקבוצה סותר את הקבוצה והעונה',
+  )
   const url = urlValue(teamUrl)
   const leagueRef = manualEditRef('leagues', league)
   const teamSeasonRef = manualEditRef('teamSeasons', teamSeasonId)
@@ -54,7 +59,8 @@ export const updateTeamSeasonUrl = async ({
         requireValue(
           clean(teamSeason.identity?.teamSeasonDocumentId) === teamSeasonId &&
             clean(teamSeason.identity?.teamId) === team &&
-            clean(teamSeason.identity?.seasonId) === season,
+            clean(teamSeason.identity?.seasonId) === season &&
+            clean(teamSeason.identity?.leagueId) === league,
           'זהות עונת הקבוצה סותרת',
         )
         if (clean(teamSeason.competitionSnapshot?.teamUrl) !== url) {
@@ -72,6 +78,7 @@ export const updateTeamSeasonUrl = async ({
       }
       indexRefs.forEach(indexRef => {
         const index = requireManualEditDocument(get(indexRef))
+        if (clean(index.leagueId) !== league) return
         requireValue(
           clean(index.seasonId) === season && clean(index.team?.teamId) === team,
           'זהות תוצר החיפוש סותרת',

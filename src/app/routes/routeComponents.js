@@ -60,6 +60,26 @@ const loadPlayersDatabaseDataOpsPage = () =>
     default: module.DataOpsPage,
   }))
 
+const loadPlayersDatabaseDataOpsLayout = () =>
+  import('../../features/playersDatabase/index.js').then(module => ({
+    default: module.DataOpsLayout,
+  }))
+
+const loadPlayersDatabaseDataOpsAuditPage = () =>
+  import('../../features/playersDatabase/index.js').then(module => ({
+    default: module.DataOpsAuditPage,
+  }))
+
+const loadPlayersDatabaseDataOpsReceiptsPage = () =>
+  import('../../features/playersDatabase/index.js').then(module => ({
+    default: module.DataOpsReceiptsPage,
+  }))
+
+const loadPlayersDatabaseDataOpsSystemAuditPage = () =>
+  import('../../features/playersDatabase/index.js').then(module => ({
+    default: module.DataOpsSystemAuditPage,
+  }))
+
 const loadPlayersDatabaseClubsPage = () =>
   import('../../features/playersDatabase/index.js').then(module => ({
     default: module.ClubsPage,
@@ -98,7 +118,11 @@ export const PlayersDatabaseLeaguePage = React.lazy(loadPlayersDatabaseLeaguePag
 export const PlayersDatabaseTeamPage = React.lazy(loadPlayersDatabaseTeamPage)
 export const PlayersDatabasePlayerPage = React.lazy(loadPlayersDatabasePlayerPage)
 export const PlayersDatabaseSearchPage = React.lazy(loadPlayersDatabaseSearchPage)
+export const PlayersDatabaseDataOpsLayout = React.lazy(loadPlayersDatabaseDataOpsLayout)
 export const PlayersDatabaseDataOpsPage = React.lazy(loadPlayersDatabaseDataOpsPage)
+export const PlayersDatabaseDataOpsAuditPage = React.lazy(loadPlayersDatabaseDataOpsAuditPage)
+export const PlayersDatabaseDataOpsReceiptsPage = React.lazy(loadPlayersDatabaseDataOpsReceiptsPage)
+export const PlayersDatabaseDataOpsSystemAuditPage = React.lazy(loadPlayersDatabaseDataOpsSystemAuditPage)
 export const PlayersDatabaseClubsPage = React.lazy(loadPlayersDatabaseClubsPage)
 export const PlayersDatabaseClubPage = React.lazy(loadPlayersDatabaseClubPage)
 export const PlayersDatabaseProfilesPage = React.lazy(loadPlayersDatabaseProfilesPage)

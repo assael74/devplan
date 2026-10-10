@@ -19,6 +19,7 @@ export const buildRosterAuditExpected = ({ approvedState = null } = {}) => {
     expected: {
       canonical: object(state.canonical),
       counterparts: list(state.counterparts),
+      counterpartClubsCenterProjections: list(state.counterpartClubsCenterProjections),
       playerSeasons: list(state.playerSeasons),
       playerSearchIndexes: object(state.playerSearchIndexes),
       leagueProjection: object(state.leagueProjection),

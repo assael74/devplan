@@ -27,6 +27,9 @@ const buildRosterAction = ({ hasSeason }) => ({
 })
 
 export default function TeamActionsPanel({
+  collapsible = false,
+  collapsed = false,
+  onCollapsedChange,
   selectedSeasonOptionKey,
   seasonOptions,
   hasTeamPlayers,
@@ -59,7 +62,11 @@ export default function TeamActionsPanel({
   })).filter(item => item.action)
 
   return (
-    <PageSidePanel>
+    <PageSidePanel
+      collapsible={collapsible}
+      collapsed={collapsed}
+      onCollapsedChange={onCollapsedChange}
+    >
       <Box sx={sx.actionsSection}>
         <Typography level='body-xs' sx={sx.sectionLabel}>
           {selectedSeason?.seasonKey ? `פעולות לעונת ${selectedSeason.seasonKey}` : 'פעולות עונה'}

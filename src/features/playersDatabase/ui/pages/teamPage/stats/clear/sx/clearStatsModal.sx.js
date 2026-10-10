@@ -1,14 +1,23 @@
 // src/features/playersDatabase/ui/pages/teamPage/stats/clear/sx/clearStatsModal.sx.js
 
 export const clearStatsModalSx = {
-  content: {
-    width: 'min(620px, calc(100vw - 32px))',
-    direction: 'rtl',
-  },
-
   body: {
     display: 'grid',
     gap: 2,
+  },
+
+  syncPanel: {
+    display: 'grid',
+    gap: 1.25,
+  },
+
+  executingNotice: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+    p: 1.25,
+    borderRadius: 'md',
+    bgcolor: 'primary.softBg',
   },
 
   summaryGrid: {
@@ -73,9 +82,11 @@ export const clearStatsModalSx = {
   },
 
   actions: {
+    width: '100%',
     display: 'flex',
+    alignItems: 'center',
     justifyContent: 'flex-start',
+    flexWrap: 'wrap',
     gap: 1,
-    mt: 1,
   },
 }

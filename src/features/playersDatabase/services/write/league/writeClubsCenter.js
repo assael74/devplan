@@ -33,6 +33,7 @@ const LEAGUE_FIELDS = Object.freeze([
   'displayName',
   'ageGroupLabel',
   'leagueLevel',
+  'seasonStatus',
   'tableImportedAt',
 ])
 
@@ -365,10 +366,9 @@ const requireWriteTarget = ({ approvedState = {} } = {}) => {
   }
 
   const seasonKey = clean(source.seasonKey)
-  const seasonStatus = clean(source.seasonStatus)
   if (
     leagueOperation !== LEAGUE_OPERATIONS.DELETE
-    && (!seasonKey || !seasonStatus)
+    && !seasonKey
   ) {
     throw new Error('Invalid ClubsCenter season projection')
   }
@@ -376,8 +376,18 @@ const requireWriteTarget = ({ approvedState = {} } = {}) => {
     throw new Error('Missing ClubsCenter projection updatedAt')
   }
 
+  const sourceLeague = source.league && typeof source.league === 'object'
+    ? source.league
+    : {}
   const league = leagueOperation === LEAGUE_OPERATIONS.UPSERT
-    ? requireLeagueProjection(source.league)
+    ? requireLeagueProjection(
+        Object.prototype.hasOwnProperty.call(sourceLeague, 'seasonStatus')
+          ? sourceLeague
+          : {
+              ...sourceLeague,
+              seasonStatus: clean(source.seasonStatus),
+            }
+      )
     : null
 
   const sourceClubWrites = source.clubWrites === null || source.clubWrites === undefined
@@ -399,7 +409,6 @@ const requireWriteTarget = ({ approvedState = {} } = {}) => {
     writeRequired: true,
     seasonId,
     seasonKey,
-    seasonStatus,
     leagueId,
     leagueOperation,
     league,
@@ -429,8 +438,7 @@ const buildWrite = target => {
 
   if (target.leagueOperation !== LEAGUE_OPERATIONS.DELETE) {
     data.seasonKey = target.seasonKey
-    data.seasonStatus = target.seasonStatus
-    mergeFields.push('seasonKey', 'seasonStatus')
+    mergeFields.push('seasonKey')
   }
 
   if (target.leagueOperation === LEAGUE_OPERATIONS.UPSERT) {

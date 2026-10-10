@@ -9,6 +9,7 @@ export const auditStats = async ({
   teamId = '',
   seasonId = '',
   approvedState = null,
+  scopedPlayerIds = [],
 } = {}) => {
   const counterpartDocumentIds = Array.isArray(approvedState?.counterpartPatches)
     ? approvedState.counterpartPatches.map(patch => patch.documentId).filter(Boolean)
@@ -30,8 +31,14 @@ export const auditStats = async ({
     seasonId,
     counterpartDocumentIds,
     playerIds: expectedPlayerIds,
+    scopedPlayerIds,
   })
-  const expectedState = buildStatsAuditExpected({ actual, approvedState, seasonId })
+  const expectedState = buildStatsAuditExpected({
+    actual,
+    approvedState,
+    seasonId,
+    scopedPlayerIds,
+  })
   const findings = compareStatsAudit({ actual, expectedState, approvedState, seasonId })
   const complete = expectedState.complete === true
 

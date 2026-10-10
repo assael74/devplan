@@ -8,6 +8,14 @@ import {
   buildTeamSeasonDocumentId,
   requireSeasonId,
 } from '../../../domain/identity/index.js'
+import { buildClubDirectoryProjection } from '../../../domain/projections/club/clubDirectory.projection.js'
+import { buildClubsCenterTeamProjection } from '../../../domain/league/clubsCenterTeam.builder.js'
+import {
+  buildClubProfileProjection,
+  buildClubsCenterLeague,
+  buildLeaguesCenterIdentity,
+  buildLeaguesCenterSeason,
+} from '../../../domain/league/leagueWritePlan.builder.js'
 import {
   buildSystemAuditFinding,
   SYSTEM_AUDIT_TARGET,
@@ -17,6 +25,55 @@ const clean = value => String(value === null || value === undefined ? '' : value
 const object = value => (value && typeof value === 'object' && !Array.isArray(value) ? value : {})
 const rows = value => (Array.isArray(value) ? value : [])
 const mapRows = value => new Map(rows(value).map(row => [clean(row && row.id), row]))
+const equal = (left, right) => {
+  if (Object.is(left, right)) return true
+  if (left === null || right === null) return false
+  if (typeof left !== 'object' || typeof right !== 'object') return false
+
+  const leftIsArray = Array.isArray(left)
+  const rightIsArray = Array.isArray(right)
+  if (leftIsArray !== rightIsArray) return false
+
+  if (leftIsArray) {
+    return left.length === right.length && left.every((value, index) => (
+      equal(value, right[index])
+    ))
+  }
+
+  if (left instanceof Date || right instanceof Date) {
+    return left instanceof Date &&
+      right instanceof Date &&
+      left.getTime() === right.getTime()
+  }
+
+  const leftKeys = Object.keys(left)
+  const rightKeys = Object.keys(right)
+  if (leftKeys.length !== rightKeys.length) return false
+
+  return leftKeys.every(key => (
+    Object.prototype.hasOwnProperty.call(right, key) && equal(left[key], right[key])
+  ))
+}
+
+const projectionFinding = ({
+  target,
+  documentId,
+  relatedDocumentId = '',
+  title,
+  expected,
+  actual,
+  owner,
+}) => relationFinding({
+  type: 'projection_mismatch',
+  target,
+  documentId,
+  relatedDocumentId,
+  title,
+  reason: 'התוצר אינו תואם למקורות הקנוניים שמהם הוא נבנה.',
+  expected,
+  actual,
+  owner,
+})
 
 const identityFinding = ({ target, documentId, title, expected, actual, owner }) => (
   buildSystemAuditFinding({
@@ -73,7 +130,7 @@ const safeBuild = callback => {
   }
 }
 
-const teamSeasonPlayerIds = teamSeason => {
+export const getTeamSeasonPlayerIds = teamSeason => {
   const playerIds = new Set()
   ;['roster', 'stats', 'scouting', 'manual'].forEach(section => {
     Object.keys(object(teamSeason && teamSeason[section] && teamSeason[section].playersById))
@@ -174,7 +231,7 @@ const appendTeamRootFindings = ({
         clubId,
         title: 'Team Root מפנה ל־ClubProfile חסר',
         reason: 'כל Team Root חייב להפנות ל־ClubProfile קנוני קיים.',
-        owner: 'clubsBootstrap',
+        owner: 'clubProfiles',
       }))
     }
 
@@ -286,7 +343,7 @@ const appendTeamSeasonFindings = ({
         seasonId,
         title: 'Team Season מפנה ל־ClubProfile חסר',
         reason: 'clubId של עונת הקבוצה חייב להפנות למועדון קנוני קיים.',
-        owner: 'clubsBootstrap',
+        owner: 'clubProfiles',
       }))
     }
 
@@ -298,7 +355,7 @@ const appendTeamSeasonFindings = ({
       findings,
     })
 
-    const playerIds = teamSeasonPlayerIds(data)
+    const playerIds = getTeamSeasonPlayerIds(data)
     const statsPlayerIds = statsOwnedPlayerIds(data)
     playerIds.forEach(playerId => {
       const playerSeasonDocumentId = safeBuild(() => buildPlayerSeasonDocumentId({ playerId, seasonId }))
@@ -416,7 +473,14 @@ const appendPlayerSeasonFindings = ({ playerSeasons, teamSeasonsById, findings }
     Object.entries(object(data.teamsById)).forEach(([teamId, team]) => {
       const expectedTeamSeasonId = safeBuild(() => buildTeamSeasonDocumentId({ teamId, seasonId }))
       const actualTeamSeasonId = clean(team && team.teamSeasonDocumentId)
-      if (!expectedTeamSeasonId || actualTeamSeasonId !== expectedTeamSeasonId || !teamSeasonsById.has(actualTeamSeasonId)) {
+      const canonicalTeamSeason = expectedTeamSeasonId
+        ? teamSeasonsById.get(expectedTeamSeasonId)
+        : null
+      const playerExistsInTeamSeason = Boolean(
+        canonicalTeamSeason
+        && getTeamSeasonPlayerIds(canonicalTeamSeason.data).has(playerId)
+      )
+      if (!canonicalTeamSeason || !playerExistsInTeamSeason) {
         findings.push(relationFinding({
           type: 'orphan_projection',
           target: SYSTEM_AUDIT_TARGET.PLAYER_SEASONS,
@@ -425,8 +489,26 @@ const appendPlayerSeasonFindings = ({ playerSeasons, teamSeasonsById, findings }
           playerId,
           teamId,
           seasonId,
-          title: 'Player Season מפנה ל־Team Season חסר או שגוי',
-          reason: 'כל teamsById חייב להפנות לעונת הקבוצה הקנונית של אותה עונה.',
+          title: canonicalTeamSeason
+            ? 'קשר קבוצה יתום ב־Player Season'
+            : 'Player Season מפנה ל־Team Season חסר',
+          reason: canonicalTeamSeason
+            ? 'השחקן אינו קיים בנתוני ה־Team Season ולכן הקשר אינו בבעלות מקור קנוני.'
+            : 'כל teamsById חייב להפנות לעונת קבוצה קנונית קיימת.',
+          expected: expectedTeamSeasonId,
+          actual: actualTeamSeasonId,
+          owner: 'roster/stats',
+        }))
+      } else if (actualTeamSeasonId !== expectedTeamSeasonId) {
+        findings.push(relationFinding({
+          target: SYSTEM_AUDIT_TARGET.PLAYER_SEASONS,
+          documentId: id,
+          relatedDocumentId: actualTeamSeasonId,
+          playerId,
+          teamId,
+          seasonId,
+          title: 'Player Season מפנה ל־Team Season שגוי',
+          reason: 'הקבוצה קיימת בעונה, אך ההפניה אינה מצביעה למסמך הקנוני שלה.',
           expected: expectedTeamSeasonId,
           actual: actualTeamSeasonId,
           owner: 'roster/stats',
@@ -518,6 +600,659 @@ const appendSearchIndexFindings = ({
   })
 }
 
+const appendCanonicalIdentityFindings = ({ leagues, clubProfiles, findings }) => {
+  rows(leagues).forEach(({ id, data = {} }) => {
+    if (clean(data.leagueId) === clean(id)) return
+    findings.push(identityFinding({
+      target: SYSTEM_AUDIT_TARGET.LEAGUES,
+      documentId: id,
+      title: 'זהות League אינה תואמת למזהה המסמך',
+      expected: clean(id),
+      actual: clean(data.leagueId),
+      owner: 'league',
+    }))
+  })
+
+  rows(clubProfiles).forEach(({ id, data = {} }) => {
+    if (clean(data.clubId) === clean(id)) return
+    findings.push(identityFinding({
+      target: SYSTEM_AUDIT_TARGET.CLUB_PROFILES,
+      documentId: id,
+      title: 'זהות ClubProfile אינה תואמת למזהה המסמך',
+      expected: clean(id),
+      actual: clean(data.clubId),
+      owner: 'clubProfiles',
+    }))
+  })
+}
+
+const leagueCenterSeasonFields = value => {
+  const source = object(value)
+  return {
+    seasonKey: clean(source.seasonKey),
+    seasonStatus: clean(source.seasonStatus),
+    birthYear: source.birthYear === undefined ? null : source.birthYear,
+    seasonUrl: clean(source.seasonUrl),
+    hasCompetitionRules: Boolean(source.hasCompetitionRules),
+    tableState: clean(source.tableState),
+    tableImportedAt: source.tableImportedAt || null,
+  }
+}
+
+const centerTeamStateFields = value => {
+  const source = object(value)
+  const signals = object(source.teamTaskSignals)
+  return {
+    clubId: clean(source.clubId),
+    teamSlot: source.teamSlot === undefined ? null : source.teamSlot,
+    documentationState: clean(source.documentationState),
+    teamTaskSignals: {
+      offense: Boolean(signals.offense),
+      defense: Boolean(signals.defense),
+    },
+  }
+}
+
+const teamSeasonsFor = ({ teamSeasons, leagueId, seasonId }) => {
+  const result = new Map()
+  rows(teamSeasons).forEach(({ data = {} }) => {
+    const identity = object(data.identity)
+    if (clean(identity.leagueId) !== leagueId || clean(identity.seasonId) !== seasonId) return
+    const teamId = clean(identity.teamId)
+    if (teamId) result.set(teamId, data)
+  })
+  return result
+}
+
+const appendLeaguesCenterFindings = ({
+  leagues,
+  teamSeasons,
+  leaguesCenter,
+  findings,
+}) => {
+  const centerRowsById = mapRows(leaguesCenter)
+  const centerRow = centerRowsById.get('all')
+
+  rows(leaguesCenter).forEach(({ id }) => {
+    if (clean(id) === 'all') return
+    findings.push(relationFinding({
+      type: 'unexpected_projection',
+      target: SYSTEM_AUDIT_TARGET.LEAGUES_CENTER,
+      documentId: id,
+      title: 'מסמך לא צפוי במרכז הליגות',
+      reason: 'מרכז הליגות נשמר במסמך יחיד שמזההו all.',
+      owner: 'league',
+    }))
+  })
+
+  if (!centerRow) {
+    findings.push(relationFinding({
+      type: 'missing_projection',
+      target: SYSTEM_AUDIT_TARGET.LEAGUES_CENTER,
+      documentId: 'all',
+      title: 'חסר מסמך מרכז הליגות',
+      reason: 'המסמך all חייב להיבנות ממסמכי הליגה ועונות הקבוצה.',
+      owner: 'league',
+    }))
+    return
+  }
+
+  const projectedLeagues = object(centerRow.data && centerRow.data.leaguesById)
+  const canonicalLeagueIds = new Set(rows(leagues).map(row => clean(row.id)).filter(Boolean))
+
+  rows(leagues).forEach(({ id, data = {} }) => {
+    const leagueId = clean(id)
+    const projectedLeague = object(projectedLeagues[leagueId])
+    if (!projectedLeagues[leagueId]) {
+      findings.push(relationFinding({
+        type: 'missing_projection',
+        target: SYSTEM_AUDIT_TARGET.LEAGUES_CENTER,
+        documentId: 'all',
+        relatedDocumentId: leagueId,
+        leagueId,
+        title: 'ליגה חסרה במרכז הליגות',
+        reason: 'כל מסמך League קנוני חייב להופיע במרכז הליגות.',
+        owner: 'league',
+      }))
+      return
+    }
+
+    const expectedIdentity = buildLeaguesCenterIdentity(data)
+    const actualIdentity = object(projectedLeague.identity)
+    if (!equal(expectedIdentity, actualIdentity)) {
+      findings.push(projectionFinding({
+        target: SYSTEM_AUDIT_TARGET.LEAGUES_CENTER,
+        documentId: 'all',
+        relatedDocumentId: leagueId,
+        title: 'זהות הליגה במרכז אינה מסונכרנת',
+        expected: expectedIdentity,
+        actual: actualIdentity,
+        owner: 'league',
+      }))
+    }
+
+    const projectedSeasons = object(projectedLeague.seasonsById)
+    const canonicalSeasons = object(data.seasonsById)
+    Object.entries(canonicalSeasons).forEach(([seasonId, season]) => {
+      const projectedSeason = projectedSeasons[seasonId]
+      if (!projectedSeason) {
+        findings.push(relationFinding({
+          type: 'missing_projection',
+          target: SYSTEM_AUDIT_TARGET.LEAGUES_CENTER,
+          documentId: 'all',
+          relatedDocumentId: `${leagueId}:${seasonId}`,
+          leagueId,
+          seasonId,
+          title: 'עונת ליגה חסרה במרכז הליגות',
+          reason: 'כל עונה קנונית של League חייבת להופיע במרכז הליגות.',
+          owner: 'league',
+        }))
+        return
+      }
+
+      const seasonTeamSeasons = teamSeasonsFor({ teamSeasons, leagueId, seasonId })
+      const expectedSeason = buildLeaguesCenterSeason({
+        season,
+        teamSeasonsByTeamId: seasonTeamSeasons,
+        previousLeaguesCenterTeamsById: object(projectedSeason.teamsById),
+        updatedAt: projectedSeason.updatedAt || null,
+      })
+      const expectedSeasonFields = leagueCenterSeasonFields(expectedSeason)
+      const actualSeasonFields = leagueCenterSeasonFields(projectedSeason)
+      if (!equal(expectedSeasonFields, actualSeasonFields)) {
+        findings.push(projectionFinding({
+          target: SYSTEM_AUDIT_TARGET.LEAGUES_CENTER,
+          documentId: 'all',
+          relatedDocumentId: `${leagueId}:${seasonId}`,
+          title: 'עונת הליגה במרכז אינה מסונכרנת',
+          expected: expectedSeasonFields,
+          actual: actualSeasonFields,
+          owner: 'league',
+        }))
+      }
+
+      const projectedTeams = object(projectedSeason.teamsById)
+      Object.entries(object(expectedSeason.teamsById)).forEach(([teamId, expectedTeam]) => {
+        const actualTeam = projectedTeams[teamId]
+        if (!actualTeam) {
+          findings.push(relationFinding({
+            type: 'missing_projection',
+            target: SYSTEM_AUDIT_TARGET.LEAGUES_CENTER,
+            documentId: 'all',
+            relatedDocumentId: teamId,
+            teamId,
+            leagueId,
+            seasonId,
+            title: 'קבוצה חסרה במרכז הליגות',
+            reason: 'כל קבוצה בטבלת הליגה חייבת להופיע בעונת המרכז.',
+            owner: 'league',
+          }))
+          return
+        }
+        const expectedTeamFields = centerTeamStateFields(expectedTeam)
+        const actualTeamFields = centerTeamStateFields(actualTeam)
+        if (!equal(expectedTeamFields, actualTeamFields)) {
+          findings.push(projectionFinding({
+            target: SYSTEM_AUDIT_TARGET.LEAGUES_CENTER,
+            documentId: 'all',
+            relatedDocumentId: teamId,
+            title: 'מצב הקבוצה במרכז הליגות אינו מסונכרן',
+            expected: expectedTeamFields,
+            actual: actualTeamFields,
+            owner: 'league/roster/stats',
+          }))
+        }
+      })
+
+      Object.keys(projectedTeams).forEach(teamId => {
+        if (object(expectedSeason.teamsById)[teamId]) return
+        findings.push(relationFinding({
+          type: 'orphan_projection',
+          target: SYSTEM_AUDIT_TARGET.LEAGUES_CENTER,
+          documentId: 'all',
+          relatedDocumentId: teamId,
+          teamId,
+          leagueId,
+          seasonId,
+          title: 'קבוצה מיותרת במרכז הליגות',
+          reason: 'הקבוצה אינה קיימת עוד בטבלת הליגה הקנונית.',
+          owner: 'league',
+        }))
+      })
+    })
+
+    Object.keys(projectedSeasons).forEach(seasonId => {
+      if (canonicalSeasons[seasonId]) return
+      findings.push(relationFinding({
+        type: 'orphan_projection',
+        target: SYSTEM_AUDIT_TARGET.LEAGUES_CENTER,
+        documentId: 'all',
+        relatedDocumentId: `${leagueId}:${seasonId}`,
+        leagueId,
+        seasonId,
+        title: 'עונה מיותרת במרכז הליגות',
+        reason: 'העונה אינה קיימת עוד במסמך הליגה הקנוני.',
+        owner: 'league',
+      }))
+    })
+  })
+
+  Object.keys(projectedLeagues).forEach(leagueId => {
+    if (canonicalLeagueIds.has(leagueId)) return
+    findings.push(relationFinding({
+      type: 'orphan_projection',
+      target: SYSTEM_AUDIT_TARGET.LEAGUES_CENTER,
+      documentId: 'all',
+      relatedDocumentId: leagueId,
+      leagueId,
+      title: 'ליגה מיותרת במרכז הליגות',
+      reason: 'הליגה אינה קיימת עוד בקולקשיין הליגות הקנוני.',
+      owner: 'league',
+    }))
+  })
+}
+
+const directoryEntryFields = value => {
+  const source = object(value)
+  return buildClubDirectoryProjection({
+    profile: source,
+    updatedAt: source.updatedAt || null,
+  })
+}
+
+const appendClubsDirectoryFindings = ({ clubProfiles, clubsDirectory, findings }) => {
+  const directoryRowsById = mapRows(clubsDirectory)
+  const directoryRow = directoryRowsById.get('all')
+
+  rows(clubsDirectory).forEach(({ id }) => {
+    if (clean(id) === 'all') return
+    findings.push(relationFinding({
+      type: 'unexpected_projection',
+      target: SYSTEM_AUDIT_TARGET.CLUBS_DIRECTORY,
+      documentId: id,
+      title: 'מסמך לא צפוי בספריית המועדונים',
+      reason: 'ספריית המועדונים נשמרת במסמך יחיד שמזההו all.',
+      owner: 'clubProfiles',
+    }))
+  })
+
+  if (!directoryRow) {
+    findings.push(relationFinding({
+      type: 'missing_projection',
+      target: SYSTEM_AUDIT_TARGET.CLUBS_DIRECTORY,
+      documentId: 'all',
+      title: 'חסרה ספריית המועדונים',
+      reason: 'המסמך all חייב להיבנות מפרופילי המועדונים.',
+      owner: 'clubProfiles',
+    }))
+    return
+  }
+
+  const projectedClubs = object(directoryRow.data && directoryRow.data.clubsById)
+  const canonicalClubIds = new Set(rows(clubProfiles).map(row => clean(row.id)).filter(Boolean))
+  rows(clubProfiles).forEach(({ id, data = {} }) => {
+    const clubId = clean(id)
+    const actualEntry = projectedClubs[clubId]
+    if (!actualEntry) {
+      findings.push(relationFinding({
+        type: 'missing_projection',
+        target: SYSTEM_AUDIT_TARGET.CLUBS_DIRECTORY,
+        documentId: 'all',
+        relatedDocumentId: clubId,
+        clubId,
+        title: 'מועדון חסר בספריית המועדונים',
+        reason: 'כל ClubProfile קנוני חייב להופיע בספריית המועדונים.',
+        owner: 'clubProfiles',
+      }))
+      return
+    }
+
+    const expectedEntry = buildClubDirectoryProjection({
+      profile: data,
+      updatedAt: actualEntry.updatedAt || null,
+    })
+    const actualFields = directoryEntryFields(actualEntry)
+    if (!equal(expectedEntry, actualFields)) {
+      findings.push(projectionFinding({
+        target: SYSTEM_AUDIT_TARGET.CLUBS_DIRECTORY,
+        documentId: 'all',
+        relatedDocumentId: clubId,
+        title: 'פרטי המועדון בספרייה אינם מסונכרנים',
+        expected: expectedEntry,
+        actual: actualFields,
+        owner: 'clubProfiles',
+      }))
+    }
+  })
+
+  Object.keys(projectedClubs).forEach(clubId => {
+    if (canonicalClubIds.has(clubId)) return
+    findings.push(relationFinding({
+      type: 'orphan_projection',
+      target: SYSTEM_AUDIT_TARGET.CLUBS_DIRECTORY,
+      documentId: 'all',
+      relatedDocumentId: clubId,
+      clubId,
+      title: 'מועדון מיותר בספריית המועדונים',
+      reason: 'המועדון אינו קיים עוד בקולקשיין ClubProfile.',
+      owner: 'clubProfiles',
+    }))
+  })
+}
+
+const clubsCenterTeamFields = value => {
+  const source = object(value)
+  const taskSignals = object(source.teamTaskSignals)
+  const transfers = object(source.transfers)
+  return {
+    teamSeasonDocumentId: clean(source.teamSeasonDocumentId),
+    birthYear: source.birthYear === undefined ? null : source.birthYear,
+    ageGroupId: clean(source.ageGroupId),
+    teamSlot: source.teamSlot === undefined ? null : source.teamSlot,
+    leagueId: clean(source.leagueId),
+    documentationState: clean(source.documentationState),
+    teamTaskSignals: {
+      offense: Boolean(taskSignals.offense),
+      defense: Boolean(taskSignals.defense),
+    },
+    performance: object(source.performance),
+    competitionProjection: object(source.competitionProjection),
+    transfers: {
+      coverageStatus: clean(transfers.coverageStatus),
+      external: object(transfers.external),
+      internal: object(transfers.internal),
+      pending: object(transfers.pending),
+    },
+  }
+}
+
+const clubsCenterClubFields = value => {
+  const source = object(value)
+  return {
+    displayName: clean(source.displayName),
+    shortName: clean(source.shortName),
+    clubLevel: source.clubLevel === undefined ? null : source.clubLevel,
+    clubStrengthLevel: source.clubStrengthLevel === undefined
+      ? null
+      : source.clubStrengthLevel,
+  }
+}
+
+const clubsCenterLeagueFields = value => {
+  const source = object(value)
+  return {
+    displayName: clean(source.displayName),
+    ageGroupLabel: clean(source.ageGroupLabel),
+    leagueLevel: source.leagueLevel === undefined ? null : source.leagueLevel,
+    seasonStatus: clean(source.seasonStatus),
+    tableImportedAt: source.tableImportedAt || null,
+  }
+}
+
+const canonicalSeasons = leagues => {
+  const result = new Map()
+  rows(leagues).forEach(({ id, data = {} }) => {
+    const leagueId = clean(id)
+    Object.entries(object(data.seasonsById)).forEach(([seasonId, season]) => {
+      if (!result.has(seasonId)) result.set(seasonId, [])
+      result.get(seasonId).push({ leagueId, league: data, season })
+    })
+  })
+  return result
+}
+
+const duplicateSeasonTeamOwners = seasonEntries => {
+  const ownersByTeamId = new Map()
+
+  seasonEntries.forEach(({ leagueId, season }) => {
+    Object.keys(object(season && season.table && season.table.teamsById)).forEach(teamId => {
+      if (!ownersByTeamId.has(teamId)) ownersByTeamId.set(teamId, new Set())
+      ownersByTeamId.get(teamId).add(leagueId)
+    })
+  })
+
+  return new Map(
+    [...ownersByTeamId.entries()]
+      .filter(([, leagueIds]) => leagueIds.size > 1)
+      .map(([teamId, leagueIds]) => [teamId, [...leagueIds].sort()])
+  )
+}
+
+const appendClubsCenterFindings = ({
+  leagues,
+  clubProfiles,
+  teamSeasons,
+  clubsCenter,
+  findings,
+}) => {
+  const centersById = mapRows(clubsCenter)
+  const seasonsById = canonicalSeasons(leagues)
+  const clubProfilesById = mapRows(clubProfiles)
+  const teamSeasonsById = mapRows(teamSeasons)
+
+  seasonsById.forEach((seasonEntries, seasonId) => {
+    const duplicateOwners = duplicateSeasonTeamOwners(seasonEntries)
+    duplicateOwners.forEach((leagueIds, teamId) => {
+      findings.push(relationFinding({
+        target: SYSTEM_AUDIT_TARGET.LEAGUES,
+        documentId: seasonId,
+        relatedDocumentId: teamId,
+        teamId,
+        seasonId,
+        title: 'קבוצה משויכת ליותר מליגה קנונית אחת באותה עונה',
+        reason: 'לכל Team ID מותר בעל ליגה קנוני אחד בלבד בכל עונה.',
+        expected: 'one canonical league',
+        actual: leagueIds,
+        owner: 'league',
+      }))
+    })
+
+    const centerRow = centersById.get(seasonId)
+    if (!centerRow) {
+      findings.push(relationFinding({
+        type: 'missing_projection',
+        target: SYSTEM_AUDIT_TARGET.CLUBS_CENTER,
+        documentId: seasonId,
+        seasonId,
+        title: 'מרכז המועדונים חסר לעונה',
+        reason: 'לכל עונה קנונית חייב להיות מסמך ClubsCenter.',
+        owner: 'league/clubProfiles',
+      }))
+      return
+    }
+
+    const center = object(centerRow.data)
+    const firstSeason = object(seasonEntries[0] && seasonEntries[0].season)
+    const expectedSeasonIdentity = {
+      seasonId,
+      seasonKey: clean(firstSeason.seasonKey),
+    }
+    const actualSeasonIdentity = {
+      seasonId: clean(center.seasonId),
+      seasonKey: clean(center.seasonKey),
+    }
+    if (!equal(expectedSeasonIdentity, actualSeasonIdentity)) {
+      findings.push(projectionFinding({
+        target: SYSTEM_AUDIT_TARGET.CLUBS_CENTER,
+        documentId: seasonId,
+        title: 'זהות העונה במרכז המועדונים אינה מסונכרנת',
+        expected: expectedSeasonIdentity,
+        actual: actualSeasonIdentity,
+        owner: 'league',
+      }))
+    }
+
+    const projectedLeagues = object(center.leaguesById)
+    const expectedLeagueIds = new Set()
+    const expectedTeamLocations = new Set()
+
+    seasonEntries.forEach(({ leagueId, league, season }) => {
+      expectedLeagueIds.add(leagueId)
+      const expectedLeague = clubsCenterLeagueFields(buildClubsCenterLeague({ league, season }))
+      const actualLeague = clubsCenterLeagueFields(projectedLeagues[leagueId])
+      if (!projectedLeagues[leagueId]) {
+        findings.push(relationFinding({
+          type: 'missing_projection',
+          target: SYSTEM_AUDIT_TARGET.CLUBS_CENTER,
+          documentId: seasonId,
+          relatedDocumentId: leagueId,
+          leagueId,
+          seasonId,
+          title: 'ליגה חסרה במרכז המועדונים',
+          reason: 'כל ליגה בעונה חייבת להופיע במרכז המועדונים.',
+          owner: 'league',
+        }))
+      } else if (!equal(expectedLeague, actualLeague)) {
+        findings.push(projectionFinding({
+          target: SYSTEM_AUDIT_TARGET.CLUBS_CENTER,
+          documentId: seasonId,
+          relatedDocumentId: leagueId,
+          title: 'פרטי הליגה במרכז המועדונים אינם מסונכרנים',
+          expected: expectedLeague,
+          actual: actualLeague,
+          owner: 'league',
+        }))
+      }
+
+      Object.entries(object(season && season.table && season.table.teamsById))
+        .forEach(([teamId, teamRow]) => {
+          const clubId = clean(teamRow && teamRow.clubId)
+          const locationKey = `${clubId}:${teamId}`
+          expectedTeamLocations.add(locationKey)
+          const projectedClub = object(object(center.clubsById)[clubId])
+          const actualTeam = object(projectedClub.teamsById)[teamId]
+          const clubProfileRow = clubProfilesById.get(clubId)
+
+          if (duplicateOwners.has(teamId)) return
+
+          if (!clubProfileRow) {
+            findings.push(relationFinding({
+              type: 'missing_canonical',
+              target: SYSTEM_AUDIT_TARGET.CLUB_PROFILES,
+              documentId: clubId,
+              relatedDocumentId: teamId,
+              clubId,
+              teamId,
+              leagueId,
+              seasonId,
+              title: 'חסר ClubProfile לקבוצה במרכז המועדונים',
+              reason: 'פרטי המועדון במרכז נבנים מ־ClubProfile קנוני.',
+              owner: 'clubProfiles',
+            }))
+          } else {
+            const expectedClub = clubsCenterClubFields(
+              buildClubProfileProjection(clubProfileRow.data)
+            )
+            const actualClub = clubsCenterClubFields(projectedClub)
+            if (!equal(expectedClub, actualClub)) {
+              findings.push(projectionFinding({
+                target: SYSTEM_AUDIT_TARGET.CLUBS_CENTER,
+                documentId: seasonId,
+                relatedDocumentId: clubId,
+                title: 'פרטי המועדון במרכז העונה אינם מסונכרנים',
+                expected: expectedClub,
+                actual: actualClub,
+                owner: 'clubProfiles',
+              }))
+            }
+          }
+
+          if (!actualTeam) {
+            findings.push(relationFinding({
+              type: 'missing_projection',
+              target: SYSTEM_AUDIT_TARGET.CLUBS_CENTER,
+              documentId: seasonId,
+              relatedDocumentId: teamId,
+              clubId,
+              teamId,
+              leagueId,
+              seasonId,
+              title: 'קבוצה חסרה במרכז המועדונים',
+              reason: 'כל קבוצה בטבלת הליגה חייבת להופיע תחת המועדון שלה.',
+              owner: 'league',
+            }))
+            return
+          }
+
+          const teamSeasonDocumentId = safeBuild(() => buildTeamSeasonDocumentId({
+            teamId,
+            seasonId,
+          }))
+          const teamSeasonRow = teamSeasonsById.get(teamSeasonDocumentId)
+          const expectedTeam = safeBuild(() => buildClubsCenterTeamProjection({
+            league,
+            season,
+            seasonId,
+            teamId,
+            teamRow,
+            teamSeason: teamSeasonRow ? teamSeasonRow.data : null,
+            previousTeamProjection: actualTeam,
+            updatedAt: actualTeam.updatedAt || null,
+          }))
+          const expectedTeamFields = expectedTeam ? clubsCenterTeamFields(expectedTeam) : null
+          const actualTeamFields = clubsCenterTeamFields(actualTeam)
+          if (!expectedTeamFields || !equal(expectedTeamFields, actualTeamFields)) {
+            findings.push(projectionFinding({
+              target: SYSTEM_AUDIT_TARGET.CLUBS_CENTER,
+              documentId: seasonId,
+              relatedDocumentId: teamId,
+              title: 'מצב הקבוצה במרכז המועדונים אינו מסונכרן',
+              expected: expectedTeamFields,
+              actual: actualTeamFields,
+              owner: 'league/roster/stats',
+            }))
+          }
+        })
+    })
+
+    Object.keys(projectedLeagues).forEach(leagueId => {
+      if (expectedLeagueIds.has(leagueId)) return
+      findings.push(relationFinding({
+        type: 'orphan_projection',
+        target: SYSTEM_AUDIT_TARGET.CLUBS_CENTER,
+        documentId: seasonId,
+        relatedDocumentId: leagueId,
+        leagueId,
+        seasonId,
+        title: 'ליגה מיותרת במרכז המועדונים',
+        reason: 'הליגה אינה קיימת עוד בעונה קנונית.',
+        owner: 'league',
+      }))
+    })
+
+    Object.entries(object(center.clubsById)).forEach(([clubId, club]) => {
+      Object.keys(object(club && club.teamsById)).forEach(teamId => {
+        if (expectedTeamLocations.has(`${clubId}:${teamId}`)) return
+        findings.push(relationFinding({
+          type: 'orphan_projection',
+          target: SYSTEM_AUDIT_TARGET.CLUBS_CENTER,
+          documentId: seasonId,
+          relatedDocumentId: teamId,
+          clubId,
+          teamId,
+          seasonId,
+          title: 'קבוצה מיותרת במרכז המועדונים',
+          reason: 'הקבוצה אינה קיימת עוד בטבלת ליגה קנונית של העונה.',
+          owner: 'league',
+        }))
+      })
+    })
+  })
+
+  rows(clubsCenter).forEach(({ id }) => {
+    if (seasonsById.has(clean(id))) return
+    findings.push(relationFinding({
+      type: 'orphan_projection',
+      target: SYSTEM_AUDIT_TARGET.CLUBS_CENTER,
+      documentId: id,
+      seasonId: id,
+      title: 'מסמך עונה מיותר במרכז המועדונים',
+      reason: 'העונה אינה קיימת עוד באף מסמך League קנוני.',
+      owner: 'league',
+    }))
+  })
+}
+
 export const evaluateSystemIntegrity = ({
   teamRoots = [],
   teamSeasons = [],
@@ -526,6 +1261,9 @@ export const evaluateSystemIntegrity = ({
   playerSearchIndexes = [],
   leagues = [],
   clubProfiles = [],
+  leaguesCenter = [],
+  clubsCenter = [],
+  clubsDirectory = [],
 } = {}) => {
   const findings = []
   const teamRootsById = mapRows(teamRoots)
@@ -555,6 +1293,16 @@ export const evaluateSystemIntegrity = ({
     teamSeasonsById,
     findings,
   })
+  appendCanonicalIdentityFindings({ leagues, clubProfiles, findings })
+  appendLeaguesCenterFindings({ leagues, teamSeasons, leaguesCenter, findings })
+  appendClubsCenterFindings({
+    leagues,
+    clubProfiles,
+    teamSeasons,
+    clubsCenter,
+    findings,
+  })
+  appendClubsDirectoryFindings({ clubProfiles, clubsDirectory, findings })
 
   return findings
 }

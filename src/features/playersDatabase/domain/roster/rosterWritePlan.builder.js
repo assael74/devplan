@@ -705,13 +705,13 @@ const buildClubsCenterProjection = ({ league, season, teamId, teamRow, teamSeaso
   writeRequired: true,
   seasonId: teamSeason.identity.seasonId,
   seasonKey: clean(season.seasonKey),
-  seasonStatus: clean(season.seasonStatus),
   leagueId: league.leagueId,
   leagueOperation: 'UPSERT',
   league: {
     displayName: clean(league.names && (league.names.display || league.names.official || league.names.short || league.names.source)),
     ageGroupLabel: clean(league.ageGroupLabel),
     leagueLevel: league.level === undefined ? null : league.level,
+    seasonStatus: clean(season.seasonStatus),
     tableImportedAt: season.tableImportedAt || null,
   },
   clubWrites: [{
@@ -737,6 +737,51 @@ const buildClubsCenterProjection = ({ league, season, teamId, teamRow, teamSeaso
     deleteTeamIds: [],
   }],
   updatedAt: updatedAt || null,
+})
+
+const buildCounterpartClubsCenterProjections = ({
+  counterparts,
+  existingCounterpartTeamSeasonsById,
+  counterpartProjectionSourcesByDocumentId,
+  seasonId,
+  updatedAt,
+}) => list(counterparts).map(counterpart => {
+  const documentId = clean(counterpart && counterpart.documentId)
+  const existingTeamSeason = object(map(existingCounterpartTeamSeasonsById)[documentId])
+  const identity = object(existingTeamSeason.identity)
+  const sources = object(map(counterpartProjectionSourcesByDocumentId)[documentId])
+  const league = object(sources.league)
+  const season = object(sources.season)
+  const teamRow = object(sources.teamRow)
+  const clubProfile = object(sources.clubProfile)
+  const teamId = clean(identity.teamId)
+
+  if (
+    !documentId
+    || !teamId
+    || clean(identity.teamSeasonDocumentId) !== documentId
+    || clean(identity.seasonId) !== seasonId
+    || clean(league.leagueId) !== clean(identity.leagueId)
+    || clean(clubProfile.clubId) !== clean(identity.clubId)
+    || !Object.keys(season).length
+    || !Object.keys(teamRow).length
+  ) {
+    throw new Error('Invalid canonical source for counterpart ClubsCenter projection')
+  }
+
+  return buildClubsCenterProjection({
+    league,
+    season,
+    teamId,
+    teamRow,
+    teamSeason: {
+      ...existingTeamSeason,
+      movement: counterpart.movement,
+    },
+    clubProfile,
+    previousTeamProjection: sources.previousTeamProjection || null,
+    updatedAt,
+  })
 })
 
 const MOVEMENT_FACT_FIELDS = Object.freeze([
@@ -791,30 +836,41 @@ const buildCounterpartWrites = ({
   existingCounterpartTeamSeasonsById,
   movement,
   updatedAt,
-}) => list(counterpartRequests).flatMap(request => {
-  const source = object(request)
-  const documentId = clean(source.teamSeasonDocumentId)
-  if (!documentId) throw new Error('Missing counterpart Team Season id')
-  const { approvedFact, movementId, side } = resolveApprovedCounterpartFact({
-    request,
-    movement,
-    documentId,
+}) => {
+  const writesByDocumentId = new Map()
+
+  list(counterpartRequests).forEach(request => {
+    const source = object(request)
+    const documentId = clean(source.teamSeasonDocumentId)
+    if (!documentId) throw new Error('Missing counterpart Team Season id')
+    const { approvedFact, movementId, side } = resolveApprovedCounterpartFact({
+      request,
+      movement,
+      documentId,
+    })
+    const existing = object(map(existingCounterpartTeamSeasonsById)[documentId])
+    if (!Object.keys(existing).length) return
+    const existingIdentity = object(existing.identity)
+    if (clean(existingIdentity.teamSeasonDocumentId) !== documentId) {
+      throw new Error('Counterpart Team Season identity mismatch')
+    }
+
+    if (!writesByDocumentId.has(documentId)) {
+      writesByDocumentId.set(documentId, {
+        documentId,
+        movement: {
+          ...object(existing.movement),
+          transfersInById: { ...map(existing.movement && existing.movement.transfersInById) },
+          transfersOutById: { ...map(existing.movement && existing.movement.transfersOutById) },
+          updatedAt: updatedAt || null,
+        },
+      })
+    }
+    writesByDocumentId.get(documentId).movement[side][movementId] = approvedFact
   })
-  const existing = object(map(existingCounterpartTeamSeasonsById)[documentId])
-  if (!Object.keys(existing).length) return []
-  const existingIdentity = object(existing.identity)
-  if (clean(existingIdentity.teamSeasonDocumentId) !== documentId) {
-    throw new Error('Counterpart Team Season identity mismatch')
-  }
-  const counterpartMovement = {
-    ...object(existing.movement),
-    transfersInById: { ...map(existing.movement && existing.movement.transfersInById) },
-    transfersOutById: { ...map(existing.movement && existing.movement.transfersOutById) },
-    updatedAt: updatedAt || null,
-  }
-  counterpartMovement[side][movementId] = approvedFact
-  return [{ documentId, movement: counterpartMovement }]
-})
+
+  return [...writesByDocumentId.values()]
+}
 
 const buildCanonicalCounterpartRequests = ({ teamSeason, movement }) => {
   const currentDocumentId = clean(
@@ -1028,6 +1084,7 @@ export const buildRosterLoadWritePlan = ({
   playerRootsById = {},
   existingPlayerSeasonsById = {},
   existingCounterpartTeamSeasonsById = {},
+  counterpartProjectionSourcesByDocumentId = {},
   previousLeaguesCenterTeamProjection = null,
   previousClubsCenterTeamProjection = null,
   createdAt = null,
@@ -1143,6 +1200,13 @@ export const buildRosterLoadWritePlan = ({
       teamSeason,
     },
     counterparts: movementPlan.counterparts,
+    counterpartClubsCenterProjections: buildCounterpartClubsCenterProjections({
+      counterparts: movementPlan.counterparts,
+      existingCounterpartTeamSeasonsById,
+      counterpartProjectionSourcesByDocumentId,
+      seasonId,
+      updatedAt,
+    }),
     playerSeasons,
     playerSearchIndexes: {
       upserts: playerSearchIndexes,
@@ -1190,6 +1254,7 @@ export const buildRosterProjectionRepairPlan = ({
   existingPlayerSeasonsById = {},
   existingPlayerSearchIndexes = [],
   existingCounterpartTeamSeasonsById = {},
+  counterpartProjectionSourcesByDocumentId = {},
   previousLeaguesCenterTeamProjection = null,
   previousClubsCenterTeamProjection = null,
   updatedAt = null,
@@ -1241,6 +1306,13 @@ export const buildRosterProjectionRepairPlan = ({
     .map(row => clean(row && (row.id || row.documentId)))
     .filter(documentId => documentId && !expectedIndexIds.has(documentId))
 
+  const counterparts = buildCounterpartWrites({
+    counterpartRequests: buildCanonicalCounterpartRequests({ teamSeason, movement }),
+    existingCounterpartTeamSeasonsById,
+    movement,
+    updatedAt,
+  })
+
   return {
     actionType: 'rosterLoad',
     teamId: resolvedTeamId,
@@ -1248,10 +1320,12 @@ export const buildRosterProjectionRepairPlan = ({
     leagueId: resolvedLeagueId,
     clubId: clean(identity.clubId),
     seasonId: resolvedSeasonId,
-    counterparts: buildCounterpartWrites({
-      counterpartRequests: buildCanonicalCounterpartRequests({ teamSeason, movement }),
+    counterparts,
+    counterpartClubsCenterProjections: buildCounterpartClubsCenterProjections({
+      counterparts,
       existingCounterpartTeamSeasonsById,
-      movement,
+      counterpartProjectionSourcesByDocumentId,
+      seasonId: resolvedSeasonId,
       updatedAt,
     }),
     playerSeasons,
@@ -1376,14 +1450,8 @@ export const buildRosterClearWritePlan = ({
   }
 
   const existingMovement = object(existingTeamSeason && existingTeamSeason.movement)
-  if (
-    Object.keys(object(existingMovement.transfersInById)).length ||
+  const movementCount = Object.keys(object(existingMovement.transfersInById)).length +
     Object.keys(object(existingMovement.transfersOutById)).length
-  ) {
-    const error = new Error('לא ניתן למחוק סגל עם תנועות שחקנים פעילות.')
-    error.code = 'ROSTER_CLEAR_MOVEMENT_PRESENT'
-    throw error
-  }
 
   const season = object(map(league.seasonsById)[resolvedSeasonId])
   if (!Object.keys(season).length) throw new Error('Canonical League season was not found')
@@ -1438,7 +1506,7 @@ export const buildRosterClearWritePlan = ({
     impact: {
       players: playerIds.length,
       playerIndexes: list(existingPlayerSearchIndexes).length,
-      transfers: 0,
+      transfers: movementCount,
     },
     canonical: {
       teamRootOperation: rootResult.operation,
@@ -1447,6 +1515,7 @@ export const buildRosterClearWritePlan = ({
       teamSeason: null,
     },
     counterparts: [],
+    counterpartClubsCenterProjections: [],
     playerSeasons,
     playerSearchIndexes: {
       upserts: [],
@@ -1471,13 +1540,13 @@ export const buildRosterClearWritePlan = ({
       writeRequired: true,
       seasonId: resolvedSeasonId,
       seasonKey: clean(season.seasonKey),
-      seasonStatus: clean(season.seasonStatus),
       leagueId: resolvedLeagueId,
       leagueOperation: 'UPSERT',
       league: {
         displayName: clean(league.names && (league.names.display || league.names.official || league.names.short || league.names.source)),
         ageGroupLabel: clean(league.ageGroupLabel),
         leagueLevel: league.level === undefined ? null : league.level,
+        seasonStatus: clean(season.seasonStatus),
         tableImportedAt: season.tableImportedAt || null,
       },
       clubWrites: [{

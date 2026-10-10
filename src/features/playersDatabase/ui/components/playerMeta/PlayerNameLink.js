@@ -18,6 +18,7 @@ export default function PlayerNameLink({
   avatarAlt = '',
 }) {
   const hasInternalLink = Boolean(internalHref)
+  const hasExternalLink = Boolean(String(url || '').trim())
 
   return (
     <Box sx={sx.root}>
@@ -31,7 +32,11 @@ export default function PlayerNameLink({
         target={hasInternalLink ? internalTarget : undefined}
         rel={hasInternalLink && internalTarget === '_blank' ? 'noopener noreferrer' : undefined}
         level="body-sm"
-        sx={[sx.name, hasInternalLink && sx.nameLink]}
+        sx={[
+          sx.name,
+          hasExternalLink && sx.nameWithExternalLink,
+          hasInternalLink && sx.nameLink,
+        ]}
       >
         {name || '-'}
       </Typography>
@@ -39,6 +44,7 @@ export default function PlayerNameLink({
       <ExternalLinkIcon
         href={url}
         onClick={event => event.stopPropagation()}
+        sx={sx.link}
       />
     </Box>
   )

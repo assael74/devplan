@@ -9,13 +9,13 @@ export const CLUBS_CENTER_SEASON_DOCUMENT = {
 
   seasonId: '',
   seasonKey: '',
-  seasonStatus: '',
 
   leaguesById: {
     '<leagueId>': {
       displayName: '',
       ageGroupLabel: '',
       leagueLevel: null,
+      seasonStatus: '',
       tableImportedAt: null,
     },
   },
@@ -149,6 +149,7 @@ export const CLUBS_CENTER_SEASON_DOCUMENT = {
   invariants: [
     'documentId equals technical seasonId in YYYY_YYYY form.',
     'seasonKey is display/business data and never participates in the document id.',
+    'seasonStatus belongs to leaguesById because leagues in one technical season may have different lifecycle states.',
     'teamSlot is the canonical field name; slot is not used.',
     'teamGamePlayed is the canonical compact games-played field name in this projection.',
     'clubId and teamId are map keys and are not duplicated inside their respective values.',

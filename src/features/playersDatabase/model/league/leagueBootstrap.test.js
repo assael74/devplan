@@ -51,6 +51,58 @@ test('builds League Center rows only for created league projections', () => {
   }))
 })
 
+test('derives operational League Center facts from the season projection', () => {
+  const catalogLeague = PLAYERS_DATABASE_LEAGUES_CATALOG[0]
+  const rows = buildLeagueCenterRows({
+    leagueDocs: [{
+      leagueId: catalogLeague.id,
+      catalog: catalogLeague,
+      projection: {
+        identity: {
+          leagueName: catalogLeague.name,
+          ageGroupId: catalogLeague.ageGroupId,
+          ageGroupLabel: catalogLeague.ageGroupLabel,
+          level: catalogLeague.level,
+        },
+        seasonsById: {
+          '2026_2027': {
+            seasonKey: '26/27',
+            seasonStatus: 'active',
+            birthYear: 2008,
+            seasonUrl: 'https://example.com/league',
+            tableState: 'LOADED',
+            tableImportedAt: '2026-10-05T00:00:00.000Z',
+            teamsById: {
+              teamOne: {
+                documentationState: 'NO_ROSTER',
+                documentationStateUpdatedAt: '2026-10-03T00:00:00.000Z',
+                teamTaskSignals: { offense: true, defense: false },
+              },
+              teamTwo: {
+                documentationState: 'STATS_FINAL',
+                documentationStateUpdatedAt: '2026-10-04T00:00:00.000Z',
+                teamTaskSignals: { offense: true, defense: true },
+              },
+            },
+          },
+        },
+      },
+    }],
+  })
+
+  expect(rows[0]).toEqual(expect.objectContaining({
+    seasonWorkStatus: 'active',
+    seasonUrl: 'https://example.com/league',
+    tableState: 'LOADED',
+    teamsCount: 2,
+    requiresReview: true,
+    offenseOnlyPriorityCount: 1,
+    defenseOnlyPriorityCount: 0,
+    combinedPriorityCount: 1,
+    latestDocumentationUpdatedAt: '2026-10-04T00:00:00.000Z',
+  }))
+})
+
 test('offers every catalog league and marks its existing seasons', () => {
   const existingLeague = PLAYERS_DATABASE_LEAGUES_CATALOG[0]
   const options = buildLeagueCenterOpenOptions([{

@@ -5,12 +5,12 @@
 // different definition later without changing the evaluator.
 export const TEAM_LINEUP_STRUCTURE_BENCHMARK = Object.freeze({
   definitionId: 'reference-lineup-structure',
-  definitionVersion: 'reference-lineup-structure-v1',
+  definitionVersion: 'reference-lineup-structure-v2',
   metrics: Object.freeze({
     goalkeeper: Object.freeze({ reference: 1 }),
     defense: Object.freeze({ reference: 4 }),
     midfieldCore: Object.freeze({ reference: 3 }),
     attackingMidfielder: Object.freeze({ reference: 1 }),
-    attack: Object.freeze({ reference: 3 }),
+    attack: Object.freeze({ reference: 2 }),
   }),
 })

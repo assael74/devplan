@@ -3,6 +3,13 @@
 import { devPlanColors } from '../../../../../../../../ui/core/theme/Colors.js'
 
 export const rosterImportModalSx = {
+  stepLayout: {
+    height: {
+      xs: 'min(560px, calc(100dvh - 290px))',
+      md: 'min(720px, calc(100dvh - 310px))',
+    },
+  },
+
   selectionPanel: {
     width: '100%',
     alignSelf: 'start',
@@ -230,37 +237,41 @@ export const rosterImportModalSx = {
     alignContent: 'start',
     justifyItems: 'stretch',
     gap: 1.25,
-    p: { xs: 2, md: 3 },
+    p: { xs: 1, md: 1.25 },
     border: '1px solid #d5e1ef',
     borderRadius: 'md',
     overflowY: 'auto',
   },
 
-  syncCards: {
-    width: '100%',
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'stretch',
-    gap: 1,
+  summaryPanel: {
+    minHeight: 0,
+    overflowY: 'auto',
+    alignContent: 'start',
+    p: { xs: 0.5, md: 1 },
   },
 
-  syncCard: {
-    minWidth: 0,
-    flex: {
-      xs: '0 0 100%',
-      sm: '0 0 calc(50% - 4px)',
-      md: '0 0 calc(33.333% - 6px)',
-      lg: '0 0 calc(25% - 6px)',
-    },
+  summaryLeadCard: {
+    py: 1,
+    px: 1.25,
   },
 
-  syncCardContent: {
-    height: '100%',
+  summaryLeadCardEmpty: {
+    minHeight: 'unset',
+    flex: '0 0 auto',
+    gap: 0.35,
+    py: 0.65,
   },
 
-  syncCardActive: {
-    borderColor: devPlanColors.primary,
-    boxShadow: '0 8px 18px rgba(23, 76, 123, 0.18)',
+  summaryCard: {
+    py: 1,
+    px: 1.25,
+  },
+
+  summaryCardEmpty: {
+    minHeight: 'unset',
+    flex: '0 0 auto',
+    gap: 0.3,
+    py: 0.55,
   },
 
   syncCardAction: {
@@ -273,6 +284,7 @@ export const rosterImportModalSx = {
   },
 
   syncScopeHint: { color: 'neutral.500' },
+  syncStatusContent: { flex: 1, minWidth: 0 },
   syncError: { maxWidth: 720 },
   syncRetryButton: { mt: 0.5 },
 }

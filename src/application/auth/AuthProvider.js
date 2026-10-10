@@ -13,8 +13,8 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '../../services/firebase/firebase'
 import { authApi } from '../../services/auth/auth.api'
 import { registerExternalUser } from '../../services/auth/registerExternalUser.js'
-import { clearPlayersDatabaseDocumentCache } from '../../features/playersDatabase/services/cache/index.js'
-import { resetPlayersDatabaseTasksSubscription } from '../../features/playersDatabase/services/read/index.js'
+import { clearPlayersDatabaseDocumentCache } from '../../features/playersDatabase/services/cache/documentCache.js'
+import { resetPlayersDatabaseTasksSubscription } from '../../features/playersDatabase/services/read/tasks/tasks.read.js'
 
 const AuthContext = createContext(null)
 

@@ -25,7 +25,7 @@ export async function saveEditor({
     })
   }
   try {
-    if (!saved || reloadAfterSuccess) {
+    if (reload && (!saved || reloadAfterSuccess)) {
       await reload()
     }
   } catch (error) {

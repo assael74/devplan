@@ -22,7 +22,7 @@ import {
 
 const buildStructure = ({ seasonDoc, lineInterpretation = null }) => {
   const balance = seasonDoc?.teamBalance
-  const interpretation = lineInterpretation || balance?.scoutInterpretation || null
+  const interpretation = balance?.scoutInterpretation || lineInterpretation || null
   const structure = balance?.lineStructure
   if (!structure || typeof structure !== 'object') return null
 
@@ -110,13 +110,17 @@ export const buildTeamInformationView = ({
     players,
     playerIdsFilter,
   })
-  const lineInterpretation = selectedTeamSeason
+  const persistedLineInterpretation = selectedTeamSeason?.teamBalance?.scoutInterpretation || null
+  const lineInterpretation = persistedLineInterpretation || (selectedTeamSeason
     ? buildTeamLineInterpretationState({
       teamDocument: team || {},
-      seasonDocument: selectedTeamSeason,
+      seasonDocument: {
+        ...selectedTeamSeason,
+        performance: selectedTeamSeason.performance || team.performance || null,
+      },
       balanceState: selectedTeamSeason.teamBalance || null,
     })
-    : null
+    : null)
   const structure = buildStructure({
     seasonDoc: selectedTeamSeason,
     lineInterpretation,

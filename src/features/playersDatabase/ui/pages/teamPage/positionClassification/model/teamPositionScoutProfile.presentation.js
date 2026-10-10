@@ -56,6 +56,23 @@ const resolveProfileDepthPct = source => {
   return depth === undefined ? null : Number(depth) * 100
 }
 
+const resolveCombinationDepthPct = ({ combination, profiles }) => {
+  const componentProfileIds = new Set(
+    (Array.isArray(combination?.matchedProfileIds)
+      ? combination.matchedProfileIds
+      : Array.isArray(combination?.profileIds)
+        ? combination.profileIds
+        : [])
+      .filter(Boolean)
+  )
+  const componentDepths = (Array.isArray(profiles) ? profiles : [])
+    .filter(profile => componentProfileIds.has(profile?.profileId || profile?.id))
+    .map(resolveProfileDepthPct)
+    .filter(depthPct => depthPct !== null)
+
+  return componentDepths.length ? Math.max(...componentDepths) : null
+}
+
 export const buildTableScoutProfileChip = player => {
   const profile = buildPlayerScoutProfile(player)
   const primaryProfile = profile.view.primaryItem
@@ -63,9 +80,22 @@ export const buildTableScoutProfileChip = player => {
   if (!primaryProfile) return null
 
   const isCombination = primaryProfile.type === 'combination'
-  const sourceDepthPct = resolveProfileDepthPct(primaryProfile.source)
-  const displayDepthPctValue = Number(profile.player?.scoutProfileDisplay?.profileStrength)
-  const displayDepthPct = sourceDepthPct === null && Number.isFinite(displayDepthPctValue)
+  const profiles = Array.isArray(profile.player?.scoutProfiles)
+    ? profile.player.scoutProfiles
+    : []
+  const combinationDepthPct = isCombination
+    ? resolveCombinationDepthPct({
+      combination: primaryProfile.source,
+      profiles,
+    })
+    : null
+  const sourceDepthPct = combinationDepthPct !== null
+    ? combinationDepthPct
+    : resolveProfileDepthPct(primaryProfile.source)
+  const displayDepthPctValue = resolveProfileDepthPct(
+    profile.player?.scoutProfileDisplay
+  )
+  const displayDepthPct = sourceDepthPct === null && displayDepthPctValue !== null
     ? displayDepthPctValue
     : sourceDepthPct
 
@@ -74,9 +104,7 @@ export const buildTableScoutProfileChip = player => {
     label: primaryProfile.shortLabel || primaryProfile.label,
     iconId: primaryProfile.iconId,
     profile: primaryProfile.source,
-    profiles: Array.isArray(profile.player?.scoutProfiles)
-      ? profile.player.scoutProfiles
-      : [],
+    profiles,
     depthPct: displayDepthPct,
     extraCount: isCombination ? 0 : Math.max(0, ((profile.view.displayItems && profile.view.displayItems.length) || 0) - 1),
     isCombination,

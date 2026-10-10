@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/pages/teamPage/hooks/useTeamPageUrlEditor.js
+
 import * as React from 'react'
 import { updateTeamSeasonUrl } from '../../../../services/write/league/edits/updateTeamSeasonUrl.js'
 import { buildTeamSeasonDocumentId } from '../../../../domain/identity/index.js'
@@ -7,16 +9,18 @@ export const buildTeamUrlRows = ({ leagueDocuments = [], teamId = '' } = {}) => 
   const rows = []
   ;(Array.isArray(leagueDocuments) ? leagueDocuments : []).forEach(league => {
     const leagueId = clean(league?.leagueId || league?.id)
-    const seasons = [league?.current, ...(Array.isArray(league?.history) ? league.history : [])].filter(Boolean)
-    seasons.forEach(season => {
+    const seasons = league?.seasonsById && typeof league.seasonsById === 'object'
+      ? Object.entries(league.seasonsById)
+      : []
+    seasons.forEach(([seasonDocumentId, season]) => {
       const tableRow = findTeamPageTableRow({ season, teamId })
       if (!tableRow) return
-      const seasonId = clean(season?.seasonId)
-      const seasonKey = clean(season?.seasonKey)
-      const teamId = clean(tableRow?.teamId)
-      if (!leagueId || !seasonId || !teamId) return
+      const seasonId = clean(season?.seasonId || seasonDocumentId)
+      const seasonKey = clean(season?.seasonKey || seasonId)
+      const rowTeamId = clean(tableRow?.teamId)
+      if (!leagueId || !seasonId || !rowTeamId) return
       const originalUrl = clean(tableRow?.teamUrl)
-      rows.push({ key: `${leagueId}::${seasonId}::${teamId}`, leagueId, leagueName: clean(league?.leagueName || league?.name || leagueId), seasonId, seasonKey, ageGroupLabel: clean(season?.ageGroupLabel || season?.ageGroupId), teamId, teamSeasonDocumentId: buildTeamSeasonDocumentId({ teamId, seasonId }), originalUrl, draftUrl: originalUrl, saving: false, saved: false, error: '' })
+      rows.push({ key: `${leagueId}::${seasonId}::${rowTeamId}`, leagueId, leagueName: clean(league?.names?.display || league?.names?.official || leagueId), seasonId, seasonKey, ageGroupLabel: clean(season?.ageGroupLabel || league?.ageGroupLabel || league?.ageGroupId), teamId: rowTeamId, teamSeasonDocumentId: buildTeamSeasonDocumentId({ teamId: rowTeamId, seasonId }), originalUrl, draftUrl: originalUrl, saving: false, saved: false, error: '' })
     })
   })
   return rows.sort((a, b) => b.seasonKey.localeCompare(a.seasonKey))

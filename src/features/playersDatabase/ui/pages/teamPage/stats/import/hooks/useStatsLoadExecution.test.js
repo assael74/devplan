@@ -23,7 +23,7 @@ describe('useStatsLoadExecution active Stats Load retry', () => {
     jest.clearAllMocks()
   })
 
-  test('retry before canonical confirmation prepares a fresh Approved State', async () => {
+  test('waits for an explicit execution and retries with a fresh Approved State before canonical confirmation', async () => {
     const input = {
       leagueId: 'league-1',
       teamId: 'club-1_2011_1',
@@ -62,22 +62,28 @@ describe('useStatsLoadExecution active Stats Load retry', () => {
       approvedState,
       prepareFreshApprovedState,
     }))
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    expect(mockLoadStats).not.toHaveBeenCalled()
+
+    await act(async () => {
+      await result.current.execute()
+    })
     await waitFor(() => expect(result.current.status).toBe('audit_failed'))
 
     await act(async () => {
       await result.current.retry()
     })
 
-    expect(mockLoadStats).toHaveBeenNthCalledWith(1, {
+    expect(mockLoadStats).toHaveBeenNthCalledWith(1, expect.objectContaining({
       approvedState,
       receiptId: '',
       display: {},
-    })
-    expect(mockLoadStats).toHaveBeenNthCalledWith(2, {
+    }))
+    expect(mockLoadStats).toHaveBeenNthCalledWith(2, expect.objectContaining({
       approvedState: freshApprovedState,
       receiptId: 'receipt-1',
       display: {},
-    })
+    }))
     expect(prepareFreshApprovedState).toHaveBeenCalledTimes(1)
     expect(mockRepairWriteActionReceipt).not.toHaveBeenCalled()
     expect(result.current.status).toBe('success')

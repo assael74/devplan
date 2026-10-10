@@ -7,11 +7,11 @@ jest.mock('../../../../../components/modals/RegularModal.js', () => {
 
   return {
     __esModule: true,
-    default: ({ children, hideFooter = false }) => React.createElement(
+    default: ({ children, hideFooter = false, footerContent = null }) => React.createElement(
       'div',
       null,
       children,
-      hideFooter ? null : React.createElement('button', null, 'שמירה')
+      hideFooter ? null : (footerContent || React.createElement('button', null, 'שמירה'))
     ),
   }
 })
@@ -32,6 +32,8 @@ const controller = overrides => ({
   },
   result: null,
   error: null,
+  executionReceipt: null,
+  syncStages: [],
   close: jest.fn(),
   execute: jest.fn(),
   retry: jest.fn(),
@@ -44,8 +46,6 @@ describe('ClearStatsModal', () => {
     render(<ClearStatsModal controller={value} teamName='קבוצה א' seasonKey='2026' />)
 
     expect(screen.queryByRole('button', { name: 'שמירה' })).not.toBeInTheDocument()
-    expect(screen.getByText('נתוני הטבלה הרשמיים וביצועי הקבוצה.', { exact: false }))
-      .toBeInTheDocument()
     const scoutProfileCountLabel = screen.getByText('שחקנים שפרופיל הסקאוט שלהם ינוקה')
     expect(within(scoutProfileCountLabel.parentElement).getByText('1')).toBeInTheDocument()
 
@@ -96,6 +96,16 @@ describe('ClearStatsModal', () => {
           audit: { status: 'CLEAN' },
         },
         error: new Error('reload failed'),
+        executionReceipt: {
+          id: 'receipt-1',
+          progress: { completedByStage: { canonical: true } },
+        },
+        syncStages: [{
+          id: 'canonical',
+          title: 'מחיקת נתוני הסטטיסטיקה',
+          target: 'dbTeamSeasons',
+          state: 'completed',
+        }],
       })}
     />)
 
@@ -105,7 +115,11 @@ describe('ClearStatsModal', () => {
     expect(screen.getByText('2 נכתבו')).toBeInTheDocument()
     expect(screen.getByText('מסמך הליגה')).toBeInTheDocument()
     expect(screen.getByText('1 כבר היו תקינים')).toBeInTheDocument()
-    expect(screen.getByText('מזהה תיעוד פעולה: receipt-1')).toBeInTheDocument()
+    const syncTitle = screen.getByText('סדר עדכון המסמכים')
+    expect(syncTitle.parentElement).not.toHaveTextContent('קבלה: receipt-1')
+    const statusTitle = screen.getByText('נתוני הסטטיסטיקה נמחקו בהצלחה')
+    expect(statusTitle.parentElement).toHaveTextContent('קבלה: receipt-1')
+    expect(screen.getByText('מחיקת נתוני הסטטיסטיקה')).toBeInTheDocument()
   })
 
   test('shows the failed stage, partial progress, Receipt and Audit findings', () => {
@@ -139,8 +153,11 @@ describe('ClearStatsModal', () => {
       })}
     />)
 
-    expect(screen.getAllByText('בדיקת סנכרון')).toHaveLength(2)
-    expect(screen.getByText('מזהה תיעוד פעולה: receipt-failed-1')).toBeInTheDocument()
+    expect(screen.getAllByText('בדיקת סנכרון')).toHaveLength(1)
+    const syncTitle = screen.getByText('סדר עדכון המסמכים')
+    expect(syncTitle.parentElement).not.toHaveTextContent('קבלה: receipt-failed-1')
+    const statusTitle = screen.getByText('מחיקת נתוני הסטטיסטיקה לא הושלמה')
+    expect(statusTitle.parentElement).toHaveTextContent('קבלה: receipt-failed-1')
     expect(screen.getByText('פערים שנמצאו בבדיקת הסנכרון')).toBeInTheDocument()
     expect(screen.getByText('נמצא פער ב־תוצרי חיפוש השחקנים')).toBeInTheDocument()
     expect(screen.getByText('העדכון נעצר כאן')).toBeInTheDocument()

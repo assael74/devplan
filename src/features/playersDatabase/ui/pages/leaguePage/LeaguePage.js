@@ -14,18 +14,23 @@ import { usePlayersDatabaseFavorites } from '../../favorites/index.js'
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import { useLeaguePage } from './hooks/useLeaguePage.js'
 import { useLeagueTableImport } from './hooks/useLeagueTableImport.js'
+import useLeagueUrlEditor from './hooks/useLeagueUrlEditor.js'
+import useTeamUrlEditor from '../../hooks/useTeamUrlEditor.js'
 import useClearLeagueTeamsFlow from './clear/useClearLeagueTeamsFlow.js'
 import ClearLeagueTeamsModal from './clear/ClearLeagueTeamsModal.js'
 import usePlayersDatabaseTasks from '../../hooks/usePlayersDatabaseTasks.js'
 import usePlayersDatabaseTaskActions from '../../hooks/usePlayersDatabaseTaskActions.js'
 import {
   buildPlayersDatabaseBreadcrumbs,
+  PLAYERS_DATABASE_QUERY_KEYS as queryKeys,
   PLAYERS_DATABASE_UI_ROUTES,
 } from '../../logic/routeBuilders.js'
 import LeagueHeader from './LeagueHeader.js'
 import LeagueKpiOverview from './LeagueKpiOverview.js'
 import LeagueActionsPanel from './LeagueActionsPanel.js'
 import LeagueTeamsTable from './LeagueTeamsTable.js'
+import LeagueSeasonSettingsDrawer from './LeagueSeasonSettingsDrawer.js'
+import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
 import {
   LeagueImportModal,
   TaskEditModal,
@@ -40,6 +45,7 @@ import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
 import useLeagueReport from './report/useLeagueReport.js'
 import { pageCoreLayoutSx as sx } from '../../components/page/sx/pageCoreLayout.sx.js'
+import usePageSidePanelCollapsed from '../../components/page/usePageSidePanelCollapsed.js'
 import { downloadLeaguePageDocumentsJson } from './logic/leagueDocumentsJson.logic.js'
 import { buildLeagueImportColumns, LEAGUE_IMPORT_PLACEHOLDER } from './logic/leagueImport.columns.js'
 
@@ -53,6 +59,9 @@ function LeaguePageContent() {
   const taskActions = usePlayersDatabaseTaskActions()
   const [attackPriorityFilter, setAttackPriorityFilter] = React.useState('')
   const [defensePriorityFilter, setDefensePriorityFilter] = React.useState('')
+  const [sidePanelCollapsed, setSidePanelCollapsed] = usePageSidePanelCollapsed(
+    'playersDatabase:leagueSidePanelCollapsed'
+  )
   const [taskModalOpen, setTaskModalOpen] = React.useState(false)
   const [editTask, setEditTask] = React.useState(null)
   const pageSearchParams = React.useMemo(
@@ -81,6 +90,16 @@ function LeaguePageContent() {
   const clearLeagueTeamsFlow = useClearLeagueTeamsFlow({
     league,
     selectedSeasonOption,
+  })
+  const leagueUrlEditor = useLeagueUrlEditor({
+    league,
+    selectedSeasonOption,
+    notify,
+  })
+  const teamUrlEditor = useTeamUrlEditor({
+    leagueId: league.id,
+    selectedSeasonOption,
+    notify,
   })
   const leagueImportColumns = React.useMemo(() => buildLeagueImportColumns(), [])
   const teamsWithFavorites = React.useMemo(() => (
@@ -143,20 +162,31 @@ function LeaguePageContent() {
   ])
 
   const hasCenterContext = (
+    pageSearchParams.has(queryKeys.centerSeason) ||
+    pageSearchParams.has(queryKeys.centerBirthYear) ||
+    pageSearchParams.has(queryKeys.centerAgeGroup) ||
+    pageSearchParams.has(queryKeys.centerLevel) ||
+    pageSearchParams.has(queryKeys.centerStatus) ||
     pageSearchParams.has('centerSeason') ||
     pageSearchParams.has('centerBirthYear') ||
     pageSearchParams.has('centerLevel')
   )
   const centerBackPath = PLAYERS_DATABASE_UI_ROUTES.leagues({
     seasonKey: hasCenterContext
-      ? pageSearchParams.get('centerSeason') || 'all'
-      : pageSearchParams.get('season'),
+      ? pageSearchParams.get(queryKeys.centerSeason) || pageSearchParams.get('centerSeason') || 'all'
+      : pageSearchParams.get(queryKeys.season) || pageSearchParams.get('season'),
     birthYear: hasCenterContext
-      ? pageSearchParams.get('centerBirthYear') || 'all'
-      : pageSearchParams.get('birthYear'),
+      ? pageSearchParams.get(queryKeys.centerBirthYear) || pageSearchParams.get('centerBirthYear') || 'all'
+      : pageSearchParams.get(queryKeys.birthYear) || pageSearchParams.get('birthYear'),
+    ageGroup: hasCenterContext
+      ? pageSearchParams.get(queryKeys.centerAgeGroup) || 'all'
+      : 'all',
     level: hasCenterContext
-      ? pageSearchParams.get('centerLevel') || 'all'
-      : pageSearchParams.get('level'),
+      ? pageSearchParams.get(queryKeys.centerLevel) || pageSearchParams.get('centerLevel') || 'all'
+      : pageSearchParams.get(queryKeys.level) || pageSearchParams.get('level'),
+    status: hasCenterContext
+      ? pageSearchParams.get(queryKeys.centerStatus) || 'all'
+      : 'all',
   })
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     {
@@ -259,7 +289,7 @@ function LeaguePageContent() {
           onBack={handleBackToCenter}
         />
 
-        <Box sx={sx.contentGrid}>
+        <Box sx={[sx.contentGrid, sidePanelCollapsed && sx.contentGridCollapsed]}>
           <Box sx={sx.mainColumn}>
             <LeagueKpiOverview
               summary={summary}
@@ -276,12 +306,17 @@ function LeaguePageContent() {
               ageGroup={league.ageGroup}
               birthYear={league.birthYear}
               onTeamOpen={handleTeamOpen}
-              onTeamUrlEdit={null}
+              onTeamUrlEdit={leagueDoc && selectedSeasonOption?.seasonId
+                ? teamUrlEditor.open
+                : null}
               onFavoriteToggle={handleFavoriteToggle}
             />
           </Box>
 
           <LeagueActionsPanel
+            collapsible
+            collapsed={sidePanelCollapsed}
+            onCollapsedChange={setSidePanelCollapsed}
             selectedSeasonKey={selectedSeasonKey}
             seasonOptions={seasonOptions}
             onSeasonChange={setSelectedSeasonKey}
@@ -293,7 +328,9 @@ function LeaguePageContent() {
             onDefensePriorityFilterChange={setDefensePriorityFilter}
             onLoad={leagueImport.handleOpen}
             onDownloadDocuments={handleDownloadDocuments}
-            onLeagueUrlEdit={null}
+            onLeagueUrlEdit={leagueDoc && selectedSeasonOption?.seasonId
+              ? leagueUrlEditor.show
+              : null}
             downloadDisabled={!leagueDoc || loading}
             loadDisabled={clearLeagueTeamsFlow.open || leagueImport.busy || !selectedSeasonOption?.seasonId}
             loadDisabledReason={!selectedSeasonOption?.seasonId
@@ -330,7 +367,19 @@ function LeaguePageContent() {
 
       <ClearLeagueTeamsModal
         flow={clearLeagueTeamsFlow}
+        leagueName={league?.name}
         seasonKey={selectedSeasonKey}
+      />
+
+      <LeagueSeasonSettingsDrawer editor={leagueUrlEditor} />
+
+      <TeamUrlEditDrawer
+        open={Boolean(teamUrlEditor.row)}
+        onClose={teamUrlEditor.close}
+        onSave={teamUrlEditor.save}
+        saving={teamUrlEditor.saving}
+        row={teamUrlEditor.row}
+        seasonLabel={selectedSeasonKey}
       />
 
       <TaskEditModal

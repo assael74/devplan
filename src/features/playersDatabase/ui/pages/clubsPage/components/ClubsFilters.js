@@ -13,9 +13,19 @@ import PageSidePanel from '../../../components/page/PageSidePanel.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { clubsFiltersSx as sx } from './sx/clubsFilters.sx.js'
 
-export default function ClubsFilters({ model }) {
+export default function ClubsFilters({
+  model,
+  collapsible = false,
+  collapsed = false,
+  onCollapsedChange,
+}) {
   return (
-    <PageSidePanel scrollable>
+    <PageSidePanel
+      scrollable
+      collapsible={collapsible}
+      collapsed={collapsed}
+      onCollapsedChange={onCollapsedChange}
+    >
       <Box sx={sx.sideSection}>
         <Typography level='title-sm' sx={sx.sideTitle}>סינון מועדונים</Typography>
         <Typography level='body-xs' sx={sx.sideSubtitle}>

@@ -54,7 +54,10 @@ export const executeManualEdit = async ({ refs, build }) => {
       updatedAt,
     })
 
-    changes.forEach(({ ref, patch }) => transaction.update(ref, { ...patch, updatedAt }))
+    changes.forEach(({ ref, patch, document }) => {
+      if (document) transaction.set(ref, document)
+      else transaction.update(ref, { ...patch, updatedAt })
+    })
     return changes.length
   }, usage)
 

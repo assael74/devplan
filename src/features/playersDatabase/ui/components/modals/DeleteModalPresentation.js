@@ -6,7 +6,6 @@ export const DELETE_MODAL_STEPS = [
   { id: 'check', label: 'בדיקה' },
   { id: 'preview', label: 'תצוגה מקדימה' },
   { id: 'sync', label: 'מחיקה וסנכרון' },
-  { id: 'audit', label: 'בדיקת סנכרון' },
 ]
 
 
@@ -21,8 +20,7 @@ export const normalizeDeleteModalMessage = message => {
 export const resolveDeleteModalStep = status => {
   if (status === 'preparing' || status === 'loadingPreview') return 0
   if (status === 'preview' || status === 'ready') return 1
-  if (status === 'writing' || status === 'steps' || status === 'executing') return 2
-  return 3
+  return 2
 }
 
 export function DeleteModalSummary({ items = [] }) {

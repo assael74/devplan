@@ -13,6 +13,9 @@ export const SYSTEM_AUDIT_TARGET = Object.freeze({
   PLAYER_SEARCH_INDEXES: 'playerSearchIndexes',
   LEAGUES: 'leagues',
   CLUB_PROFILES: 'clubProfiles',
+  LEAGUES_CENTER: 'leaguesCenter',
+  CLUBS_CENTER: 'clubsCenter',
+  CLUBS_DIRECTORY: 'clubsDirectory',
 })
 
 export const SYSTEM_AUDIT_TARGETS = Object.freeze(

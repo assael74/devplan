@@ -1,7 +1,5 @@
 // src/features/playersDatabase/ui/pages/teamPage/positionClassification/logic/teamPositionClassification.export.js
 
-import * as XLSX from 'xlsx'
-
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../../catalog/clubs.catalog.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
@@ -242,7 +240,7 @@ const HEADER_STYLE = {
   },
 }
 
-export default function exportTeamPositionClassificationToXlsx({
+export default async function exportTeamPositionClassificationToXlsx({
   rows = [],
   seasonDoc = null,
   teamName = '',
@@ -257,6 +255,7 @@ export default function exportTeamPositionClassificationToXlsx({
   })
   if (!safeRows.length) return false
 
+  const XLSX = await import('xlsx')
   const headers = TEAM_POSITION_CLASSIFICATION_EXPORT_COLUMNS.map(([label]) => label)
   const dataRows = safeRows.map((row, index) => (
     TEAM_POSITION_CLASSIFICATION_EXPORT_COLUMNS.map(([, getValue]) => {

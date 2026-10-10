@@ -3,8 +3,11 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import {
+  deleteOldClosedReceipts,
   getWriteActionReceipt,
-  listWriteActionReceipts,
+  listOldClosedReceipts,
+  listProblemReceipts,
+  listWriteActionReceiptHistory,
 } from '../../../../services/write/receipt/index.js'
 import {
   auditWriteActionReceipt,
@@ -18,27 +21,35 @@ const messageFromError = error => (
     : 'טעינת הקבלות נכשלה'
 )
 
-export default function useWriteActionReceipts() {
-  const [receipts, setReceipts] = useState([])
+export default function useWriteActionReceipts({ autoLoad = true, maxProblemResults = 20 } = {}) {
+  const [problemReceipts, setProblemReceipts] = useState([])
+  const [historyReceipts, setHistoryReceipts] = useState([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyLoaded, setHistoryLoaded] = useState(false)
+  const [cleanupReceipts, setCleanupReceipts] = useState([])
+  const [cleanupLoading, setCleanupLoading] = useState(false)
+  const [cleanupDeleting, setCleanupDeleting] = useState(false)
+  const [cleanupError, setCleanupError] = useState('')
   const [error, setError] = useState('')
+  const [historyError, setHistoryError] = useState('')
   const [selectedReceipt, setSelectedReceipt] = useState(null)
-  const [detailsLoading, setDetailsLoading] = useState(false)
+  const [detailsLoadingId, setDetailsLoadingId] = useState('')
   const [repairing, setRepairing] = useState(false)
   const [actionError, setActionError] = useState('')
   const [checkingSync, setCheckingSync] = useState(false)
   const [syncCheck, setSyncCheck] = useState(null)
   const [syncCheckError, setSyncCheckError] = useState('')
 
-  const load = useCallback(async ({ refresh = false } = {}) => {
+  const loadProblems = useCallback(async ({ refresh = false } = {}) => {
     if (refresh) setRefreshing(true)
     else setLoading(true)
     setError('')
 
     try {
-      const rows = await listWriteActionReceipts({ maxResults: 50 })
-      setReceipts(rows)
+      const rows = await listProblemReceipts({ maxResults: maxProblemResults })
+      setProblemReceipts(rows)
       return rows
     } catch (loadError) {
       setError(messageFromError(loadError))
@@ -47,14 +58,74 @@ export default function useWriteActionReceipts() {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [])
+  }, [maxProblemResults])
 
   useEffect(() => {
-    load().catch(() => {})
-  }, [load])
+    if (!autoLoad) {
+      setLoading(false)
+      return
+    }
+    loadProblems().catch(() => {})
+  }, [autoLoad, loadProblems])
+
+  const loadHistory = useCallback(async ({
+    maxResults = 25,
+    fromDate = null,
+    actionType = '',
+  } = {}) => {
+    setHistoryLoading(true)
+    setHistoryError('')
+    try {
+      const rows = await listWriteActionReceiptHistory({ maxResults, fromDate })
+      const filtered = actionType
+        ? rows.filter(receipt => receipt.actionType === actionType)
+        : rows
+      setHistoryReceipts(filtered)
+      setHistoryLoaded(true)
+      return filtered
+    } catch (loadError) {
+      setHistoryError(messageFromError(loadError))
+      throw loadError
+    } finally {
+      setHistoryLoading(false)
+    }
+  }, [])
+
+  const loadCleanupReceipts = useCallback(async ({ beforeDate, maxResults = 100 } = {}) => {
+    setCleanupLoading(true)
+    setCleanupError('')
+    try {
+      const rows = await listOldClosedReceipts({ beforeDate, maxResults })
+      setCleanupReceipts(rows)
+      return rows
+    } catch (loadError) {
+      setCleanupError(messageFromError(loadError))
+      throw loadError
+    } finally {
+      setCleanupLoading(false)
+    }
+  }, [])
+
+  const deleteCleanupReceipts = useCallback(async ({ beforeDate } = {}) => {
+    setCleanupDeleting(true)
+    setCleanupError('')
+    try {
+      const deletedIds = await deleteOldClosedReceipts({
+        receiptIds: cleanupReceipts.map(receipt => receipt.id),
+        beforeDate,
+      })
+      setCleanupReceipts([])
+      return deletedIds
+    } catch (deleteError) {
+      setCleanupError(messageFromError(deleteError))
+      throw deleteError
+    } finally {
+      setCleanupDeleting(false)
+    }
+  }, [cleanupReceipts])
 
   const openReceipt = useCallback(async receiptId => {
-    setDetailsLoading(true)
+    setDetailsLoadingId(receiptId)
     setActionError('')
     setSyncCheck(null)
     setSyncCheckError('')
@@ -66,7 +137,7 @@ export default function useWriteActionReceipts() {
       setActionError(messageFromError(detailsError))
       throw detailsError
     } finally {
-      setDetailsLoading(false)
+      setDetailsLoadingId('')
     }
   }, [])
 
@@ -104,7 +175,7 @@ export default function useWriteActionReceipts() {
       const result = await repairWriteActionReceipt({ receiptId })
       const [receipt] = await Promise.all([
         getWriteActionReceipt({ receiptId }),
-        load({ refresh: true }),
+        loadProblems({ refresh: true }),
       ])
       setSelectedReceipt(receipt)
       return result
@@ -114,17 +185,25 @@ export default function useWriteActionReceipts() {
     } finally {
       setRepairing(false)
     }
-  }, [load, selectedReceipt])
+  }, [loadProblems, selectedReceipt])
 
   const repairEligibility = inspectWriteActionRepair(selectedReceipt)
 
   return {
-    receipts,
+    problemReceipts,
+    historyReceipts,
     loading,
     refreshing,
+    historyLoading,
+    historyLoaded,
+    cleanupReceipts,
+    cleanupLoading,
+    cleanupDeleting,
     error,
+    historyError,
+    cleanupError,
     selectedReceipt,
-    detailsLoading,
+    detailsLoadingId,
     repairing,
     actionError,
     checkingSync,
@@ -135,7 +214,10 @@ export default function useWriteActionReceipts() {
     closeReceipt,
     repairReceipt,
     checkReceiptSync,
-    reload: () => load({ refresh: true }),
+    loadHistory,
+    loadCleanupReceipts,
+    deleteCleanupReceipts,
+    reload: () => loadProblems({ refresh: true }),
   }
 }
 

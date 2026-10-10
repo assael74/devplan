@@ -4,6 +4,10 @@ import * as React from 'react'
 
 import { prepareStatsLoad } from '../../../../../../services/write/stats/index.js'
 import { resolveCanonicalTeamPlayerIdentities } from '../../../../../../services/read/identity/canonicalPlayerIdentityPreview.read.js'
+import {
+  buildMovementTeamOptions,
+  listExistingTeamRootOptions,
+} from '../../../../../../services/read/index.js'
 import { SNACK_STATUS } from '../../../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import { clean } from '../../../logic/teamPage.utils.js'
 import {
@@ -25,6 +29,7 @@ import {
 } from '../logic/teamStatsPreview.model.js'
 import { findTeamPageSeasonDoc } from '../../../../../../model/team/page/teamPageSeason.model.js'
 import { buildTeamPagePlayerRows } from '../../../../../../model/team/page/teamPagePlayer.model.js'
+import { resolveTeamLookupKey } from '../../../../../../model/team/teamIdentity.model.js'
 import useStatsLoadExecution from './useStatsLoadExecution.js'
 import { resolvePlayersDatabaseLeagueGameTime } from '../../../../../../catalog/leagues.catalog.js'
 import { validatePlayerStatsAgainstLeague } from '../../../../../../domain/validation/playerStatsLeague.validation.js'
@@ -108,12 +113,14 @@ export default function useTeamStatsImport({
   teamSeasons,
   seasonOptions = [],
   selectedSeasonOption: pageSelectedSeasonOption = null,
+  clubsDirectory = null,
   notify,
 }) {
   const [open, setOpen] = React.useState(false)
   const [selectedSeasonOptionKey, setSelectedSeasonOptionKey] = React.useState('')
   const [pasteValue, setPasteValue] = React.useState('')
   const [rows, setRows] = React.useState([])
+  const [teamRootOptions, setTeamRootOptions] = React.useState([])
   const [busy, setBusy] = React.useState(false)
   const [reloadDecisions, setReloadDecisions] = React.useState({})
   const [approvedStatsPlan, setApprovedStatsPlan] = React.useState(null)
@@ -190,6 +197,7 @@ export default function useTeamStatsImport({
   React.useEffect(() => {
     if (!open) return
     setRows([])
+    setTeamRootOptions([])
     setPasteValue('')
     setReloadDecisions({})
     setApprovedStatsPlan(null)
@@ -202,6 +210,7 @@ export default function useTeamStatsImport({
   const selectSeasonOption = React.useCallback(optionKey => {
     setSelectedSeasonOptionKey(optionKey)
     setRows([])
+    setTeamRootOptions([])
     setPasteValue('')
     setReloadDecisions({})
     setApprovedStatsPlan(null)
@@ -377,6 +386,17 @@ export default function useTeamStatsImport({
     setBusy(true)
     try {
       const previewRows = parsePlayerStatsRows(pasteValue).map(row => enrichStatsRowForPreview(row, rosterLookup))
+      const movementTeamOptions = await listExistingTeamRootOptions({
+        seasonId: selectedSeasonOption.seasonId,
+        ageGroupId,
+        birthYear: Number(
+          selectedTeamSeason?.identity?.birthYear ||
+          selectedSeasonOption?.birthYear ||
+          team?.birthYear ||
+          0
+        ),
+        excludedBirthTeamDocumentId: resolveTeamLookupKey(team),
+      })
       const unresolvedEntries = previewRows
         .map((row, index) => ({ row, index }))
         .filter(entry => entry.row.identityStatus !== STATS_IDENTITY_STATUS.ROSTER_MATCH)
@@ -395,6 +415,17 @@ export default function useTeamStatsImport({
           ? row
           : applyResolvedStatsIdentity({ row, resolvedPlayer: resolvedByIndex.get(index) })
       )))
+      setTeamRootOptions(buildMovementTeamOptions({
+        clubsDirectory,
+        existingOptions: movementTeamOptions,
+        birthYear: Number(
+          selectedTeamSeason?.identity?.birthYear ||
+          selectedSeasonOption?.birthYear ||
+          team?.birthYear ||
+          0
+        ),
+        excludedBirthTeamDocumentId: resolveTeamLookupKey(team),
+      }))
     } catch (error) {
       notify({
         status: SNACK_STATUS.ERROR,
@@ -404,7 +435,7 @@ export default function useTeamStatsImport({
     } finally {
       setBusy(false)
     }
-  }, [notify, pasteValue, rosterLookup, selectedSeasonOption])
+  }, [ageGroupId, clubsDirectory, notify, pasteValue, rosterLookup, selectedSeasonOption, selectedTeamSeason, team])
 
   const changeCell = React.useCallback(({ rowIndex, column, value }) => {
     setRows(currentRows => currentRows.map((row, index) => (
@@ -444,6 +475,7 @@ export default function useTeamStatsImport({
     if (busy) return
     setPasteValue('')
     setRows([])
+    setTeamRootOptions([])
     setReloadDecisions({})
   }, [busy])
 
@@ -484,7 +516,7 @@ export default function useTeamStatsImport({
     rosterLookup,
     hasInvalidRows,
     movementPreview,
-    teamRootOptions: [],
+    teamRootOptions,
     approvedStatsPlan,
     approvedStatsPlanPreparing,
     approvedStatsPlanError,

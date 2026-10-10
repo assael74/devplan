@@ -8,17 +8,17 @@ export const LEAGUE_SYNC_STAGES = Object.freeze([
   }),
   Object.freeze({
     id: 'teamSeasonCompetitionSnapshots',
-    title: 'תמונת התחרות של הקבוצות',
+    title: 'מסמך קבוצה עונתי',
     target: 'dbTeamSeasons',
   }),
   Object.freeze({
     id: 'leaguesCenter',
-    title: 'מרכז הליגות',
+    title: 'מסמך מרכז הליגות',
     target: 'dbLeaguesCenter',
   }),
   Object.freeze({
     id: 'clubsCenter',
-    title: 'מרכז המועדונים',
+    title: 'מסמך מרכז המועדונים',
     target: 'dbClubsCenter',
   }),
   Object.freeze({

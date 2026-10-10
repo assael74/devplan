@@ -1,5 +1,7 @@
 // src/features/playersDatabase/ui/pages/leagueCenterPage/sx/leagueCenterTable.sx.js
 
+import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
+
 export const leagueCenterTableSx = {
   tablePanel: {
     width: '100%',
@@ -34,6 +36,7 @@ export const leagueCenterTableSx = {
       py: 0.7,
       borderBottomColor: '#dce5eb',
     },
+
     '& button': {
       minWidth: 0,
       minHeight: 28,
@@ -47,10 +50,48 @@ export const leagueCenterTableSx = {
     maxHeight: 'none',
   },
 
-  openLeagueButton: {
-    minHeight: 28,
+  groupHeaderCell: {
+    position: 'sticky',
+    top: 0,
+    zIndex: 2,
+    p: '0 !important',
+    '--TableCell-dataBackground': '#dbeaf5',
+    bgcolor: '#dbeaf5 !important',
+    opacity: 1,
+    borderTop: '1px solid #aac4d7',
+    borderBottom: '1px solid #9cb8cd',
+    boxShadow: '0 2px 5px rgba(23, 67, 96, 0.12)',
+  },
+
+  groupHeaderMessage: {
     px: 1.25,
+    py: 0.45,
+    textAlign: 'left',
+    color: devPlanColors.primaryDark,
+    fontSize: 11,
+    fontWeight: 700,
+  },
+
+  openLeagueButton: {
+    minHeight: 32,
+    px: 1.5,
+    bgcolor: devPlanColors.tertiaryLight,
+    color: devPlanColors.tertiaryDark,
+    borderColor: devPlanColors.tertiary,
     fontSize: 12,
+    fontWeight: 700,
+    boxShadow: '0 3px 8px rgba(23, 107, 166, 0.12)',
+
+    '&:hover': {
+      bgcolor: '#dcebff',
+      borderColor: devPlanColors.tertiaryDark,
+    },
+
+    '&.Mui-disabled': {
+      bgcolor: devPlanColors.secondaryLight,
+      color: devPlanColors.secondary,
+      boxShadow: 'none',
+    },
   },
 
   noRowHoverTable: {

@@ -44,6 +44,31 @@ const readLeague = async ({ leagueId }) => readDocument({
   action: 'write-league-prepare-read-canonical',
 })
 
+export const readOtherLeagueTeamOwners = async ({ leagueId, seasonId }) => {
+  const snapshot = await trackedGetDocsFromServer(
+    collection(db, PLAYERS_DATABASE_COLLECTIONS.leagues),
+    {
+      feature: 'playersDatabase',
+      collection: PLAYERS_DATABASE_COLLECTIONS.leagues,
+      action: 'write-league-prepare-read-team-owners',
+      operationSubtype: 'write-prepare-getDocs',
+    }
+  )
+  const ownersByTeamId = {}
+
+  snapshot.docs.forEach(item => {
+    const ownerLeagueId = clean(item.id)
+    if (!ownerLeagueId || ownerLeagueId === leagueId) return
+    const season = object(object(item.data()).seasonsById)[seasonId]
+    Object.keys(object(season && season.table && season.table.teamsById)).forEach(teamId => {
+      if (!ownersByTeamId[teamId]) ownersByTeamId[teamId] = []
+      ownersByTeamId[teamId].push(ownerLeagueId)
+    })
+  })
+
+  return ownersByTeamId
+}
+
 const readClubProfiles = async ({ clubIds }) => {
   const uniqueClubIds = Array.from(new Set(
     clubIds.map(clean).filter(Boolean)
@@ -128,12 +153,14 @@ export const readLeagueLoadSources = async ({ league = {}, season = {}, rows = [
     existingTeamSeasons,
     leaguesCenter,
     clubsCenter,
+    otherLeagueIdsByTeamId,
   ] = await Promise.all([
     readLeague({ leagueId }),
     readClubProfiles({ clubIds }),
     readTeamSeasons({ leagueId, seasonId }),
     readLeaguesCenter(),
     readClubsCenter({ seasonId }),
+    readOtherLeagueTeamOwners({ leagueId, seasonId }),
   ])
 
   return {
@@ -142,6 +169,7 @@ export const readLeagueLoadSources = async ({ league = {}, season = {}, rows = [
     existingLeague: existingLeague || {},
     clubProfilesById,
     existingTeamSeasons,
+    otherLeagueIdsByTeamId,
     previousLeaguesCenterTeamsById: readPreviousLeaguesCenterTeams({
       leaguesCenter,
       leagueId,
@@ -157,13 +185,22 @@ export const readLeagueLoadSources = async ({ league = {}, season = {}, rows = [
 export const readLeagueMutationSources = async ({ leagueId = '', seasonId = '' } = {}) => {
   const resolvedLeagueId = requireLeagueId(leagueId)
   const resolvedSeasonId = requireSeasonId(seasonId)
-  const [existingLeague, existingTeamSeasons, clubsCenter] = await Promise.all([
+  const [
+    existingLeague,
+    existingTeamSeasons,
+    clubsCenter,
+    otherLeagueIdsByTeamId,
+  ] = await Promise.all([
     readLeague({ leagueId: resolvedLeagueId }),
     readTeamSeasons({
       leagueId: resolvedLeagueId,
       seasonId: resolvedSeasonId,
     }),
     readClubsCenter({ seasonId: resolvedSeasonId }),
+    readOtherLeagueTeamOwners({
+      leagueId: resolvedLeagueId,
+      seasonId: resolvedSeasonId,
+    }),
   ])
 
   return {
@@ -171,6 +208,7 @@ export const readLeagueMutationSources = async ({ leagueId = '', seasonId = '' }
     seasonId: resolvedSeasonId,
     existingLeague,
     existingTeamSeasons,
+    otherLeagueIdsByTeamId,
     previousClubsCenterTeamLocations: readPreviousClubsCenterTeamLocations({
       clubsCenter,
       leagueId: resolvedLeagueId,

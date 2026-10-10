@@ -3,8 +3,6 @@
 import {
   collection,
   doc,
-  query,
-  where,
 } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
@@ -15,6 +13,7 @@ import {
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
 import {
   buildPlayerId,
+  buildPlayerSearchIndexDocumentId,
   buildPlayerSeasonDocumentId,
   buildTeamId,
   buildTeamSeasonDocumentId,
@@ -78,10 +77,73 @@ const readCenters = async ({ leagueId, seasonId, teamId }) => {
     map(object(map(leaguesCenter && leaguesCenter.leaguesById)[leagueId]).seasonsById)[seasonId]
   )
   return {
+    clubsCenterDocument: clubsCenter,
     previousLeaguesCenterTeamsById: map(leagueCenterSeason.teamsById),
     previousLeaguesCenterTeamProjection: map(leagueCenterSeason.teamsById)[teamId] || null,
     previousClubsCenterTeamProjection: findClubsCenterTeam({ clubsCenter, teamId })?.team || null,
   }
+}
+
+const readCounterpartProjectionSources = async ({
+  teamSeasonsById,
+  currentLeague,
+  currentClubProfile,
+  currentClubsCenter,
+} = {}) => {
+  const teamSeasons = Object.values(map(teamSeasonsById))
+  const leagueIds = unique(teamSeasons.map(row => clean(row && row.identity && row.identity.leagueId)))
+  const clubIds = unique(teamSeasons.map(row => clean(row && row.identity && row.identity.clubId)))
+  const seasonIds = unique(teamSeasons.map(row => clean(row && row.identity && row.identity.seasonId)))
+  const currentLeagueId = clean(currentLeague && (currentLeague.leagueId || currentLeague.id))
+  const currentClubId = clean(currentClubProfile && (currentClubProfile.clubId || currentClubProfile.id))
+  const currentSeasonId = clean(currentClubsCenter && (currentClubsCenter.seasonId || currentClubsCenter.id))
+
+  const [leagueRows, clubRows, centerRows] = await Promise.all([
+    readDocumentsByIds({
+      collectionName: PLAYERS_DATABASE_COLLECTIONS.leagues,
+      documentIds: leagueIds.filter(id => id !== currentLeagueId),
+    }),
+    readDocumentsByIds({
+      collectionName: PLAYERS_DATABASE_COLLECTIONS.clubProfiles,
+      documentIds: clubIds.filter(id => id !== currentClubId),
+    }),
+    readDocumentsByIds({
+      collectionName: PLAYERS_DATABASE_COLLECTIONS.clubsCenter,
+      documentIds: seasonIds.filter(id => id !== currentSeasonId),
+    }),
+  ])
+  if (currentLeagueId) leagueRows[currentLeagueId] = currentLeague
+  if (currentClubId) clubRows[currentClubId] = currentClubProfile
+  if (currentSeasonId) centerRows[currentSeasonId] = currentClubsCenter
+
+  return Object.fromEntries(teamSeasons.map(teamSeason => {
+    const identity = object(teamSeason && teamSeason.identity)
+    const documentId = clean(identity.teamSeasonDocumentId || teamSeason.id)
+    const teamId = clean(identity.teamId)
+    const leagueId = clean(identity.leagueId)
+    const clubId = clean(identity.clubId)
+    const seasonId = requireSeasonId(identity.seasonId)
+    const league = object(leagueRows[leagueId])
+    const season = object(map(league.seasonsById)[seasonId])
+    const teamRow = object(map(season.table && season.table.teamsById)[teamId])
+    const clubProfile = object(clubRows[clubId])
+    const previous = findClubsCenterTeam({
+      clubsCenter: centerRows[seasonId],
+      teamId,
+    })
+
+    if (!documentId || !Object.keys(teamRow).length || !Object.keys(clubProfile).length) {
+      throw new Error('Missing canonical source for counterpart ClubsCenter projection')
+    }
+
+    return [documentId, {
+      league,
+      season,
+      teamRow,
+      clubProfile,
+      previousTeamProjection: previous ? previous.team : null,
+    }]
+  }))
 }
 
 const readCounterparts = async counterpartRequests => {
@@ -150,6 +212,12 @@ export const readRosterLoadSources = async ({ input = {} } = {}) => {
     readCounterparts(source.counterpartRequests),
     readCenters({ leagueId, seasonId, teamId }),
   ])
+  const counterpartProjectionSourcesByDocumentId = await readCounterpartProjectionSources({
+    teamSeasonsById: existingCounterpartTeamSeasonsById,
+    currentLeague: league,
+    currentClubProfile: clubProfile,
+    currentClubsCenter: centers.clubsCenterDocument,
+  })
 
   const existingPlayerSeasonsById = {}
   Object.entries(playerSeasonRowsById).forEach(([_documentId, row]) => {
@@ -165,34 +233,25 @@ export const readRosterLoadSources = async ({ input = {} } = {}) => {
     playerRootsById,
     existingPlayerSeasonsById,
     existingCounterpartTeamSeasonsById,
+    counterpartProjectionSourcesByDocumentId,
     ...centers,
   }
 }
 
-const readRosterSearchIndexes = async ({ teamSeasonDocumentId }) => {
-  const reference = collection(db, PLAYERS_DATABASE_COLLECTIONS.playerSearchIndexes)
-  const snapshot = await trackedGetDocsFromServer(
-    query(reference, where('references.teamSeasonDocumentId', '==', teamSeasonDocumentId)),
-    {
-      feature: 'playersDatabase',
-      collection: PLAYERS_DATABASE_COLLECTIONS.playerSearchIndexes,
-      action: 'write-roster-clear-read-player-search-indexes',
-      operationSubtype: 'write-prepare-query',
-    }
-  )
-  return snapshot.docs.map(row => ({ id: row.id, ...row.data() }))
+const readRosterSearchIndexes = async ({ playerIds, teamSeasonDocumentId }) => {
+  const documentIds = unique(playerIds).map(playerId => (
+    buildPlayerSearchIndexDocumentId({ playerId, teamSeasonDocumentId })
+  ))
+  const rowsById = await readDocumentsByIds({
+    collectionName: PLAYERS_DATABASE_COLLECTIONS.playerSearchIndexes,
+    documentIds,
+  })
+  return Object.values(rowsById)
 }
 
-const readRosterPlayerSeasonsByTeam = async ({ teamId, teamSeasonDocumentId }) => {
+const readRosterPlayerSeasonsByTeam = async ({ teamId }) => {
   const snapshot = await trackedGetDocsFromServer(
-    query(
-      collection(db, PLAYERS_DATABASE_COLLECTIONS.playerSeasons),
-      where(
-        `teamsById.${teamId}.teamSeasonDocumentId`,
-        '==',
-        teamSeasonDocumentId
-      )
-    ),
+    collection(db, PLAYERS_DATABASE_COLLECTIONS.playerSeasons),
     {
       feature: 'playersDatabase',
       collection: PLAYERS_DATABASE_COLLECTIONS.playerSeasons,
@@ -200,10 +259,9 @@ const readRosterPlayerSeasonsByTeam = async ({ teamId, teamSeasonDocumentId }) =
       operationSubtype: 'write-prepare-getDocs',
     }
   )
-  return Object.fromEntries(snapshot.docs.map(item => [
-    item.id,
-    { id: item.id, ...item.data() },
-  ]))
+  return Object.fromEntries(snapshot.docs
+    .map(item => [item.id, { id: item.id, ...item.data() }])
+    .filter(([, row]) => Object.prototype.hasOwnProperty.call(object(row.teamsById), teamId)))
 }
 
 export const readRosterClearSources = async ({
@@ -217,11 +275,10 @@ export const readRosterClearSources = async ({
   if (!teamId || !leagueId) throw new Error('Missing Roster Clear target identity')
   const teamSeasonDocumentId = buildTeamSeasonDocumentId({ teamId, seasonId })
 
-  const [existingTeamRoot, existingTeamSeason, league, existingPlayerSearchIndexes, centers] = await Promise.all([
+  const [existingTeamRoot, existingTeamSeason, league, centers] = await Promise.all([
     readDocument({ collectionName: PLAYERS_DATABASE_COLLECTIONS.teamRoots, documentId: teamId }),
     readDocument({ collectionName: PLAYERS_DATABASE_COLLECTIONS.teamSeasons, documentId: teamSeasonDocumentId }),
     readDocument({ collectionName: PLAYERS_DATABASE_COLLECTIONS.leagues, documentId: leagueId }),
-    readRosterSearchIndexes({ teamSeasonDocumentId }),
     readCenters({ leagueId, seasonId, teamId }),
   ])
   if (!league) throw new Error('Canonical League document was not found')
@@ -236,25 +293,30 @@ export const readRosterClearSources = async ({
   })
   if (!clubProfile) throw new Error('Canonical ClubProfile was not found')
 
-  const playerIds = unique(
+  const canonicalPlayerIds = unique(
     Object.keys(object(existingTeamSeason && existingTeamSeason.roster && existingTeamSeason.roster.playersById))
   )
-  const playerSeasonDocumentIds = playerIds.map(playerId => buildPlayerSeasonDocumentId({ playerId, seasonId }))
+  const playerSeasonRowsById = existingTeamSeason
+    ? await readDocumentsByIds({
+        collectionName: PLAYERS_DATABASE_COLLECTIONS.playerSeasons,
+        documentIds: canonicalPlayerIds.map(playerId => (
+          buildPlayerSeasonDocumentId({ playerId, seasonId })
+        )),
+      })
+    : await readRosterPlayerSeasonsByTeam({ teamId })
+  const recoveredPlayerIds = Object.values(playerSeasonRowsById)
+    .map(row => clean(row.identity && row.identity.playerId))
+  const playerIds = unique([...canonicalPlayerIds, ...recoveredPlayerIds])
   const [
     playerRootsById,
-    playerSeasonRowsById,
+    existingPlayerSearchIndexes,
     existingCounterpartTeamSeasonsById,
   ] = await Promise.all([
     readDocumentsByIds({
       collectionName: PLAYERS_DATABASE_COLLECTIONS.playerRoots,
       documentIds: playerIds,
     }),
-    existingTeamSeason
-      ? readDocumentsByIds({
-          collectionName: PLAYERS_DATABASE_COLLECTIONS.playerSeasons,
-          documentIds: playerSeasonDocumentIds,
-        })
-      : readRosterPlayerSeasonsByTeam({ teamId, teamSeasonDocumentId }),
+    readRosterSearchIndexes({ playerIds, teamSeasonDocumentId }),
     readDocumentsByIds({
       collectionName: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
       documentIds: includeCounterparts
@@ -267,6 +329,12 @@ export const readRosterClearSources = async ({
     const playerId = clean(row.identity && row.identity.playerId)
     if (playerId) existingPlayerSeasonsById[playerId] = row
   })
+  const counterpartProjectionSourcesByDocumentId = await readCounterpartProjectionSources({
+    teamSeasonsById: existingCounterpartTeamSeasonsById,
+    currentLeague: league,
+    currentClubProfile: clubProfile,
+    currentClubsCenter: centers.clubsCenterDocument,
+  })
 
   return {
     existingTeamRoot,
@@ -275,6 +343,7 @@ export const readRosterClearSources = async ({
     existingPlayerSeasonsById,
     existingPlayerSearchIndexes,
     existingCounterpartTeamSeasonsById,
+    counterpartProjectionSourcesByDocumentId,
     league,
     clubProfile,
     ...centers,

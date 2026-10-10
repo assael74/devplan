@@ -145,20 +145,6 @@ const IMMEDIACY_PARAMETER_LABELS = {
   signal_decay: 'דעיכת הסימן לאורך זמן',
 }
 
-const IMMEDIACY_MISSING_INFO_REASONS = new Set([
-  'club_strength_unavailable',
-  'league_level_unavailable',
-  'future_path_unavailable',
-  'future_path_season_mismatch',
-])
-
-const IMMEDIACY_MISSING_PREREQUISITE_REASONS = new Set([
-  'multiple_profiles_required',
-  'promoted_talent_profile_required',
-  'current_profile_required',
-  'current_combination_required',
-])
-
 export const getImmediacyParameterLabel = item => IMMEDIACY_PARAMETER_LABELS[item.id] || item.label || item.id
 
 const getMissedExplanation = item => {

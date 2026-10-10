@@ -31,28 +31,32 @@ export default function AnimatedModal({
   confirmLabel = 'שמירה',
   cancelLabel = 'ביטול',
   confirmIconId = '',
+  confirmLoading = false,
   confirmLoadingPosition = 'center',
   size = 'md',
   busy = false,
+  allowCloseWhileBusy = false,
   disabled = false,
   hideFooter = false,
+  hideCancel = false,
   persistent = false,
   contentSx,
   headerSx,
   footerSx,
+  footerText = '',
   footerActions = null,
   oppositeFooterActions = null,
+  footerContent = null,
   onConfirm,
   onClose,
 }) {
   const handleClose = (event, reason) => {
-    if (busy) return
-    if (persistent && reason) return
+    if ((busy && !allowCloseWhileBusy) || persistent) return
     onClose?.()
   }
 
   const handleConfirm = () => {
-    if (busy || disabled) return
+    if (busy || confirmLoading || disabled) return
     onConfirm?.()
   }
 
@@ -88,7 +92,7 @@ export default function AnimatedModal({
                 </Box>
 
                 <ModalClose
-                  disabled={busy}
+                  disabled={(busy && !allowCloseWhileBusy) || persistent}
                   onClick={handleClose}
                   sx={sx.closeButton}
                 />
@@ -105,38 +109,50 @@ export default function AnimatedModal({
 
               {!hideFooter ? (
                 <Box sx={{ ...sx.footer, ...(footerSx || {}) }}>
-                  <Button
-                    variant='solid'
-                    loading={busy}
-                    loadingPosition={confirmLoadingPosition}
-                    disabled={disabled || busy}
-                    startDecorator={
-                      !busy && confirmIconId
-                        ? iconUi({ id: confirmIconId, size: 'sm' })
-                        : null
-                    }
-                    onClick={handleConfirm}
-                    sx={sx.confirmButton}
-                  >
-                    {confirmLabel}
-                  </Button>
+                  {footerContent !== null ? footerContent : (
+                    <>
+                      {footerText ? (
+                        <Typography level='body-xs' sx={sx.footerText}>
+                          {footerText}
+                        </Typography>
+                      ) : null}
 
-                  {footerActions}
+                      <Button
+                        variant='solid'
+                        loading={busy || confirmLoading}
+                        loadingPosition={confirmLoadingPosition}
+                        disabled={disabled || busy || confirmLoading}
+                        startDecorator={
+                          !busy && !confirmLoading && confirmIconId
+                            ? iconUi({ id: confirmIconId, size: 'sm' })
+                            : null
+                        }
+                        onClick={handleConfirm}
+                        sx={sx.confirmButton}
+                      >
+                        {confirmLabel}
+                      </Button>
 
-                  <Button
-                    variant='outlined'
-                    disabled={busy}
-                    onClick={handleClose}
-                    sx={sx.cancelButton}
-                  >
-                    {cancelLabel}
-                  </Button>
+                      {footerActions}
 
-                  {oppositeFooterActions ? (
-                    <Box sx={{ marginInlineStart: 'auto' }}>
-                      {oppositeFooterActions}
-                    </Box>
-                  ) : null}
+                      {!hideCancel ? (
+                        <Button
+                          variant='outlined'
+                          disabled={(busy && !allowCloseWhileBusy) || persistent}
+                          onClick={handleClose}
+                          sx={sx.cancelButton}
+                        >
+                          {cancelLabel}
+                        </Button>
+                      ) : null}
+
+                      {oppositeFooterActions ? (
+                        <Box sx={{ marginInlineStart: 'auto' }}>
+                          {oppositeFooterActions}
+                        </Box>
+                      ) : null}
+                    </>
+                  )}
                 </Box>
               ) : null}
             </ModalDialog>

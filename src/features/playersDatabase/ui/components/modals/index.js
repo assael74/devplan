@@ -2,9 +2,9 @@
 
 export { default as ConfirmModal } from './ConfirmModal.js'
 export { default as PlayerRoleEditModal } from './PlayerRoleEditModal.js'
-export { default as PlayerDatabaseAuditModal } from './CanonicalAuditModal.js'
 export { default as RegularModal } from './RegularModal.js'
 export { default as ReportNameModal } from './ReportNameModal.js'
+export { default as SteppedModal } from './SteppedModal.js'
 
 export { default as LeagueImportModal } from './paste/LeagueImportModal.js'
 

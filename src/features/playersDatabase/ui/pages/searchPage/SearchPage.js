@@ -17,21 +17,34 @@ import SearchWorkspace from './SearchWorkspace.js'
 import useSearchPage from './hooks/useSearchPage.js'
 import { useSearchReport } from './report/index.js'
 import {
-  PlayerDatabaseAuditModal,
   ReportNameModal,
 } from '../../components/modals/index.js'
-import useCanonicalSearchAudit from './hooks/useCanonicalSearchAudit.js'
 import { searchPageSx as sx } from './sx/searchPage.sx.js'
+
+const clean = value => String(value === undefined || value === null ? '' : value).trim()
+
+const buildSearchAuditRoute = rows => {
+  const scopes = [
+    ...new Map((Array.isArray(rows) ? rows : []).map(row => {
+      const scope = {
+        leagueId: clean(row && row.leagueId),
+        teamId: clean(row && row.teamId),
+        seasonId: clean(row && row.seasonId),
+      }
+      return [`${scope.leagueId}::${scope.teamId}::${scope.seasonId}`, scope]
+    })).values(),
+  ].filter(scope => scope.leagueId && scope.teamId && scope.seasonId)
+
+  return scopes.length === 1
+    ? PLAYERS_DATABASE_UI_ROUTES.dataOpsAudit({ type: 'team', ...scopes[0] })
+    : PLAYERS_DATABASE_UI_ROUTES.dataOpsAudit()
+}
 
 function SearchPageContent() {
   const location = useLocation()
   const navigate = useNavigate()
   const [reportNameOpen, setReportNameOpen] = React.useState(false)
   const search = useSearchPage()
-  const audit = useCanonicalSearchAudit({
-    rows: search.rows,
-  })
-
   const searchReport = useSearchReport({
     rows: search.rows,
     queryFilters: search.queryFilters,
@@ -80,7 +93,7 @@ function SearchPageContent() {
           breadcrumbs={breadcrumbs}
           onLeagues={() => navigate(PLAYERS_DATABASE_UI_ROUTES.leagues())}
           onReport={() => setReportNameOpen(true)}
-          onScoutAudit={audit.openAudit}
+          onScoutAudit={() => navigate(buildSearchAuditRoute(search.rows))}
           reportDisabled={!search.hasLoaded || !search.rows.length}
         />
 
@@ -99,18 +112,6 @@ function SearchPageContent() {
         onConfirm={handleCreateReport}
       />
 
-      <PlayerDatabaseAuditModal
-        open={audit.open}
-        busy={audit.busy}
-        error={audit.error}
-        result={audit.result}
-        defaults={audit.defaults}
-        onRun={audit.runAudit}
-        onScopeChange={audit.handleScopeChange}
-        onTeamOpen={audit.openTeam}
-        onLeagueOpen={audit.openLeague}
-        onClose={audit.closeAudit}
-      />
     </>
   )
 }

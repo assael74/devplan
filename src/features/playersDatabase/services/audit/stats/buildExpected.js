@@ -9,7 +9,12 @@ import {
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 const object = value => (value && typeof value === 'object' && !Array.isArray(value) ? value : {})
 
-export const buildStatsAuditExpected = ({ actual = {}, approvedState = null, seasonId = '' } = {}) => {
+export const buildStatsAuditExpected = ({
+  actual = {},
+  approvedState = null,
+  seasonId = '',
+  scopedPlayerIds = [],
+} = {}) => {
   const teamSeason = actual.teamSeason
   const league = actual.league
   const clubDirectoryEntry = actual.clubDirectoryEntry
@@ -27,8 +32,14 @@ export const buildStatsAuditExpected = ({ actual = {}, approvedState = null, sea
   const teamId = clean(identity.teamId)
   const leagueId = clean(identity.leagueId)
   const clubId = clean(identity.clubId)
+  const requestedPlayerIds = (Array.isArray(scopedPlayerIds) ? scopedPlayerIds : [])
+    .map(clean)
+    .filter(Boolean)
+  const rosterPlayerIds = requestedPlayerIds.length
+    ? requestedPlayerIds
+    : Object.keys(object(object(teamSeason.roster).playersById))
   const playerIds = Array.from(new Set([
-    ...Object.keys(object(object(teamSeason.roster).playersById)),
+    ...rosterPlayerIds,
     ...(approvedState && Array.isArray(approvedState.playerRootPlans)
       ? approvedState.playerRootPlans.map(plan => plan.playerId)
       : []),

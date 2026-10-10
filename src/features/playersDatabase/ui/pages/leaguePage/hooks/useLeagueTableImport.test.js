@@ -3,12 +3,18 @@
 import { act, renderHook } from '@testing-library/react'
 
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
-import { loadLeague } from '../../../../services/write/league/index.js'
+import {
+  loadLeague,
+  readOtherLeagueTeamOwners,
+} from '../../../../services/write/league/index.js'
 import { getWriteActionReceipt } from '../../../../services/write/receipt/index.js'
 import { repairWriteActionReceipt } from '../../../../services/write/recovery/index.js'
 import { useLeagueTableImport } from './useLeagueTableImport.js'
 
-jest.mock('../../../../services/write/league/index.js', () => ({ loadLeague: jest.fn() }))
+jest.mock('../../../../services/write/league/index.js', () => ({
+  loadLeague: jest.fn(),
+  readOtherLeagueTeamOwners: jest.fn(),
+}))
 jest.mock('../../../../services/write/receipt/index.js', () => ({
   getWriteActionReceipt: jest.fn(),
 }))
@@ -80,6 +86,7 @@ const completedReceipt = {
 beforeEach(() => {
   jest.resetAllMocks()
   props.reload.mockResolvedValue(undefined)
+  readOtherLeagueTeamOwners.mockResolvedValue({})
 })
 
 test('repairs projections without reopening a receipt after canonical confirmation', async () => {
@@ -112,9 +119,7 @@ test('repairs projections without reopening a receipt after canonical confirmati
     result.current.setSeasonStatus('not_started')
     result.current.setPasteValue(pasteValue)
   })
-  act(() => {
-    result.current.handlePreview()
-  })
+  await act(async () => result.current.handlePreview())
   expect(result.current.rows[0].teamSlot).toBe('1')
   expect(result.current.canConfirm).toBe(true)
   act(() => {
@@ -134,4 +139,62 @@ test('repairs projections without reopening a receipt after canonical confirmati
   expect(loadLeague).toHaveBeenCalledTimes(1)
   expect(repairWriteActionReceipt).toHaveBeenCalledWith({ receiptId: 'receipt-1' })
   expect(result.current.executionStatus).toBe('succeeded')
+})
+
+test('locks a historical league season to completed when the import opens', () => {
+  const historicalProps = {
+    ...props,
+    selectedSeasonOption: {
+      ...props.selectedSeasonOption,
+      season: {
+        ...props.selectedSeasonOption.season,
+        seasonKey: '25/26',
+      },
+    },
+  }
+  const { result } = renderHook(() => useLeagueTableImport(historicalProps))
+
+  act(() => result.current.handleOpen())
+
+  expect(result.current.historicalSeason).toBe(true)
+  expect(result.current.seasonStatus).toBe('completed')
+})
+
+test('blocks an occupied team slot and allows selecting a free second-team slot', async () => {
+  const club = PLAYERS_DATABASE_CLUBS_CATALOG[0]
+  readOtherLeagueTeamOwners.mockResolvedValue({
+    [`${club.id}_2008_1`]: ['u19-premier'],
+  })
+  const { result } = renderHook(() => useLeagueTableImport(props))
+  const pasteValue = [
+    'מיקום\tקבוצה\tמשחקים\tניצחונות\tתיקו\tהפסדים\tשערי זכות\tשערי חובה\tנקודות',
+    `1\t${club.name}\t0\t0\t0\t0\t0\t0\t0`,
+  ].join('\n')
+
+  act(() => {
+    result.current.setSeasonStatus('not_started')
+    result.current.setPasteValue(pasteValue)
+  })
+  await act(async () => result.current.handlePreview())
+
+  expect(result.current.rows[0]).toEqual(expect.objectContaining({
+    teamSlot: '1',
+    valid: false,
+    requiresTeamSlotResolution: true,
+  }))
+  expect(result.current.rows[0].errors.join(' ')).toContain('כבר קיימת בעונה זו')
+  expect(result.current.canConfirm).toBe(false)
+
+  act(() => result.current.handleCellChange({
+    rowIndex: 0,
+    column: { key: 'teamSlot' },
+    value: '2',
+  }))
+
+  expect(result.current.rows[0]).toEqual(expect.objectContaining({
+    teamSlot: '2',
+    valid: true,
+    requiresTeamSlotResolution: false,
+  }))
+  expect(result.current.canConfirm).toBe(true)
 })

@@ -1,5 +1,6 @@
 // src/features/playersDatabase/ui/pages/leagueCenterPage/LeagueCenterTable.js
 
+import * as React from 'react'
 import { Button } from '@mui/joy'
 
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
@@ -7,6 +8,7 @@ import PageContentPanel from '../../components/page/PageContentPanel.js'
 import DataTable from '../../components/tables/dataTable/index.js'
 import { buildLeagueCenterExportConfig } from './logic/leagueCenter.export.js'
 import { downloadLeagueCenterDocumentsJson } from './logic/leagueCenterJson.logic.js'
+import { buildLeagueCenterTableGroups } from './logic/leagueCenterTableGroups.js'
 import { leagueCenterTableSx as sx } from './sx/leagueCenterTable.sx.js'
 
 export default function LeagueCenterTable({
@@ -14,13 +16,27 @@ export default function LeagueCenterTable({
   model,
   onOpenLeague,
 }) {
-  const hasContext = model.birthYear !== 'all' && model.leagueLevel !== 'all'
+  const hasContext = model.birthYears.length > 0 && model.leagueLevel !== 'all'
   const emptyText = model.loading
     ? 'טוען ליגות...'
     : model.error || (hasContext
       ? 'לא נמצאו ליגות בהקשר שנבחר'
       : 'בחר שנתון ורמת ליגה כדי להתחיל')
   const hasJsonDocument = Boolean(model.leaguesCenterDoc?.documentExists)
+  const groupedRows = React.useMemo(() => (
+    buildLeagueCenterTableGroups(model.leagues).map(row => (
+      row.fullWidthMessage
+        ? {
+          ...row,
+          fullWidthCellSx: sx.groupHeaderCell,
+          fullWidthMessageSx: sx.groupHeaderMessage,
+        }
+        : row
+    ))
+  ), [model.leagues])
+  const groupedColumns = React.useMemo(() => (
+    columns.map(column => ({ ...column, sortable: false }))
+  ), [columns])
   const exportConfig = {
     ...buildLeagueCenterExportConfig({ rows: model.allRows }),
     headerActions: [{
@@ -52,14 +68,14 @@ export default function LeagueCenterTable({
           onClick={onOpenLeague}
           sx={sx.openLeagueButton}
         >
-          פתיחת ליגה
+          פתיחת ליגה חדשה
         </Button>
       )}
       panelSx={sx.tablePanel}
     >
       <DataTable
-        columns={columns}
-        rows={model.leagues}
+        columns={groupedColumns}
+        rows={groupedRows}
         getRowKey={row => `${row.id}_${row.seasonId || row.seasonKey || 'bootstrap'}`}
         emptyText={emptyText}
         wrapSx={sx.tableScroll}

@@ -215,7 +215,12 @@ export const loadRoster = async ({
   })
 }
 
-export const clearRoster = async ({ approvedState = null, receiptId = '', display = {} } = {}) => {
+export const clearRoster = async ({
+  approvedState = null,
+  receiptId = '',
+  display = {},
+  onProgress,
+} = {}) => {
   if (!approvedState || approvedState.actionType !== 'rosterClear') {
     throw new Error('Roster Clear requires an approved state')
   }
@@ -225,5 +230,6 @@ export const clearRoster = async ({ approvedState = null, receiptId = '', displa
     stages: CLEAR_STAGES,
     receiptId,
     display,
+    onProgress,
   })
 }

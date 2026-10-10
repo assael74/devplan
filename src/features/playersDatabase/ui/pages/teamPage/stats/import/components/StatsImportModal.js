@@ -15,8 +15,7 @@ import {
 } from '../logic/statsImport.constants.js'
 import ImportActionArea from '../../../../../components/modals/ImportActionArea.js'
 import ImportModalContextDescription from '../../../../../components/modals/ImportModalContextDescription.js'
-import ModalStepper from '../../../../../components/modals/ModalStepper.js'
-import RegularModal from '../../../../../components/modals/RegularModal.js'
+import SteppedModal from '../../../../../components/modals/SteppedModal.js'
 import PasteArea from '../../../../../components/modals/paste/PasteArea.js'
 import PreviewTable from '../../../../../components/modals/paste/PreviewTable.js'
 import TeamSeasonChoiceCards from '../../../../../components/modals/paste/TeamSeasonChoiceCards.js'
@@ -219,8 +218,12 @@ export default function StatsImportModal({
     activeStep === 3 &&
     controller.finalSync?.syncComplete === true
   )
+  const syncStatus = controller.finalSync?.executionStatus || 'idle'
+  const syncLocked = activeStep === 3 && (syncStatus === 'writing' || controller.busy)
+  const collectingDocuments = activeStep === 2 && controller.approvedStatsPlanPreparing
+  const confirmLoading = collectingDocuments || (activeStep === 3 && syncStatus === 'writing')
   const confirmDisabled = activeStep === 3
-    ? !syncComplete
+    ? controller.busy || syncStatus === 'writing' || (syncStatus === 'success' && !syncComplete)
     : activeStep === 0
     ? !contextReady
     : activeStep === 1
@@ -254,6 +257,20 @@ export default function StatsImportModal({
         },
       ]}
     />
+  ) : activeStep === 3 && syncStatus !== 'success' ? (
+    <ImportActionArea
+      actions={[
+        {
+          id: 'back',
+          label: 'חזרה לזיהוי ואישור',
+          iconId: 'forward',
+          presentationRole: 'back',
+          disabled: syncLocked,
+          sx: chromeSx.backButton,
+          onClick: () => setActiveStep(2),
+        },
+      ]}
+    />
   ) : null
   const handleConfirm = async () => {
     if (activeStep === 0) {
@@ -273,7 +290,15 @@ export default function StatsImportModal({
     }
 
     if (activeStep === 3) {
-      handleClose()
+      if (syncStatus === 'success') {
+        handleClose()
+        return
+      }
+      if (syncStatus === 'failed' || syncStatus === 'audit_failed') {
+        controller.finalSync?.retry()
+        return
+      }
+      controller.finalSync?.execute()
       return
     }
 
@@ -281,55 +306,70 @@ export default function StatsImportModal({
     if (approved) setActiveStep(3)
   }
   const handleClose = () => {
-    if (controller.busy) return
-    if (activeStep === 3 && controller.finalSync?.status === 'writing') return
-    if (activeStep === 3 && controller.finalSync?.syncComplete !== true) return
+    if (syncLocked) return
 
     controller.clearPaste()
     controller.close()
   }
-  const confirmLabel = activeStep === 0
-    ? 'המשך לקליטת נתונים'
-    : activeStep === 1
-      ? 'המשך לזיהוי ואישור'
-      : activeStep === 2 ? 'אישור טעינת סטטיסטיקות' : 'סגור'
+  const confirmLabel = collectingDocuments
+    ? 'אוסף מסמכים…'
+    : activeStep === 0
+      ? 'המשך לקליטת נתונים'
+      : activeStep === 1
+        ? 'המשך לזיהוי ואישור'
+        : activeStep === 2
+          ? 'עבור לסנכרון'
+          : syncStatus === 'writing'
+            ? 'מסנכרן נתונים…'
+            : syncStatus === 'success'
+              ? 'סגור'
+              : syncStatus === 'failed' || syncStatus === 'audit_failed'
+                ? controller.finalSync?.retryMode === 'repair' ? 'תקן תוצרים' : 'נסה שוב'
+                : 'בצע טעינת סטטיסטיקות'
 
   return (
-    <RegularModal
+    <SteppedModal
       open={controller.open}
+      activeStep={activeStep}
+      steps={STEPS}
+      compactStepper
       title={`טעינת סטטיסטיקות - ${team.name}`}
       description={description}
       iconId='addStats'
       busy={controller.busy}
+      allowCloseWhileBusy={!syncLocked}
+      persistent={syncLocked}
       disabled={confirmDisabled}
       confirmLabel={confirmLabel}
       confirmIconId={activeStep === 2 ? 'upload' : activeStep === 3 ? 'next' : 'next'}
+      confirmLoading={confirmLoading}
+      confirmLoadingPosition='start'
       size='xl'
       contentSx={pasteSx.modalContent}
+      layoutSx={sx.stepLayout}
       headerIconSx={sx.modalHeaderIcon}
       footerSx={chromeSx.footer}
       footerActions={footerActions}
       onConfirm={handleConfirm}
       onClose={handleClose}
     >
-      <Box sx={pasteSx.content}>
-        <ModalStepper activeStep={activeStep} steps={STEPS} compact />
+      {activeStep === 0 ? selectionControls : null}
 
-        {activeStep === 0 ? selectionControls : null}
+      {activeStep === 1 ? (
+        <PasteArea
+          value={controller.pasteValue}
+          placeholder={PLAYER_STATS_PLACEHOLDER}
+          compact={hasPreviewRows}
+          onChange={controller.setPasteValue}
+          inputVariant='tall'
+          templateText={PLAYER_STATS_PLACEHOLDER}
+          showFooterHint={false}
+          fillHeight
+        />
+      ) : null}
 
-        {activeStep === 1 ? (
-          <PasteArea
-            value={controller.pasteValue}
-            placeholder={PLAYER_STATS_PLACEHOLDER}
-            compact={hasPreviewRows}
-            onChange={controller.setPasteValue}
-            inputVariant='tall'
-            templateText={PLAYER_STATS_PLACEHOLDER}
-          />
-        ) : null}
-
-        {activeStep === 2 ? (
-          <Box sx={sx.reviewStep}>
+      {activeStep === 2 ? (
+        <Box sx={sx.reviewStep}>
             <PreviewTable
               columns={columns}
               rows={controller.rows}
@@ -395,13 +435,14 @@ export default function StatsImportModal({
                 ) : null}
               </Stack>
             ) : null}
-          </Box>
-        ) : null}
+        </Box>
+      ) : null}
 
-        {activeStep === 3 ? (
+      {activeStep === 3 ? (
+        <Box sx={sx.syncStep}>
           <StatsFinalSyncPanel controller={controller.finalSync} />
-        ) : null}
-      </Box>
-    </RegularModal>
+        </Box>
+      ) : null}
+    </SteppedModal>
   )
 }

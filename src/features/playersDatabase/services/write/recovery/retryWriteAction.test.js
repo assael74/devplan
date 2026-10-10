@@ -1,9 +1,8 @@
 // src/features/playersDatabase/services/write/recovery/retryWriteAction.test.js
 
-import { bootstrapClubs } from '../club/index.js'
 import { clearLeagueTeams, deleteLeagueSeason } from '../league/index.js'
 import { clearRoster, prepareRosterClear } from '../roster/index.js'
-import { clearStats } from '../stats/index.js'
+import { clearStats, prepareStatsClear } from '../stats/index.js'
 import { getWriteActionReceipt } from '../receipt/index.js'
 import { repairWriteActionReceipt } from './repairWriteAction.js'
 import {
@@ -11,7 +10,6 @@ import {
   retryWriteActionReceipt,
 } from './retryWriteAction.js'
 
-jest.mock('../club/index.js', () => ({ bootstrapClubs: jest.fn() }))
 jest.mock('../league/index.js', () => ({
   clearLeagueTeams: jest.fn(),
   deleteLeagueSeason: jest.fn(),
@@ -20,7 +18,10 @@ jest.mock('../roster/index.js', () => ({
   clearRoster: jest.fn(),
   prepareRosterClear: jest.fn(),
 }))
-jest.mock('../stats/index.js', () => ({ clearStats: jest.fn() }))
+jest.mock('../stats/index.js', () => ({
+  clearStats: jest.fn(),
+  prepareStatsClear: jest.fn(),
+}))
 jest.mock('../receipt/index.js', () => ({ getWriteActionReceipt: jest.fn() }))
 jest.mock('./repairWriteAction.js', () => ({ repairWriteActionReceipt: jest.fn() }))
 
@@ -47,14 +48,13 @@ describe('retryWriteActionReceipt', () => {
     clearRoster.mockResolvedValue({ receiptId: 'receipt-1' })
     prepareRosterClear.mockResolvedValue({ actionType: 'rosterClear' })
     clearStats.mockResolvedValue({ receiptId: 'receipt-1' })
-    bootstrapClubs.mockResolvedValue({ receiptId: 'receipt-1' })
+    prepareStatsClear.mockResolvedValue({ actionType: 'statsClear' })
     repairWriteActionReceipt.mockResolvedValue({ receiptId: 'receipt-1' })
   })
 
   test.each([
     ['leagueTeamsClear', clearLeagueTeams],
     ['leagueSeasonDelete', deleteLeagueSeason],
-    ['statsClear', clearStats],
   ])('retries %s through its canonical owner with fresh target input', async (actionType, action) => {
     getWriteActionReceipt.mockResolvedValue(receipt(actionType))
 
@@ -62,6 +62,19 @@ describe('retryWriteActionReceipt', () => {
 
     expect(action).toHaveBeenCalledWith({
       input: target,
+      receiptId: 'receipt-1',
+      display: { teamName: 'קבוצה א' },
+    })
+  })
+
+  test('prepares Stats Clear once before retrying when no Approved State was supplied', async () => {
+    getWriteActionReceipt.mockResolvedValue(receipt('statsClear'))
+
+    await retryWriteActionReceipt({ receiptId: 'receipt-1' })
+
+    expect(prepareStatsClear).toHaveBeenCalledWith({ input: target })
+    expect(clearStats).toHaveBeenCalledWith({
+      approvedState: { actionType: 'statsClear' },
       receiptId: 'receipt-1',
       display: { teamName: 'קבוצה א' },
     })
@@ -92,14 +105,6 @@ describe('retryWriteActionReceipt', () => {
       receiptId: 'receipt-1',
       display: { teamName: 'קבוצה א' },
     })
-  })
-
-  test('retries club bootstrap through the canonical owner', async () => {
-    getWriteActionReceipt.mockResolvedValue(receipt('clubsBootstrap'))
-
-    await retryWriteActionReceipt({ receiptId: 'receipt-1' })
-
-    expect(bootstrapClubs).toHaveBeenCalledWith({ receiptId: 'receipt-1' })
   })
 
   test('repairs projections without reopening a receipt after canonical confirmation', async () => {

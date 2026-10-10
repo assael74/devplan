@@ -44,7 +44,7 @@ const resolveStatValue = ({
   return null
 }
 
-export const adaptTeamBalancePlayerRow = player => {
+const adaptTeamBalancePlayerRow = player => {
   const source = player && typeof player === 'object' ? player : {}
   const stats = getPlayerStats(source)
 

@@ -5,6 +5,7 @@
 import {
   buildDataOpsNavigationState,
   PLAYERS_DATABASE_UI_ROUTES,
+  resolveDataOpsAuditRoute,
   resolveDataOpsReturnPath,
 } from './routeBuilders.js'
 
@@ -40,5 +41,30 @@ describe('DataOps return navigation', () => {
       .toBe(PLAYERS_DATABASE_UI_ROUTES.entry)
     expect(resolveDataOpsReturnPath({ from: PLAYERS_DATABASE_UI_ROUTES.dataOps }))
       .toBe(PLAYERS_DATABASE_UI_ROUTES.entry)
+  })
+})
+
+describe('DataOps scoped navigation', () => {
+  test('opens a team audit with context from the current route', () => {
+    expect(resolveDataOpsAuditRoute({
+      pathname: '/players-database/leagues/league-1/teams/team-1',
+      search: '?auditSeason=2026_2027',
+    })).toBe(
+      '/players-database/data-ops/audit?type=team&league=league-1&team=team-1&season=2026_2027'
+    )
+  })
+
+  test('opens a player audit with query context', () => {
+    expect(resolveDataOpsAuditRoute({
+      pathname: '/players-database/players/player-1',
+      search: '?league=league-1&team=team-1&season=2026_2027',
+    })).toBe(
+      '/players-database/data-ops/audit?type=player&league=league-1&team=team-1&player=player-1&season=2026_2027'
+    )
+  })
+
+  test('falls back to the DataOps home outside an entity route', () => {
+    expect(resolveDataOpsAuditRoute({ pathname: '/players-database/search' }))
+      .toBe(PLAYERS_DATABASE_UI_ROUTES.dataOps)
   })
 })

@@ -58,10 +58,42 @@ describe('useClearStatsFlow', () => {
       display: {
         teamName: '',
       },
+      onProgress: expect.any(Function),
     })
     expect(result.current.status).toBe('succeeded')
     expect(result.current.result).toBe(resultValue)
     expect(result.current.error).toBe(null)
+  })
+
+  test('updates the synchronization cards from clear progress events', async () => {
+    prepareStatsClear.mockResolvedValue({
+      isIdempotent: false,
+      projectionPlan: { impact: { operationsRequired: 1 } },
+    })
+    clearStats.mockImplementation(async ({ onProgress }) => {
+      onProgress({ type: 'receiptOpened', receiptId: 'receipt-progress' })
+      onProgress({
+        type: 'stageCompleted',
+        receiptId: 'receipt-progress',
+        stageId: 'canonical',
+      })
+      return { receiptId: 'receipt-progress', status: 'succeeded' }
+    })
+
+    const { result } = renderHook(() => useClearStatsFlow(target))
+
+    act(() => result.current.openModal())
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    await act(async () => result.current.execute())
+
+    expect(result.current.syncStages[0]).toEqual(expect.objectContaining({
+      id: 'canonical',
+      state: 'completed',
+    }))
+    expect(result.current.syncStages[1]).toEqual(expect.objectContaining({
+      id: 'playerRoots',
+      state: 'pending',
+    }))
   })
 
   test('allows explicit receipt creation and Audit when Stats are already clean', async () => {

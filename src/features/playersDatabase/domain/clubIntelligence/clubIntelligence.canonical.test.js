@@ -38,6 +38,7 @@ const sources = {
           displayName: 'ליגה 1',
           ageGroupLabel: 'נערים ג׳',
           leagueLevel: 1,
+          seasonStatus: 'completed',
         },
       },
       clubsById: {
@@ -80,6 +81,7 @@ describe('Canonical club intelligence', () => {
       teamSeasonDocumentId: 'club-a_2012_1__2026_2027',
       seasonId: '2026_2027',
       seasonKey: '26/27',
+      seasonStatus: 'completed',
       teamSlot: 1,
       league: {
         leagueId: 'league_1',

@@ -32,43 +32,6 @@ const cloneValue = value => {
   }, {})
 }
 
-const RESULT_FILTER_LABELS = {
-  teamSearch: 'חיפוש קבוצה',
-  playerSearch: 'חיפוש שחקן',
-  seasons: 'עונות בתצוגה',
-  leagues: 'ליגות בתצוגה',
-  teams: 'קבוצות בתצוגה',
-  profiles: 'פרופילים בתצוגה',
-  attackLevels: 'עדיפות התקפית בתצוגה',
-  defenseLevels: 'עדיפות הגנתית בתצוגה',
-}
-
-const PRIORITY_LEVEL_LABELS = {
-  elite: 'יעד מוביל',
-  high: 'עדיפות גבוהה',
-  positive: 'חיובי',
-  neutral: 'רגיל',
-  low: 'עדיפות נמוכה',
-}
-
-const buildResultFilterItems = (filters = {}) => Object.entries(filters)
-  .flatMap(([field, rawValue]) => {
-    const values = Array.isArray(rawValue)
-      ? rawValue
-      : clean(rawValue)
-        ? [rawValue]
-        : []
-
-    return values.map((value, index) => ({
-      id: `${field}-${index}-${clean(value)}`,
-      label: RESULT_FILTER_LABELS[field] || field,
-      value: field === 'attackLevels' || field === 'defenseLevels'
-        ? PRIORITY_LEVEL_LABELS[value] || clean(value)
-        : clean(value),
-    }))
-  })
-
-
 const CANONICAL_RESULT_FILTER_FIELDS = [
   'teamSearch',
   'playerSearch',

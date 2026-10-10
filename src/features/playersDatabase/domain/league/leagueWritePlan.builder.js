@@ -57,7 +57,7 @@ const requireClubProfiles = ({ rows, clubProfilesById }) => {
   return profiles
 }
 
-const buildClubProfileProjection = profile => ({
+export const buildClubProfileProjection = profile => ({
   displayName: clean(profile && profile.names && profile.names.display),
   shortName: clean(profile && profile.names && profile.names.short),
   clubLevel: toNullableNumber(profile && profile.clubLevel),
@@ -158,7 +158,7 @@ const buildSnapshotTargetsForClear = ({ affectedTeamIds, teamSeasonsByTeamId, up
     }))
 )
 
-const buildLeaguesCenterIdentity = league => ({
+export const buildLeaguesCenterIdentity = league => ({
   leagueName: resolveLeagueName(league && league.names),
   region: clean(league && league.region),
   ageGroupId: clean(league && league.ageGroupId),
@@ -166,7 +166,7 @@ const buildLeaguesCenterIdentity = league => ({
   level: toNullableNumber(league && league.level),
 })
 
-const buildLeaguesCenterSeason = ({
+export const buildLeaguesCenterSeason = ({
   season,
   teamSeasonsByTeamId,
   previousLeaguesCenterTeamsById,
@@ -266,6 +266,7 @@ const buildClubWritesForLoad = ({
   clubProfilesById,
   teamSeasonsByTeamId,
   previousClubsCenterTeamLocations,
+  otherLeagueIdsByTeamId,
   updatedAt,
 }) => {
   const season = canonicalLeague.seasonsById[seasonId]
@@ -316,6 +317,15 @@ const buildClubWritesForLoad = ({
 
   previousTeamClubIds.forEach((clubId, teamId) => {
     if (Object.prototype.hasOwnProperty.call(currentTeams, teamId)) return
+
+    const otherOwners = Array.isArray(object(otherLeagueIdsByTeamId)[teamId])
+      ? object(otherLeagueIdsByTeamId)[teamId]
+      : []
+    const belongsToCurrentLeagueProjection = previousLocations.some(location => (
+      location.clubId === clubId && location.teamId === teamId
+    ))
+    if (otherOwners.length > 0 && !belongsToCurrentLeagueProjection) return
+
     ensure(clubId).deleteTeamIds.push(teamId)
   })
 
@@ -337,6 +347,7 @@ const buildClubWritesForRemoval = ({
   seasonId,
   teamSeasonsByTeamId,
   previousClubsCenterTeamLocations,
+  otherLeagueIdsByTeamId,
   leagueId,
 }) => {
   const teamClubIds = collectTeamClubIds({
@@ -370,16 +381,26 @@ const buildClubWritesForRemoval = ({
   affectedTeamIds.forEach(teamId => {
     const clubId = teamClubIds.get(teamId)
     if (!clubId) throw new Error(`Missing club identity for affected Team ${teamId}`)
+
+    const otherOwners = Array.isArray(object(otherLeagueIdsByTeamId)[teamId])
+      ? object(otherLeagueIdsByTeamId)[teamId]
+      : []
+    const belongsToCurrentLeagueProjection = previousLocations.some(location => (
+      location.clubId === clubId && location.teamId === teamId
+    ))
+    if (otherOwners.length > 0 && !belongsToCurrentLeagueProjection) return
+
     ensureDelete(clubId, teamId)
   })
 
   return Array.from(writesByClubId.values())
 }
 
-const buildClubsCenterLeague = ({ league, season }) => ({
+export const buildClubsCenterLeague = ({ league, season }) => ({
   displayName: resolveLeagueName(league && league.names),
   ageGroupLabel: clean(league && league.ageGroupLabel),
   leagueLevel: toNullableNumber(league && league.level),
+  seasonStatus: clean(season && season.seasonStatus),
   tableImportedAt: season && season.tableImportedAt ? season.tableImportedAt : null,
 })
 
@@ -392,6 +413,7 @@ export const buildLeagueLoadWritePlan = ({
   existingTeamSeasons = [],
   previousLeaguesCenterTeamsById = {},
   previousClubsCenterTeamLocations = [],
+  otherLeagueIdsByTeamId = {},
   createdAt = null,
   updatedAt = null,
   tableImportedAt = null,
@@ -399,6 +421,18 @@ export const buildLeagueLoadWritePlan = ({
   tableState = '',
 } = {}) => {
   const context = resolveLeagueLoadContext({ league, season, rows, existingLeague })
+  context.canonicalRows.forEach(row => {
+    const ownerIds = otherLeagueIdsByTeamId && otherLeagueIdsByTeamId[row.teamId]
+    const owners = Array.isArray(ownerIds)
+      ? ownerIds
+      : []
+    if (!owners.length) return
+    const error = new Error(`Team ${row.teamId} already belongs to another League in this season`)
+    error.code = 'LEAGUE_TEAM_DUPLICATE_OWNER'
+    error.teamId = row.teamId
+    error.leagueIds = owners
+    throw error
+  })
   const profiles = requireClubProfiles({
     rows: context.canonicalRows,
     clubProfilesById,
@@ -457,7 +491,6 @@ export const buildLeagueLoadWritePlan = ({
       writeRequired: true,
       seasonId: canonical.seasonId,
       seasonKey: canonicalSeason.seasonKey,
-      seasonStatus: canonicalSeason.seasonStatus,
       leagueId: canonical.leagueId,
       leagueOperation: 'UPSERT',
       league: buildClubsCenterLeague({ league: canonicalLeague, season: canonicalSeason }),
@@ -468,6 +501,7 @@ export const buildLeagueLoadWritePlan = ({
         clubProfilesById: profiles,
         teamSeasonsByTeamId,
         previousClubsCenterTeamLocations,
+        otherLeagueIdsByTeamId,
         updatedAt,
       }),
       updatedAt: updatedAt || null,
@@ -519,6 +553,7 @@ export const buildLeagueTeamsClearWritePlan = ({
   existingLeague = {},
   existingTeamSeasons = [],
   previousClubsCenterTeamLocations = [],
+  otherLeagueIdsByTeamId = {},
   updatedAt = null,
 } = {}) => {
   const canonical = buildLeagueTeamsClearApprovedState({
@@ -561,7 +596,6 @@ export const buildLeagueTeamsClearWritePlan = ({
       writeRequired: true,
       seasonId: canonical.seasonId,
       seasonKey: season.seasonKey,
-      seasonStatus: season.seasonStatus,
       leagueId: canonical.leagueId,
       leagueOperation: 'UPSERT',
       league: buildClubsCenterLeague({ league: canonical.document, season }),
@@ -571,6 +605,7 @@ export const buildLeagueTeamsClearWritePlan = ({
         seasonId: canonical.seasonId,
         teamSeasonsByTeamId,
         previousClubsCenterTeamLocations,
+        otherLeagueIdsByTeamId,
         leagueId: canonical.leagueId,
       }),
       updatedAt: updatedAt || null,
@@ -584,6 +619,7 @@ export const buildLeagueSeasonDeleteWritePlan = ({
   existingLeague = null,
   existingTeamSeasons = [],
   previousClubsCenterTeamLocations = [],
+  otherLeagueIdsByTeamId = {},
   updatedAt = null,
 } = {}) => {
   const resolvedLeagueId = requireLeagueId(leagueId)
@@ -629,6 +665,7 @@ export const buildLeagueSeasonDeleteWritePlan = ({
         seasonId: resolvedSeasonId,
         teamSeasonsByTeamId,
         previousClubsCenterTeamLocations,
+        otherLeagueIdsByTeamId,
         leagueId: resolvedLeagueId,
       }),
       updatedAt: updatedAt || null,
@@ -644,6 +681,7 @@ export const buildLeagueLoadProjectionRepairPlan = ({
   existingTeamSeasons = [],
   previousLeaguesCenterTeamsById = {},
   previousClubsCenterTeamLocations = [],
+  otherLeagueIdsByTeamId = {},
   updatedAt = null,
 } = {}) => {
   const resolvedLeagueId = requireLeagueId(leagueId)
@@ -700,7 +738,6 @@ export const buildLeagueLoadProjectionRepairPlan = ({
       writeRequired: true,
       seasonId: resolvedSeasonId,
       seasonKey: clean(season.seasonKey),
-      seasonStatus: clean(season.seasonStatus),
       leagueId: resolvedLeagueId,
       leagueOperation: 'UPSERT',
       league: buildClubsCenterLeague({ league, season }),
@@ -711,6 +748,7 @@ export const buildLeagueLoadProjectionRepairPlan = ({
         clubProfilesById: profiles,
         teamSeasonsByTeamId,
         previousClubsCenterTeamLocations,
+        otherLeagueIdsByTeamId,
         updatedAt,
       }),
       updatedAt: updatedAt || null,

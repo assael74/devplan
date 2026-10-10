@@ -20,6 +20,7 @@ import usePlayersDatabaseTasks from '../../hooks/usePlayersDatabaseTasks.js'
 import usePlayersDatabaseTaskActions from '../../hooks/usePlayersDatabaseTaskActions.js'
 import {
   buildPlayersDatabaseBreadcrumbs,
+  PLAYERS_DATABASE_QUERY_KEYS as queryKeys,
   PLAYERS_DATABASE_UI_ROUTES,
 } from '../../logic/routeBuilders.js'
 import { PLAYER_STATS_STATUS } from '../../../model/player/playerStats.model.js'
@@ -56,6 +57,7 @@ import ClearStatsModal from './stats/clear/components/ClearStatsModal.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import useTeamReport from './report/useTeamReport.js'
 import { pageCoreLayoutSx } from '../../components/page/sx/pageCoreLayout.sx.js'
+import usePageSidePanelCollapsed from '../../components/page/usePageSidePanelCollapsed.js'
 import { teamPageSx } from './sx/teamPage.sx.js'
 import {
   downloadTeamPageDocumentsJson,
@@ -77,6 +79,9 @@ function TeamPageContent() {
   const [profileFilterKey, setProfileFilterKey] = React.useState('all')
   const [activeView, setActiveView] = React.useState('team')
   const [jsonDownloadBusy, setJsonDownloadBusy] = React.useState(false)
+  const [sidePanelCollapsed, setSidePanelCollapsed] = usePageSidePanelCollapsed(
+    'playersDatabase:teamSidePanelCollapsed'
+  )
   const {
     leagueId,
     leagueDoc,
@@ -86,6 +91,7 @@ function TeamPageContent() {
     teamSeasons,
     seasonSnapshots,
     clubDoc,
+    clubsDirectory,
     players,
     hasTeamPlayers,
     seasonOptions,
@@ -126,6 +132,7 @@ function TeamPageContent() {
     selectedTeamSeason,
     selectedSeasonOption,
     seasonOptions,
+    clubsDirectory,
     notify,
   }
   const roleEditor = useTeamRoleEditor(sharedActionContext)
@@ -210,8 +217,8 @@ function TeamPageContent() {
     () => new URLSearchParams(location.search),
     [location.search]
   )
-  const fromLeaguePath = pageSearchParams.get('fromLeague') || ''
-  const fromClubs = pageSearchParams.get('fromClubs') === '1'
+  const fromLeaguePath = pageSearchParams.get(queryKeys.fromLeague) || pageSearchParams.get('fromLeague') || ''
+  const fromClubs = (pageSearchParams.get(queryKeys.fromClubs) || pageSearchParams.get('fromClubs')) === '1'
   const leagueFallbackPath = PLAYERS_DATABASE_UI_ROUTES.league(leagueId, {
     seasonKey: selectedSeasonKey,
   })
@@ -422,7 +429,7 @@ function TeamPageContent() {
           backLabel={fromClubs ? 'חזרה למועדונים' : 'חזרה לליגה'}
         />
 
-        <Box sx={sx.contentGrid}>
+        <Box sx={[sx.contentGrid, sidePanelCollapsed && sx.contentGridCollapsed]}>
           <Box sx={sx.mainColumn}>
             <Box sx={sx.viewTabsToolbar}>
               <Box sx={sx.viewTabs}>
@@ -468,6 +475,9 @@ function TeamPageContent() {
           </Box>
 
           <TeamActionsPanel
+            collapsible
+            collapsed={sidePanelCollapsed}
+            onCollapsedChange={setSidePanelCollapsed}
             selectedSeasonOptionKey={selectedSeasonOptionKey}
             seasonOptions={seasonOptions}
             hasTeamPlayers={hasTeamPlayers}
@@ -594,6 +604,7 @@ function TeamPageContent() {
 
       <ClearRosterModal
         controller={playersDelete}
+        teamName={team?.name || team?.teamName}
         seasonKey={playersDelete.target?.seasonKey || selectedSeasonOption?.seasonKey}
       />
 

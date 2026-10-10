@@ -1,20 +1,58 @@
 // src/features/playersDatabase/ui/logic/routeBuilders.js
 
+export const PLAYERS_DATABASE_QUERY_KEYS = {
+  season: 's',
+  birthYear: 'y',
+  ageGroup: 'a',
+  level: 'l',
+  status: 't',
+  view: 'v',
+  centerSeason: 'cs',
+  centerBirthYear: 'cy',
+  centerAgeGroup: 'ca',
+  centerLevel: 'cl',
+  centerStatus: 'ct',
+  fromLeague: 'fl',
+  fromClubs: 'fc',
+}
+
 export const PLAYERS_DATABASE_UI_ROUTES = {
   entry: '/players-database',
-  leagues: ({ seasonKey, birthYear, level } = {}) => {
+  leagues: ({
+    seasonKey,
+    birthYear,
+    ageGroup,
+    level,
+    status,
+  } = {}) => {
     const basePath = '/players-database/leagues'
     const params = new URLSearchParams()
 
-    if (seasonKey && seasonKey !== 'all') params.set('season', seasonKey)
-    if (birthYear && birthYear !== 'all') params.set('birthYear', birthYear)
-    if (level && level !== 'all') params.set('level', level)
+    if (seasonKey && seasonKey !== 'all') params.set(PLAYERS_DATABASE_QUERY_KEYS.season, seasonKey)
+    if (birthYear && birthYear !== 'all') params.set(PLAYERS_DATABASE_QUERY_KEYS.birthYear, birthYear)
+    if (ageGroup && ageGroup !== 'all') params.set(PLAYERS_DATABASE_QUERY_KEYS.ageGroup, ageGroup)
+    if (level && level !== 'all') params.set(PLAYERS_DATABASE_QUERY_KEYS.level, level)
+    if (status && status !== 'all') params.set(PLAYERS_DATABASE_QUERY_KEYS.status, status)
 
     const query = params.toString()
     return query ? `${basePath}?${query}` : basePath
   },
   search: '/players-database/search',
   dataOps: '/players-database/data-ops',
+  dataOpsAudit: ({ type = '', leagueId = '', teamId = '', playerId = '', seasonId = '' } = {}) => {
+    const params = new URLSearchParams()
+    if (type) params.set('type', type)
+    if (leagueId) params.set('league', leagueId)
+    if (teamId) params.set('team', teamId)
+    if (playerId) params.set('player', playerId)
+    if (seasonId) params.set('season', seasonId)
+    const query = params.toString()
+    return query
+      ? `/players-database/data-ops/audit?${query}`
+      : '/players-database/data-ops/audit'
+  },
+  dataOpsReceipts: '/players-database/data-ops/receipts',
+  dataOpsSystemAudit: '/players-database/data-ops/system-audit',
   clubs: '/players-database/clubs',
   club: clubId => `/players-database/clubs/${clubId || ''}`,
   league: (leagueId, {
@@ -23,19 +61,23 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
     level,
     centerSeasonKey,
     centerBirthYear,
+    centerAgeGroup,
     centerLevel,
+    centerStatus,
     auditFindingId,
   } = {}) => {
     const basePath = `/players-database/leagues/${leagueId || ''}`
     const params = new URLSearchParams()
 
-    if (seasonKey && seasonKey !== 'all') params.set('season', seasonKey)
-    if (birthYear && birthYear !== 'all') params.set('birthYear', birthYear)
-    if (level && level !== 'all') params.set('level', level)
+    if (seasonKey && seasonKey !== 'all') params.set(PLAYERS_DATABASE_QUERY_KEYS.season, seasonKey)
+    if (birthYear && birthYear !== 'all') params.set(PLAYERS_DATABASE_QUERY_KEYS.birthYear, birthYear)
+    if (level && level !== 'all') params.set(PLAYERS_DATABASE_QUERY_KEYS.level, level)
 
-    if (centerSeasonKey) params.set('centerSeason', centerSeasonKey)
-    if (centerBirthYear) params.set('centerBirthYear', centerBirthYear)
-    if (centerLevel) params.set('centerLevel', centerLevel)
+    if (centerSeasonKey) params.set(PLAYERS_DATABASE_QUERY_KEYS.centerSeason, centerSeasonKey)
+    if (centerBirthYear) params.set(PLAYERS_DATABASE_QUERY_KEYS.centerBirthYear, centerBirthYear)
+    if (centerAgeGroup && centerAgeGroup !== 'all') params.set(PLAYERS_DATABASE_QUERY_KEYS.centerAgeGroup, centerAgeGroup)
+    if (centerLevel) params.set(PLAYERS_DATABASE_QUERY_KEYS.centerLevel, centerLevel)
+    if (centerStatus) params.set(PLAYERS_DATABASE_QUERY_KEYS.centerStatus, centerStatus)
     if (auditFindingId) params.set('auditFinding', auditFindingId)
 
     const query = params.toString()
@@ -53,8 +95,8 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
     const basePath = `/players-database/leagues/${leagueId || ''}/teams/${teamId || ''}`
     const params = new URLSearchParams()
 
-    if (fromLeague) params.set('fromLeague', fromLeague)
-    if (fromClubs) params.set('fromClubs', '1')
+    if (fromLeague) params.set(PLAYERS_DATABASE_QUERY_KEYS.fromLeague, fromLeague)
+    if (fromClubs) params.set(PLAYERS_DATABASE_QUERY_KEYS.fromClubs, '1')
     if (auditFindingId) params.set('auditFinding', auditFindingId)
     if (auditSeasonKey) params.set('auditSeason', auditSeasonKey)
     if (openStatsImport) params.set('openStatsImport', '1')
@@ -84,6 +126,49 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
   },
 }
 
+const decodePathPart = value => {
+  try {
+    return decodeURIComponent(value || '')
+  } catch {
+    return value || ''
+  }
+}
+
+export function resolveDataOpsAuditRoute({ pathname = '', search = '' } = {}) {
+  const params = new URLSearchParams(search)
+  const teamMatch = pathname.match(/^\/players-database\/leagues\/([^/]+)\/teams\/([^/]+)/)
+  if (teamMatch) {
+    return PLAYERS_DATABASE_UI_ROUTES.dataOpsAudit({
+      type: 'team',
+      leagueId: decodePathPart(teamMatch[1]),
+      teamId: decodePathPart(teamMatch[2]),
+      seasonId: params.get('auditSeason') || params.get('season') || '',
+    })
+  }
+
+  const leagueMatch = pathname.match(/^\/players-database\/leagues\/([^/]+)$/)
+  if (leagueMatch) {
+    return PLAYERS_DATABASE_UI_ROUTES.dataOpsAudit({
+      type: 'league',
+      leagueId: decodePathPart(leagueMatch[1]),
+      seasonId: params.get(PLAYERS_DATABASE_QUERY_KEYS.season) || '',
+    })
+  }
+
+  const playerMatch = pathname.match(/^\/players-database\/players\/([^/]+)/)
+  if (playerMatch) {
+    return PLAYERS_DATABASE_UI_ROUTES.dataOpsAudit({
+      type: 'player',
+      playerId: decodePathPart(playerMatch[1]),
+      leagueId: params.get('league') || '',
+      teamId: params.get('team') || '',
+      seasonId: params.get('season') || '',
+    })
+  }
+
+  return PLAYERS_DATABASE_UI_ROUTES.dataOps
+}
+
 export function buildDataOpsNavigationState({
   pathname = '',
   search = '',
@@ -103,6 +188,7 @@ export function resolveDataOpsReturnPath(state = {}) {
   )
   const isDataOpsPath = (
     from === PLAYERS_DATABASE_UI_ROUTES.dataOps
+    || from.startsWith(`${PLAYERS_DATABASE_UI_ROUTES.dataOps}/`)
     || from.startsWith(`${PLAYERS_DATABASE_UI_ROUTES.dataOps}?`)
   )
 

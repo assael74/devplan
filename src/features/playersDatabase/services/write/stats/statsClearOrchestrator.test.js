@@ -89,6 +89,24 @@ describe('statsClearOrchestrator', () => {
       .toBeLessThan(writeStatsCanonical.mock.invocationCallOrder[0])
   })
 
+  test('reports every synchronization stage to the UI', async () => {
+    const onProgress = jest.fn()
+
+    await clearStats({ approvedState, onProgress })
+
+    expect(onProgress.mock.calls.map(([event]) => [event.type, event.stageId || ''])).toEqual([
+      ['receiptOpened', ''],
+      ['stageCompleted', 'canonical'],
+      ['stageCompleted', 'playerRoots'],
+      ['stageCompleted', 'playerSeasons'],
+      ['stageCompleted', 'playerSearchIndexes'],
+      ['stageCompleted', 'leagueProjection'],
+      ['stageCompleted', 'leaguesCenter'],
+      ['stageCompleted', 'clubsCenter'],
+      ['stageCompleted', 'audit'],
+    ])
+  })
+
   test('rejects execution without an Approved State', async () => {
     await expect(clearStats()).rejects.toThrow('Stats Clear requires an approved state')
     expect(readStatsLoadSources).not.toHaveBeenCalled()

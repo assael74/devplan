@@ -139,6 +139,21 @@ export const teamPositionClassificationTableSx = {
 
   playerColumn: {
     width: '12%',
+    whiteSpace: 'nowrap',
+
+    '& > a': {
+      width: '100%',
+      minWidth: 0,
+    },
+
+    '& > a > span:first-of-type': {
+      minWidth: 0,
+      flex: '1 1 auto',
+    },
+
+    '& [data-link-indicator]': {
+      flex: '0 0 auto',
+    },
   },
 
   gamesStartsColumn: {
@@ -245,16 +260,24 @@ export const teamPositionClassificationTableSx = {
   },
 
   player: {
+    minWidth: 0,
+    flex: '1 1 auto',
     color: devPlanColors.primaryDark,
     fontSize: 12,
     fontWeight: 700,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
 
   playerNameContent: {
+    width: '100%',
+    maxWidth: '100%',
     minWidth: 0,
     display: 'inline-flex',
     alignItems: 'center',
     gap: 0.55,
+    overflow: 'hidden',
   },
 
   playerStatusBadge: color => ({

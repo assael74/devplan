@@ -96,3 +96,6 @@ Stats Load אינו מוחק Player Documents. ניקוי מסמכים שאינ�
   task signals שבבעלות Stats.
 - Club ו־Masters מקבלים רק projections הנגזרים מהמצב המאושר.
 - patch למסמך משותף חייב לשמר מידע שאינו בבעלות Stats.
+- לפני כתיבת Player Season יש להבדיל בין מסמך עונה קיים לבין קשר קבוצה קיים.
+  כאשר המסמך קיים אך `teamsById[teamId]` חסר, Stats כותב את קשר הקבוצה המלא;
+  עדכון חלקי של `stats` ו־`scouting` מותר רק לקשר קבוצה שכבר קיים.

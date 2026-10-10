@@ -2,7 +2,14 @@
 
 import * as React from 'react'
 import { clearRoster, prepareRosterClear } from '../../../../../services/write/roster/index.js'
+import { getWriteActionReceipt } from '../../../../../services/write/receipt/index.js'
 import { retryWriteActionReceipt } from '../../../../../services/write/recovery/index.js'
+import {
+  applyRosterSyncProgressEvent,
+  buildRosterSyncStages,
+  ROSTER_CLEAR_SYNC_STAGES,
+  resolveRosterRetryMode,
+} from '../import/logic/rosterSyncProgress.model.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
@@ -23,6 +30,7 @@ export default function useClearRosterFlow({ team, selectedSeasonOption, leagueI
   const [counts, setCounts] = React.useState({})
   const [message, setMessage] = React.useState('')
   const [receiptId, setReceiptId] = React.useState('')
+  const [executionReceipt, setExecutionReceipt] = React.useState(null)
   const busyRef = React.useRef(false)
 
   const prepareTarget = async requestedTarget => {
@@ -36,6 +44,7 @@ export default function useClearRosterFlow({ team, selectedSeasonOption, leagueI
     setStepIndex(0)
     setCounts({})
     setMessage('')
+    setExecutionReceipt(null)
     try {
       const approvedState = await prepareRosterClear({ input: target })
       setProposal({
@@ -93,8 +102,26 @@ export default function useClearRosterFlow({ team, selectedSeasonOption, leagueI
               teamName: clean(team?.name || team?.displayName),
               seasonKey: clean((activeTarget || defaultTarget)?.seasonKey),
             },
+            onProgress: event => {
+              setReceiptId(clean(event?.receiptId))
+              setExecutionReceipt(current => applyRosterSyncProgressEvent({
+                receipt: current,
+                event,
+              }))
+            },
           })
       setReceiptId(result.receiptId || '')
+      try {
+        setExecutionReceipt(await getWriteActionReceipt({ receiptId: result.receiptId }))
+      } catch {
+        setExecutionReceipt(current => ({
+          ...current,
+          id: result.receiptId,
+          status: result.status,
+          executionStatus: result.executionStatus,
+          recoveryRequired: Boolean(result.recoveryRequired),
+        }))
+      }
       setCounts({
         sync: {
           processed: Object.keys(result.stageResults || {}).length,
@@ -123,6 +150,14 @@ export default function useClearRosterFlow({ team, selectedSeasonOption, leagueI
     counts,
     message,
     stepIndex,
+    receiptId,
+    executionReceipt,
+    syncStages: buildRosterSyncStages({
+      receipt: executionReceipt,
+      busy: status === 'writing',
+      stages: ROSTER_CLEAR_SYNC_STAGES,
+    }),
+    retryMode: resolveRosterRetryMode(executionReceipt),
     target: activeTarget || defaultTarget,
     disabled: isDisabledFor(selectedSeasonOption),
     isDisabledFor,
@@ -134,7 +169,7 @@ export default function useClearRosterFlow({ team, selectedSeasonOption, leagueI
     approve,
     next,
     close: () => {
-      if (!busyRef.current && status !== 'steps') setOpen(false)
+      if (!busyRef.current) setOpen(false)
     },
   }
 }

@@ -145,6 +145,29 @@ describe('buildStatsLoadApprovedState', () => {
     expect(approved.canonicalTeamSeason.stats.teamBalance.includedPlayerIds).toEqual([playerId])
   })
 
+  test('distinguishes an existing Player Season document from an existing team context', () => {
+    const currentSources = sources()
+    currentSources.playerSeasonsById[playerId] = {
+      teamsById: { 'club-2_2011_1': { teamSeasonDocumentId: 'other' } },
+    }
+    currentSources.playerSeasonsById[leftPlayerId] = {
+      teamsById: { 'club-1_2011_1': { teamSeasonDocumentId: 'current' } },
+    }
+
+    const approved = buildStatsLoadApprovedState({
+      leagueId: 'league-1',
+      teamId: 'club-1_2011_1',
+      seasonId: '2026_2027',
+      incomingPlayers,
+      sources: currentSources,
+    })
+
+    expect(approved.playerSeasonPlans.find(plan => plan.playerId === playerId))
+      .toMatchObject({ exists: true, teamExists: false })
+    expect(approved.playerSeasonPlans.find(plan => plan.playerId === leftPlayerId))
+      .toMatchObject({ exists: true, teamExists: true })
+  })
+
   test('does not require a ClubProfile or a directory entry to approve Stats Load', () => {
     const approved = buildStatsLoadApprovedState({
       leagueId: 'league-1',
@@ -158,6 +181,36 @@ describe('buildStatsLoadApprovedState', () => {
     })
 
     expect(approved.canonicalTeamSeason.stats.statsLoadState.status).toBe('loaded')
+  })
+
+  test('passes verified player roles and League performance to Team Balance', () => {
+    const currentSources = sources()
+    currentSources.playerRootsById[playerId] = {
+      primaryPosition: 'GK',
+      positionLayer: 'goalkeeper',
+    }
+    currentSources.league.seasonsById['2026_2027']
+      .table.teamsById['club-1_2011_1'].performance = {
+        offense: { priorityLevel: 'elite' },
+        defense: { priorityLevel: 'high' },
+      }
+
+    buildStatsLoadApprovedState({
+      leagueId: 'league-1',
+      teamId: 'club-1_2011_1',
+      seasonId: '2026_2027',
+      incomingPlayers,
+      sources: currentSources,
+    })
+
+    const balanceInput = mockBuildTeamBalanceState.mock.calls.at(-1)[0].seasonDocument
+    const goalkeeper = balanceInput.teamPlayers.find(player => player.playerId === playerId)
+    expect(goalkeeper.primaryPosition).toBe('GK')
+    expect(goalkeeper.positionLayer).toBe('goalkeeper')
+    expect(balanceInput.performance).toEqual({
+      offense: { priorityLevel: 'elite' },
+      defense: { priorityLevel: 'high' },
+    })
   })
 
   test('rejects a resolved playerId that differs from the canonical external identity', () => {

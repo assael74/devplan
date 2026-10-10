@@ -5,6 +5,11 @@ import * as React from 'react'
 import { getWriteActionReceipt } from '../../../../../../services/write/receipt/index.js'
 import { repairWriteActionReceipt } from '../../../../../../services/write/recovery/index.js'
 import { loadStats } from '../../../../../../services/write/stats/index.js'
+import {
+  applyStatsSyncProgressEvent,
+  buildStatsSyncStages,
+  resolveStatsRetryMode,
+} from '../logic/statsSyncProgress.model.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
@@ -30,12 +35,16 @@ export default function useStatsLoadExecution({
 } = {}) {
   const [state, setState] = React.useState(initialState)
   const [receiptId, setReceiptId] = React.useState('')
+  const [executionReceipt, setExecutionReceipt] = React.useState(null)
   const [activeApprovedState, setActiveApprovedState] = React.useState(approvedState)
   const runningRef = React.useRef(false)
 
   React.useEffect(() => {
-    setState(initialState())
+    setState(actionInput && approvedState
+      ? { status: 'ready', result: null, error: null }
+      : initialState())
     setReceiptId('')
+    setExecutionReceipt(null)
     setActiveApprovedState(approvedState)
     runningRef.current = false
   }, [actionInput, approvedState])
@@ -50,7 +59,12 @@ export default function useStatsLoadExecution({
       let result
       if (retry && receiptId) {
         const receipt = await getWriteActionReceipt({ receiptId })
+        setExecutionReceipt(receipt)
         if (clean(receipt?.canonicalOutcome) === 'confirmed') {
+          setExecutionReceipt(current => applyStatsSyncProgressEvent({
+            receipt: current,
+            event: { type: 'repairStarted', receiptId },
+          }))
           result = await repairWriteActionReceipt({ receiptId })
         } else {
           executionState = await prepareFreshApprovedState?.()
@@ -63,9 +77,27 @@ export default function useStatsLoadExecution({
           approvedState: executionState,
           receiptId,
           display,
+          onProgress: event => {
+            setReceiptId(clean(event?.receiptId))
+            setExecutionReceipt(current => applyStatsSyncProgressEvent({
+              receipt: current,
+              event,
+            }))
+          },
         })
       }
       if (result.receiptId) setReceiptId(result.receiptId)
+      try {
+        setExecutionReceipt(await getWriteActionReceipt({ receiptId: result.receiptId }))
+      } catch {
+        setExecutionReceipt(current => ({
+          ...current,
+          id: result.receiptId,
+          status: result.status,
+          executionStatus: result.executionStatus,
+          recoveryRequired: Boolean(result.recoveryRequired),
+        }))
+      }
       setState({
         status: auditIsClean(result) ? 'success' : 'audit_failed',
         result,
@@ -73,18 +105,21 @@ export default function useStatsLoadExecution({
       })
       return result
     } catch (error) {
-      if (error?.receiptId) setReceiptId(error.receiptId)
+      const failedReceiptId = clean(error?.receiptId) || receiptId
+      if (failedReceiptId) {
+        setReceiptId(failedReceiptId)
+        try {
+          setExecutionReceipt(await getWriteActionReceipt({ receiptId: failedReceiptId }))
+        } catch {
+          setExecutionReceipt(current => current)
+        }
+      }
       setState({ status: 'failed', result: null, error })
       return null
     } finally {
       runningRef.current = false
     }
   }, [actionInput, activeApprovedState, display, prepareFreshApprovedState, receiptId])
-
-  React.useEffect(() => {
-    if (!actionInput || !activeApprovedState || state.status !== 'idle') return
-    void run()
-  }, [actionInput, activeApprovedState, run, state.status])
 
   const expectedTeamSeasonId = clean(activeApprovedState?.teamSeasonDocumentId)
   const expectedUpdatedAt = clean(
@@ -98,17 +133,28 @@ export default function useStatsLoadExecution({
     expectedTeamSeasonId && expectedUpdatedAt && observedUpdatedAt === expectedUpdatedAt
   )
   const result = state.result
+  const executionStatus = state.status
+  const syncStages = buildStatsSyncStages({
+    receipt: executionReceipt,
+    busy: executionStatus === 'writing',
+  })
   const receiptClosed = result?.status === 'closed' && result?.executionStatus === 'succeeded'
   return {
     status: state.status,
     error: state.error,
     result,
     receiptId: result?.receiptId || receiptId,
+    executionReceipt,
+    executionStatus,
+    executionError: state.error?.message || '',
+    retryMode: resolveStatsRetryMode(executionReceipt),
+    syncStages,
     receiptClosed,
     auditResult: result?.audit || null,
     running: state.status === 'writing',
     listenerConfirmed,
     syncComplete: state.status === 'success' && receiptClosed && listenerConfirmed,
+    execute: () => run(),
     retry: () => run({ retry: true }),
   }
 }

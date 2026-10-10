@@ -7,9 +7,13 @@ import { mapFirestoreErrorToDetails } from '../../../../../../ui/core/feedback/s
 import { SNACK_STATUS } from '../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
 import { getWriteActionReceipt } from '../../../../services/write/receipt/index.js'
-import { loadLeague } from '../../../../services/write/league/index.js'
+import {
+  loadLeague,
+  readOtherLeagueTeamOwners,
+} from '../../../../services/write/league/index.js'
 import { repairWriteActionReceipt } from '../../../../services/write/recovery/index.js'
 import {
+  applyLeagueTeamOwnerConflicts,
   buildLeagueImportPreview,
   buildServiceLeague,
   buildServiceRows,
@@ -103,11 +107,27 @@ const buildStructuralLeagueDiff = ({ existingRows = [], nextRows = [] } = {}) =>
     added,
     removed,
     changed,
+    hasExistingRows: existingByKey.size > 0,
     hasChanges: added.length > 0 || removed.length > 0 || changed.length > 0,
   }
 }
 
-const describeFailure = error => clean(error && (error.message || error.code)) || 'טעינת הליגה נכשלה'
+const describeFailure = error => {
+  if (clean(error && error.code) === 'LEAGUE_TEAM_DUPLICATE_OWNER') {
+    const teamId = clean(error && error.teamId)
+    const leagueIds = Array.isArray(error && error.leagueIds)
+      ? error.leagueIds.map(clean).filter(Boolean).join(', ')
+      : ''
+    return `הקבוצה ${teamId || 'שנבחרה'} כבר קיימת בעונה זו בליגה אחרת${leagueIds ? `: ${leagueIds}` : ''}. יש לבחור מספר קבוצה אחר או להסיר תחילה את השיוך הישן.`
+  }
+
+  return clean(error && (error.message || error.code)) || 'טעינת הליגה נכשלה'
+}
+
+const isHistoricalSeason = seasonKey => {
+  const normalizedSeasonKey = clean(seasonKey)
+  return Boolean(normalizedSeasonKey) && normalizedSeasonKey !== '26/27'
+}
 
 export function useLeagueTableImport({
   league = {},
@@ -135,7 +155,17 @@ export function useLeagueTableImport({
   const [executionReceipt, setExecutionReceipt] = React.useState(null)
   const [executionStatus, setExecutionStatus] = React.useState('idle')
   const [executionError, setExecutionError] = React.useState('')
-  const [structuralAcknowledged, setStructuralAcknowledged] = React.useState(false)
+  const [identityCheckBusy, setIdentityCheckBusy] = React.useState(false)
+  const [identityValidationError, setIdentityValidationError] = React.useState(false)
+  const teamOwnersRef = React.useRef({})
+  const historicalSeason = isHistoricalSeason(
+    selectedSeasonOption?.seasonKey ||
+    selectedSeasonOption?.season?.seasonKey ||
+    league?.seasonKey
+  )
+  const importBirthYear = Number(
+    selectedSeasonOption?.season?.birthYear || league?.birthYear
+  ) || 0
 
   const hasStartedData = React.useMemo(() => hasStartedSeasonData(rows), [rows])
   const structuralChanges = React.useMemo(() => buildStructuralLeagueDiff({
@@ -144,11 +174,13 @@ export function useLeagueTableImport({
   }), [rows, selectedSeasonOption])
   const gameDurationValid = Number.isFinite(Number(gameDurationMinutes)) && Number(gameDurationMinutes) > 0
   const canConfirm = React.useMemo(() => (
+    !identityCheckBusy &&
+    !identityValidationError &&
     Boolean(seasonStatus) &&
     gameDurationValid &&
     rows.length > 0 &&
     rows.every(row => row && row.valid !== false && isImportRowReady(row))
-  ), [gameDurationValid, rows, seasonStatus])
+  ), [gameDurationValid, identityCheckBusy, identityValidationError, rows, seasonStatus])
 
   React.useEffect(() => {
     if (open) return
@@ -161,6 +193,12 @@ export function useLeagueTableImport({
     }
   }, [hasStartedData, seasonStatus])
 
+  React.useEffect(() => {
+    if (open && historicalSeason && seasonStatus !== 'completed') {
+      setSeasonStatus('completed')
+    }
+  }, [historicalSeason, open, seasonStatus])
+
   const resetExecution = React.useCallback(() => {
     setApprovedInput(null)
     setReceiptId('')
@@ -170,68 +208,108 @@ export function useLeagueTableImport({
     setExecutionError('')
   }, [])
 
-  const handlePreview = React.useCallback(() => {
-    setStructuralAcknowledged(false)
-    setRows(buildLeagueImportPreview({
+  const handlePreview = React.useCallback(async () => {
+    setIdentityCheckBusy(true)
+    setIdentityValidationError(false)
+    setRows([])
+    const previewRows = buildLeagueImportPreview({
       text: pasteValue,
       league,
       leagueDoc,
       selectedSeasonOption,
-    }).rows || [])
-  }, [pasteValue, league, leagueDoc, selectedSeasonOption])
+    }).rows || []
+    const serviceLeague = buildServiceLeague({ league, leagueDoc })
+    const serviceSeason = buildServiceSeason({
+      league,
+      leagueDoc,
+      selectedSeasonOption,
+    })
+
+    try {
+      const otherLeagueIdsByTeamId = await readOtherLeagueTeamOwners({
+        leagueId: serviceLeague.leagueId,
+        seasonId: serviceSeason.seasonId,
+      })
+      teamOwnersRef.current = otherLeagueIdsByTeamId
+      setRows(applyLeagueTeamOwnerConflicts({
+        rows: previewRows,
+        otherLeagueIdsByTeamId,
+        birthYear: serviceSeason.birthYear,
+      }))
+    } catch (previewError) {
+      teamOwnersRef.current = {}
+      setIdentityValidationError(true)
+      notify({
+        status: SNACK_STATUS.ERROR,
+        title: 'בדיקת זהות הקבוצות נכשלה',
+        message: 'לא ניתן להמשיך לפני קריאה טרייה של הליגות. נסה שוב.',
+        details: mapFirestoreErrorToDetails(previewError),
+      })
+    } finally {
+      setIdentityCheckBusy(false)
+    }
+  }, [league, leagueDoc, notify, pasteValue, selectedSeasonOption])
 
   const handlePasteValueChange = React.useCallback(value => {
     setPasteValue(value)
+    setRows([])
+    teamOwnersRef.current = {}
+    setIdentityValidationError(false)
   }, [])
 
   const handleClear = React.useCallback(() => {
-    if (busy) return
+    if (busy || identityCheckBusy) return
     setPasteValue('')
     setRows([])
     setSeasonStatus('')
     setGameDurationMinutes(resolveGameDuration())
-    setStructuralAcknowledged(false)
+    teamOwnersRef.current = {}
+    setIdentityValidationError(false)
     resetExecution()
-  }, [busy, resetExecution, resolveGameDuration])
+  }, [busy, identityCheckBusy, resetExecution, resolveGameDuration])
 
   const handleCellChange = React.useCallback(({ rowIndex, column, value }) => {
-    setStructuralAcknowledged(false)
-    setRows(currentRows => currentRows.map((row, index) => {
-      if (index !== rowIndex) return row
+    setRows(currentRows => applyLeagueTeamOwnerConflicts({
+      rows: currentRows.map((row, index) => {
+        if (index !== rowIndex) return row
 
-      const nextRow = {
-        ...row,
-        [column.key]: value,
-      }
+        const nextRow = {
+          ...row,
+          [column.key]: value,
+        }
 
-      if (column.key === 'clubId') {
-        const club = PLAYERS_DATABASE_CLUBS_CATALOG.find(item => item.id === value)
-        nextRow.clubName = club ? club.name : ''
-      }
+        if (column.key === 'clubId') {
+          const club = PLAYERS_DATABASE_CLUBS_CATALOG.find(item => item.id === value)
+          nextRow.clubName = club ? club.name : ''
+        }
 
-      if (column.key === 'teamSlot') {
-        nextRow.teamSlot = value
-      }
+        if (column.key === 'teamSlot') {
+          nextRow.teamSlot = value
+        }
 
-      if (column.key === 'clubId' || column.key === 'teamSlot') {
-        nextRow.displayTeamUrl = clean(nextRow.pastedTeamUrl) || resolveExistingLeagueTeamUrl({
-          existingTeamsById: selectedSeasonOption && selectedSeasonOption.season && selectedSeasonOption.season.table
-            ? selectedSeasonOption.season.table.teamsById
-            : {},
-          clubId: nextRow.clubId,
-          teamSlot: nextRow.teamSlot,
-        })
-      }
+        if (column.key === 'clubId' || column.key === 'teamSlot') {
+          nextRow.displayTeamUrl = clean(nextRow.pastedTeamUrl) || resolveExistingLeagueTeamUrl({
+            existingTeamsById: selectedSeasonOption && selectedSeasonOption.season && selectedSeasonOption.season.table
+              ? selectedSeasonOption.season.table.teamsById
+              : {},
+            clubId: nextRow.clubId,
+            teamSlot: nextRow.teamSlot,
+          })
+        }
 
-      if (column.key === 'goalDifference') {
-        nextRow.goalDifference = formatGoalDifference(value)
-      }
+        if (column.key === 'goalDifference') {
+          nextRow.goalDifference = formatGoalDifference(value)
+        }
 
-      nextRow.valid = isImportRowReady(nextRow)
-      nextRow.errors = nextRow.valid ? [] : (Array.isArray(nextRow.errors) ? nextRow.errors : [])
-      return nextRow
+        nextRow.valid = isImportRowReady(nextRow)
+        nextRow.validBeforeTeamOwnerCheck = nextRow.valid
+        nextRow.errors = nextRow.valid ? [] : (Array.isArray(nextRow.errors) ? nextRow.errors : [])
+        return nextRow
+      }),
+      otherLeagueIdsByTeamId: teamOwnersRef.current,
+      birthYear: importBirthYear,
     }))
-  }, [selectedSeasonOption])
+  }, [importBirthYear, selectedSeasonOption])
 
   const buildApprovedInput = React.useCallback(() => {
     const serviceLeague = buildServiceLeague({ league, leagueDoc })
@@ -386,13 +464,14 @@ export function useLeagueTableImport({
     pasteValue,
     rows,
     canConfirm,
-    busy,
+    busy: busy || identityCheckBusy,
     seasonStatus,
     gameDurationMinutes,
     gameDurationValid,
     hasStartedData,
     identityIndexDocument: null,
-    identityValidationError: false,
+    identityCheckBusy,
+    identityValidationError,
     approvedPayload: approvedInput,
     receiptId,
     auditResult: executionResult && executionResult.audit ? executionResult.audit : null,
@@ -406,11 +485,10 @@ export function useLeagueTableImport({
       ? 'repair'
       : 'retry',
     structuralChanges,
-    structuralAcknowledged,
+    historicalSeason,
     setOpen,
     setSeasonStatus,
     setPasteValue: handlePasteValueChange,
-    setStructuralAcknowledged,
     handlePreview,
     handleClear,
     handleCellChange,
@@ -419,7 +497,7 @@ export function useLeagueTableImport({
     retryApprovedImport: executeApprovedImport,
     finishLeagueImport,
     handleClose: () => {
-      if (busy) return
+      if (busy || identityCheckBusy) return
       setOpen(false)
     },
     handleOpen,

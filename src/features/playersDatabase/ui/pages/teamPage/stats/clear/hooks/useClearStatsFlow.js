@@ -6,6 +6,11 @@ import {
   clearStats,
   prepareStatsClear,
 } from '../../../../../../services/write/stats/index.js'
+import {
+  applyStatsSyncProgressEvent,
+  buildStatsSyncStages,
+  STATS_CLEAR_SYNC_STAGES,
+} from '../../import/logic/statsSyncProgress.model.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
@@ -22,6 +27,7 @@ export default function useClearStatsFlow({
   const [result, setResult] = React.useState(null)
   const [error, setError] = React.useState(null)
   const [activeTarget, setActiveTarget] = React.useState(null)
+  const [executionReceipt, setExecutionReceipt] = React.useState(null)
 
   const buildTarget = React.useCallback(seasonOption => ({
     teamId: clean(
@@ -45,6 +51,7 @@ export default function useClearStatsFlow({
     setResult(null)
     setError(null)
     setActiveTarget(null)
+    setExecutionReceipt(null)
   }, [])
 
   const loadPreview = React.useCallback(async requestedTarget => {
@@ -54,6 +61,7 @@ export default function useClearStatsFlow({
     setProposedPlan(null)
     setResult(null)
     setError(null)
+    setExecutionReceipt(null)
 
     try {
       const plan = await prepareStatsClear({ input: target })
@@ -94,6 +102,12 @@ export default function useClearStatsFlow({
         display: {
           teamName: clean(team?.teamName || team?.name),
         },
+        onProgress: event => {
+          setExecutionReceipt(current => applyStatsSyncProgressEvent({
+            receipt: current,
+            event,
+          }))
+        },
       })
 
       setResult(nextResult)
@@ -116,6 +130,12 @@ export default function useClearStatsFlow({
     proposedPlan,
     result,
     error,
+    executionReceipt,
+    syncStages: buildStatsSyncStages({
+      receipt: executionReceipt,
+      busy: status === 'executing',
+      stages: STATS_CLEAR_SYNC_STAGES,
+    }),
     target: activeTarget || defaultTarget,
     openModal,
     close,
