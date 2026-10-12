@@ -201,7 +201,7 @@ export default function LeagueImportModal({
         activeStep={activeStep}
         steps={STEPS}
         compactStepper
-        title='טעינת נתוני ליגה'
+        title={leagueImport.repairReload ? 'טעינת מקור ליגה לתיקון אודיט' : 'טעינת נתוני ליגה'}
         description={leagueContext}
         iconId='upload'
         busy={leagueImport.busy}
@@ -225,6 +225,13 @@ export default function LeagueImportModal({
         onConfirm={handleConfirm}
         onClose={handleClose}
       >
+        {leagueImport.repairReload ? (
+          <Alert color={leagueImport.repairContextValid ? 'warning' : 'danger'} variant='soft'>
+            {leagueImport.repairContextValid
+              ? 'הטעינה מיועדת לליגה ולעונה שבממצא. יש להזין טבלה ממקור הליגה, לבדוק את הנתונים ולאשר את השמירה.'
+              : 'עונת הליגה אינה תואמת לממצא. יש לחזור לאודיט ולפתוח שוב את הטעינה.'}
+          </Alert>
+        ) : null}
         {activeStep === 0 ? (
             <Box>
               <FormControl required sx={sx.seasonStatusField}>
@@ -351,7 +358,9 @@ export default function LeagueImportModal({
                         {leagueImport.executionError || 'הפעולה לא הושלמה.'}
                       </Typography>
                       <Typography level='body-xs' sx={{ mt: 0.5 }}>
-                        {leagueImport.retryMode === 'repair'
+                        {leagueImport.repairReload
+                          ? 'יש לבדוק את הפערים שנותרו באודיט. ניסיון חוזר יקרא שוב את המקורות וישתמש בנתונים שאושרו.'
+                          : leagueImport.retryMode === 'repair'
                           ? 'מקור האמת כבר אושר. הפעולה הבאה תתקן רק את התוצרים באותה קבלה.'
                           : 'מקור האמת לא אושר. ניסיון חוזר ישתמש בקלט המאושר ובאותה קבלה.'}
                       </Typography>

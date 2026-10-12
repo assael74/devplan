@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { Box } from '@mui/joy'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
@@ -28,6 +28,7 @@ import useDeleteLeagueSeason from './deleteSeason/useDeleteLeagueSeason.js'
 import DeleteLeagueSeasonModal from './deleteSeason/DeleteLeagueSeasonModal.js'
 import { readLeaguePageData } from '../../../services/read/index.js'
 import { openLeagueSeason } from '../../../services/write/league/index.js'
+import { openLeagueForAuditRepair } from '../../../services/audit/repair/reloadLeague.js'
 import { hasLeagueCenterSeason } from '../../../model/league/center/leagueCenterOptions.model.js'
 import { leaguesCenterPageSx as sx } from './sx/leaguesCenterPage.sx.js'
 import usePageSidePanelCollapsed from '../../components/page/usePageSidePanelCollapsed.js'
@@ -41,6 +42,14 @@ const EMPTY_OPEN_LEAGUE_ACTION = {
 
 export default function LeaguesCenterPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const repairReload = searchParams.get('repairReload') === '1'
+  const repairLeagueId = searchParams.get('openLeague') || ''
+  const repairSeasonId = searchParams.get('auditSeasonId') || ''
+  const repairContext = React.useMemo(() => repairReload ? {
+    leagueId: repairLeagueId,
+    seasonId: repairSeasonId,
+  } : null, [repairLeagueId, repairReload, repairSeasonId])
   const { notify } = useSnackbar()
   const model = useLeagueCenter()
   const tasksModel = usePlayersDatabaseTasks()
@@ -48,6 +57,7 @@ export default function LeaguesCenterPage() {
   const [taskModalOpen, setTaskModalOpen] = React.useState(false)
   const [openLeagueModal, setOpenLeagueModal] = React.useState(false)
   const [openLeagueAction, setOpenLeagueAction] = React.useState(EMPTY_OPEN_LEAGUE_ACTION)
+  const openingInFlight = React.useRef(false)
   const [editTask, setEditTask] = React.useState(null)
   const [sidePanelCollapsed, setSidePanelCollapsed] = usePageSidePanelCollapsed(
     'playersDatabase:leagueCenterSidePanelCollapsed'
@@ -55,6 +65,10 @@ export default function LeaguesCenterPage() {
   const breadcrumbs = buildPlayersDatabaseBreadcrumbs([
     { label: 'ניהול נתוני ליגות' },
   ])
+
+  React.useEffect(() => {
+    if (repairReload) setOpenLeagueModal(true)
+  }, [repairLeagueId, repairReload, repairSeasonId])
 
   const deleteLeagueSeasonFlow = useDeleteLeagueSeason({
     reload: async row => {
@@ -134,7 +148,11 @@ export default function LeaguesCenterPage() {
   ])
 
   const handleLeagueOpen = async option => {
-    if (openLeagueAction.busy) return
+    if (openLeagueAction.busy || openingInFlight.current) return
+    if (repairContext && (
+      option.value !== repairContext.leagueId || option.seasonId !== repairContext.seasonId
+    )) return
+    openingInFlight.current = true
 
     const actionTime = new Date().toISOString()
     const target = {
@@ -149,7 +167,8 @@ export default function LeaguesCenterPage() {
     })
 
     try {
-      const result = await openLeagueSeason({
+      const open = repairContext ? openLeagueForAuditRepair : openLeagueSeason
+      const result = await open({
         input: {
           league: {
             leagueId: option.value,
@@ -184,8 +203,21 @@ export default function LeaguesCenterPage() {
         },
       })
 
-      if (!result || result.executionStatus !== 'succeeded' || result.status !== 'closed') {
-        throw new Error('פתיחת הליגה הסתיימה ללא אישור תקין')
+      const expectedStatus = repairContext ? 'succeeded' : 'closed'
+      if (!result || result.executionStatus !== 'succeeded' || result.status !== expectedStatus) {
+        throw new Error(repairContext
+          ? 'המקור נכתב אך הבדיקה עדיין מצאה פערים. יש להריץ אודיט מחדש לפני המשך הטעינה.'
+          : 'פתיחת הליגה הסתיימה ללא אישור תקין')
+      }
+
+      if (repairContext) {
+        const path = PLAYERS_DATABASE_UI_ROUTES.league(option.value, {
+          seasonKey: option.seasonKey,
+          birthYear: option.birthYear,
+        })
+        const separator = path.includes('?') ? '&' : '?'
+        navigate(`${path}${separator}repairReload=1&openLeagueImport=1&auditSeasonId=${encodeURIComponent(option.seasonId)}`)
+        return
       }
 
       setOpenLeagueAction(current => ({
@@ -198,6 +230,8 @@ export default function LeaguesCenterPage() {
         busy: false,
         error: error && error.message ? error.message : 'פתיחת הליגה נכשלה',
       }))
+    } finally {
+      openingInFlight.current = false
     }
   }
 
@@ -210,6 +244,13 @@ export default function LeaguesCenterPage() {
     if (openLeagueAction.busy) return
     setOpenLeagueModal(false)
     setOpenLeagueAction(EMPTY_OPEN_LEAGUE_ACTION)
+    if (repairContext) {
+      const next = new URLSearchParams(searchParams)
+      next.delete('openLeague')
+      next.delete('auditSeasonId')
+      next.delete('repairReload')
+      setSearchParams(next, { replace: true })
+    }
   }
 
   const handleTaskEditSave = async patch => {
@@ -270,6 +311,7 @@ export default function LeaguesCenterPage() {
         busy={openLeagueAction.busy}
         waitingForCenter={openLeagueAction.writeCompleted}
         error={openLeagueAction.error}
+        repairContext={repairContext}
         onConfirm={handleLeagueOpen}
         onClose={handleCloseLeagueModal}
       />

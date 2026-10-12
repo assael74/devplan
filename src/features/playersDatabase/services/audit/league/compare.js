@@ -186,16 +186,6 @@ const compareLeaguesCenter = ({ expected, actual, findings }) => {
     reason: 'LeaguesCenter League-owned season fields do not match canonical League.',
   })
 
-  compareExactValue({
-    findings,
-    target: LEAGUE_AUDIT_TARGET.LEAGUES_CENTER,
-    documentId,
-    field: `leaguesById.${leagueId}.seasonsById.${seasonId}.updatedAt`,
-    expected: expectedSeason.updatedAt || null,
-    actual: actualSeason.updatedAt || null,
-    reason: 'LeaguesCenter season updatedAt does not match the canonical League action timestamp.',
-  })
-
   Object.entries(expectedSeason.teamsById || {}).forEach(([teamId, teamExpected]) => {
     const actualTeam = actualSeason.teamsById && actualSeason.teamsById[teamId]
       ? actualSeason.teamsById[teamId]
@@ -502,7 +492,8 @@ const compareCompetitionSnapshots = ({ expected, actual, findings }) => {
       const comparableActual = Object.fromEntries(
         Object.keys(expectedSnapshot.expectedFields).map(key => [key, compactActual[key]])
       )
-      compareExactValue({
+      // Roster writes can advance this timestamp without changing League facts.
+      compareValue({
         findings,
         target: LEAGUE_AUDIT_TARGET.TEAM_SEASON_COMPETITION_SNAPSHOTS,
         documentId,
@@ -515,22 +506,14 @@ const compareCompetitionSnapshots = ({ expected, actual, findings }) => {
     }
 
     const compactActual = compactEmptySnapshot(actualSnapshot)
-    const hasCanonicalProjectionTimestamp = Boolean(expected.projectionUpdatedAt)
-    const expectedComparable = hasCanonicalProjectionTimestamp
-      ? emptyExpected
-      : { ...emptyExpected, updatedAt: null }
-    const actualComparable = hasCanonicalProjectionTimestamp
-      ? compactActual
-      : { ...compactActual, updatedAt: null }
-
-    if (!sameExact(expectedComparable, actualComparable)) {
+    if (!same(emptyExpected, compactActual)) {
       findings.push(finding({
         type: 'stale_projection',
         target: LEAGUE_AUDIT_TARGET.TEAM_SEASON_COMPETITION_SNAPSHOTS,
         documentId,
         field: 'competitionSnapshot',
-        expected: expectedComparable,
-        actual: actualComparable,
+        expected: emptyExpected,
+        actual: compactActual,
         reason: expected.seasonExists
           ? 'Team Season removed from the canonical League table still has a League competitionSnapshot.'
           : 'Team Season from a missing or deleted League season still has a League competitionSnapshot.',

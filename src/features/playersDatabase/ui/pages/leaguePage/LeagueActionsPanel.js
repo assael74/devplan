@@ -28,6 +28,7 @@ export default function LeagueActionsPanel({
   selectedSeasonKey,
   seasonOptions = [],
   onSeasonChange,
+  seasonDisabled = false,
   attackPriorityFilter,
   defensePriorityFilter,
   attackPriorityCounts = {},
@@ -60,7 +61,7 @@ export default function LeagueActionsPanel({
     : null
 
   const handleSeasonChange = (_, nextValue) => {
-    if (!nextValue || nextValue === selectedSeasonKey) return
+    if (seasonDisabled || !nextValue || nextValue === selectedSeasonKey) return
     onSeasonChange(nextValue)
   }
 
@@ -79,7 +80,7 @@ export default function LeagueActionsPanel({
           <Select
             value={seasonSelectValue}
             size='sm'
-            disabled={!seasonOptions.length}
+            disabled={seasonDisabled || !seasonOptions.length}
             sx={sx.actionSeasonSelect}
             onChange={handleSeasonChange}
             renderValue={selected => {

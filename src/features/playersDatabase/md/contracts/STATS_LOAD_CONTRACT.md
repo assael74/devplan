@@ -91,6 +91,8 @@ Stats Load אינו מוחק Player Documents. ניקוי מסמכים שאינ�
 - Team Season מקבל רק את שדות ה־Stats, ה־Movement המקומי המאושר, Team
   Balance, scouting,‏ `scoutProfilesSummary` ומצב טעינת Stats.
 - Counterpart Team Season מקבל Movement מאושר בלבד ורק כאשר המסמך כבר קיים.
+- כאשר Stats יוצר Movement מאושר, `clubsCenter` מעודכן מאותו Movement גם
+  לקבוצה המקומית וגם לכל Counterpart Team Season קיים.
 - Player ו־Team SearchIndexes הם projections בלבד.
 - League מקבל רק metadata של טעינת Stats, מספר שחקנים וסיכומי scouting או
   task signals שבבעלות Stats.

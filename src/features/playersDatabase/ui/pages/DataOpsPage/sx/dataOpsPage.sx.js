@@ -768,7 +768,7 @@ export const dataOpsPageSx = {
     minWidth: 0,
     minHeight: 0,
     display: 'grid',
-    gridTemplateColumns: '300px minmax(0, 1fr)',
+    gridTemplateColumns: '350px minmax(0, 1fr)',
     gap: 1.5,
     alignItems: 'stretch',
     overflow: 'hidden',
@@ -828,18 +828,19 @@ export const dataOpsPageSx = {
   auditConfigStack: {
     minHeight: 0,
     flex: 1,
+    gap: 1,
   },
 
   auditTeamMetaFields: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 3fr)',
     gap: 0.75,
   },
 
   auditSeasonClubSlotFields: {
     minWidth: 0,
     display: 'grid',
-    gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr)',
+    gridTemplateColumns: 'minmax(0, 25fr) minmax(0, 60fr) minmax(0, 15fr)',
     gap: 0.5,
 
     '& > *': {

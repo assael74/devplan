@@ -66,10 +66,7 @@ const loadTeamPageData = async ({ leagueId = '', teamId = '' } = {}) => {
         seasonId: ref.seasonId,
       })
 
-      if (ref.teamSeasonDocumentId && ref.teamSeasonDocumentId !== canonicalDocumentId) {
-        throw new Error('Invalid teamSeasonDocumentId reference')
-      }
-
+      // Read only the deterministic document; a broken stored reference remains an Audit finding.
       return getTeamSeasonByDocumentId(canonicalDocumentId)
     })
   )).filter(Boolean)
@@ -275,9 +272,6 @@ export const subscribeTeamPageData = ({
         teamId: safeTeamId,
         seasonId: ref.seasonId,
       })
-      if (ref.teamSeasonDocumentId && ref.teamSeasonDocumentId !== documentId) {
-        throw new Error('Invalid teamSeasonDocumentId reference')
-      }
       return [documentId, ref]
     }))
 

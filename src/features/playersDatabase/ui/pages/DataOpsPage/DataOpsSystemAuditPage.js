@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import {
+  Alert,
   Box,
   Button,
   Checkbox,
@@ -20,6 +21,7 @@ import {
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import InfoPanel from '../../components/page/InfoPanel.js'
 import { auditSystem } from '../../../services/audit/system/index.js'
+import { inspectSystemAuditRepair } from '../../../services/audit/system/repair/index.js'
 import {
   buildSystemAuditPlan,
   SYSTEM_AUDIT_CHECK,
@@ -38,7 +40,10 @@ import {
   restoreSystemAuditResult,
   writeSystemAuditSnapshot,
 } from './logic/systemAuditSnapshot.logic.js'
+import SystemAuditRepairDialog from './components/SystemAuditRepairDialog.js'
+import useSystemAuditRepair from './hooks/useSystemAuditRepair.js'
 import { dataOpsPageSx as sx } from './sx/dataOpsPage.sx.js'
+import { systemAuditRepairSx as repairSx } from './sx/systemAuditRepair.sx.js'
 
 const TARGET_LABELS = {
   teamRoots: 'מסמכי קבוצה',
@@ -252,6 +257,33 @@ export default function DataOpsSystemAuditPage() {
   const [deleteError, setDeleteError] = useState('')
   const [deletedCount, setDeletedCount] = useState(0)
   const [selectedFinding, setSelectedFinding] = useState(null)
+  const resultChecks = Array.isArray(result && result.selectedChecks) && result.selectedChecks.length
+    ? result.selectedChecks
+    : SYSTEM_AUDIT_CHECKS
+  const updateAuditResult = nextResult => {
+    setResult(nextResult)
+    setResultSource('current')
+    setFindingFilter('all')
+    setVisibleFindings(40)
+    setSelectedCandidates([])
+    setDeleteConfirmed(false)
+    setDeleteError('')
+    setDeletedCount(0)
+    setSelectedFinding(null)
+    try {
+      setSnapshot(typeof window === 'undefined'
+        ? null
+        : writeSystemAuditSnapshot({ storage: window.localStorage, result: nextResult }))
+    } catch {
+      setSnapshot(null)
+    }
+  }
+  const repair = useSystemAuditRepair({
+    checks: resultChecks,
+    disabled: busy || deleting,
+    onAuditUpdated: updateAuditResult,
+  })
+  const controlsDisabled = busy || deleting || repair.busy || Boolean(repair.pending)
   const auditPlan = useMemo(
     () => buildSystemAuditPlan(selectedChecks),
     [selectedChecks]
@@ -271,7 +303,7 @@ export default function DataOpsSystemAuditPage() {
   }, [auditPlan.targets, inventorySnapshot])
 
   const toggleCheck = card => {
-    if (card.disabled || busy) return
+    if (card.disabled || controlsDisabled) return
     if (card.all) {
       setSelectedChecks(allChecksSelected ? [] : [...SYSTEM_AUDIT_CHECKS])
       return
@@ -284,8 +316,9 @@ export default function DataOpsSystemAuditPage() {
   }
 
   const runAudit = async () => {
-    if (!selectedChecks.length || busy) return
+    if (!selectedChecks.length || controlsDisabled) return
     setBusy(true)
+    repair.reset()
     setError('')
     setResult(null)
     setVisibleFindings(40)
@@ -296,12 +329,7 @@ export default function DataOpsSystemAuditPage() {
     setDeletedCount(0)
     try {
       const nextResult = await auditSystem({ checks: selectedChecks })
-      const nextSnapshot = typeof window === 'undefined'
-        ? null
-        : writeSystemAuditSnapshot({ storage: window.localStorage, result: nextResult })
-      setResult(nextResult)
-      setResultSource('current')
-      setSnapshot(nextSnapshot)
+      updateAuditResult(nextResult)
     } catch (auditError) {
       setError(auditError instanceof Error ? auditError.message : 'בדיקת התקינות נכשלה')
     } finally {
@@ -348,6 +376,7 @@ export default function DataOpsSystemAuditPage() {
     [cleanupCandidates]
   )
   const toggleCandidate = finding => {
+    if (controlsDisabled) return
     const key = getSystemCleanupCandidateKey(finding)
     setSelectedCandidates(current => (
       current.includes(key)
@@ -358,8 +387,9 @@ export default function DataOpsSystemAuditPage() {
   }
 
   const deleteSelected = async () => {
-    if (!deleteConfirmed || deleting || !selectedCandidates.length) return
+    if (!deleteConfirmed || controlsDisabled || !selectedCandidates.length) return
     setDeleting(true)
+    repair.reset()
     setDeleteError('')
     try {
       const selected = cleanupCandidates.filter(finding => (
@@ -367,19 +397,10 @@ export default function DataOpsSystemAuditPage() {
       ))
       const cleanupResult = await deleteSystemCleanupCandidates({
         candidates: selected,
-        checks: selectedChecks,
+        checks: resultChecks,
       })
       const nextResult = cleanupResult.auditResult
-      const nextSnapshot = typeof window === 'undefined'
-        ? null
-        : writeSystemAuditSnapshot({ storage: window.localStorage, result: nextResult })
-      setResult(nextResult)
-      setResultSource('current')
-      setSnapshot(nextSnapshot)
-      setFindingFilter('all')
-      setVisibleFindings(40)
-      setSelectedCandidates([])
-      setDeleteConfirmed(false)
+      updateAuditResult(nextResult)
       setDeletedCount(cleanupResult.cleanedCandidatesCount)
     } catch (cleanupError) {
       setDeleteError(cleanupError instanceof Error ? cleanupError.message : 'מחיקת המסמכים נכשלה')
@@ -404,7 +425,7 @@ export default function DataOpsSystemAuditPage() {
                       key={card.id}
                       component='button'
                       type='button'
-                      disabled={card.disabled || busy}
+                      disabled={card.disabled || controlsDisabled}
                       aria-pressed={selected}
                       onClick={() => toggleCheck(card)}
                       sx={sx.systemCheckCard({ selected, disabled: card.disabled, all: card.all })}
@@ -458,7 +479,7 @@ export default function DataOpsSystemAuditPage() {
               <Button
                 type='button'
                 loading={busy}
-                disabled={!selectedChecks.length}
+                disabled={!selectedChecks.length || controlsDisabled}
                 startDecorator={iconUi({ id: 'search', size: 'sm' })}
                 onClick={runAudit}
                 sx={{ alignSelf: 'flex-start' }}
@@ -556,7 +577,7 @@ export default function DataOpsSystemAuditPage() {
                   </Typography>
                   <Typography level='body-xs'>
                     {resultSource === 'cache'
-                      ? 'לא בוצעה קריאה חדשה מהמאגר. לפני ניקוי יש להריץ בדיקה חדשה.'
+                      ? 'לא בוצעה קריאה חדשה מהמאגר. פתיחת הצעת תיקון או ניקוי כוללת בדיקה חדשה לפני שמירה.'
                       : 'הנתונים נקראו מהמאגר במהלך השימוש הנוכחי ונשמרו גם בדפדפן.'}
                   </Typography>
                 </Box>
@@ -617,6 +638,15 @@ export default function DataOpsSystemAuditPage() {
                 </Box>
               ) : null}
 
+              {repair.feedback ? (
+                <Alert color={repair.feedback.tone} role='status'>
+                  <Box>
+                    <Typography level='title-sm'>{repair.feedback.title}</Typography>
+                    <Typography level='body-sm'>{repair.feedback.message}</Typography>
+                  </Box>
+                </Alert>
+              ) : null}
+
               {cleanupCandidates.length ? (
                 <Box sx={sx.cleanupActions}>
                   <Box>
@@ -627,6 +657,7 @@ export default function DataOpsSystemAuditPage() {
                     type='button'
                     size='sm'
                     variant='outlined'
+                    disabled={controlsDisabled}
                     onClick={() => {
                       setSelectedCandidates(cleanupCandidates.slice(0, 400).map(getSystemCleanupCandidateKey))
                       setDeleteConfirmed(false)
@@ -641,7 +672,7 @@ export default function DataOpsSystemAuditPage() {
                 <Box sx={sx.cleanupDeletePanel}>
                   <Checkbox
                     checked={deleteConfirmed}
-                    disabled={deleting}
+                    disabled={controlsDisabled}
                     label={`אני מאשר לנקות ${selectedCandidates.length} ממצאים יתומים`}
                     onChange={event => setDeleteConfirmed(event.target.checked)}
                   />
@@ -649,7 +680,7 @@ export default function DataOpsSystemAuditPage() {
                     type='button'
                     color='danger'
                     loading={deleting}
-                    disabled={!deleteConfirmed}
+                    disabled={!deleteConfirmed || controlsDisabled}
                     onClick={deleteSelected}
                   >
                     נקה והריץ בדיקה חוזרת
@@ -663,6 +694,7 @@ export default function DataOpsSystemAuditPage() {
                 <Box sx={sx.systemFindingsGrid}>
                   {filteredFindings.slice(0, visibleFindings).map((finding, index) => {
                     const displayImpact = getFindingDisplayImpact(finding)
+                    const repairAction = inspectSystemAuditRepair({ finding })
                     return (
                       <Box key={`${finding.type}-${finding.documentId}-${index}`} sx={sx.systemFindingCard(displayImpact.tone)}>
                       <Box sx={sx.findingTop}>
@@ -670,7 +702,7 @@ export default function DataOpsSystemAuditPage() {
                           {cleanupKeys.has(getSystemCleanupCandidateKey(finding)) ? (
                             <Checkbox
                               checked={selectedCandidates.includes(getSystemCleanupCandidateKey(finding))}
-                              disabled={deleting}
+                              disabled={controlsDisabled}
                               onChange={() => toggleCandidate(finding)}
                             />
                           ) : null}
@@ -708,17 +740,37 @@ export default function DataOpsSystemAuditPage() {
                           <Typography sx={sx.systemFindingText}>{displayImpact.text}</Typography>
                         </Box>
                         <Box sx={sx.systemFindingAction}>
-                          <Typography level='body-xs' fontWeight={700}>פעולה מומלצת</Typography>
+                          <Typography level='body-xs' fontWeight={700}>תיקון הממצא</Typography>
                           <Typography sx={sx.systemFindingText}>
-                            {finding.recommendedAction || 'יש לבדוק את מסמך המקור לפני ביצוע תיקון.'}
+                            {repairAction.allowed
+                              ? repairAction.description
+                              : repairAction.reason || finding.recommendedAction || 'יש לבדוק את מסמך המקור לפני ביצוע תיקון.'}
                           </Typography>
                         </Box>
                       </Box>
                       <Box sx={[sx.findingFooter, sx.systemFindingFooter]}>
                         <Typography sx={sx.sourceLabel}>{finding.owner ? `אחריות: ${finding.owner}` : 'בדיקת הקשר נדרשת'}</Typography>
-                        <Button size='sm' variant='outlined' onClick={() => setSelectedFinding(finding)}>
-                          פרטים מלאים
-                        </Button>
+                        <Box sx={repairSx.actions}>
+                          <Button
+                            type='button'
+                            size='sm'
+                            variant='outlined'
+                            disabled={controlsDisabled}
+                            onClick={() => setSelectedFinding(finding)}
+                          >
+                            פרטים מלאים
+                          </Button>
+                          <Button
+                            type='button'
+                            size='sm'
+                            disabled={controlsDisabled || !repairAction.allowed}
+                            loading={repair.busy && repair.pending && repair.pending.finding === finding}
+                            startDecorator={iconUi({ id: 'edit', size: 'sm' })}
+                            onClick={() => repair.requestRepair(finding)}
+                          >
+                            {repairAction.label || 'הצג תיקון'}
+                          </Button>
+                        </Box>
                       </Box>
                       </Box>
                     )
@@ -750,6 +802,15 @@ export default function DataOpsSystemAuditPage() {
         <FindingDetailsDialog
           finding={selectedFinding}
           onClose={() => setSelectedFinding(null)}
+        />
+        <SystemAuditRepairDialog
+          pending={repair.pending}
+          preparing={repair.preparing}
+          repairing={repair.repairing}
+          onInputChange={repair.changeInput}
+          onRefresh={repair.refreshPreview}
+          onClose={repair.cancelRepair}
+          onConfirm={repair.confirmRepair}
         />
     </Stack>
   )

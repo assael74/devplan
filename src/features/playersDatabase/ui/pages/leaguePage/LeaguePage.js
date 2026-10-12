@@ -1,7 +1,7 @@
 // src/features/playersDatabase/ui/pages/leaguePage/LeaguePage.js
 
 import * as React from 'react'
-import { Box } from '@mui/joy'
+import { Alert, Box } from '@mui/joy'
 import {
   useLocation,
   useNavigate,
@@ -82,11 +82,23 @@ function LeaguePageContent() {
     error,
     selectionError,
   } = useLeaguePage()
+  const repairReload = pageSearchParams.get('repairReload') === '1'
+  const repairSeasonId = pageSearchParams.get('auditSeasonId') || ''
+  const openedRepairImport = React.useRef('')
   const leagueImport = useLeagueTableImport({
     league,
     leagueDoc: displayLeagueDoc,
     selectedSeasonOption,
+    repairReload,
+    repairSeasonId,
   })
+  React.useEffect(() => {
+    if (!repairReload || pageSearchParams.get('openLeagueImport') !== '1' || loading || error) return
+    const key = `${league.id}:${repairSeasonId}`
+    if (!leagueImport.repairContextValid || openedRepairImport.current === key) return
+    openedRepairImport.current = key
+    leagueImport.handleOpen()
+  }, [error, league.id, leagueImport, loading, pageSearchParams, repairReload, repairSeasonId])
   const clearLeagueTeamsFlow = useClearLeagueTeamsFlow({
     league,
     selectedSeasonOption,
@@ -275,6 +287,9 @@ function LeaguePageContent() {
   return (
     <>
       <Box sx={sx.page}>
+        {repairReload && !leagueImport.repairContextValid ? (
+          <Alert color='danger'>עונת הליגה אינה תואמת לממצא. יש לחזור לאודיט ולפתוח שוב את טעינת המקור.</Alert>
+        ) : null}
         <LeagueHeader
           breadcrumbs={breadcrumbs}
           title={titleParts.name}
@@ -320,6 +335,7 @@ function LeaguePageContent() {
             selectedSeasonKey={selectedSeasonKey}
             seasonOptions={seasonOptions}
             onSeasonChange={setSelectedSeasonKey}
+            seasonDisabled={repairReload || leagueImport.open}
             attackPriorityFilter={attackPriorityFilter}
             defensePriorityFilter={defensePriorityFilter}
             attackPriorityCounts={attackPriorityCounts}
@@ -332,7 +348,7 @@ function LeaguePageContent() {
               ? leagueUrlEditor.show
               : null}
             downloadDisabled={!leagueDoc || loading}
-            loadDisabled={clearLeagueTeamsFlow.open || leagueImport.busy || !selectedSeasonOption?.seasonId}
+            loadDisabled={clearLeagueTeamsFlow.open || leagueImport.busy || !leagueImport.repairContextValid || !selectedSeasonOption?.seasonId}
             loadDisabledReason={!selectedSeasonOption?.seasonId
               ? 'חסר seasonId טכני לעונה שנבחרה'
               : clearLeagueTeamsFlow.open

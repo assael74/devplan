@@ -14,6 +14,9 @@ import {
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 const object = value => (value && typeof value === 'object' && !Array.isArray(value) ? value : {})
+const indexPlayerRows = (rows, playerIds) => Object.fromEntries(
+  rows.map((row, index) => [playerIds[index], row]).filter(([, row]) => Boolean(row))
+)
 
 const readDocument = async ({ collectionName, documentId, action }) => {
   if (!clean(documentId)) return null
@@ -105,9 +108,9 @@ export const readStatsAuditActual = async ({
     league,
     leaguesCenter,
     clubsCenter,
-    playerRootsById: Object.fromEntries(playerRoots.filter(Boolean).map(row => [clean(row.id), row])),
-    playerSeasonsById: Object.fromEntries(playerSeasons.filter(Boolean).map(row => [clean(row.identity && row.identity.playerId), row])),
-    playerSearchIndexesById: Object.fromEntries(playerSearchIndexes.filter(Boolean).map(row => [clean(row.playerId), row])),
+    playerRootsById: indexPlayerRows(playerRoots, resolvedPlayerIds),
+    playerSeasonsById: indexPlayerRows(playerSeasons, resolvedPlayerIds),
+    playerSearchIndexesById: indexPlayerRows(playerSearchIndexes, resolvedPlayerIds),
     counterpartTeamSeasonsById: Object.fromEntries(
       counterpartTeamSeasons.filter(Boolean).map(row => [clean(row.id), row])
     ),

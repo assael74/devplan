@@ -1,6 +1,7 @@
 // src/features/playersDatabase/services/write/manualEdits.preservation.test.js
 
 import { updateClubUrl } from './club/edits/updateClubUrl.js'
+import { buildPlayerSeasonProjection } from '../../domain/stats/statsProjection.builder.js'
 import {
   updateLeagueCompetitionRules,
 } from './league/edits/updateLeagueCompetitionRules.js'
@@ -45,6 +46,150 @@ jest.mock('./shared/manualEdit.write.js', () => ({
 const patchFor = (result, path) => (
   result.changes.find(change => change.ref.path === path)?.patch
 )
+
+const applyPatch = (document, patch = {}) => {
+  const result = JSON.parse(JSON.stringify(document))
+  Object.entries(patch).forEach(([field, value]) => {
+    const keys = field.split('.')
+    const lastKey = keys.pop()
+    const parent = keys.reduce((current, key) => {
+      if (!current[key]) current[key] = {}
+      return current[key]
+    }, result)
+    parent[lastKey] = value
+  })
+  return result
+}
+
+const seedRoleProjectionSources = ({ loadedStats = true, teamIds = ['team-a'] } = {}) => {
+  const playerId = 'player__2012__229642'
+  const seasonId = '2025_2026'
+  const leagueId = 'league-a'
+  const playerSeasonDocumentId = `playerSeason__${playerId}__${seasonId}`
+  const playerRoot = {
+    identity: { playerId },
+    primaryPosition: 'CB',
+    positionLayer: 'defense',
+    notes: 'keep root note',
+  }
+  const league = {
+    id: leagueId,
+    seasonsById: {
+      [seasonId]: {
+        seasonKey: '25/26',
+        seasonStatus: 'completed',
+        gameDurationMinutes: 80,
+        table: { teamsById: {} },
+      },
+    },
+  }
+  const playerSeason = {
+    identity: { playerId, seasonId },
+    teamsById: { unrelated: { manual: { note: 'keep other team' } } },
+  }
+  const leaguesCenter = {
+    leaguesById: {
+      [leagueId]: {
+        seasonsById: {
+          [seasonId]: {
+            seasonUrl: 'https://league.test/season',
+            teamsById: { unrelated: { teamTaskSignals: { offense: false } } },
+          },
+        },
+      },
+    },
+  }
+  const clubsCenter = {
+    clubsById: {
+      unrelated: { teamsById: { unrelated: { rosterPlayersCount: 19 } } },
+    },
+  }
+
+  teamIds.forEach((teamId, index) => {
+    const clubId = `club-${index}`
+    const teamSeasonDocumentId = `${teamId}__${seasonId}`
+    const indexRef = { path: `playerSearchIndexes/${teamId}-role` }
+    const teamSeason = {
+      identity: {
+        teamSeasonDocumentId,
+        teamId,
+        clubId,
+        seasonId,
+        leagueId,
+        seasonKey: '25/26',
+        seasonStatus: 'completed',
+      },
+      competitionSnapshot: { officialTable: { teamGamePlayed: 24 } },
+      roster: {
+        playersById: { [playerId]: { playerId, rosterStatus: 'regular' } },
+      },
+      stats: {
+        playersById: {
+          [playerId]: {
+            statsStatus: loadedStats ? 'loaded' : 'not_loaded',
+            playerStats: { games: 21, goals: 0, minutes: 1412, starts: 18, teamGamePlayed: 24 },
+            lineClassification: { line: 'DEFENSE' },
+          },
+        },
+      },
+      scouting: {
+        updatedAt: 'old-scouting-time',
+        playersById: {
+          [playerId]: {
+            primaryPosition: 'CB',
+            positionLayer: 'defense',
+            professionalProfileIds: ['profile-a'],
+            evidence: { capturedAt: 'source-evidence-time', projected: { goals: 3 } },
+            updatedAt: 'old-scouting-time',
+          },
+        },
+      },
+    }
+    const teamRow = {
+      clubId,
+      officialTable: { teamGamePlayed: 24, goalsFor: 40, goalsAgainst: 20 },
+      performance: {
+        offense: { priorityLevel: 'elite' },
+        defense: { priorityLevel: 'high' },
+      },
+      scouting: { teamTaskSignals: { offense: false, defense: false, updatedAt: 'old-time' } },
+    }
+    league.seasonsById[seasonId].table.teamsById[teamId] = teamRow
+    playerSeason.teamsById[teamId] = {
+      teamSeasonDocumentId,
+      stats: { custom: 'keep stats', lineClassification: { line: 'DEFENSE' } },
+      scouting: { professionalProfileIds: ['stale'], updatedAt: 'stale-time' },
+      manual: { playerUrl: 'https://player.test/profile', note: 'keep manual' },
+      movementsById: { move: { direction: 'in' } },
+    }
+    const centerTeam = {
+      teamId,
+      teamTaskSignals: { offense: false, defense: false, updatedAt: 'old-time' },
+      documentationStateUpdatedAt: 'documentation-time',
+      rosterPlayersCount: 18,
+      transfers: { totalIn: 2, updatedAt: 'movement-time' },
+    }
+    leaguesCenter.leaguesById[leagueId].seasonsById[seasonId].teamsById[teamId] = centerTeam
+    clubsCenter.clubsById[clubId] = {
+      displayName: `Club ${index}`,
+      teamsById: { [teamId]: { ...centerTeam, officialTable: teamRow.officialTable } },
+    }
+    mockIndexRefs.push(indexRef)
+    mockSnapshots[indexRef.path] = snapshot({
+      playerId,
+      references: { teamSeasonDocumentId, playerSeasonDocumentId },
+      player: { primaryPosition: 'CB', positionLayer: 'defense' },
+      scoutEvidence: { capturedAt: 'source-evidence-time' },
+    })
+    mockSnapshots[`teamSeasons/${teamSeasonDocumentId}`] = snapshot(teamSeason)
+  })
+  mockSnapshots[`playerRoots/${playerId}`] = snapshot(playerRoot)
+  mockSnapshots[`playerSeasons/${playerSeasonDocumentId}`] = snapshot(playerSeason)
+  mockSnapshots[`leagues/${leagueId}`] = snapshot(league)
+  mockSnapshots['leaguesCenter/all'] = snapshot(leaguesCenter)
+  mockSnapshots[`clubsCenter/${seasonId}`] = snapshot(clubsCenter)
+  return { playerId, seasonId, leagueId, playerSeasonDocumentId, league, playerSeason }
+}
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -332,6 +477,7 @@ test('Player Root edits preserve fields outside notes, agent and professional ro
     },
   })
   mockSnapshots['teamSeasons/team-a__2026_2027'] = snapshot({
+    identity: { teamId: 'team-a', seasonId: '2026_2027' },
     scouting: {
       playersById: {
         'player-a': {
@@ -434,6 +580,7 @@ test('Player role edit rebuilds classification, Team Balance and Player Season p
     identity: {
       teamSeasonDocumentId,
       teamId,
+      clubId: 'club-a',
       seasonId,
       seasonKey: '25/26',
       seasonStatus: 'completed',
@@ -506,6 +653,14 @@ test('Player role edit rebuilds classification, Team Balance and Player Season p
       },
     },
   })
+  mockSnapshots['leaguesCenter/all'] = snapshot({
+    leaguesById: {
+      'league-a': { seasonsById: { [seasonId]: { teamsById: { [teamId]: {} } } } },
+    },
+  })
+  mockSnapshots[`clubsCenter/${seasonId}`] = snapshot({
+    clubsById: { 'club-a': { teamsById: { [teamId]: {} } } },
+  })
 
   const result = await updatePlayerRole({
     playerId,
@@ -521,6 +676,153 @@ test('Player role edit rebuilds classification, Team Balance and Player Season p
   expect(patchFor(result, 'leagues/league-a')[
     `seasonsById.${seasonId}.table.teamsById.${teamId}.scouting.teamTaskSignals`
   ]).toEqual({ offense: true, defense: true, updatedAt: 'updated-time' })
+})
+
+test('Role edit propagates canonical scouting without loaded Stats and preserves source evidence', async () => {
+  const { playerId, seasonId, league, playerSeasonDocumentId, playerSeason } = seedRoleProjectionSources({
+    loadedStats: false,
+  })
+  const teamId = 'team-a'
+  const teamSeasonPath = `teamSeasons/${teamId}__${seasonId}`
+  const result = await updatePlayerRole({
+    playerId,
+    primaryPosition: 'DM',
+    positionLayer: 'midfield',
+  })
+  const nextTeamSeason = applyPatch(mockSnapshots[teamSeasonPath].data(), patchFor(result, teamSeasonPath))
+  const nextPlayerSeason = applyPatch(playerSeason, patchFor(result, `playerSeasons/${playerSeasonDocumentId}`))
+  const expected = buildPlayerSeasonProjection({
+    playerId,
+    teamSeason: nextTeamSeason,
+    league,
+    seasonId,
+    updatedAt: 'updated-time',
+  })
+
+  expect(nextPlayerSeason.teamsById[teamId].scouting).toEqual(expected.team.scouting)
+  expect(nextPlayerSeason.teamsById[teamId].scouting.updatedAt).toBe('updated-time')
+  expect(nextPlayerSeason.teamsById[teamId].scouting.evidence.capturedAt).toBe('source-evidence-time')
+  expect(nextPlayerSeason.teamsById[teamId].scouting).not.toHaveProperty('primaryPosition')
+  expect(nextPlayerSeason.teamsById[teamId].scouting).not.toHaveProperty('positionLayer')
+  expect(nextPlayerSeason.teamsById[teamId].stats).toEqual(playerSeason.teamsById[teamId].stats)
+  expect(nextPlayerSeason.teamsById[teamId].manual).toEqual(playerSeason.teamsById[teamId].manual)
+  expect(nextPlayerSeason.teamsById[teamId].movementsById).toEqual(playerSeason.teamsById[teamId].movementsById)
+  expect(nextPlayerSeason.teamsById.unrelated).toEqual(playerSeason.teamsById.unrelated)
+  expect(patchFor(result, 'leaguesCenter/all')).toBeUndefined()
+  expect(patchFor(result, `clubsCenter/${seasonId}`)).toBeUndefined()
+  expect(patchFor(result, 'playerSearchIndexes/team-a-role')).not.toHaveProperty('scoutEvidence')
+})
+
+test('Role edit syncs changed task flags and their timestamp to both Centers without touching adjacent fields', async () => {
+  const { playerId, seasonId, leagueId } = seedRoleProjectionSources()
+  const result = await updatePlayerRole({
+    playerId,
+    primaryPosition: 'GK',
+    positionLayer: 'goalkeeper',
+  })
+  const leaguePath = `leagues/${leagueId}`
+  const league = applyPatch(mockSnapshots[leaguePath].data(), patchFor(result, leaguePath))
+  const expected = league.seasonsById[seasonId].table.teamsById['team-a'].scouting.teamTaskSignals
+  const leaguesCenter = applyPatch(mockSnapshots['leaguesCenter/all'].data(), patchFor(result, 'leaguesCenter/all'))
+  const clubsCenterPath = `clubsCenter/${seasonId}`
+  const clubsCenter = applyPatch(mockSnapshots[clubsCenterPath].data(), patchFor(result, clubsCenterPath))
+  const leagueTeam = leaguesCenter.leaguesById[leagueId].seasonsById[seasonId].teamsById['team-a']
+  const clubTeam = clubsCenter.clubsById['club-0'].teamsById['team-a']
+
+  expect(expected).toEqual({ offense: true, defense: true, updatedAt: 'updated-time' })
+  expect(leagueTeam.teamTaskSignals).toEqual(expected)
+  expect(clubTeam.teamTaskSignals).toEqual(expected)
+  const centerTeams = [leagueTeam, clubTeam]
+  centerTeams.forEach(team => {
+    expect(team.documentationStateUpdatedAt).toBe('documentation-time')
+    expect(team.rosterPlayersCount).toBe(18)
+    expect(team.transfers).toEqual({ totalIn: 2, updatedAt: 'movement-time' })
+  })
+  expect(clubTeam.officialTable).toEqual({ teamGamePlayed: 24, goalsFor: 40, goalsAgainst: 20 })
+  expect(executeManualEdit).toHaveBeenCalledTimes(1)
+  expect(result.refs.map(ref => ref.path)).toEqual(expect.arrayContaining([
+    `playerRoots/${playerId}`,
+    `teamSeasons/team-a__${seasonId}`,
+    `playerSeasons/playerSeason__${playerId}__${seasonId}`,
+    'leaguesCenter/all',
+    clubsCenterPath,
+  ]))
+})
+
+test('Role edit combines two team updates into each shared Center and Player Season', async () => {
+  const teamIds = ['team-a', 'team-b']
+  const { playerId, seasonId, leagueId, playerSeasonDocumentId, playerSeason } = seedRoleProjectionSources({ teamIds })
+  const result = await updatePlayerRole({
+    playerId,
+    primaryPosition: 'GK',
+    positionLayer: 'goalkeeper',
+  })
+  const paths = ['leaguesCenter/all', `clubsCenter/${seasonId}`, `playerSeasons/${playerSeasonDocumentId}`]
+  paths.forEach(path => {
+    expect(result.changes.filter(change => change.ref.path === path)).toHaveLength(1)
+  })
+  const leaguesCenter = applyPatch(mockSnapshots[paths[0]].data(), patchFor(result, paths[0]))
+  const clubsCenter = applyPatch(mockSnapshots[paths[1]].data(), patchFor(result, paths[1]))
+  const nextPlayerSeason = applyPatch(playerSeason, patchFor(result, paths[2]))
+  teamIds.forEach((teamId, index) => {
+    const leagueSignals = leaguesCenter.leaguesById[leagueId].seasonsById[seasonId].teamsById[teamId].teamTaskSignals
+    const clubSignals = clubsCenter.clubsById[`club-${index}`].teamsById[teamId].teamTaskSignals
+    expect(leagueSignals).toEqual({ offense: true, defense: true, updatedAt: 'updated-time' })
+    expect(clubSignals).toEqual(leagueSignals)
+    expect(nextPlayerSeason.teamsById[teamId].scouting.updatedAt).toBe('updated-time')
+    expect(nextPlayerSeason.teamsById[teamId].stats.custom).toBe('keep stats')
+  })
+  expect(clubsCenter.clubsById.unrelated).toEqual(mockSnapshots[paths[1]].data().clubsById.unrelated)
+  expect(nextPlayerSeason.teamsById.unrelated).toEqual(playerSeason.teamsById.unrelated)
+})
+
+test('Re-saving the same role keeps timestamp-only task and scouting updates aligned', async () => {
+  const { playerId, seasonId, leagueId, playerSeasonDocumentId } = seedRoleProjectionSources()
+  const oldSignals = { offense: true, defense: true, updatedAt: 'old-time' }
+  mockSnapshots[`leagues/${leagueId}`].data().seasonsById[seasonId].table.teamsById['team-a']
+    .scouting.teamTaskSignals = oldSignals
+  mockSnapshots['leaguesCenter/all'].data().leaguesById[leagueId].seasonsById[seasonId].teamsById['team-a']
+    .teamTaskSignals = oldSignals
+  mockSnapshots[`clubsCenter/${seasonId}`].data().clubsById['club-0'].teamsById['team-a']
+    .teamTaskSignals = oldSignals
+  const result = await updatePlayerRole({
+    playerId,
+    primaryPosition: 'CB',
+    positionLayer: 'defense',
+  })
+  const expected = { ...oldSignals, updatedAt: 'updated-time' }
+  const leaguesCenter = applyPatch(mockSnapshots['leaguesCenter/all'].data(), patchFor(result, 'leaguesCenter/all'))
+  const clubsCenterPath = `clubsCenter/${seasonId}`
+  const clubsCenter = applyPatch(mockSnapshots[clubsCenterPath].data(), patchFor(result, clubsCenterPath))
+  const playerSeasonPath = `playerSeasons/${playerSeasonDocumentId}`
+  const playerSeason = applyPatch(mockSnapshots[playerSeasonPath].data(), patchFor(result, playerSeasonPath))
+
+  expect(patchFor(result, `playerRoots/${playerId}`)).toBeUndefined()
+  expect(leaguesCenter.leaguesById[leagueId].seasonsById[seasonId].teamsById['team-a'].teamTaskSignals).toEqual(expected)
+  expect(clubsCenter.clubsById['club-0'].teamsById['team-a'].teamTaskSignals).toEqual(expected)
+  expect(playerSeason.teamsById['team-a'].scouting.updatedAt).toBe('updated-time')
+  expect(playerSeason.teamsById['team-a'].scouting.evidence.capturedAt).toBe('source-evidence-time')
+})
+
+test.each(['leaguesCenter', 'clubsCenter'])('Role edit rejects a missing %s team before completing the write plan', async target => {
+  const { playerId, seasonId, leagueId } = seedRoleProjectionSources()
+  if (target === 'leaguesCenter') {
+    delete mockSnapshots['leaguesCenter/all'].data().leaguesById[leagueId].seasonsById[seasonId].teamsById['team-a']
+  } else {
+    delete mockSnapshots[`clubsCenter/${seasonId}`].data().clubsById['club-0'].teamsById['team-a']
+  }
+  const before = Object.fromEntries(Object.entries(mockSnapshots).map(([path, value]) => [path, value.data()]))
+  const serializedBefore = JSON.stringify(before)
+
+  await expect(updatePlayerRole({
+    playerId,
+    primaryPosition: 'GK',
+    positionLayer: 'goalkeeper',
+  })).rejects.toThrow()
+
+  expect(executeManualEdit).toHaveBeenCalledTimes(1)
+  const after = Object.fromEntries(Object.entries(mockSnapshots).map(([path, value]) => [path, value.data()]))
+  expect(JSON.stringify(after)).toBe(serializedBefore)
 })
 
 test('Explicit note edit creates a missing Player Root from canonical roster', async () => {

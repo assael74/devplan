@@ -29,6 +29,7 @@ const base = ({ expectedUpdatedAt, actualUpdatedAt }) => ({
       playerSeasonsById: {},
       playerSearchIndexesById: {},
       counterpartPatches: [],
+      counterpartClubsCenterProjections: [],
       leagueTeamPatch: { stats: { a: 1, b: 2, updatedAt: expectedUpdatedAt }, scouting: {} },
       leaguesCenterTeam: {},
       clubsCenterTeam: {},
@@ -39,6 +40,21 @@ const base = ({ expectedUpdatedAt, actualUpdatedAt }) => ({
 })
 
 describe('compareStatsAudit', () => {
+  test('reports missing Center documents and team rows without interrupting the audit', () => {
+    const args = base({ expectedUpdatedAt: null, actualUpdatedAt: null })
+    args.actual.leaguesCenter = null
+    args.actual.clubsCenter = { clubsById: { club: { teamsById: {} } } }
+
+    expect(compareStatsAudit(args)).toEqual([
+      expect.objectContaining({
+        type: 'missing_projection', target: 'leaguesCenter', documentId: 'all', field: 'team',
+      }),
+      expect.objectContaining({
+        type: 'missing_projection', target: 'clubsCenter', documentId: '2026_2027', field: 'team',
+      }),
+    ])
+  })
+
   test('normalizes object key order and Firestore timestamp representations', () => {
     const args = base({
       expectedUpdatedAt: { _seconds: 100, _nanoseconds: 500000000 },
@@ -62,6 +78,32 @@ describe('compareStatsAudit', () => {
         target: 'counterpartTeamSeason',
         documentId: 'counterpart__2026_2027',
         field: 'movement',
+      }),
+    ]))
+  })
+
+  test('reports stale local and counterpart ClubsCenter transfer projections', () => {
+    const args = base({ expectedUpdatedAt: null, actualUpdatedAt: null })
+    args.expectedState.expected.clubsCenterTeam = {
+      transfers: { external: { in: { up: { clubsById: { source: 1 } } } } },
+    }
+    args.expectedState.expected.counterpartClubsCenterProjections = [{
+      seasonId: '2026_2027',
+      clubId: 'source',
+      teamId: 'source_2011_1',
+      team: {
+        transfers: { external: { out: { down: { clubsById: { club: 1 } } } } },
+      },
+    }]
+    args.actual.clubsCenter.clubsById.source = {
+      teamsById: { source_2011_1: { transfers: {} } },
+    }
+
+    expect(compareStatsAudit(args)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ target: 'clubsCenter', field: 'transfers' }),
+      expect.objectContaining({
+        target: 'clubsCenter',
+        field: 'clubsById.source.teamsById.source_2011_1.transfers',
       }),
     ]))
   })

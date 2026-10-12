@@ -12,6 +12,7 @@ import {
   readOtherLeagueTeamOwners,
 } from '../../../../services/write/league/index.js'
 import { repairWriteActionReceipt } from '../../../../services/write/recovery/index.js'
+import { loadLeagueForAuditRepair } from '../../../../services/audit/repair/reloadLeague.js'
 import {
   applyLeagueTeamOwnerConflicts,
   buildLeagueImportPreview,
@@ -134,6 +135,8 @@ export function useLeagueTableImport({
   leagueDoc = {},
   selectedSeasonOption = {},
   reload,
+  repairReload = false,
+  repairSeasonId = '',
 } = {}) {
   const { notify } = useSnackbar()
   const resolveGameDuration = React.useCallback(() => (
@@ -158,6 +161,7 @@ export function useLeagueTableImport({
   const [identityCheckBusy, setIdentityCheckBusy] = React.useState(false)
   const [identityValidationError, setIdentityValidationError] = React.useState(false)
   const teamOwnersRef = React.useRef({})
+  const executionInFlight = React.useRef(false)
   const historicalSeason = isHistoricalSeason(
     selectedSeasonOption?.seasonKey ||
     selectedSeasonOption?.season?.seasonKey ||
@@ -173,14 +177,22 @@ export function useLeagueTableImport({
     nextRows: rows,
   }), [rows, selectedSeasonOption])
   const gameDurationValid = Number.isFinite(Number(gameDurationMinutes)) && Number(gameDurationMinutes) > 0
+  const importSeasonId = clean(selectedSeasonOption && (
+    selectedSeasonOption.seasonId
+    || (selectedSeasonOption.season && selectedSeasonOption.season.seasonId)
+  ))
+  const repairContextValid = !repairReload || Boolean(
+    clean(repairSeasonId) && importSeasonId === clean(repairSeasonId)
+  )
   const canConfirm = React.useMemo(() => (
     !identityCheckBusy &&
     !identityValidationError &&
     Boolean(seasonStatus) &&
     gameDurationValid &&
+    repairContextValid &&
     rows.length > 0 &&
     rows.every(row => row && row.valid !== false && isImportRowReady(row))
-  ), [gameDurationValid, identityCheckBusy, identityValidationError, rows, seasonStatus])
+  ), [gameDurationValid, identityCheckBusy, identityValidationError, repairContextValid, rows, seasonStatus])
 
   React.useEffect(() => {
     if (open) return
@@ -346,17 +358,52 @@ export function useLeagueTableImport({
   }, [buildApprovedInput, canConfirm])
 
   const executeApprovedImport = React.useCallback(async () => {
-    if (!approvedInput || busy) return false
-    if (receiptId && !executionReceipt) {
+    if (!approvedInput || busy || executionInFlight.current) return false
+    if (repairReload && (
+      clean(approvedInput.season.seasonId) !== clean(repairSeasonId)
+      || clean(approvedInput.league.leagueId) !== clean(league.id || league.leagueId)
+    )) {
+      setExecutionError('הליגה או העונה אינן תואמות לממצא שנבחר לתיקון האודיט.')
+      return false
+    }
+    if (!repairReload && receiptId && !executionReceipt) {
       setExecutionError('לא ניתן לקבוע את מצב הקבלה. יש לפתוח אותה בעמוד ניהול הדאטה.')
       return false
     }
 
+    executionInFlight.current = true
     setBusy(true)
     setExecutionStatus('running')
     setExecutionError('')
 
     try {
+      if (repairReload) {
+        setExecutionReceipt(null)
+        const result = await loadLeagueForAuditRepair({
+          input: approvedInput,
+          onProgress: event => setExecutionReceipt(current => applyLeagueSyncProgressEvent({
+            receipt: current,
+            event,
+          })),
+        })
+        setExecutionResult(result)
+        if (result && result.executionStatus === 'succeeded' && result.status === 'succeeded') {
+          setExecutionStatus('succeeded')
+          try {
+            if (typeof reload === 'function') await reload()
+          } catch {
+            notify({
+              status: SNACK_STATUS.WARNING,
+              title: 'הטעינה הושלמה',
+              message: 'הנתונים נשמרו ונבדקו. רענון התצוגה נכשל ויש לרענן את העמוד.',
+            })
+          }
+          return true
+        }
+        setExecutionStatus('failed')
+        setExecutionError('הנתונים נשמרו, אך הבדיקה עדיין מצאה פערים. יש לבדוק את תוצאות האודיט לפני ניסיון נוסף.')
+        return false
+      }
       const canonicalConfirmed = clean(
         executionReceipt && executionReceipt.canonicalOutcome
       ) === 'confirmed'
@@ -422,7 +469,10 @@ export function useLeagueTableImport({
     } catch (error) {
       setExecutionStatus('failed')
       setExecutionError(describeFailure(error))
-      const failedReceiptId = clean(error && error.receiptId) || receiptId
+      if (repairReload && error && error.auditResult) {
+        setExecutionResult({ audit: error.auditResult, executionStatus: 'failed', status: 'failed' })
+      }
+      const failedReceiptId = repairReload ? '' : clean(error && error.receiptId) || receiptId
       if (failedReceiptId) {
         setReceiptId(failedReceiptId)
         try {
@@ -443,9 +493,10 @@ export function useLeagueTableImport({
       })
       return false
     } finally {
+      executionInFlight.current = false
       setBusy(false)
     }
-  }, [approvedInput, busy, executionReceipt, league, notify, receiptId, reload])
+  }, [approvedInput, busy, executionReceipt, league, notify, receiptId, reload, repairReload, repairSeasonId])
 
   const finishLeagueImport = React.useCallback(() => {
     if (busy || executionStatus !== 'succeeded') return false
@@ -461,6 +512,8 @@ export function useLeagueTableImport({
 
   return {
     open,
+    repairReload,
+    repairContextValid,
     pasteValue,
     rows,
     canConfirm,
@@ -480,8 +533,8 @@ export function useLeagueTableImport({
     executionStatus,
     executionError,
     syncComplete: executionStatus === 'succeeded',
-    syncStages: buildLeagueSyncStages({ receipt: executionReceipt, busy }),
-    retryMode: clean(executionReceipt && executionReceipt.canonicalOutcome) === 'confirmed'
+    syncStages: buildLeagueSyncStages({ receipt: executionReceipt, busy, repairReload }),
+    retryMode: repairReload ? 'reload' : clean(executionReceipt && executionReceipt.canonicalOutcome) === 'confirmed'
       ? 'repair'
       : 'retry',
     structuralChanges,

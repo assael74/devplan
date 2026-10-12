@@ -345,7 +345,12 @@ describe('buildStatsLoadApprovedState', () => {
       sources: sources({
         existingCounterpartTeamSeasonsById: {
           [counterpartId]: {
-            identity: { teamSeasonDocumentId: counterpartId },
+            identity: {
+              teamSeasonDocumentId: counterpartId,
+              teamId: 'club-2_2011_1',
+              clubId: 'club-2',
+              seasonId: '2026_2027',
+            },
             movement: {},
           },
         },
@@ -356,6 +361,22 @@ describe('buildStatsLoadApprovedState', () => {
       expect.objectContaining({ documentId: counterpartId }),
     ])
     expect(Object.keys(approved.counterpartPatches[0].movement.transfersOutById)).toHaveLength(1)
+    expect(approved.counterpartClubsCenterProjections).toEqual([
+      expect.objectContaining({
+        seasonId: '2026_2027',
+        clubId: 'club-2',
+        teamId: 'club-2_2011_1',
+        team: expect.objectContaining({
+          transfers: expect.objectContaining({
+            external: expect.objectContaining({
+              out: expect.objectContaining({
+                unknown: { clubsById: { 'club-1': 1 } },
+              }),
+            }),
+          }),
+        }),
+      }),
+    ])
   })
 
   test('rejects League identity or League team clubId mismatches before Approved State', () => {

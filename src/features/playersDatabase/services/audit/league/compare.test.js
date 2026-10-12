@@ -113,7 +113,7 @@ const cleanActual = () => ({
   teamSeasons: [{
     ...teamSeason,
     competitionSnapshot: {
-      ...expected.teamSeasonCompetitionSnapshots[0].expectedFields,
+      ...clone(expected.teamSeasonCompetitionSnapshots[0].expectedFields),
       updatedAt: 'snapshot-at',
     },
   }],
@@ -121,6 +121,44 @@ const cleanActual = () => ({
 
 test('accepts clean League Load projections and ignores non-auditable ClubsCenter derived fields', () => {
   expect(compareLeagueAudit({ expected, actual: cleanActual() })).toEqual([])
+})
+
+test.each(['2026-10-11T03:39:28.862Z', 'older-write', null])(
+  'ignores operational timestamp-only differences in League Center and competition snapshots: %s',
+  updatedAt => {
+    const actual = cleanActual()
+    actual.leaguesCenter.leaguesById['league-1'].seasonsById['2026_2027'].updatedAt = updatedAt
+    actual.teamSeasons[0].competitionSnapshot.updatedAt = updatedAt
+
+    expect(compareLeagueAudit({ expected, actual })).toEqual([])
+  }
+)
+
+test('still detects changed season and competition data when operational timestamps differ', () => {
+  const actual = cleanActual()
+  const season = actual.leaguesCenter.leaguesById['league-1'].seasonsById['2026_2027']
+  season.updatedAt = 'later-stats-write'
+  season.seasonStatus = 'completed'
+  actual.teamSeasons[0].competitionSnapshot.updatedAt = 'later-roster-write'
+  actual.teamSeasons[0].competitionSnapshot.officialTable.points = 99
+
+  expect(compareLeagueAudit({ expected, actual })).toEqual([
+    expect.objectContaining({ target: 'leaguesCenter', type: 'projection_mismatch' }),
+    expect.objectContaining({ target: 'teamSeasonCompetitionSnapshots', type: 'projection_mismatch' }),
+  ])
+})
+
+test('still detects a canonical task signal timestamp mismatch', () => {
+  const actual = cleanActual()
+  actual.leaguesCenter.leaguesById['league-1'].seasonsById['2026_2027']
+    .teamsById.club_2012_1.teamTaskSignals.updatedAt = 'stale-signal'
+
+  expect(compareLeagueAudit({ expected, actual })).toEqual([
+    expect.objectContaining({
+      target: 'leaguesCenter',
+      field: 'leaguesById.league-1.seasonsById.2026_2027.teamsById.club_2012_1.teamTaskSignals.updatedAt',
+    }),
+  ])
 })
 
 test('detects Team Season-owned documentation state and task signal mismatches in both Centers', () => {
@@ -289,7 +327,7 @@ test('League Teams Clear keeps Centers season, removes teams and requires full e
           goalsAgainst: null,
           teamGamePlayed: null,
         },
-        updatedAt: 'cleared-at',
+        updatedAt: 'different-operational-timestamp',
       },
     }],
   }

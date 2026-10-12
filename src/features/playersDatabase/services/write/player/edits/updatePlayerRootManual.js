@@ -4,6 +4,7 @@ import { clean, equal, requireValue } from '../../../../domain/edits/editIdentit
 import { buildPlayerRoleEditState } from '../../../../domain/edits/playerRoleEdit.builder.js'
 import { buildPlayerRootDocument } from '../../../../domain/playerRoot.builder.js'
 import { buildPlayerId, buildPlayerSeasonDocumentId } from '../../../../domain/identity/index.js'
+import { buildPlayerSeasonProjection } from '../../../../domain/stats/statsProjection.builder.js'
 import {
   executeManualEdit,
   manualEditRef,
@@ -30,7 +31,7 @@ const readTeamSeasonRefs = async indexRefs => {
   })).values()]
 }
 
-const readRoleEditTargets = async indexRefs => {
+const readRoleEditTargets = async ({ indexRefs, playerId }) => {
   const indexSnapshots = await Promise.all(indexRefs.map(readManualEditDocument))
   const indexes = indexSnapshots.map(requireManualEditDocument)
   const teamSeasonRefs = [...new Map(indexes.map(index => {
@@ -50,8 +51,13 @@ const readRoleEditTargets = async indexRefs => {
     })).values()]
   const teamSeasonSnapshots = await Promise.all(teamSeasonRefs.map(readManualEditDocument))
   const leagueRefsById = new Map()
+  const clubsCenterRefsBySeasonId = new Map()
   teamSeasonSnapshots.forEach(snapshot => {
     const teamSeason = requireManualEditDocument(snapshot)
+    if (clean(teamSeason.stats?.playersById?.[playerId]?.statsStatus) === 'loaded') {
+      const seasonId = requireValue(clean(teamSeason.identity?.seasonId), 'זהות העונה חסרה')
+      clubsCenterRefsBySeasonId.set(seasonId, manualEditRef('clubsCenter', seasonId))
+    }
     const leagueId = clean(teamSeason.identity?.leagueId)
     if (!leagueId) return
     const leagueRef = manualEditRef('leagues', leagueId)
@@ -63,7 +69,43 @@ const readRoleEditTargets = async indexRefs => {
     playerSeasonRefs,
     leagueRefs: [...leagueRefsById.values()],
     leagueRefsById,
+    leaguesCenterRef: clubsCenterRefsBySeasonId.size ? manualEditRef('leaguesCenter', 'all') : null,
+    clubsCenterRefsBySeasonId,
   }
+}
+
+const appendRoleCenterPatches = ({
+  get,
+  identity,
+  teamTaskSignals,
+  leaguesCenterRef,
+  clubsCenterRefsBySeasonId,
+  patchesByPath,
+}) => {
+  const leagueId = requireValue(clean(identity.leagueId), 'זהות הליגה חסרה')
+  const seasonId = requireValue(clean(identity.seasonId), 'זהות העונה חסרה')
+  const teamId = requireValue(clean(identity.teamId), 'זהות הקבוצה חסרה')
+  const clubId = requireValue(clean(identity.clubId), 'זהות המועדון חסרה')
+  const clubsCenterRef = clubsCenterRefsBySeasonId.get(seasonId)
+  requireValue(leaguesCenterRef && clubsCenterRef, 'יעדי המרכזים השתנו; יש לנסות לשמור מחדש')
+  const leaguesCenter = requireManualEditDocument(get(leaguesCenterRef))
+  const clubsCenter = requireManualEditDocument(get(clubsCenterRef))
+  requireValue(
+    leaguesCenter.leaguesById?.[leagueId]?.seasonsById?.[seasonId]?.teamsById?.[teamId],
+    'הקבוצה חסרה במרכז הליגות; יש לתקן אותה באודיט לפני שמירת התפקיד',
+  )
+  requireValue(
+    clubsCenter.clubsById?.[clubId]?.teamsById?.[teamId],
+    'הקבוצה חסרה במרכז המועדונים; יש לתקן אותה באודיט לפני שמירת התפקיד',
+  )
+  ;[
+    [leaguesCenterRef, `leaguesById.${leagueId}.seasonsById.${seasonId}.teamsById.${teamId}.teamTaskSignals`],
+    [clubsCenterRef, `clubsById.${clubId}.teamsById.${teamId}.teamTaskSignals`],
+  ].forEach(([ref, field]) => {
+    const change = patchesByPath.get(ref.path) || { ref, patch: {} }
+    change.patch[field] = teamTaskSignals
+    patchesByPath.set(ref.path, change)
+  })
 }
 
 const buildMissingPlayerRoot = ({
@@ -180,7 +222,9 @@ export const updatePlayerRole = async ({ playerId, primaryPosition, positionLaye
     playerSeasonRefs,
     leagueRefs,
     leagueRefsById,
-  } = await readRoleEditTargets(indexRefs)
+    leaguesCenterRef,
+    clubsCenterRefsBySeasonId,
+  } = await readRoleEditTargets({ indexRefs, playerId: id })
 
   return executeManualEdit({
     refs: [
@@ -189,6 +233,8 @@ export const updatePlayerRole = async ({ playerId, primaryPosition, positionLaye
       ...teamSeasonRefs,
       ...playerSeasonRefs,
       ...leagueRefs,
+      ...(leaguesCenterRef ? [leaguesCenterRef] : []),
+      ...clubsCenterRefsBySeasonId.values(),
     ],
     build: ({ get, updatedAt }) => {
       const playerSnapshot = get(ref)
@@ -233,6 +279,7 @@ export const updatePlayerRole = async ({ playerId, primaryPosition, positionLaye
       })
       const roleStatesByTeamSeasonId = new Map()
       const leaguePatchesByPath = new Map()
+      const centerPatchesByPath = new Map()
       teamSeasonRefs.forEach(teamSeasonRef => {
         const teamSeason = requireManualEditDocument(get(teamSeasonRef))
         const identity = teamSeason.identity || {}
@@ -272,11 +319,6 @@ export const updatePlayerRole = async ({ playerId, primaryPosition, positionLaye
           teamSeasonPatch['stats.updatedAt'] = updatedAt
           teamSeasonPatch.teamTaskSignals = roleState.teamTaskSignals
           teamSeasonPatch.teamTaskAvailability = roleState.teamTaskAvailability
-          roleStatesByTeamSeasonId.set(teamSeasonDocumentId, {
-            ...roleState,
-            teamId: clean(identity.teamId),
-          })
-
           const leaguePatch = leaguePatchesByPath.get(leagueRef.path) || {
             ref: leagueRef,
             patch: {},
@@ -285,8 +327,38 @@ export const updatePlayerRole = async ({ playerId, primaryPosition, positionLaye
             `seasonsById.${clean(identity.seasonId)}.table.teamsById.${clean(identity.teamId)}.scouting.teamTaskSignals`
           ] = roleState.teamTaskSignals
           leaguePatchesByPath.set(leagueRef.path, leaguePatch)
+          appendRoleCenterPatches({
+            get,
+            identity,
+            teamTaskSignals: roleState.teamTaskSignals,
+            leaguesCenterRef,
+            clubsCenterRefsBySeasonId,
+            patchesByPath: centerPatchesByPath,
+          })
         }
         if (Object.keys(teamSeasonPatch).length) {
+          const projectedTeamSeason = {
+            ...teamSeason,
+            scouting: {
+              ...teamSeason.scouting,
+              playersById: {
+                ...teamSeason.scouting?.playersById,
+                [id]: roleState.scoutingPlayer,
+              },
+            },
+          }
+          const projection = buildPlayerSeasonProjection({
+            playerId: id,
+            teamSeason: projectedTeamSeason,
+            league,
+            seasonId: clean(identity.seasonId),
+            updatedAt,
+          })
+          roleStatesByTeamSeasonId.set(teamSeasonDocumentId, {
+            ...roleState,
+            teamId: clean(identity.teamId),
+            scoutingProjection: projection.team.scouting,
+          })
           changes.push({ ref: teamSeasonRef, patch: teamSeasonPatch })
         }
       })
@@ -298,22 +370,24 @@ export const updatePlayerRole = async ({ playerId, primaryPosition, positionLaye
             clean(teamContext && teamContext.teamSeasonDocumentId),
           )
           if (!roleState || roleState.teamId !== teamId) return
-          projectionPatch[`teamsById.${teamId}`] = {
-            ...teamContext,
-            stats: {
+          const nextTeamContext = { ...teamContext, updatedAt }
+          if (roleState.statsChanged) {
+            nextTeamContext.stats = {
               ...(teamContext.stats || {}),
               lineClassification: {
                 ...roleState.statsPlayer.lineClassification,
               },
-            },
-            updatedAt,
+            }
           }
+          if (roleState.scoutingPlayer) nextTeamContext.scouting = roleState.scoutingProjection
+          projectionPatch[`teamsById.${teamId}`] = nextTeamContext
         })
         if (Object.keys(projectionPatch).length) {
           changes.push({ ref: playerSeasonRef, patch: projectionPatch })
         }
       })
       leaguePatchesByPath.forEach(change => changes.push(change))
+      centerPatchesByPath.forEach(change => changes.push(change))
       return changes
     },
   })

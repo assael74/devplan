@@ -118,6 +118,15 @@ function TeamPageContent() {
     }
   }, [location.search])
   const handledStatsImportRequestRef = React.useRef('')
+  const rosterImportRequest = React.useMemo(() => {
+    const params = new URLSearchParams(location.search)
+    return {
+      requested: params.get('openRosterImport') === '1',
+      repairReload: params.get('repairReload') === '1',
+      seasonKey: cleanKey(params.get('auditSeason')),
+    }
+  }, [location.search])
+  const handledRosterImportRequestRef = React.useRef('')
 
   const selectedLeagueDocument = selectedLeagueSeason?.leagueDoc || leagueDoc
   const handleRosterSeasonSelect = React.useCallback(optionKey => {
@@ -140,7 +149,17 @@ function TeamPageContent() {
   const rosterImport = useTeamRosterImport({
     ...sharedActionContext,
     teamSeasons,
+    repairReload: rosterImportRequest.repairReload,
   })
+  const openRosterImportModal = rosterImport.openModal
+  React.useEffect(() => {
+    if (!rosterImportRequest.requested || loading || !selectedSeasonOption) return
+    if (rosterImportRequest.seasonKey && selectedSeasonOption.seasonKey !== rosterImportRequest.seasonKey) return
+    const requestKey = `${leagueId}:${team.id}:${selectedSeasonOption.seasonId}`
+    if (handledRosterImportRequestRef.current === requestKey) return
+    handledRosterImportRequestRef.current = requestKey
+    openRosterImportModal()
+  }, [leagueId, loading, openRosterImportModal, rosterImportRequest, selectedSeasonOption, team.id])
   const statsImport = useTeamStatsImport({
     ...sharedActionContext,
     teamDoc,

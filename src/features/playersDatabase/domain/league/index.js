@@ -10,6 +10,7 @@ export { buildLeagueLoadDocument } from './leagueLoad.builder.js'
 export { buildLeaguePerformanceProjection } from './leaguePerformance.builder.js'
 export {
   buildCenterTeamStateProjection,
+  buildClubsCenterTransfersProjection,
   buildClubsCenterTeamProjection,
 } from './clubsCenterTeam.builder.js'
 export {

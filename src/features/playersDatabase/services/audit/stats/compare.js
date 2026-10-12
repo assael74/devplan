@@ -158,9 +158,20 @@ export const compareStatsAudit = ({ actual = {}, expectedState = {}, approvedSta
     )[seasonId]
   ).teamsById
   const actualLeaguesCenterTeam = object(leaguesCenterTeam)[identity.teamId]
-  ;['documentationState', 'documentationStateUpdatedAt', 'teamTaskSignals'].forEach(field => {
-    compareField({ findings, target: 'leaguesCenter', documentId: 'all', field, expected: expected.leaguesCenterTeam[field], actual: actualLeaguesCenterTeam[field] })
-  })
+  if (!actualLeaguesCenterTeam) {
+    findings.push(finding({
+      type: 'missing_projection',
+      target: 'leaguesCenter',
+      documentId: 'all',
+      field: 'team',
+      expected: expected.leaguesCenterTeam,
+      actual: null,
+    }))
+  } else {
+    ;['documentationState', 'documentationStateUpdatedAt', 'teamTaskSignals'].forEach(field => {
+      compareField({ findings, target: 'leaguesCenter', documentId: 'all', field, expected: expected.leaguesCenterTeam[field], actual: actualLeaguesCenterTeam[field] })
+    })
+  }
 
   const actualClubsCenterTeam = object(
     object(
@@ -169,8 +180,37 @@ export const compareStatsAudit = ({ actual = {}, expectedState = {}, approvedSta
       )[identity.clubId]
     ).teamsById
   )[identity.teamId]
-  ;['documentationState', 'documentationStateUpdatedAt', 'teamTaskSignals'].forEach(field => {
-    compareField({ findings, target: 'clubsCenter', documentId: seasonId, field, expected: expected.clubsCenterTeam[field], actual: actualClubsCenterTeam[field] })
+  if (!actualClubsCenterTeam) {
+    findings.push(finding({
+      type: 'missing_projection',
+      target: 'clubsCenter',
+      documentId: seasonId,
+      field: 'team',
+      expected: expected.clubsCenterTeam,
+      actual: null,
+    }))
+  } else {
+    ;['documentationState', 'documentationStateUpdatedAt', 'teamTaskSignals', 'transfers'].forEach(field => {
+      compareField({ findings, target: 'clubsCenter', documentId: seasonId, field, expected: expected.clubsCenterTeam[field], actual: actualClubsCenterTeam[field] })
+    })
+  }
+
+  ;(expected.counterpartClubsCenterProjections || []).forEach(projection => {
+    const actualTeam = object(
+      object(
+        object(
+          object(actual.clubsCenter).clubsById
+        )[projection.clubId]
+      ).teamsById
+    )[projection.teamId]
+    compareField({
+      findings,
+      target: 'clubsCenter',
+      documentId: projection.seasonId,
+      field: `clubsById.${projection.clubId}.teamsById.${projection.teamId}.transfers`,
+      expected: object(projection.team).transfers,
+      actual: object(actualTeam).transfers,
+    })
   })
 
   return findings

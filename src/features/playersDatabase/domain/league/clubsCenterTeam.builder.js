@@ -123,7 +123,7 @@ const increment = ({ container, direction, key, id }) => {
   bucket[id] = (Number(bucket[id]) || 0) + 1
 }
 
-const buildTransfers = teamSeason => {
+export const buildClubsCenterTransfersProjection = teamSeason => {
   const external = {
     in: emptyDirectionMaps('clubsById'),
     out: emptyDirectionMaps('clubsById'),
@@ -258,7 +258,7 @@ export const buildClubsCenterTeamProjection = ({
       teamId: resolvedTeamId,
       teamRow,
     }),
-    transfers: buildTransfers(teamSeason),
+    transfers: buildClubsCenterTransfersProjection(teamSeason),
     updatedAt: updatedAt || null,
   }
 }

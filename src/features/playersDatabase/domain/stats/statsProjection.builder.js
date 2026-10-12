@@ -6,6 +6,7 @@ import {
 } from '../identity/index.js'
 import {
   buildCenterTeamStateProjection,
+  buildClubsCenterTransfersProjection,
   buildClubsCenterTeamProjection,
 } from '../league/index.js'
 
@@ -276,3 +277,38 @@ export const buildStatsCenterProjections = ({
     clubProfileProjection: clubProjection,
   }
 }
+
+export const buildStatsCounterpartClubsCenterProjections = ({
+  counterpartPatches = [],
+  existingCounterpartTeamSeasonsById = {},
+  seasonId = '',
+  updatedAt = null,
+} = {}) => array(counterpartPatches).map(patch => {
+  const documentId = clean(patch && patch.documentId)
+  const existingTeamSeason = object(object(existingCounterpartTeamSeasonsById)[documentId])
+  const identity = object(existingTeamSeason.identity)
+  const teamId = clean(identity.teamId)
+  const clubId = clean(identity.clubId)
+  const counterpartSeasonId = clean(identity.seasonId || seasonId)
+
+  if (!documentId || !teamId || !clubId || counterpartSeasonId !== clean(seasonId)) {
+    throw new Error(`Invalid Stats counterpart ClubsCenter projection source: ${documentId || 'missing'}`)
+  }
+
+  const projectedTeamSeason = {
+    ...existingTeamSeason,
+    movement: object(patch && patch.movement),
+  }
+
+  return {
+    documentId,
+    seasonId: counterpartSeasonId,
+    clubId,
+    teamId,
+    team: {
+      transfers: buildClubsCenterTransfersProjection(projectedTeamSeason),
+      updatedAt: updatedAt || null,
+    },
+    updatedAt: updatedAt || null,
+  }
+})

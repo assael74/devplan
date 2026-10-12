@@ -9,6 +9,7 @@ import {
 } from '../../../../services/write/league/index.js'
 import { getWriteActionReceipt } from '../../../../services/write/receipt/index.js'
 import { repairWriteActionReceipt } from '../../../../services/write/recovery/index.js'
+import { loadLeagueForAuditRepair } from '../../../../services/audit/repair/reloadLeague.js'
 import { useLeagueTableImport } from './useLeagueTableImport.js'
 
 jest.mock('../../../../services/write/league/index.js', () => ({
@@ -20,6 +21,9 @@ jest.mock('../../../../services/write/receipt/index.js', () => ({
 }))
 jest.mock('../../../../services/write/recovery/index.js', () => ({
   repairWriteActionReceipt: jest.fn(),
+}))
+jest.mock('../../../../services/audit/repair/reloadLeague.js', () => ({
+  loadLeagueForAuditRepair: jest.fn(),
 }))
 jest.mock('../../../../../../ui/core/feedback/snackbar/SnackbarProvider.js', () => ({
   useSnackbar: () => ({ notify: jest.fn() }),
@@ -197,4 +201,49 @@ test('blocks an occupied team slot and allows selecting a free second-team slot'
     requiresTeamSlotResolution: false,
   }))
   expect(result.current.canConfirm).toBe(true)
+})
+
+test('reloads audit source with the approved input without accessing receipts', async () => {
+  loadLeagueForAuditRepair.mockImplementation(async ({ onProgress }) => {
+    onProgress({ type: 'stageCompleted', stageId: 'canonical' })
+    onProgress({ type: 'stageCompleted', stageId: 'audit' })
+    return { status: 'succeeded', executionStatus: 'succeeded', audit: { findings: [] } }
+  })
+  const { result } = renderHook(() => useLeagueTableImport({
+    ...props, repairReload: true, repairSeasonId: '2026_2027',
+  }))
+  const club = PLAYERS_DATABASE_CLUBS_CATALOG[0]
+  const pasteValue = [
+    'מיקום\tקבוצה\tמשחקים\tניצחונות\tתיקו\tהפסדים\tשערי זכות\tשערי חובה\tנקודות',
+    `1\t${club.name}\t0\t0\t0\t0\t0\t0\t0`,
+  ].join('\n')
+
+  act(() => {
+    result.current.setSeasonStatus('not_started')
+    result.current.setPasteValue(pasteValue)
+  })
+  await act(async () => result.current.handlePreview())
+  act(() => expect(result.current.handleApproveForSync()).toBe(true))
+  await act(async () => result.current.executeApprovedImport())
+
+  expect(loadLeagueForAuditRepair).toHaveBeenCalledTimes(1)
+  expect(loadLeagueForAuditRepair.mock.calls[0][0].input.season.seasonId).toBe('2026_2027')
+  expect(loadLeague).not.toHaveBeenCalled()
+  expect(getWriteActionReceipt).not.toHaveBeenCalled()
+  expect(repairWriteActionReceipt).not.toHaveBeenCalled()
+  expect(result.current.receiptId).toBe('')
+  expect(result.current.executionStatus).toBe('succeeded')
+  expect(result.current.syncStages.find(stage => stage.id === 'audit')).toEqual(expect.objectContaining({
+    title: 'בדיקה חוזרת', state: 'completed',
+  }))
+})
+
+test('blocks audit source approval when the selected season differs from the finding', () => {
+  const { result } = renderHook(() => useLeagueTableImport({
+    ...props, repairReload: true, repairSeasonId: '2025_2026',
+  }))
+  expect(result.current.repairContextValid).toBe(false)
+  expect(result.current.canConfirm).toBe(false)
+  act(() => expect(result.current.handleApproveForSync()).toBe(false))
+  expect(loadLeagueForAuditRepair).not.toHaveBeenCalled()
 })

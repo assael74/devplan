@@ -10,6 +10,7 @@ export {
   buildPlayerSearchIndexProjection,
   buildPlayerSeasonProjection,
   buildStatsCenterProjections,
+  buildStatsCounterpartClubsCenterProjections,
 } from './statsProjection.builder.js'
 export {
   buildStatsLeagueContext,

@@ -119,6 +119,10 @@ export const buildStatsAuditExpected = ({
       counterpartPatches: approvedState && Array.isArray(approvedState.counterpartPatches)
         ? approvedState.counterpartPatches
         : [],
+      counterpartClubsCenterProjections: approvedState
+        && Array.isArray(approvedState.counterpartClubsCenterProjections)
+        ? approvedState.counterpartClubsCenterProjections
+        : [],
       playerSeasonsById,
       playerSearchIndexesById,
       leagueTeamPatch: {

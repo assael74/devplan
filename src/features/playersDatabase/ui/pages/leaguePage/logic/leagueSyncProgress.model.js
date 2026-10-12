@@ -112,7 +112,7 @@ export const applyLeagueSyncProgressEvent = ({ receipt = null, event = {} } = {}
   return receipt
 }
 
-export const buildLeagueSyncStages = ({ receipt = null, busy = false } = {}) => {
+export const buildLeagueSyncStages = ({ receipt = null, busy = false, repairReload = false } = {}) => {
   const source = object(receipt)
   const progress = object(source.progress)
   const completedByStage = object(progress.completedByStage)
@@ -127,7 +127,11 @@ export const buildLeagueSyncStages = ({ receipt = null, busy = false } = {}) => 
     else if (completedByStage[stage.id]) state = 'completed'
     else if (busy && index === firstPendingIndex) state = 'running'
 
-    return { ...stage, state }
+    return {
+      ...stage,
+      ...(repairReload && stage.id === 'audit' ? { title: 'בדיקה חוזרת', target: 'dbLeagues' } : {}),
+      state,
+    }
   })
 }
 

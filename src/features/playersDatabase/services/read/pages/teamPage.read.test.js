@@ -114,6 +114,44 @@ test('returns the cached Team Page scope without rebuilding the graph', async ()
   expect(getTeamSeasonByDocumentId).toHaveBeenCalledTimes(2)
 })
 
+test('keeps source reload accessible when a stored season reference is wrong and the canonical season is missing', async () => {
+  const brokenRoot = {
+    ...teamRoot,
+    seasonRefsById: { '2026_2027': { teamSeasonDocumentId: 'another-team__2026_2027', leagueId: 'league-1' } },
+  }
+  getTeamById.mockResolvedValue(brokenRoot)
+  getTeamSeasonByDocumentId.mockResolvedValue(null)
+  const result = await readTeamPageData({ leagueId: 'league-1', teamId: 'club-1_2010_1' })
+  expect(getTeamSeasonByDocumentId).toHaveBeenCalledWith('club-1_2010_1__2026_2027')
+  expect(result.teamSeasons).toEqual([])
+  expect(result.teamDoc).toBe(brokenRoot)
+  expect(result.documentLoadState.teamSeasons[0]).toMatchObject({
+    documentExists: false,
+    teamSeasonDocumentId: 'another-team__2026_2027',
+  })
+})
+
+test('subscribes to the deterministic season rather than an incorrect stored document reference', () => {
+  const callbacks = new Map()
+  const onError = jest.fn()
+  onSnapshot.mockImplementation((reference, onValue) => {
+    callbacks.set(reference.path, onValue)
+    return jest.fn()
+  })
+  const stop = subscribeTeamPageData({ leagueId: 'league-1', teamId: 'club-1_2010_1', onError })
+  callbacks.get('dbBirthTeams/club-1_2010_1')(snapshot({
+    id: 'club-1_2010_1',
+    data: {
+      ...teamRoot,
+      seasonRefsById: { '2026_2027': { teamSeasonDocumentId: 'another-team__2026_2027', leagueId: 'league-1' } },
+    },
+  }))
+  expect(callbacks.has('dbBirthTeamSeasons/club-1_2010_1__2026_2027')).toBe(true)
+  expect(callbacks.has('dbBirthTeamSeasons/another-team__2026_2027')).toBe(false)
+  expect(onError).not.toHaveBeenCalled()
+  stop()
+})
+
 test('replaces Team Season listeners from Team Root refs and unsubscribes all listeners', () => {
   const callbacks = new Map()
   const unsubscribes = new Map()

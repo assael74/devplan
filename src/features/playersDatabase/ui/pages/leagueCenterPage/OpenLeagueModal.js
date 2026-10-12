@@ -43,6 +43,7 @@ export default function OpenLeagueModal({
   busy = false,
   waitingForCenter = false,
   error = '',
+  repairContext = null,
   onClose,
   onConfirm,
 }) {
@@ -52,6 +53,17 @@ export default function OpenLeagueModal({
   const [gameDurationMinutes, setGameDurationMinutes] = React.useState(90)
   const [seasonUrl, setSeasonUrl] = React.useState('')
   const seasonOptions = getSeasonCatalogOptions()
+  const repairLeague = repairContext
+    ? options.find(option => option.value === repairContext.leagueId)
+    : null
+  const repairSeason = repairContext
+    ? seasonOptions.find(option => option.seasonId === repairContext.seasonId)
+    : null
+  const repairLeagueId = repairLeague ? repairLeague.value : ''
+  const repairAgeGroupId = repairLeague ? repairLeague.ageGroupId : ''
+  const repairSeasonKey = repairSeason ? repairSeason.seasonKey : ''
+  const repairReload = Boolean(repairContext)
+  const repairContextMissing = repairReload && (!repairLeague || !repairSeason)
   const ageGroupOptions = Array.from(new Map(options.map(option => [
     option.ageGroupId,
     {
@@ -73,15 +85,20 @@ export default function OpenLeagueModal({
 
   React.useEffect(() => {
     if (!open) return
-    setAgeGroupId('')
-    setLeagueId('')
-    setSeasonKey(PLAYERS_DATABASE_CURRENT_SEASON_KEY)
-    setGameDurationMinutes(90)
+    setAgeGroupId(repairAgeGroupId)
+    setLeagueId(repairLeagueId)
+    setSeasonKey(repairReload ? repairSeasonKey : PLAYERS_DATABASE_CURRENT_SEASON_KEY)
+    setGameDurationMinutes(repairReload ? resolvePlayersDatabaseLeagueGameTime(repairAgeGroupId) : 90)
     setSeasonUrl('')
-  }, [open])
+  }, [open, repairAgeGroupId, repairLeagueId, repairReload, repairSeasonKey])
 
   const handleConfirm = () => {
-    if (!isValidSeasonUrl(seasonUrl)) return
+    if (!isValidSeasonUrl(seasonUrl) || repairContextMissing) return
+    if (repairReload && (
+      leagueId !== repairContext.leagueId
+      || !selectedSeason
+      || selectedSeason.seasonId !== repairContext.seasonId
+    )) return
 
     const selected = options.find(option => option.value === leagueId)
     if (selected && selectedSeason && onConfirm) {
@@ -99,14 +116,16 @@ export default function OpenLeagueModal({
   return (
     <RegularModal
       open={open}
-      title='פתיחת ליגה'
-      description='בחר קבוצת גיל, ליגה ועונה ליצירת עונה חדשה ללא קבוצות.'
+      title={repairReload ? 'השלמת מקור ליגה חסר' : 'פתיחת ליגה'}
+      description={repairReload
+        ? 'אשר את פרטי הליגה מהקטלוג לפתיחת העונה החסרה. לאחר מכן תוכל לטעון מחדש את טבלת הליגה.'
+        : 'בחר קבוצת גיל, ליגה ועונה ליצירת עונה חדשה ללא קבוצות.'}
       iconId='addSeason'
       confirmLabel={waitingForCenter
         ? 'ממתין למרכז הליגות'
         : busy
           ? 'פותח ליגה'
-          : 'פתיחת ליגה'}
+          : repairReload ? 'אשר ופתח מקור ליגה' : 'פתיחת ליגה'}
       confirmIconId='addSeason'
       headerIconSx={chromeSx.modalHeaderIcon}
       hideCancel
@@ -114,7 +133,8 @@ export default function OpenLeagueModal({
       disabled={
         !leagueId
         || !selectedSeason
-        || seasonAlreadyExists
+        || (seasonAlreadyExists && !repairReload)
+        || repairContextMissing
         || !Number.isFinite(Number(gameDurationMinutes))
         || Number(gameDurationMinutes) <= 0
         || !isValidSeasonUrl(seasonUrl)
@@ -123,6 +143,13 @@ export default function OpenLeagueModal({
       onClose={onClose}
     >
       <Stack spacing={1.5}>
+        {repairReload ? (
+          <Alert color={repairContextMissing ? 'danger' : 'warning'} variant='soft'>
+            {repairContextMissing
+              ? `הליגה או העונה אינן זמינות בקטלוג. לא ניתן לפתוח מקור עבור ${repairContext.leagueId} בעונה ${repairContext.seasonId}.`
+              : 'התיקון מיועד לליגה ולעונה שבממצא. הפרטים נעולים, והשמירה תבוצע לאחר אישורך.'}
+          </Alert>
+        ) : null}
         {error ? (
           <Alert color='danger' variant='soft'>{error}</Alert>
         ) : null}
@@ -133,11 +160,13 @@ export default function OpenLeagueModal({
           </Alert>
         ) : busy ? (
           <Alert color='primary' variant='soft'>
-            הקבלה נפתחה. מקור האמת והתוצרים מתעדכנים לפי הסדר.
+            {repairReload
+              ? 'מקור הליגה והתוצרים מתעדכנים, ולאחר מכן תתבצע בדיקה חוזרת.'
+              : 'הקבלה נפתחה. מקור האמת והתוצרים מתעדכנים לפי הסדר.'}
           </Alert>
         ) : null}
 
-        <FormControl required disabled={busy}>
+        <FormControl required disabled={busy || repairReload}>
           <FormLabel>עונה</FormLabel>
           <Select
             value={seasonKey || null}
@@ -149,7 +178,7 @@ export default function OpenLeagueModal({
                 key={option.seasonKey}
                 value={option.seasonKey}
                 disabled={Boolean(
-                  selectedLeague
+                  !repairReload && selectedLeague
                   && selectedLeague.existingSeasonIds.includes(option.seasonId)
                 )}
               >
@@ -160,7 +189,7 @@ export default function OpenLeagueModal({
         </FormControl>
 
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'minmax(10rem, 0.8fr) minmax(14rem, 1.2fr)' }, gap: 1.5 }}>
-          <FormControl required disabled={busy}>
+          <FormControl required disabled={busy || repairReload}>
             <FormLabel>קבוצת גיל</FormLabel>
             <Select
               value={ageGroupId || null}
@@ -181,7 +210,7 @@ export default function OpenLeagueModal({
             </Select>
           </FormControl>
 
-          <FormControl required disabled={busy || !ageGroupId}>
+          <FormControl required disabled={busy || repairReload || !ageGroupId}>
             <FormLabel>ליגה</FormLabel>
             <Select
               value={leagueId || null}

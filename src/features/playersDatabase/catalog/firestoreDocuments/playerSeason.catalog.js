@@ -54,6 +54,7 @@ export const PLAYER_SEASON_DOCUMENT = {
 
       // Projection copied from canonical seasonal scouting in Team Season.
       scouting: {
+        updatedAt: null,
         primary: {
           profileId: '',
           strengthDepthPct: null,

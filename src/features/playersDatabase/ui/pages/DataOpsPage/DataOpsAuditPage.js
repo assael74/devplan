@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Autocomplete,
+  Alert,
   Box,
   Button,
   Chip,
@@ -24,6 +25,7 @@ import { getSeasonCatalogOptions } from '../../../catalog/seasons.catalog.js'
 import { buildTeamSeasonDocumentId } from '../../../domain/identity/index.js'
 import { auditLeague } from '../../../services/audit/league/index.js'
 import { auditStats } from '../../../services/audit/stats/index.js'
+import { getFocusedAuditFindingKey } from '../../../services/audit/repair/index.js'
 import {
   getTeamSeasonByDocumentId,
   CLUBS_DIRECTORY_STORE_KEY,
@@ -40,41 +42,17 @@ import {
   getFocusedAuditTeamOptions,
 } from './logic/focusedAudit.model.js'
 import { downloadDataOpsJson } from './logic/dataOpsJsonDownload.logic.js'
+import { getFocusedAuditScopeDetails } from './logic/focusedAuditFindings.presentation.js'
+import FocusedAuditFindingCard from './components/FocusedAuditFindingCard.js'
+import FocusedAuditRepairDialog from './components/FocusedAuditRepairDialog.js'
+import useFocusedAuditRepair from './hooks/useFocusedAuditRepair.js'
 import { dataOpsPageSx as sx } from './sx/dataOpsPage.sx.js'
+import { focusedAuditFindingsSx as findingSx } from './sx/focusedAuditFindings.sx.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 const EMPTY_DOCUMENT = Object.freeze({})
 
 const statusOf = result => clean(result && (result.status || result.result)).toUpperCase()
-
-const toneOfFinding = finding => {
-  const type = clean(finding && finding.type)
-  if (['missing_canonical', 'missing_canonical_dependency', 'invalid_identity'].includes(type)) {
-    return 'danger'
-  }
-  if (['missing_projection', 'projection_mismatch', 'missing_document', 'orphan_projection'].includes(type)) {
-    return 'warning'
-  }
-  return 'info'
-}
-
-const labelOfFinding = finding => {
-  const type = clean(finding && finding.type)
-  if (type === 'missing_projection' || type === 'missing_document') return 'מסמך חסר'
-  if (type === 'projection_mismatch' || type === 'source_mismatch') return 'אי־התאמה'
-  if (type === 'orphan_projection') return 'תוצר יתום'
-  if (type === 'invalid_identity') return 'זהות לא תקינה'
-  if (type === 'broken_relation') return 'קשר שבור'
-  return type || 'ממצא'
-}
-
-const findingTitle = finding => (
-  clean(finding && (finding.title || finding.field || finding.target)) || 'פער בבדיקת הנתונים'
-)
-
-const findingDescription = finding => (
-  clean(finding && (finding.reason || finding.explanation || finding.recommendedAction))
-)
 
 export default function DataOpsAuditPage() {
   const navigate = useNavigate()
@@ -98,10 +76,19 @@ export default function DataOpsAuditPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
+  const [auditScope, setAuditScope] = useState(null)
   const [visibleFindings, setVisibleFindings] = useState(40)
   const [teamSeason, setTeamSeason] = useState(null)
   const [teamSeasonLoading, setTeamSeasonLoading] = useState(false)
   const [teamSeasonError, setTeamSeasonError] = useState('')
+  const repair = useFocusedAuditRepair({
+    scope: auditScope,
+    onAuditUpdated: nextResult => {
+      setResult(nextResult)
+      setVisibleFindings(40)
+    },
+  })
+  const controlsDisabled = busy || repair.repairing
 
   const seasonOptions = useMemo(() => getSeasonCatalogOptions(), [])
   const leagueOptions = useMemo(() => getFocusedAuditLeagueOptions({
@@ -213,12 +200,18 @@ export default function DataOpsAuditPage() {
     Array.isArray(result && result.findings) ? result.findings : []
   ), [result])
 
+  const clearAuditResult = () => {
+    setResult(null)
+    setAuditScope(null)
+    repair.reset()
+  }
+
   const resetResolvedTeam = () => {
     setAgeGroupSelection('')
     setLeagueId('')
     setTeamId('')
     setPlayerId('')
-    setResult(null)
+    clearAuditResult()
   }
 
   const resetFromTeamSlot = () => {
@@ -237,6 +230,7 @@ export default function DataOpsAuditPage() {
   }
 
   const changeType = nextType => {
+    if (controlsDisabled) return
     setType(nextType)
     resetFromSeason()
     setVisibleFindings(40)
@@ -244,12 +238,14 @@ export default function DataOpsAuditPage() {
   }
 
   const runAudit = async () => {
-    if (!canRun || busy) return
+    if (!canRun || controlsDisabled) return
     setBusy(true)
     setError('')
-    setResult(null)
+    clearAuditResult()
+    setVisibleFindings(40)
     try {
       const scope = {
+        type,
         leagueId: clean(leagueId),
         teamId: clean(teamId),
         playerId: clean(playerId),
@@ -263,7 +259,8 @@ export default function DataOpsAuditPage() {
             seasonId: scope.seasonId,
             scopedPlayerIds: type === 'player' ? [scope.playerId] : [],
           })
-      setSearchParams({ type, ...scope })
+      setSearchParams(scope)
+      setAuditScope(scope)
       setResult(nextResult)
     } catch (auditError) {
       setError(auditError instanceof Error ? auditError.message : 'הבדיקה נכשלה')
@@ -273,15 +270,16 @@ export default function DataOpsAuditPage() {
   }
 
   const openFindingContext = finding => {
-    const targetLeagueId = clean(finding && finding.leagueId) || clean(leagueId)
-    const targetTeamId = clean(finding && finding.teamId) || clean(teamId)
-    const targetPlayerId = clean(finding && finding.playerId) || clean(playerId)
+    if (!auditScope || repair.repairing) return
+    const targetLeagueId = clean(finding && finding.leagueId) || auditScope.leagueId
+    const targetTeamId = clean(finding && finding.teamId) || auditScope.teamId
+    const targetPlayerId = clean(finding && finding.playerId) || auditScope.playerId
     if (targetPlayerId) {
       navigate(PLAYERS_DATABASE_UI_ROUTES.player({
         playerId: targetPlayerId,
         leagueId: targetLeagueId,
         teamId: targetTeamId,
-        seasonKey: clean(seasonId),
+        seasonKey: auditScope.seasonId,
       }))
       return
     }
@@ -289,7 +287,7 @@ export default function DataOpsAuditPage() {
       navigate(PLAYERS_DATABASE_UI_ROUTES.team({
         leagueId: targetLeagueId,
         teamId: targetTeamId,
-        auditSeasonKey: clean(seasonId),
+        auditSeasonKey: auditScope.seasonId,
       }))
       return
     }
@@ -297,7 +295,7 @@ export default function DataOpsAuditPage() {
   }
 
   const ageGroupField = (
-    <FormControl required size='sm' disabled={!birthYear}>
+    <FormControl required size='sm' disabled={controlsDisabled || !birthYear}>
       <FormLabel>קבוצת גיל</FormLabel>
       <Select
         size='sm'
@@ -309,7 +307,7 @@ export default function DataOpsAuditPage() {
           setLeagueId(selected ? selected.leagueId : '')
           setTeamId(selected ? selected.teamId : '')
           setPlayerId('')
-          setResult(null)
+          clearAuditResult()
         }}
       >
         {ageGroupOptions.map(option => (
@@ -323,7 +321,7 @@ export default function DataOpsAuditPage() {
     <Box sx={sx.auditLayout}>
       <Box className='dpScrollThin' sx={[sx.auditPanelScroll, sx.auditConfigPanelScroll]}>
         <InfoPanel title='הגדרת הבדיקה' sx={sx.auditFullPanel}>
-          <Stack spacing={1} sx={sx.auditConfigStack}>
+          <Stack sx={sx.auditConfigStack}>
             <Box sx={sx.auditTypeButtons}>
               {[
                 ['team', 'קבוצה', 'teams'],
@@ -336,6 +334,7 @@ export default function DataOpsAuditPage() {
                   size='sm'
                   variant={type === id ? 'solid' : 'outlined'}
                   color={type === id ? 'primary' : 'neutral'}
+                  disabled={controlsDisabled}
                   startDecorator={iconUi({ id: iconId, size: 'sm' })}
                   onClick={() => changeType(id)}
                 >
@@ -346,7 +345,7 @@ export default function DataOpsAuditPage() {
 
             {type === 'league' ? (
               <>
-                <FormControl required size='sm'>
+                <FormControl required size='sm' disabled={controlsDisabled}>
                   <FormLabel>עונה</FormLabel>
                   <Select
                     size='sm'
@@ -356,7 +355,7 @@ export default function DataOpsAuditPage() {
                     onChange={(_event, value) => {
                       setSeasonId(value || '')
                       setLeagueId('')
-                      setResult(null)
+                      clearAuditResult()
                     }}
                   >
                     {seasonOptions.map(option => (
@@ -366,7 +365,7 @@ export default function DataOpsAuditPage() {
                     ))}
                   </Select>
                 </FormControl>
-                <FormControl required size='sm' disabled={!seasonId}>
+                <FormControl required size='sm' disabled={controlsDisabled || !seasonId}>
                   <FormLabel>ליגה</FormLabel>
                   <Select
                     size='sm'
@@ -374,7 +373,7 @@ export default function DataOpsAuditPage() {
                     placeholder={seasonId ? 'בחר ליגה' : 'בחר עונה תחילה'}
                     onChange={(_event, value) => {
                       setLeagueId(value || '')
-                      setResult(null)
+                      clearAuditResult()
                     }}
                   >
                     {leagueOptions.map(option => (
@@ -387,7 +386,7 @@ export default function DataOpsAuditPage() {
             {type !== 'league' ? (
               <>
                 <Box sx={sx.auditSeasonClubSlotFields}>
-                  <FormControl required size='sm'>
+                  <FormControl required size='sm' disabled={controlsDisabled}>
                     <FormLabel>עונה</FormLabel>
                     <Select
                       size='sm'
@@ -404,14 +403,14 @@ export default function DataOpsAuditPage() {
                       ))}
                     </Select>
                   </FormControl>
-                  <FormControl required size='sm' disabled={!seasonId}>
+                  <FormControl required size='sm' disabled={controlsDisabled || !seasonId}>
                     <FormLabel>מועדון</FormLabel>
                     <Autocomplete
                       size='sm'
                       options={clubOptions}
                       value={clubOptions.find(option => option.value === clubId) || null}
                       placeholder='בחר מועדון'
-                      disabled={!seasonId}
+                      disabled={controlsDisabled || !seasonId}
                       forcePopupIcon={false}
                       getOptionLabel={option => option?.label || ''}
                       isOptionEqualToValue={(option, selected) => option.value === selected.value}
@@ -424,7 +423,7 @@ export default function DataOpsAuditPage() {
                       }}
                     />
                   </FormControl>
-                  <FormControl required size='sm' disabled={!clubId}>
+                  <FormControl required size='sm' disabled={controlsDisabled || !clubId}>
                     <FormLabel>סלוט</FormLabel>
                     <Select
                       size='sm'
@@ -444,7 +443,7 @@ export default function DataOpsAuditPage() {
                 </Box>
 
                 <Box sx={sx.auditTeamMetaFields}>
-                  <FormControl required size='sm' disabled={!teamSlot}>
+                  <FormControl required size='sm' disabled={controlsDisabled || !teamSlot}>
                     <FormLabel>שנתון</FormLabel>
                     <Select
                       size='sm'
@@ -468,7 +467,7 @@ export default function DataOpsAuditPage() {
               <FormControl
                 required
                 size='sm'
-                disabled={!teamId || teamSeasonLoading || !teamSeason}
+                disabled={controlsDisabled || !teamId || teamSeasonLoading || !teamSeason}
               >
                 <FormLabel>שחקן</FormLabel>
                 <Select
@@ -477,7 +476,7 @@ export default function DataOpsAuditPage() {
                   placeholder={teamSeasonLoading ? 'טוען סגל...' : 'בחר שחקן'}
                   onChange={(_event, value) => {
                     setPlayerId(value || '')
-                    setResult(null)
+                    clearAuditResult()
                   }}
                 >
                   {playerOptions.map(option => (
@@ -532,7 +531,7 @@ export default function DataOpsAuditPage() {
             <Button
               type='button'
               loading={busy}
-              disabled={!canRun}
+              disabled={!canRun || repair.repairing}
               startDecorator={iconUi({ id: 'search', size: 'sm' })}
               sx={sx.auditRunButton}
               onClick={runAudit}
@@ -579,6 +578,19 @@ export default function DataOpsAuditPage() {
             </Box>
           ) : (
             <Stack spacing={1.5}>
+              {repair.feedback ? (
+                <Alert color={repair.feedback.tone} variant='soft' role={repair.feedback.tone === 'danger' ? 'alert' : 'status'}>
+                  <Box>
+                    <Typography level='title-sm'>{repair.feedback.title}</Typography>
+                    <Typography level='body-sm'>{repair.feedback.message}</Typography>
+                  </Box>
+                </Alert>
+              ) : null}
+              <Box sx={findingSx.scope}>
+                {getFocusedAuditScopeDetails(auditScope).map(([label, value]) => (
+                  <Typography key={label} level='body-xs'>{label}: {value}</Typography>
+                ))}
+              </Box>
               <Box sx={sx.auditResultSummary}>
                 <Box>
                   <Typography level='title-md'>
@@ -599,37 +611,18 @@ export default function DataOpsAuditPage() {
 
               {findings.length ? (
                 <Box sx={sx.findings}>
-                  {findings.slice(0, visibleFindings).map((finding, index) => {
-                    const tone = toneOfFinding(finding)
+                  {findings.slice(0, visibleFindings).map(finding => {
+                    const key = getFocusedAuditFindingKey(finding)
                     return (
-                      <Box key={`${finding.type}-${finding.documentId}-${index}`} sx={sx.finding(tone)}>
-                        <Box sx={sx.findingTop}>
-                          <Box sx={sx.findingCopy}>
-                            <Typography level='title-sm'>{findingTitle(finding)}</Typography>
-                            {findingDescription(finding) ? (
-                              <Typography sx={sx.findingDetail}>{findingDescription(finding)}</Typography>
-                            ) : null}
-                            <Typography component='code' level='body-xs' sx={sx.findingDocumentId}>
-                              {clean(finding.documentId) || clean(finding.relatedDocumentId) || 'מסמך לא ידוע'}
-                            </Typography>
-                          </Box>
-                          <Chip
-                            size='sm'
-                            variant='soft'
-                            color={tone === 'danger' ? 'danger' : tone === 'warning' ? 'warning' : 'neutral'}
-                          >
-                            {labelOfFinding(finding)}
-                          </Chip>
-                        </Box>
-                        <Box sx={sx.findingFooter}>
-                          <Typography sx={sx.sourceLabel}>
-                            {finding.owner ? `אחריות: ${finding.owner}` : 'נדרשת בדיקת מקור'}
-                          </Typography>
-                          <Button size='sm' variant='outlined' onClick={() => openFindingContext(finding)}>
-                            פתח הקשר עסקי
-                          </Button>
-                        </Box>
-                      </Box>
+                      <FocusedAuditFindingCard
+                        key={key}
+                        finding={finding}
+                        scope={auditScope}
+                        disabled={controlsDisabled}
+                        repairing={repair.repairingKey === key}
+                        onRepair={() => repair.requestRepair(finding)}
+                        onOpenContext={() => openFindingContext(finding)}
+                      />
                     )
                   })}
                 </Box>
@@ -657,6 +650,12 @@ export default function DataOpsAuditPage() {
           )}
         </InfoPanel>
       </Box>
+      <FocusedAuditRepairDialog
+        pending={repair.pending}
+        busy={repair.repairing}
+        onClose={repair.cancelRepair}
+        onConfirm={repair.confirmRepair}
+      />
     </Box>
   )
 }

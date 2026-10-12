@@ -286,7 +286,9 @@ function RosterSyncStep({ controller }) {
             {controller.executionError || 'הפעולה נעצרה בשלב שלא הושלם.'}
           </Typography>
           <Typography level='body-xs'>
-            {controller.retryMode === 'repair'
+            {controller.repairReload
+              ? 'יש לבדוק את הממצאים באודיט לפני ניסיון נוסף. טעינת המקור מבוססת על הנתונים שאישרת.'
+              : controller.retryMode === 'repair'
               ? 'מקור האמת כבר אושר. הפעולה הבאה תתקן רק את התוצרים באותה קבלה.'
               : 'מקור האמת לא אושר. ניסיון חוזר ישתמש בקלט המאושר ובאותה קבלה.'}
           </Typography>
@@ -310,8 +312,12 @@ function RosterSyncStep({ controller }) {
             {auditClean && controller.listenerConfirmed
               ? 'הכיסוי מלא, לא נמצאו פערים והשינוי התקבל ב־listener. ניתן לסגור את התהליך.'
               : auditClean
-                ? 'הקבלה תקינה. החלון יישאר פתוח עד שהמסמך הקנוני יופיע במצב העמוד.'
-                : `נמצאו ${auditFindingsCount} פערים. הקבלה נשארת פתוחה לתיקון.`}
+                ? controller.repairReload
+                  ? 'הבדיקה תקינה. ממתין לעדכון מסמך הקבוצה בעמוד.'
+                  : 'הקבלה תקינה. החלון יישאר פתוח עד שהמסמך הקנוני יופיע במצב העמוד.'
+                : controller.repairReload
+                  ? `נמצאו ${auditFindingsCount} פערים. יש לתקן אותם באודיט.`
+                  : `נמצאו ${auditFindingsCount} פערים. הקבלה נשארת פתוחה לתיקון.`}
           </Typography>
         </Card>
       ) : null}

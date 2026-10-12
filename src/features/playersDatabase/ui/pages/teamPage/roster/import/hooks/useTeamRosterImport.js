@@ -4,6 +4,10 @@ import * as React from 'react'
 import { loadRoster, prepareRosterLoad } from '../../../../../../services/write/roster/index.js'
 import { getWriteActionReceipt } from '../../../../../../services/write/receipt/index.js'
 import { repairWriteActionReceipt } from '../../../../../../services/write/recovery/index.js'
+import {
+  loadRosterForAuditRepair,
+  prepareRosterForAuditRepair,
+} from '../../../../../../services/audit/repair/reloadRoster.js'
 import { resolveCanonicalTeamPlayerIdentityPreview } from '../../../../../../services/read/identity/canonicalPlayerIdentityPreview.read.js'
 import {
   buildMovementTeamOptions,
@@ -26,6 +30,7 @@ import {
   applyRosterSyncProgressEvent,
   buildRosterSyncStages,
   resolveRosterRetryMode,
+  ROSTER_SYNC_STAGES,
 } from '../logic/rosterSyncProgress.model.js'
 import useRosterIdentityReview from './useRosterIdentityReview.js'
 import useRosterMovementReview from './useRosterMovementReview.js'
@@ -49,6 +54,7 @@ export default function useTeamRosterImport({
   selectedSeasonOption: pageSelectedSeasonOption = null,
   teamSeasons = [],
   clubsDirectory = null,
+  repairReload = false,
   notify,
 }) {
   const [open, setOpen] = React.useState(false)
@@ -69,6 +75,7 @@ export default function useTeamRosterImport({
   const [executionReceipt, setExecutionReceipt] = React.useState(null)
   const [executionStatus, setExecutionStatus] = React.useState('idle')
   const [executionError, setExecutionError] = React.useState('')
+  const [repairProgress, setRepairProgress] = React.useState(null)
 
   const resetExecution = React.useCallback(() => {
     setReceiptId('')
@@ -76,6 +83,7 @@ export default function useTeamRosterImport({
     setExecutionReceipt(null)
     setExecutionStatus('idle')
     setExecutionError('')
+    setRepairProgress(null)
   }, [])
 
   const selectedSeasonOption = React.useMemo(() => (
@@ -399,7 +407,8 @@ export default function useTeamRosterImport({
     if (!selectedSeasonOption || hasIdentityErrors || !hasMissingRosterApprovals) return null
     setBusy(true)
     try {
-      const plan = await prepareRosterLoad({ input: buildActionInput() })
+      const prepare = repairReload ? prepareRosterForAuditRepair : prepareRosterLoad
+      const plan = await prepare({ input: buildActionInput() })
       setRosterImportPlan(plan)
       return plan
     } catch (error) {
@@ -413,7 +422,7 @@ export default function useTeamRosterImport({
     } finally {
       setBusy(false)
     }
-  }, [buildActionInput, hasIdentityErrors, hasMissingRosterApprovals, notify, selectedSeasonOption])
+  }, [buildActionInput, hasIdentityErrors, hasMissingRosterApprovals, notify, repairReload, selectedSeasonOption])
 
   const enterSync = React.useCallback(() => {
     if (!selectedSeasonOption || !rosterImportPlan) return null
@@ -425,6 +434,36 @@ export default function useTeamRosterImport({
 
   const executeApprovedImport = React.useCallback(async () => {
     if (!rosterImportPlan || busy) return null
+    if (repairReload) {
+      setBusy(true)
+      setExecutionStatus('running')
+      setExecutionError('')
+      setRepairProgress(null)
+      try {
+        const result = await loadRosterForAuditRepair({
+          input: buildActionInput(),
+          confirmed: true,
+          onProgress: event => setRepairProgress(current => applyRosterSyncProgressEvent({
+            receipt: current,
+            event,
+          })),
+        })
+        setRosterImportPlan(result.approvedState)
+        setAuditResult(result.audit)
+        setExecutionStatus(result.executionStatus)
+        if (result.executionStatus !== 'succeeded') {
+          setExecutionError(`הסגל נשמר, אך הבדיקה מצאה ${result.audit.findings.length} פערים. יש לחזור לאודיט ולתקן את הממצאים.`)
+        }
+        return result
+      } catch (error) {
+        setAuditResult(error.auditResult || null)
+        setExecutionStatus('failed')
+        setExecutionError(error.message || 'טעינת מקור הסגל נכשלה')
+        return null
+      } finally {
+        setBusy(false)
+      }
+    }
     if (receiptId && !executionReceipt) {
       setExecutionStatus('failed')
       setExecutionError('לא ניתן לקבוע את מצב הקבלה. יש לפתוח אותה בעמוד ניהול הדאטה.')
@@ -512,11 +551,18 @@ export default function useTeamRosterImport({
     executionReceipt,
     notify,
     receiptId,
+    repairReload,
     rosterImportPlan,
     team,
   ])
 
-  const syncStages = buildRosterSyncStages({ receipt: executionReceipt, busy })
+  const syncStages = buildRosterSyncStages({
+    receipt: repairReload ? repairProgress : executionReceipt,
+    busy,
+    stages: repairReload ? ROSTER_SYNC_STAGES.map(stage => stage.id === 'audit'
+      ? { ...stage, title: 'בדיקת סנכרון', target: 'מקורות ותוצרים' }
+      : stage) : ROSTER_SYNC_STAGES,
+  })
   const expectedRosterHash = clean(
     rosterImportPlan?.canonical?.teamSeason?.roster?.rosterImport?.contentHash
   )
@@ -540,16 +586,17 @@ export default function useTeamRosterImport({
       notify({
         status: SNACK_STATUS.ERROR,
         title: 'בדיקת הסנכרון מצאה פערים',
-        message: 'הקבלה נשארה פתוחה עד Audit נקי.',
+        message: repairReload ? 'יש לתקן את הממצאים לפני סיום התהליך.' : 'הקבלה נשארה פתוחה עד Audit נקי.',
       })
       return false
     }
     setOpen(false)
     return true
-  }, [auditResult, busy, executionStatus, notify, syncComplete])
+  }, [auditResult, busy, executionStatus, notify, repairReload, syncComplete])
 
   return {
     open,
+    repairReload,
     seasonOptions,
     selectedSeasonOptionKey,
     selectedSeasonOption,
@@ -568,7 +615,7 @@ export default function useTeamRosterImport({
     executionReceipt,
     executionStatus,
     executionError,
-    retryMode: resolveRosterRetryMode(executionReceipt),
+    retryMode: repairReload ? 'reload' : resolveRosterRetryMode(executionReceipt),
     hasIdentityErrors,
     hasMissingRosterApprovals,
     openModal,

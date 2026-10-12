@@ -315,7 +315,7 @@ const buildCompetitionSnapshot = ({ teamRow, clubProfile, updatedAt }) => ({
   updatedAt: updatedAt || null,
 })
 
-const buildTeamRoot = ({ team, season, leagueId, existingTeamRoot, teamId, teamSeasonDocumentId, createdAt, updatedAt }) => {
+export const buildTeamRoot = ({ team, season, leagueId, existingTeamRoot, teamId, teamSeasonDocumentId, createdAt, updatedAt }) => {
   const current = object(existingTeamRoot)
   const currentIdentity = object(current.identity)
   if (Object.keys(current).length) {

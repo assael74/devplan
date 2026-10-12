@@ -16,6 +16,7 @@ import {
   buildPlayerSearchIndexProjection,
   buildPlayerSeasonProjection,
   buildStatsCenterProjections,
+  buildStatsCounterpartClubsCenterProjections,
 } from './statsProjection.builder.js'
 import {
   buildStatsLeagueContext,
@@ -693,6 +694,12 @@ export const buildStatsLoadApprovedState = ({
     previousClubsCenterTeam: sources.previousClubsCenterTeam || null,
     updatedAt,
   })
+  const counterpartClubsCenterProjections = buildStatsCounterpartClubsCenterProjections({
+    counterpartPatches: rosterMovementPlan.counterparts,
+    existingCounterpartTeamSeasonsById: object(sources.existingCounterpartTeamSeasonsById),
+    seasonId: resolvedSeasonId,
+    updatedAt,
+  })
 
   return {
     actionType: 'statsLoad',
@@ -720,6 +727,7 @@ export const buildStatsLoadApprovedState = ({
       updatedAt: updatedAt || null,
     } : null,
     counterpartPatches: rosterMovementPlan.counterparts,
+    counterpartClubsCenterProjections,
     playerRootPlans,
     playerSeasonPlans,
     playerSearchIndexPlans,
