@@ -54,7 +54,9 @@ const getLeague = leagueId => PLAYERS_DATABASE_LEAGUES_CATALOG.find(
   league => cleanValue(league.id) === cleanValue(leagueId)
 ) || null
 
-const getClubShortName = clubId => {
+const getClubShortName = (clubId, clubsDirectory) => {
+  const names = clubsDirectory?.clubsById?.[clubId]?.names
+  if (names) return cleanValue(names.short || names.display || names.official)
   const club = getClub(clubId)
   return cleanValue(club?.shortName || club?.name || '')
 }
@@ -110,7 +112,7 @@ const buildReasons = ({ season, display }) => {
     : ['השחקן מופיע במאגר, אך עדיין אין מספיק נתונים להסבר מפורט.']
 }
 
-const buildSeasonContextView = (season, identity = {}) => {
+const buildSeasonContextView = (season, identity = {}, clubsDirectory) => {
   const stats = season?.stats?.actual || {}
   const display = selectPlayerScoutDisplay(season)
   const profiles = selectPlayerScoutProfiles(season)
@@ -139,7 +141,7 @@ const buildSeasonContextView = (season, identity = {}) => {
     playerUrl: cleanValue(season?.metadata?.playerUrl || season?.playerUrl),
     goalDistribution: season?.metadata?.goalDistribution || null,
     clubId: cleanValue(season?.team?.clubId),
-    clubName: getClubShortName(season?.team?.clubId) || '-',
+    clubName: getClubShortName(season?.team?.clubId, clubsDirectory) || '-',
     teamId: cleanValue(season?.team?.teamId),
     teamSeasonDocumentId: cleanValue(season?.team?.teamSeasonDocumentId),
     birthTeamId: cleanValue(season?.team?.teamId),
@@ -236,7 +238,8 @@ export const buildEmptyPlayerPageView = playerId => ({
 export const buildPlayerPageView = (
   playerDomain,
   selectedSeasonKey = '',
-  selectedTeamId = ''
+  selectedTeamId = '',
+  clubsDirectory = null
 ) => {
   const season = findPlayerActiveSeason(
     playerDomain,
@@ -254,7 +257,7 @@ export const buildPlayerPageView = (
   const minutes = Number(stats.minutes) || 0
   const league = getLeague(season.team?.leagueId)
   const seasonContexts = (playerDomain.seasons || []).map(seasonRow => (
-    buildSeasonContextView(seasonRow, playerDomain.identity || {})
+    buildSeasonContextView(seasonRow, playerDomain.identity || {}, clubsDirectory)
   ))
   const profileStrength = profiles.length
     ? display.profileStrength || null
@@ -276,7 +279,7 @@ export const buildPlayerPageView = (
     ) || null,
     agent: season?.metadata?.agent || null,
     clubId: cleanValue(season.team?.clubId),
-    clubName: getClubShortName(season.team?.clubId) || '-',
+    clubName: getClubShortName(season.team?.clubId, clubsDirectory) || '-',
     teamName: resolveAgeGroupLabel({
       ageGroupId: season.team?.ageGroupId,
       ageGroupLabel: season.team?.ageGroupLabel,

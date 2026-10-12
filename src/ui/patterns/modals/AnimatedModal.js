@@ -1,3 +1,4 @@
+// src/ui/patterns/modals/AnimatedModal.js
 import * as React from 'react'
 import {
   Box,
@@ -67,7 +68,7 @@ export default function AnimatedModal({
           <Box
             component={motion.div}
             {...motionProps}
-            sx={sx.motionWrap[size] || sx.motionWrap.md}
+            sx={[sx.motionRoot, sx.motionWrap[size] || sx.motionWrap.md]}
           >
             <ModalDialog variant='plain' sx={sx.dialog}>
               <DialogTitle sx={{ ...sx.header, ...(headerSx || {}) }}>

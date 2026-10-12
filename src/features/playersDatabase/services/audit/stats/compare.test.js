@@ -40,6 +40,19 @@ const base = ({ expectedUpdatedAt, actualUpdatedAt }) => ({
 })
 
 describe('compareStatsAudit', () => {
+  test('does not report a missing Team Season before roster lifecycle starts', () => {
+    expect(compareStatsAudit({
+      actual: { teamSeason: null },
+      expectedState: {
+        complete: true,
+        applicable: false,
+        reason: 'no_roster',
+        expected: null,
+      },
+      seasonId: '2026_2027',
+    })).toEqual([])
+  })
+
   test('reports missing Center documents and team rows without interrupting the audit', () => {
     const args = base({ expectedUpdatedAt: null, actualUpdatedAt: null })
     args.actual.leaguesCenter = null

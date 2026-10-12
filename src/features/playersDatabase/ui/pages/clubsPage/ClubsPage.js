@@ -23,7 +23,10 @@ import {
   PLAYERS_DATABASE_UI_ROUTES,
 } from '../../logic/routeBuilders.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
+import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
+import { SNACK_STATUS } from '../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import ClubsCollection from './components/ClubsCollection.js'
+import ClubIdentityEditor from './components/ClubIdentityEditor.js'
 import ClubsFilters from './components/ClubsFilters.js'
 import usePageSidePanelCollapsed from '../../components/page/usePageSidePanelCollapsed.js'
 import {
@@ -35,7 +38,10 @@ import { clubsPageSx as sx } from './sx/clubsPage.sx.js'
 
 export default function ClubsPage() {
   const navigate = useNavigate()
+  const { notify } = useSnackbar()
   const model = useClubsPage()
+  const [editingClubId, setEditingClubId] = useState('')
+  const [editorOpen, setEditorOpen] = useState(false)
   const [expandedClubId, setExpandedClubId] = useState(null)
   const [onlyClubsWithSignals, setOnlyClubsWithSignals] = useState(false)
   const [sidePanelCollapsed, setSidePanelCollapsed] = usePageSidePanelCollapsed(
@@ -92,6 +98,11 @@ export default function ClubsPage() {
 
   const clubsHeaderActions = (
     <Stack direction='row' spacing={0.75} alignItems='center'>
+      {model.refreshError ? (
+        <Tooltip title={model.refreshError}>
+          <Chip size='sm' color='warning' variant='soft'>רענון התצוגה נכשל</Chip>
+        </Tooltip>
+      ) : null}
       <Tooltip title='הצגת מועדונים עם איתותים בלבד'>
         <Chip
           size='sm'
@@ -151,6 +162,26 @@ export default function ClubsPage() {
   return (
     <PlayersDatabaseLayout>
       <Box sx={sx.page}>
+        {editingClubId ? (
+          <ClubIdentityEditor
+            key={editingClubId}
+            clubId={editingClubId}
+            open={editorOpen}
+            onClose={() => setEditorOpen(false)}
+            onSaved={async () => {
+              notify({ status: SNACK_STATUS.SUCCESS, title: 'שמות המועדון נשמרו' })
+              try {
+                await model.reload()
+              } catch {
+                notify({
+                  status: SNACK_STATUS.ERROR,
+                  title: 'השמות נשמרו; רענון התצוגה נכשל',
+                  message: 'יש לרענן את העמוד.',
+                })
+              }
+            }}
+          />
+        ) : null}
         <PageHeader breadcrumbs={breadcrumbs} actions={actions}>
           <Box>
             <Typography level='h1' sx={sx.pageTitle}>
@@ -178,6 +209,10 @@ export default function ClubsPage() {
                 expandedClubId={expandedClubId}
                 onToggleClub={handleToggleClub}
                 onOpenClub={handleOpenClub}
+                onEditClub={club => {
+                  setEditingClubId(club.clubId)
+                  setEditorOpen(true)
+                }}
               />
             </PageContentPanel>
           </Box>

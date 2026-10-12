@@ -8,11 +8,18 @@ import {
 import {
   clearPlayersDatabaseDocumentCache,
   getDocumentCacheEntry,
+  setDocumentCacheValue,
+  buildClubsCenterCacheKey,
+  buildClubDocumentCacheKey,
+  invalidateDocumentCacheValueKeepingSnapshot,
 } from '../../cache/index.js'
 import {
   CLUBS_DIRECTORY_STORE_KEY,
   subscribeClubsDirectoryDocument,
+  getCachedClubsPageData,
+  getCachedClubPageData,
 } from './clubs.read.js'
+import { PLAYERS_DATABASE_SEASONS_CATALOG } from '../../../catalog/seasons.catalog.js'
 
 jest.mock('firebase/firestore', () => ({
   doc: jest.fn(),
@@ -66,4 +73,30 @@ test('stores the global Clubs Directory snapshot and unsubscribes', () => {
 
   stop()
   expect(unsubscribe).toHaveBeenCalledTimes(1)
+})
+
+test('reuses complete snapshots during invalidation without treating them as fresh reads', () => {
+  expect(getCachedClubsPageData()).toBeNull()
+  setDocumentCacheValue({ key: CLUBS_DIRECTORY_STORE_KEY, value: { clubsById: {} } })
+  expect(getCachedClubsPageData()).toBeNull()
+  PLAYERS_DATABASE_SEASONS_CATALOG.filter(season => (
+    season.target === 'current' || season.target === 'history'
+  )).forEach(season => {
+    setDocumentCacheValue({
+      key: buildClubsCenterCacheKey(season.seasonId),
+      value: { documentExists: false },
+    })
+  })
+  expect(getCachedClubsPageData()).not.toBeNull()
+  expect(getCachedClubPageData('club-1')).toBeNull()
+  setDocumentCacheValue({
+    key: buildClubDocumentCacheKey('club-1'),
+    value: { documentExists: true, names: { display: 'Club' } },
+  })
+  invalidateDocumentCacheValueKeepingSnapshot(CLUBS_DIRECTORY_STORE_KEY)
+  expect(getDocumentCacheEntry(CLUBS_DIRECTORY_STORE_KEY).hit).toBe(false)
+  expect(getCachedClubPageData('club-1')).toMatchObject({
+    clubId: 'club-1', profile: { names: { display: 'Club' } },
+  })
+  expect(getCachedClubPageData('club-2')).toBeNull()
 })

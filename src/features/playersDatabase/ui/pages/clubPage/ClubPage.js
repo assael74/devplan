@@ -3,8 +3,10 @@
 import {
   Box,
   Button,
+  Chip,
   CircularProgress,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/joy'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -47,6 +49,11 @@ export default function ClubPage() {
 
   const actions = (
     <Stack direction='row' spacing={1}>
+      {model.refreshError ? (
+        <Tooltip title={model.refreshError}>
+          <Chip size='sm' color='warning' variant='soft'>רענון התצוגה נכשל</Chip>
+        </Tooltip>
+      ) : null}
       <Button disabled={!model.club || model.loading} onClick={urlEditor.show}>
         עריכת קישור מועדון
       </Button>

@@ -55,6 +55,7 @@ export const clubsPageSx = {
     p: 0,
     overflowY: 'auto',
     overflowX: 'hidden',
+    scrollbarGutter: 'stable',
     bgcolor: '#F4F7FA',
   },
 

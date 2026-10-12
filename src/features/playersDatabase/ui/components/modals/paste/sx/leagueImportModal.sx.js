@@ -38,9 +38,10 @@ export const leagueImportModalSx = {
 
   syncPanel: {
     width: '100%',
-    height: '100%',
-    flex: 1,
-    minHeight: 0,
+    height: 'auto',
+    flex: '0 0 auto',
+    minHeight: '100%',
+    boxSizing: 'border-box',
     maxWidth: 'none',
     p: {
       xs: 2,
@@ -61,6 +62,7 @@ export const leagueImportModalSx = {
     minHeight: 0,
     overflowX: 'hidden',
     overflowY: 'auto',
+    scrollbarGutter: 'stable',
     display: 'flex',
     flexDirection: 'column',
     px: {
@@ -108,13 +110,21 @@ export const leagueImportModalSx = {
     gridTemplateColumns: '36px minmax(0, 1fr)',
     gap: 1.25,
     alignItems: 'center',
-    p: 1.25,
+    p: 1.5,
+    minHeight: 64,
+    boxSizing: 'border-box',
+    flexShrink: 0,
+    mt: 'auto',
     borderRadius: 10,
     bgcolor: devPlanColors.secondaryLight,
   },
 
   syncStatusNotice: {
     mt: 'auto',
+    p: 1.5,
+    minHeight: 64,
+    boxSizing: 'border-box',
+    flexShrink: 0,
   },
 
   syncStatusContent: {

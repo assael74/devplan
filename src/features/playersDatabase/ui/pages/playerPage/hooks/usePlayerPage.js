@@ -66,13 +66,15 @@ export function usePlayerPage() {
     buildPlayerPageView(
       row,
       requestedSeasonKey,
-      requestedTeamId
+      requestedTeamId,
+      clubsDirectoryEntry.data
     ) || buildEmptyPlayerPageView(playerId)
   ), [
     playerId,
     requestedSeasonKey,
     requestedTeamId,
     row,
+    clubsDirectoryEntry.data,
   ])
 
   const clubDoc = useMemo(() => {

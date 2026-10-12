@@ -5,6 +5,8 @@ import {
   filterClubsPageRows,
 } from './clubsPage.model.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../catalog/clubs.catalog.js'
+import { buildClubDirectoryProjection } from '../../domain/projections/club/clubDirectory.projection.js'
+import { buildAllClubIntelligencesFromCanonicalSources } from '../../domain/clubIntelligence/clubIntelligence.canonical.js'
 
 const baseClub = {
   clubId: 'club-a',
@@ -30,6 +32,24 @@ const buildIntelligences = values => new Map(
 )
 
 describe('Clubs page rows', () => {
+  test('uses the saved display name in the club row even when official, short and seasonal names differ', () => {
+    const directory = {
+      clubsById: {
+        'club-a': buildClubDirectoryProjection({ profile: {
+          names: { official: 'שם רשמי', display: 'שם לתצוגה', short: 'שם מקוצר' },
+          aliases: ['שם מהטבלה'],
+        } }),
+      },
+    }
+    const intelligencesByClubId = buildAllClubIntelligencesFromCanonicalSources({
+      directory,
+      centers: [{ document: { clubsById: { 'club-a': { displayName: 'שם עונתי ישן' } } } }],
+    })
+    const [row] = buildClubsPageRows({ intelligencesByClubId })
+    expect(row.club.name).toBe('שם לתצוגה')
+    expect(row.club.shortName).toBe('שם מקוצר')
+  })
+
   test('shows a seeded Club even before any team season has been loaded', () => {
     const groups = buildClubsPageRows({
       intelligencesByClubId: buildIntelligences([buildIntelligence()]),

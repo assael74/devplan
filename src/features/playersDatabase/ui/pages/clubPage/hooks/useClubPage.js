@@ -4,10 +4,12 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 
 import { readClubPageData } from '../../../../services/read/index.js'
+import { getCachedClubPageData } from '../../../../services/read/pages/clubs.read.js'
 import { buildClubPageModel } from '../../../../model/pages/clubPresentation.model.js'
 import {
   buildClubIntelligenceFromCanonicalSources,
@@ -17,45 +19,47 @@ const clean = value => String(value === null || value === undefined ? '' : value
 
 export default function useClubPage({ clubId } = {}) {
   const normalizedClubId = clean(clubId)
-  const [source, setSource] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [error, setError] = useState('')
-  const [refreshError, setRefreshError] = useState('')
+  const [loadedSource, setSource] = useState(() => getCachedClubPageData(normalizedClubId))
+  const [status, setStatus] = useState({ clubId: normalizedClubId, pending: true, error: '' })
+  const requestId = useRef(0)
+  const source = loadedSource?.clubId === normalizedClubId
+    ? loadedSource
+    : getCachedClubPageData(normalizedClubId)
+  const currentStatus = status.clubId === normalizedClubId
+    ? status
+    : { pending: true, error: '' }
+  const loading = Boolean(normalizedClubId && !source && currentStatus.pending)
+  const refreshing = Boolean(source && currentStatus.pending)
+  const error = source ? '' : currentStatus.error
+  const refreshError = source ? currentStatus.error : ''
 
   const load = useCallback(async ({ refresh = false } = {}) => {
+    const currentRequest = ++requestId.current
     if (!normalizedClubId) {
       setSource(null)
-      setLoading(false)
+      setStatus({ clubId: normalizedClubId, pending: false, error: '' })
       return null
     }
 
-    if (refresh) {
-      setRefreshing(true)
-      setRefreshError('')
-    } else {
-      setLoading(true)
-      setError('')
-    }
+    setStatus({ clubId: normalizedClubId, pending: true, error: '' })
 
     try {
       const nextSource = await readClubPageData({
         clubId: normalizedClubId,
         refresh,
       })
-      setSource(nextSource)
+      if (currentRequest === requestId.current) setSource(nextSource)
       return nextSource
     } catch (loadError) {
       const message = loadError?.message || 'טעינת המועדון נכשלה'
-      if (refresh) setRefreshError(message)
-      else {
-        setSource(null)
-        setError(message)
+      if (currentRequest === requestId.current) {
+        setStatus({ clubId: normalizedClubId, pending: false, error: message })
       }
       throw loadError
     } finally {
-      if (refresh) setRefreshing(false)
-      else setLoading(false)
+      if (currentRequest === requestId.current) {
+        setStatus(previous => ({ ...previous, pending: false }))
+      }
     }
   }, [normalizedClubId])
 
@@ -63,6 +67,7 @@ export default function useClubPage({ clubId } = {}) {
 
   useEffect(() => {
     load().catch(() => {})
+    return () => { requestId.current += 1 }
   }, [load])
 
   const intelligence = useMemo(() => (

@@ -144,11 +144,12 @@ const getClubById = clubId => (
   ) || null
 )
 
-const resolveTeamName = ({ teamId, team }) => {
+const resolveTeamName = ({ teamId, team, clubsDirectory }) => {
   const clubId = cleanValue(team?.clubId)
   const club = getClubById(clubId)
 
   return buildTeamDisplayName({
+    clubNames: clubsDirectory?.clubsById?.[clubId]?.names,
     clubName: club?.name,
     clubId,
     teamId,
@@ -156,7 +157,7 @@ const resolveTeamName = ({ teamId, team }) => {
   }) || cleanValue(teamId || clubId || '-')
 }
 
-const buildTeamRow = ([teamId, team]) => {
+const buildTeamRow = ([teamId, team], clubsDirectory) => {
   const officialTable = object(team?.officialTable)
   const performance = object(team?.performance)
   const performanceView = buildTeamPerformanceViewModel(performance)
@@ -174,7 +175,7 @@ const buildTeamRow = ([teamId, team]) => {
     clubLevel: toNumberOrZero(team?.clubLevel),
     teamUrl: cleanValue(team?.teamUrl),
     tableRank: toNumberOrZero(officialTable.rank),
-    name: resolveTeamName({ teamId, team }),
+    name: resolveTeamName({ teamId, team, clubsDirectory }),
     teamSlot: team?.teamSlot,
     points: toNumberOrZero(officialTable.points),
     goalsFor: toNumberOrZero(officialTable.goalsFor),
@@ -202,10 +203,10 @@ const buildTeamRow = ([teamId, team]) => {
   }
 }
 
-export const buildLeaguePageTeams = ({ season }) => (
+export const buildLeaguePageTeams = ({ season, clubsDirectory }) => (
   sortByTableRank(
     Object.entries(object(season?.table?.teamsById))
-      .map(buildTeamRow)
+      .map(entry => buildTeamRow(entry, clubsDirectory))
       .filter(row => row.id)
   )
 )

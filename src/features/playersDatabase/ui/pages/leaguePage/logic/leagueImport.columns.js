@@ -1,6 +1,7 @@
-// features/playersDatabase/ui/pages/leaguePage/logic/leagueImport.columns.js
+// src/features/playersDatabase/ui/pages/leaguePage/logic/leagueImport.columns.js
 
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
+import { clubIdentityNames } from '../../../../domain/clubIdentity.js'
 import { LeagueClubSlotField } from '../components/LeagueClubSlotField.js'
 import { LeagueTeamNameLink } from '../components/LeagueTeamNameLink.js'
 import { leagueImportColumnsSx as sx } from './leagueImport.columns.sx.js'
@@ -13,11 +14,11 @@ function clean(value) {
   ).trim()
 }
 
-const clubOptions = PLAYERS_DATABASE_CLUBS_CATALOG.map(club => ({
+const buildClubOptions = clubs => clubs.map(club => ({
   value: club.id,
   label: club.name,
   displayLabel: club.shortName || club.name,
-  searchText: (club.searchAliases || [club.name, club.shortName, ...(club.aliases || [])])
+  searchText: clubIdentityNames(club)
     .filter(Boolean)
     .join(' '),
 }))
@@ -94,6 +95,7 @@ const renderTeamIdentityCell = ({
   row,
   rowIndex,
   onCellChange,
+  clubOptions,
 }) => {
   return (
     <LeagueClubSlotField
@@ -230,6 +232,9 @@ export const LEAGUE_IMPORT_PLACEHOLDER = [
   'קישור קבוצה',
 ].join('\t')
 
-export function buildLeagueImportColumns() {
-  return baseImportColumns
+export function buildLeagueImportColumns(clubs = PLAYERS_DATABASE_CLUBS_CATALOG) {
+  const clubOptions = buildClubOptions(clubs)
+  return baseImportColumns.map(column => column.key === 'teamIdentity'
+    ? { ...column, render: props => renderTeamIdentityCell({ ...props, clubOptions }) }
+    : column)
 }

@@ -33,6 +33,8 @@ System Audit קורא את כל הקולקשיינים הפעילים של Playe
 - League Master ← League Documents.
 - Identity Index אינו מקור Audit.
 - SearchIndex משמש לכל היותר להקשר בתצוגת Repair.
+- בבדיקת קבוצה, `TeamSeason` חסר הוא מצב חוקי לפני טעינת סגל כאשר ל־`TeamRoot`
+  אין הפניית עונה מתאימה. אם קיימת הפניה לעונה, המסמך החסר נשאר ממצא תקלה.
 
 יש להשתמש ב־canonical builder קיים; אין לשכפל נוסחאות בתוך Audit.
 אם אותו `teamId` מופיע ביותר ממסמך League אחד באותה עונה, Audit מדווח על

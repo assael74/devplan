@@ -14,6 +14,7 @@ const ClubCollectionItem = memo(function ClubCollectionItem({
   expanded,
   onToggleClub,
   onOpenClub,
+  onEditClub,
 }) {
   const clubId = group.club.clubId
   const [keepExpandedContent, setKeepExpandedContent] = useState(expanded)
@@ -58,6 +59,7 @@ const ClubCollectionItem = memo(function ClubCollectionItem({
             seasonOptions: group.seasonOptions,
           }}
           onOpenClub={onOpenClub}
+          onEditClub={onEditClub}
         />
       ) : null}
     </CollapseBox>
@@ -71,6 +73,7 @@ export default function ClubsCollection({
   expandedClubId,
   onToggleClub,
   onOpenClub,
+  onEditClub,
 }) {
   if (loading) {
     return (
@@ -112,6 +115,7 @@ export default function ClubsCollection({
           expanded={expandedClubId === group.club.clubId}
           onToggleClub={onToggleClub}
           onOpenClub={onOpenClub}
+          onEditClub={onEditClub}
         />
       ))}
     </Box>

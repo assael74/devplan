@@ -23,6 +23,7 @@ import {
   readWithDocumentCache,
   refreshWithDocumentCache,
   setDocumentCacheValue,
+  getDocumentStoreSnapshot,
 } from '../../cache/index.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
@@ -163,6 +164,29 @@ const selectedSeasonCatalog = () => {
   )) || null
 
   return [current, previous].filter(Boolean)
+}
+
+// Reuse document snapshots for presentation without creating another page cache.
+export const getCachedClubsPageData = () => {
+  const directory = getDocumentStoreSnapshot(buildClubsDirectoryCacheKey()).data
+  const centers = selectedSeasonCatalog().map(season => ({
+    season,
+    document: getDocumentStoreSnapshot(buildClubsCenterCacheKey(season.seasonId)).data,
+  }))
+  if (!directory || centers.some(item => !item.document)) return null
+  return { directory, centers }
+}
+
+export const getCachedClubPageData = clubId => {
+  const pageData = getCachedClubsPageData()
+  const profile = getDocumentStoreSnapshot(buildClubDocumentCacheKey(clubId)).data
+  if (!pageData || !profile) return null
+  return {
+    clubId,
+    profile: profile.documentExists ? profile : null,
+    directoryEntry: pageData.directory.clubsById?.[clubId] || null,
+    centers: pageData.centers,
+  }
 }
 
 const readSelectedCenters = async ({ refresh = false } = {}) => {

@@ -22,7 +22,7 @@
 | פרמטרי מנוע Player Scout, חסמים ופערי חיבור | `contracts/PLAYER_SCOUT_ENGINE_CONTRACT.md` |
 | Audit או Repair | `contracts/AUDIT_REPAIR_CONTRACT.md` וחוזה הזרימה |
 | ניקוי סגל או ליגה | חוזה הזרימה המתאים ו־`contracts/AUDIT_REPAIR_CONTRACT.md` |
-| עריכת כתובת או חוקי תחרות | `contracts/STANDALONE_EDITS_CONTRACT.md` |
+| עריכת כתובת, שמות מועדון או חוקי תחרות | `contracts/STANDALONE_EDITS_CONTRACT.md` |
 | משימות המשך שטרם הוכרעו | `plans/DEFERRED_ISSUES_AND_TASKS.md` |
 
 מסמכים שאינם פעילים אינם נשמרים בתיקיית ארכיון. היסטוריה נשמרת בגיט.

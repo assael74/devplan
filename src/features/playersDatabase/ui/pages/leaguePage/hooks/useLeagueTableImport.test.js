@@ -11,6 +11,11 @@ import { getWriteActionReceipt } from '../../../../services/write/receipt/index.
 import { repairWriteActionReceipt } from '../../../../services/write/recovery/index.js'
 import { loadLeagueForAuditRepair } from '../../../../services/audit/repair/reloadLeague.js'
 import { useLeagueTableImport } from './useLeagueTableImport.js'
+import { readClubsDirectoryDocument } from '../../../../services/read/pages/clubs.read.js'
+
+jest.mock('../../../../services/read/pages/clubs.read.js', () => ({
+  readClubsDirectoryDocument: jest.fn(),
+}))
 
 jest.mock('../../../../services/write/league/index.js', () => ({
   loadLeague: jest.fn(),
@@ -91,6 +96,49 @@ beforeEach(() => {
   jest.resetAllMocks()
   props.reload.mockResolvedValue(undefined)
   readOtherLeagueTeamOwners.mockResolvedValue({})
+  readClubsDirectoryDocument.mockResolvedValue({
+    documentExists: true,
+    clubsById: Object.fromEntries(PLAYERS_DATABASE_CLUBS_CATALOG.map(club => [club.id, {
+      names: { official: club.name, display: club.name, short: club.shortName },
+      aliases: club.aliases || [],
+      searchAliases: club.searchAliases || [],
+    }])),
+  })
+})
+
+test('manual selection learns the original pasted name only in the approved sync input', async () => {
+  const { result } = renderHook(() => useLeagueTableImport(props))
+  const club = PLAYERS_DATABASE_CLUBS_CATALOG[0]
+  act(() => {
+    result.current.setSeasonStatus('not_started')
+    result.current.setPasteValue('מיקום\tקבוצה\tמשחקים\tניצחונות\tתיקו\tהפסדים\tשערי זכות\tשערי חובה\tנקודות\n1\tשם חדש מהאתר\t0\t0\t0\t0\t0\t0\t0')
+  })
+  await act(async () => result.current.handlePreview())
+  expect(result.current.canConfirm).toBe(false)
+  act(() => result.current.handleCellChange({ rowIndex: 0, column: { key: 'clubId' }, value: club.id }))
+  expect(result.current.rows[0].teamName).toBe('שם חדש מהאתר')
+  expect(result.current.canConfirm).toBe(true)
+  expect(loadLeague).not.toHaveBeenCalled()
+  act(() => result.current.handleApproveForSync())
+  expect(result.current.approvedPayload.rows[0]).toMatchObject({ clubId: club.id, clubAlias: 'שם חדש מהאתר' })
+  expect(loadLeague).not.toHaveBeenCalled()
+})
+
+test('fresh directory names and aliases are recognized without manual selection', async () => {
+  readClubsDirectoryDocument.mockResolvedValue({
+    documentExists: true,
+    clubsById: { dynamic: { names: { display: 'שם תצוגה חדש', short: 'חדש' }, aliases: ['שם שנלמד'] } },
+  })
+  const { result } = renderHook(() => useLeagueTableImport(props))
+  act(() => {
+    result.current.setSeasonStatus('not_started')
+    result.current.setPasteValue('מיקום\tקבוצה\tמשחקים\tניצחונות\tתיקו\tהפסדים\tשערי זכות\tשערי חובה\tנקודות\n1\tשם שנלמד\t0\t0\t0\t0\t0\t0\t0')
+  })
+  await act(async () => result.current.handlePreview())
+  expect(result.current.rows[0]).toMatchObject({ clubId: 'dynamic', clubName: 'שם תצוגה חדש' })
+  expect(result.current.canConfirm).toBe(true)
+  act(() => result.current.handleApproveForSync())
+  expect(result.current.approvedPayload.rows[0].clubAlias).toBeUndefined()
 })
 
 test('repairs projections without reopening a receipt after canonical confirmation', async () => {

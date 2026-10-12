@@ -1,4 +1,4 @@
-// features/playersDatabase/catalog/teamDisplay.js
+// src/features/playersDatabase/catalog/teamDisplay.js
 
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from './clubs.catalog.js'
 
@@ -64,12 +64,13 @@ const getTeamSlotFromTeamId = teamId => {
 }
 
 export const buildTeamDisplayName = ({
+  clubNames = null,
   clubName = '',
   clubId = '',
   teamId = '',
   teamSlot = '',
 } = {}) => {
-  const baseName = resolveClubDisplayName({
+  const baseName = clean(clubNames && (clubNames.short || clubNames.display || clubNames.official)) || resolveClubDisplayName({
     clubName,
     clubId,
   }) || shortenClubName(teamId)

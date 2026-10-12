@@ -1,3 +1,4 @@
+// src/ui/patterns/modals/sx/animatedModal.sx.js
 import { devPlanColors } from '../../../core/theme/Colors.js'
 
 export const animatedModalSx = {
@@ -7,6 +8,11 @@ export const animatedModalSx = {
     alignItems: 'center',
     justifyContent: 'center',
     backdropFilter: 'blur(5px)',
+  },
+
+  motionRoot: {
+    // Modal focuses this wrapper; focus indicators belong to the controls inside it.
+    outline: 0,
   },
 
   motionWrap: {

@@ -47,7 +47,12 @@ export const readStatsAuditActual = async ({
   const resolvedSeasonId = requireSeasonId(seasonId)
   const teamSeasonDocumentId = buildTeamSeasonDocumentId({ teamId: resolvedTeamId, seasonId: resolvedSeasonId })
 
-  const [teamSeason, league, leaguesCenter, clubsCenter] = await Promise.all([
+  const [teamRoot, teamSeason, league, leaguesCenter, clubsCenter] = await Promise.all([
+    readDocument({
+      collectionName: PLAYERS_DATABASE_COLLECTIONS.teamRoots,
+      documentId: resolvedTeamId,
+      action: 'audit-stats-team-root',
+    }),
     readDocument({
       collectionName: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
       documentId: teamSeasonDocumentId,
@@ -104,6 +109,7 @@ export const readStatsAuditActual = async ({
   ])
 
   return {
+    teamRoot,
     teamSeason,
     league,
     leaguesCenter,

@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 
@@ -23,6 +24,7 @@ import {
   PLAYERS_DATABASE_SEASONS_CATALOG,
 } from '../../../../catalog/seasons.catalog.js'
 import { readClubsPageData } from '../../../../services/read/index.js'
+import { getCachedClubsPageData } from '../../../../services/read/pages/clubs.read.js'
 
 const currentSeason = PLAYERS_DATABASE_SEASONS_CATALOG.find(season => (
   season.target === 'current'
@@ -45,8 +47,9 @@ const CLUBS_PAGE_SEASON_OPTIONS = Object.freeze([
 ])
 
 export default function useClubsPage() {
-  const [clubsPageData, setClubsPageData] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [clubsPageData, setClubsPageData] = useState(getCachedClubsPageData)
+  const [pending, setPending] = useState(true)
+  const requestId = useRef(0)
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
   const [clubLevels, setClubLevels] = useState([])
@@ -54,26 +57,29 @@ export default function useClubsPage() {
   const [leagueLevelDirections, setLeagueLevelDirections] = useState([])
   const currentSeasonOption = CLUBS_PAGE_SEASON_OPTIONS[0]
 
-  const reload = useCallback(async () => {
-    setLoading(true)
+  const load = useCallback(async ({ refresh = false } = {}) => {
+    const currentRequest = ++requestId.current
+    setPending(true)
     setError('')
 
     try {
-      const data = await readClubsPageData({ refresh: true })
-      setClubsPageData(data)
+      const data = await readClubsPageData({ refresh })
+      if (currentRequest === requestId.current) setClubsPageData(data)
       return data
     } catch (err) {
-      setClubsPageData(null)
-      setError(err?.message || 'טעינת המועדונים נכשלה')
+      if (currentRequest === requestId.current) setError(err?.message || 'טעינת המועדונים נכשלה')
       throw err
     } finally {
-      setLoading(false)
+      if (currentRequest === requestId.current) setPending(false)
     }
   }, [])
 
+  const reload = useCallback(() => load({ refresh: true }), [load])
+
   useEffect(() => {
-    reload().catch(() => {})
-  }, [reload])
+    load().catch(() => {})
+    return () => { requestId.current += 1 }
+  }, [load])
 
   const intelligencesByClubId = useMemo(() => (
     buildAllClubIntelligencesFromCanonicalSources({
@@ -155,9 +161,12 @@ export default function useClubsPage() {
   }, [])
 
   return {
+    reload,
     clubsPageData,
-    loading,
-    error,
+    loading: !clubsPageData && pending,
+    refreshing: Boolean(clubsPageData && pending),
+    error: clubsPageData ? '' : error,
+    refreshError: clubsPageData ? error : '',
     query,
     setQuery,
     clubLevels,

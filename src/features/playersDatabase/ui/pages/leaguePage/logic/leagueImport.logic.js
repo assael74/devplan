@@ -212,6 +212,7 @@ export const buildServiceSeason = ({
 export const buildServiceRows = ({ rows = [] } = {}) => (
   (Array.isArray(rows) ? rows : []).map(row => ({
     clubId: clean(row.clubId),
+    ...(row.clubManuallySelected && clean(row.teamName) ? { clubAlias: clean(row.teamName) } : {}),
     teamSlot: toNumber(row.teamSlot),
     teamUrl: clean(row.pastedTeamUrl || row.displayTeamUrl || row.teamUrl),
     officialTable: {
@@ -278,6 +279,7 @@ const mapPreviewRow = ({ row, existingTeamsById = {} } = {}) => {
 
 export const buildLeagueImportPreview = ({
   text = '',
+  clubs,
   league = {},
   leagueDoc = {},
   selectedSeasonOption = {},
@@ -292,6 +294,7 @@ export const buildLeagueImportPreview = ({
     selectedSeasonOption,
   })
   const preview = buildLeagueTablePastePreview(text, {
+    clubs,
     leagueId: serviceLeague.leagueId,
     leagueName: clean(serviceLeague.names && (serviceLeague.names.display || serviceLeague.names.official)),
     leagueLevel: serviceLeague.level,

@@ -293,6 +293,8 @@ export default function LeagueImportModal({
           ) : null}
 
           {activeStep === 2 ? (
+            <>
+            <Typography level='body-sm'>בחירת מועדון ידנית תשמור את השם מהטבלה כשם נוסף לזיהוי בעת אישור וסנכרון, לכל קבוצות הגיל והעונות.</Typography>
             <PreviewTable
               columns={columns}
               rows={leagueImport.rows}
@@ -312,10 +314,11 @@ export default function LeagueImportModal({
               onCellChange={leagueImport.handleCellChange}
               getRowStatus={getLeagueImportRowStatus}
             />
+            </>
           ) : null}
 
           {activeStep === 3 ? (
-            <Box sx={sx.syncStepArea}>
+            <Box sx={sx.syncStepArea} className='dpScrollThin'>
               <Box sx={sx.syncPanel}>
                 <Box sx={sx.syncHeader}>
                   <Typography level='title-md' sx={sx.syncTitle}>

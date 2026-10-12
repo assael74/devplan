@@ -113,7 +113,7 @@ function LeaguePageContent() {
     selectedSeasonOption,
     notify,
   })
-  const leagueImportColumns = React.useMemo(() => buildLeagueImportColumns(), [])
+  const leagueImportColumns = React.useMemo(() => buildLeagueImportColumns(leagueImport.clubs), [leagueImport.clubs])
   const teamsWithFavorites = React.useMemo(() => (
     teams.map(team => ({
       ...team,

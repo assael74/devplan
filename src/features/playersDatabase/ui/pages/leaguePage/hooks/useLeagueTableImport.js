@@ -5,7 +5,8 @@ import * as React from 'react'
 import { useSnackbar } from '../../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import { mapFirestoreErrorToDetails } from '../../../../../../ui/core/feedback/snackbar/snackbar.format.js'
 import { SNACK_STATUS } from '../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
-import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../../../catalog/clubs.catalog.js'
+import { buildClubChoices } from '../../../../domain/clubIdentity.js'
+import { readClubsDirectoryDocument } from '../../../../services/read/pages/clubs.read.js'
 import { getWriteActionReceipt } from '../../../../services/write/receipt/index.js'
 import {
   loadLeague,
@@ -149,6 +150,7 @@ export function useLeagueTableImport({
   const [open, setOpen] = React.useState(false)
   const [pasteValue, setPasteValue] = React.useState('')
   const [rows, setRows] = React.useState([])
+  const [clubs, setClubs] = React.useState([])
   const [busy, setBusy] = React.useState(false)
   const [seasonStatus, setSeasonStatus] = React.useState('')
   const [gameDurationMinutes, setGameDurationMinutes] = React.useState(resolveGameDuration)
@@ -224,12 +226,6 @@ export function useLeagueTableImport({
     setIdentityCheckBusy(true)
     setIdentityValidationError(false)
     setRows([])
-    const previewRows = buildLeagueImportPreview({
-      text: pasteValue,
-      league,
-      leagueDoc,
-      selectedSeasonOption,
-    }).rows || []
     const serviceLeague = buildServiceLeague({ league, leagueDoc })
     const serviceSeason = buildServiceSeason({
       league,
@@ -238,6 +234,17 @@ export function useLeagueTableImport({
     })
 
     try {
+      const directory = await readClubsDirectoryDocument({ refresh: true })
+      if (!directory?.documentExists) throw new Error('ספריית המועדונים חסרה')
+      const choices = buildClubChoices(directory)
+      setClubs(choices)
+      const previewRows = buildLeagueImportPreview({
+        text: pasteValue,
+        clubs: choices,
+        league,
+        leagueDoc,
+        selectedSeasonOption,
+      }).rows || []
       const otherLeagueIdsByTeamId = await readOtherLeagueTeamOwners({
         leagueId: serviceLeague.leagueId,
         seasonId: serviceSeason.seasonId,
@@ -291,8 +298,9 @@ export function useLeagueTableImport({
         }
 
         if (column.key === 'clubId') {
-          const club = PLAYERS_DATABASE_CLUBS_CATALOG.find(item => item.id === value)
+          const club = clubs.find(item => item.id === value)
           nextRow.clubName = club ? club.name : ''
+          nextRow.clubManuallySelected = Boolean(club)
         }
 
         if (column.key === 'teamSlot') {
@@ -321,7 +329,7 @@ export function useLeagueTableImport({
       otherLeagueIdsByTeamId: teamOwnersRef.current,
       birthYear: importBirthYear,
     }))
-  }, [importBirthYear, selectedSeasonOption])
+  }, [clubs, importBirthYear, selectedSeasonOption])
 
   const buildApprovedInput = React.useCallback(() => {
     const serviceLeague = buildServiceLeague({ league, leagueDoc })
@@ -512,6 +520,7 @@ export function useLeagueTableImport({
 
   return {
     open,
+    clubs,
     repairReload,
     repairContextValid,
     pasteValue,

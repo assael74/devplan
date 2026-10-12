@@ -49,3 +49,25 @@ test('passes a focused player scope through the read and expected phases', async
     scopedPlayerIds: ['player-1'],
   }))
 })
+
+test('returns clean when roster lifecycle has not started', async () => {
+  readStatsAuditActual.mockResolvedValue({ teamRoot: null, teamSeason: null })
+  buildStatsAuditExpected.mockReturnValue({
+    complete: true,
+    applicable: false,
+    reason: 'no_roster',
+    expected: null,
+  })
+  compareStatsAudit.mockReturnValue([])
+
+  const result = await auditStats({
+    leagueId: 'league-1',
+    teamId: 'team-1',
+    seasonId: '2026_2027',
+  })
+
+  expect(result.status).toBe('CLEAN')
+  expect(result.findings).toEqual([])
+  expect(result.coverage.complete).toBe(true)
+  expect(result.coverage.coveredTargets).toContain('teamRoot')
+})

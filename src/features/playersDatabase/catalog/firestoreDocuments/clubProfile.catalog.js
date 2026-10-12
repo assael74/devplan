@@ -31,6 +31,8 @@ export const CLUB_PROFILE_DOCUMENT = {
   },
 
   writeModel: [
+    'Club name edits update display/short names and aliases atomically with Directory and existing Center name projections.',
+    'Explicit League import matching may append aliases atomically with the canonical League write and Directory projection.',
     'ClubProfile is the canonical source for club identity, names, aliases, URL and manual club levels.',
     'ClubsDirectory and ClubsCenter are projections rebuilt from ClubProfile plus seasonal canonical sources.',
     'A ClubProfile write must not write seasonal teams, League facts, roster, stats, scouting, movement or competition paths.',

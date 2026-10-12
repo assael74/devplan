@@ -1,6 +1,7 @@
-// features/playersDatabase/import/logic/leagueTablePastePreview.js
+// src/features/playersDatabase/import/logic/leagueTablePastePreview.js
 
 import { resolveClubCatalogMatch } from '../../catalog/catalogResolvers.js'
+import { matchClubIdentity } from '../../domain/clubIdentity.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../catalog/clubs.catalog.js'
 import { pickDefinedValue } from '../../model/shared/value.model.js'
 import { buildTeamIdentity } from '../../catalog/teamIdentity.js'
@@ -247,7 +248,9 @@ const normalizeRow = (row = {}, options = {}) => {
         goalsFor: toNumber(data.goalsFor),
         goalsAgainst: toNumber(data.goalsAgainst),
       }
-  const clubOverride = clubById(clubOverrides[row.displayIndex])
+  const clubOverride = Array.isArray(options.clubs)
+    ? options.clubs.find(club => club.id === clubOverrides[row.displayIndex])
+    : clubById(clubOverrides[row.displayIndex])
   const clubMatch = clubOverride
     ? {
         matched: true,
@@ -256,7 +259,9 @@ const normalizeRow = (row = {}, options = {}) => {
         confidence: 'manual',
         item: clubOverride,
       }
-    : resolveClubCatalogMatch(data.clubName)
+    : Array.isArray(options.clubs)
+      ? matchClubIdentity(data.clubName, options.clubs)
+      : resolveClubCatalogMatch(data.clubName)
 
   return {
     ...row,

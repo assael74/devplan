@@ -48,6 +48,7 @@ export const auditStats = async ({
     coverage: {
       complete,
       coveredTargets: [
+        'teamRoot',
         'teamSeason',
         'counterpartTeamSeasons',
         'playerRoots',

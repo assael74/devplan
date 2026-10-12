@@ -5,6 +5,7 @@ import { doc, setDoc } from 'firebase/firestore'
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
 import { requireLeagueId } from '../../../domain/league/leagueIdentity.js'
+import { writeClubIdentityChanges } from '../club/clubIdentity.write.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
@@ -42,7 +43,14 @@ export const writeLeagueCanonical = async ({ approvedState = {} } = {}) => {
     leagueId
   )
 
-  await setDoc(reference, document)
+  if (approvedState.clubAliasEdits?.length) {
+    await writeClubIdentityChanges({
+      edits: approvedState.clubAliasEdits,
+      leagueWrite: { ref: reference, document },
+    })
+  } else {
+    await setDoc(reference, document)
+  }
 
   return {
     leagueId,

@@ -104,6 +104,7 @@ const resolveTeamName = ({ teamRow = {}, teamDoc = {}, teamId = '' } = {}) => {
 }
 
 export const buildTeamPageView = ({
+  clubsDirectory,
   teamId,
   leagueDoc,
   teamDoc,
@@ -254,7 +255,9 @@ export const buildTeamPageView = ({
     clubLevel: Number(club?.clubLevel || canonicalTeamSeason.clubLevel || 0),
     birthTeamSlot: teamSlot,
     teamSlot,
-    name: canonicalTeamSeason.identity.displayName,
+    name: clubsDirectory?.clubsById?.[clubId]
+      ? buildTeamDisplayName({ clubNames: clubsDirectory.clubsById[clubId].names, teamId, teamSlot })
+      : canonicalTeamSeason.identity.displayName,
     leagueId: cleanValue(selectedSeasonOption?.leagueId || canonicalTeamSeason.league.leagueId),
     leagueName: cleanValue(
       selectedSeasonOption?.leagueName ||

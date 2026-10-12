@@ -52,6 +52,24 @@ test('indexes existing deterministic documents by requested player even when ide
   expect(actual.playerSearchIndexesById[playerId]).toMatchObject(search)
 })
 
+test('reads Team Root as the canonical roster lifecycle evidence', async () => {
+  mockDocuments({
+    [`dbBirthTeams/${teamId}`]: {
+      identity: { teamId },
+      seasonRefsById: {
+        [seasonId]: { teamSeasonDocumentId: `${teamId}__${seasonId}` },
+      },
+    },
+  })
+
+  const actual = await read()
+
+  expect(actual.teamRoot).toEqual(expect.objectContaining({
+    id: teamId,
+    identity: { teamId },
+  }))
+})
+
 test('retains separate documents when both stored identities point at the same player', async () => {
   const documents = {}
   playerIds.forEach(playerId => {

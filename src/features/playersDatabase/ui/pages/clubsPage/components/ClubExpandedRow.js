@@ -11,7 +11,7 @@ import { getClubCollapseView } from '../../../../domain/clubIntelligence/index.j
 import ClubAgeGroupSignalCards from './ClubAgeGroupSignalCards.js'
 import { clubExpandedRowSx as sx } from './sx/clubExpandedRow.sx.js'
 
-export default function ClubExpandedRow({ club, model, onOpenClub }) {
+export default function ClubExpandedRow({ club, model, onOpenClub, onEditClub }) {
   const collapseView = useMemo(() => (
     getClubCollapseView(model.intelligence)
   ), [model.intelligence])
@@ -29,6 +29,9 @@ export default function ClubExpandedRow({ club, model, onOpenClub }) {
           איתותים לפי קבוצת גיל · עונה נוכחית
         </Typography>
         <Box sx={sx.expandedSeasonActions}>
+          <Button size='sm' variant='outlined' onClick={() => onEditClub?.(club)}>
+            עריכת שמות
+          </Button>
           <Button
             size='sm'
             variant='plain'

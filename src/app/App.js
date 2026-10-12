@@ -1,3 +1,4 @@
+// src/app/App.js
 import * as React from 'react'
 import { GlobalStyles } from '@mui/joy'
 import CssBaseline from '@mui/joy/CssBaseline'
@@ -40,7 +41,7 @@ export default function App() {
               <AppProviders>
                 <AuthProvider>
                   <CoreDataProvider>
-                    <BrowserRouter>
+                    <BrowserRouter future={{ v7_startTransition: true }}>
                       <NotificationsProvider>
                         <LifecycleProvider>
                           <CreateModalProvider>

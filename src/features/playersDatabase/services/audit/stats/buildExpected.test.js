@@ -3,6 +3,45 @@
 import { buildStatsAuditExpected } from './buildExpected.js'
 
 describe('Stats audit expected state', () => {
+  test('treats a missing Team Season as legal before a roster is loaded', () => {
+    const result = buildStatsAuditExpected({
+      seasonId: '2026_2027',
+      actual: {
+        teamRoot: null,
+        teamSeason: null,
+        league: { id: 'league-1' },
+      },
+    })
+
+    expect(result).toEqual({
+      complete: true,
+      applicable: false,
+      reason: 'no_roster',
+      expected: null,
+    })
+  })
+
+  test('reports a missing Team Season when Team Root already references the season', () => {
+    const result = buildStatsAuditExpected({
+      seasonId: '2026_2027',
+      actual: {
+        teamRoot: {
+          seasonRefsById: {
+            '2026_2027': { teamSeasonDocumentId: 'team-1__2026_2027' },
+          },
+        },
+        teamSeason: null,
+        league: { id: 'league-1' },
+      },
+    })
+
+    expect(result).toEqual({
+      complete: false,
+      reason: 'missing_team_season',
+      expected: null,
+    })
+  })
+
   test('is complete without ClubProfile or ClubsDirectory', () => {
     const seasonId = '2026_2027'
     const teamId = 'club-1_2011_1'

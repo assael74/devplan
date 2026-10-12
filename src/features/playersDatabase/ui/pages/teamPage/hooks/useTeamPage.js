@@ -224,6 +224,7 @@ export function useTeamPage() {
     selectedTeamSeasonDocument,
   ])
   const team = useMemo(() => buildTeamPageView({
+    clubsDirectory,
     teamId,
     leagueDoc: selectedLeagueDocument,
     teamDoc,
@@ -232,6 +233,7 @@ export function useTeamPage() {
     selectedLeagueSeason,
     selectedTeamSeason,
   }), [
+    clubsDirectory,
     teamId,
     selectedLeagueDocument,
     teamDoc,

@@ -286,6 +286,7 @@ export const buildFocusedAuditPlan = ({
     : Number(selectedTeam?.playersCount || selectedTeam?.roster?.playersCount || 0)
   const scopedPlayersCount = type === 'player' ? 1 : rosterCount
   const collections = [
+    collection('teamRoots', 'מסמך קבוצה', 1),
     collection('teamSeasons', 'עונת קבוצה', 1),
     collection('leagues', 'מסמך ליגה', 1),
     collection('leaguesCenter', 'מרכז ליגות', 1),

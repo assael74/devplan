@@ -51,6 +51,7 @@ export const compareStatsAudit = ({ actual = {}, expectedState = {}, approvedSta
   const findings = []
   const teamSeason = actual.teamSeason
   const expected = expectedState.expected
+  if (expectedState.complete && expectedState.applicable === false) return findings
   if (!expectedState.complete || !expected) {
     findings.push(finding({
       type: 'missing_canonical_dependency',

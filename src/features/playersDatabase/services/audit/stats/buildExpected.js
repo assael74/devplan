@@ -15,15 +15,30 @@ export const buildStatsAuditExpected = ({
   seasonId = '',
   scopedPlayerIds = [],
 } = {}) => {
+  const resolvedSeasonId = clean(seasonId)
+  const teamRootSeasonRef = object(object(actual.teamRoot).seasonRefsById)[resolvedSeasonId]
   const teamSeason = actual.teamSeason
   const league = actual.league
   const clubDirectoryEntry = actual.clubDirectoryEntry
-  if (!teamSeason || !league) {
+  if (!teamSeason) {
+    if (league && !approvedState && !teamRootSeasonRef) {
+      return {
+        complete: true,
+        applicable: false,
+        reason: 'no_roster',
+        expected: null,
+      }
+    }
     return {
       complete: false,
-      reason: !teamSeason
-        ? 'missing_team_season'
-        : 'missing_league',
+      reason: 'missing_team_season',
+      expected: null,
+    }
+  }
+  if (!league) {
+    return {
+      complete: false,
+      reason: 'missing_league',
       expected: null,
     }
   }

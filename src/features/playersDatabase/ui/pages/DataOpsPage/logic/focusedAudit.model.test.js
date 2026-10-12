@@ -115,7 +115,7 @@ test('counts unique documents for a team audit', () => {
   })
 
   expect(plan.ready).toBe(true)
-  expect(plan.total).toBe(10)
+  expect(plan.total).toBe(11)
   expect(plan.collections.find(item => item.id === 'playerSeasons').count).toBe(2)
 })
 
@@ -150,6 +150,6 @@ test('limits a player audit plan to one player', () => {
     },
   })
 
-  expect(plan.total).toBe(7)
+  expect(plan.total).toBe(8)
   expect(plan.collections.find(item => item.id === 'playerRoots').count).toBe(1)
 })

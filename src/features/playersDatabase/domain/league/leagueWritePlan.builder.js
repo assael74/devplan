@@ -466,6 +466,10 @@ export const buildLeagueLoadWritePlan = ({
     seasonId: canonical.seasonId,
     canonicalWriteRequired: true,
     document: canonicalLeague,
+    clubAliasEdits: rows.filter(row => clean(row.clubAlias)).map(row => ({
+      clubId: clean(row.clubId),
+      aliases: [clean(row.clubAlias)],
+    })),
     teamSeasonCompetitionSnapshots: buildSnapshotTargetsForLoad({
       season: canonicalSeason,
       seasonId: canonical.seasonId,
