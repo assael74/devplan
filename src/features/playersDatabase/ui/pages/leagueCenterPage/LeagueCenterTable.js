@@ -8,7 +8,7 @@ import PageContentPanel from '../../components/page/PageContentPanel.js'
 import DataTable from '../../components/tables/dataTable/index.js'
 import { buildLeagueCenterExportConfig } from './logic/leagueCenter.export.js'
 import { downloadLeagueCenterDocumentsJson } from './logic/leagueCenterJson.logic.js'
-import { buildLeagueCenterTableGroups } from './logic/leagueCenterTableGroups.js'
+import { buildLeagueCenterTableGroups, sortLeagueCenterTableRows } from './logic/leagueCenterTableGroups.js'
 import { leagueCenterTableSx as sx } from './sx/leagueCenterTable.sx.js'
 
 export default function LeagueCenterTable({
@@ -34,9 +34,6 @@ export default function LeagueCenterTable({
         : row
     ))
   ), [model.leagues])
-  const groupedColumns = React.useMemo(() => (
-    columns.map(column => ({ ...column, sortable: false }))
-  ), [columns])
   const exportConfig = {
     ...buildLeagueCenterExportConfig({ rows: model.allRows }),
     headerActions: [{
@@ -74,8 +71,10 @@ export default function LeagueCenterTable({
       panelSx={sx.tablePanel}
     >
       <DataTable
-        columns={groupedColumns}
+        columns={columns}
         rows={groupedRows}
+        defaultSort={{ key: 'leagueName', direction: 'asc' }}
+        sortRows={sortLeagueCenterTableRows}
         getRowKey={row => `${row.id}_${row.seasonId || row.seasonKey || 'bootstrap'}`}
         emptyText={emptyText}
         wrapSx={sx.tableScroll}

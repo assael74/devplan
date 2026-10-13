@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/components/tables/dataTable/DataTable.js
+// src/features/playersDatabase/ui/components/tables/dataTable/DataTable.js
 
 import * as React from 'react'
 import {
@@ -15,14 +15,14 @@ import {
 } from './dataTable.sort.js'
 import exportDataTableRowsToXlsx from './dataTable.export.js'
 
-function DataTableColumnGroup({ columns }) {
+function DataTableColumnGroup({ columns, widths = [] }) {
   return (
     <colgroup>
-      {columns.map(column => (
+      {columns.map((column, index) => (
         <Box
           component='col'
           key={column.key}
-          sx={{ width: column.sx?.width }}
+          sx={{ width: widths[index] ? `${widths[index]}px` : column.sx?.width }}
         />
       ))}
     </colgroup>
@@ -39,10 +39,35 @@ export default function DataTable({
   tableSx,
   bodyScrollSx,
   defaultSort,
+  sortRows = sortDataTableRows,
   renderExpandedRow,
   getRowSx,
   exportConfig = null,
+  hoverRow = true,
 }) {
+  const bodyScrollRef = React.useRef(null)
+  const [headerColumnWidths, setHeaderColumnWidths] = React.useState([])
+  React.useLayoutEffect(() => {
+    const element = bodyScrollRef.current
+    if (!element) return undefined
+    const measure = () => {
+      const widths = Array.from(element.querySelectorAll('col')).map(column => (
+        column.getBoundingClientRect().width
+      ))
+      if (!widths.length || !widths.some(width => width > 0)) return
+      // Only the final header cell extends over the body's scrollbar gutter.
+      widths[widths.length - 1] += element.offsetWidth - element.clientWidth
+      setHeaderColumnWidths(current => (
+        current.length === widths.length && current.every((width, index) => width === widths[index])
+          ? current
+          : widths
+      ))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [columns, rows])
   const [expandedRowKey, setExpandedRowKey] = React.useState('')
   const [sortState, setSortState] = React.useState(() => ({
     key: defaultSort?.key || '',
@@ -69,11 +94,11 @@ export default function DataTable({
     [columns]
   )
 
-  const sortedRows = React.useMemo(() => sortDataTableRows({
+  const sortedRows = React.useMemo(() => sortRows({
     rows,
     column: sortableColumns.get(sortState.key),
     direction: sortState.direction,
-  }), [rows, sortState, sortableColumns])
+  }), [rows, sortState, sortableColumns, sortRows])
 
   const handleSort = column => {
     if (column.sortable === false) return
@@ -151,8 +176,8 @@ export default function DataTable({
 
   const splitWrapSx = [
     sx.wrap,
-    sx.splitWrap,
     ...wrapSxItems,
+    sx.splitWrap,
   ]
 
   const headerTableSx = [
@@ -168,68 +193,40 @@ export default function DataTable({
 
   const bodyTableSx = [
     sx.table,
+    hoverRow && sx.rowHover,
     sx.bodyTable,
     tableSx,
   ]
 
-  const regularWrapSx = [
-    sx.wrap,
-    ...wrapSxItems,
-  ]
-
-  const regularTableSx = [
-    sx.table,
-    tableSx,
-  ]
-
-  if (bodyScrollSx) {
-    return (
-      <Box
-        className={className}
-        sx={splitWrapSx}
-      >
-        <Box sx={sx.headerWrap}>
-          <Table
-            size='sm'
-            sx={headerTableSx}
-          >
-            {columnGroup}
-            {header}
-          </Table>
-        </Box>
-
-        <Box
-          className='dpScrollThin'
-          sx={bodyWrapSx}
-        >
-          <Table
-            hoverRow
-            size='sm'
-            sx={bodyTableSx}
-          >
-            {columnGroup}
-            {body}
-          </Table>
-        </Box>
-      </Box>
-    )
-  }
-
   return (
     <Box
       className={className}
-      sx={regularWrapSx}
+      sx={splitWrapSx}
     >
-      <Table
-        hoverRow
-        stickyHeader
-        size='sm'
-        sx={regularTableSx}
+      <Box sx={sx.headerWrap}>
+        <Table
+          size='sm'
+          sx={headerTableSx}
+        >
+          <DataTableColumnGroup columns={columns} widths={headerColumnWidths} />
+          {header}
+        </Table>
+      </Box>
+
+      <Box
+        ref={bodyScrollRef}
+        className='dpScrollThin'
+        sx={bodyWrapSx}
       >
-        {columnGroup}
-        {header}
-        {body}
-      </Table>
+        <Table
+          hoverRow={hoverRow}
+          size='sm'
+          sx={bodyTableSx}
+        >
+          {columnGroup}
+          {body}
+        </Table>
+      </Box>
     </Box>
   )
 }

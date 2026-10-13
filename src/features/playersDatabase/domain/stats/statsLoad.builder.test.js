@@ -183,6 +183,22 @@ describe('buildStatsLoadApprovedState', () => {
     expect(approved.canonicalTeamSeason.stats.statsLoadState.status).toBe('loaded')
   })
 
+  test('projects approved player URLs while preserving existing manual data', () => {
+    const currentSources = sources()
+    currentSources.teamSeason.manual = { playersById: { [playerId]: { goalDistribution: { leftFoot: 2 } } } }
+    const playerUrl = 'https://www.football.org.il/players/player/?player_id=10000'
+    const approved = buildStatsLoadApprovedState({
+      leagueId: 'league-1', teamId: 'club-1_2011_1', seasonId: '2026_2027',
+      incomingPlayers: incomingPlayers.map(row => row.externalPlayerId === '10000' ? { ...row, playerUrl } : row),
+      sources: currentSources,
+    })
+    expect(approved.playerUrlsById[playerId]).toBe(playerUrl)
+    expect(approved.playerSeasonPlans.find(plan => plan.playerId === playerId).projection.team.manual.playerUrl).toBe(playerUrl)
+    expect(approved.playerSearchIndexPlans.find(plan => plan.playerId === playerId).projection.player.playerUrl).toBe(playerUrl)
+    expect(approved.canonicalTeamSeason.manual.playersById[playerId]).toMatchObject({ playerUrl, goalDistribution: { leftFoot: 2 } })
+    expect(currentSources.teamSeason.manual.playersById[playerId].playerUrl).toBeUndefined()
+  })
+
   test('passes verified player roles and League performance to Team Balance', () => {
     const currentSources = sources()
     currentSources.playerRootsById[playerId] = {
@@ -232,6 +248,7 @@ describe('buildStatsLoadApprovedState', () => {
       leagueId: 'league-1',
       teamId: 'club-1_2011_1',
       seasonId: '2026_2027',
+      updatedAt: '2026-10-13T10:00:00.000Z',
       incomingPlayers,
       sources: currentSources,
     })
@@ -240,12 +257,14 @@ describe('buildStatsLoadApprovedState', () => {
       leagueId: 'league-1',
       teamId: 'club-1_2011_1',
       seasonId: '2026_2027',
+      updatedAt: '2026-10-14T10:00:00.000Z',
       sources: {
         ...currentSources,
         teamSeason: loadState.canonicalTeamSeason,
       },
     })
 
+    expect(loadState.leagueProjection.patch.stats.loadedAt).toBe('2026-10-13T10:00:00.000Z')
     expect(repairState.canonicalTeamSeason).toBeUndefined()
     expect(repairState.counterpartPatches).toBeUndefined()
     expect(repairState.playerSeasonPlans).toHaveLength(2)
@@ -253,6 +272,7 @@ describe('buildStatsLoadApprovedState', () => {
     expect(repairState.leagueProjection.patch.stats).toEqual({
       hasStats: true,
       statsComplete: true,
+      loadedAt: '2026-10-13T10:00:00.000Z',
     })
   })
 

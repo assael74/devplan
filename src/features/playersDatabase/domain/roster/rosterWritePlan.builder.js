@@ -14,6 +14,7 @@ import {
 } from '../league/index.js'
 import { resolveMovementDirection } from '../movement/index.js'
 import { normalizePlayerNameValue } from '../../model/player/playerIdentity.model.js'
+import { previousRosterSeasonRef } from './rosterHistory.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 const object = value => value && typeof value === 'object' && !Array.isArray(value) ? value : {}
@@ -673,13 +674,21 @@ const buildSearchIndexWrites = ({ teamSeason, playerRootsById, league, season, t
   }
 })
 
-const buildLeagueProjection = ({ leagueId, seasonId, teamId, playersById, updatedAt }) => ({
+const buildLeagueProjection = ({
+  leagueId,
+  seasonId,
+  teamId,
+  playersById,
+  loadedAt,
+  updatedAt,
+}) => ({
   leagueId,
   seasonId,
   teamId,
   roster: {
     playersCount: Object.values(playersById).filter(player => player.rosterStatus === 'regular').length,
     hasPlayers: Object.values(playersById).some(player => player.rosterStatus === 'regular'),
+    loadedAt: loadedAt || null,
   },
   updatedAt: updatedAt || null,
 })
@@ -908,7 +917,7 @@ const buildDecisionMovementId = ({ playerId, fromTeamSeasonDocumentId, toTeamSea
   clean(toTeamSeasonDocumentId),
 ].filter(Boolean).join('__')
 
-const normalizeDecisionTeam = ({ value, seasonId }) => {
+export const normalizeDecisionTeam = ({ value, seasonId }) => {
   const source = object(value)
   const teamId = clean(source.teamId || source.birthTeamDocumentId || source.birthTeamId)
   const clubId = clean(source.clubId)
@@ -961,7 +970,7 @@ const buildParticipantMovementInput = ({
     if (!['joined', 'left'].includes(decision)) throw new Error('Invalid Roster participant Movement decision')
 
     const otherTeam = normalizeDecisionTeam({ value: source.team || source.statsMovementTeam, seasonId })
-    if (!otherTeam) throw new Error(`Movement decision ${decision} requires a canonical Team target`)
+    if (!otherTeam) throw new Error(`יש לבחור קבוצת יעד תקינה לשחקן „${clean(source.fullName || source.name) || playerId}”`)
     const currentTeam = {
       teamId,
       teamSeasonDocumentId,
@@ -1019,6 +1028,7 @@ export const buildRosterMovementPlan = ({
   clubId = '',
   playersById = {},
   existingPlayersById = {},
+  previousPlayersById = {},
   removedPlayerIds = [],
   counterpartRequests = [],
   participantDecisions = [],
@@ -1029,6 +1039,7 @@ export const buildRosterMovementPlan = ({
   updatedAt = null,
 } = {}) => {
   const identityPlayersById = {
+    ...map(previousPlayersById),
     ...map(existingPlayersById),
     ...map(playersById),
   }
@@ -1047,6 +1058,16 @@ export const buildRosterMovementPlan = ({
     transfersOutById: { ...map(movement.transfersOutById), ...map(decisionInput.movement.transfersOutById) },
     pendingById: { ...map(movement.pendingById), ...map(decisionInput.movement.pendingById) },
   }
+  // Historical membership validates identity only; it never adds a current roster member.
+  list(participantDecisions).forEach(row => {
+    const id = clean(row.playerId)
+    if (!id || !identityPlayersById[id]) {
+      const error = new Error(`לא ניתן לאמת את השחקן „${clean(row.fullName || row.name) || id}” בסגל השמור. יש לבדוק את זהותו ולטעון את הסגל מחדש.`)
+      error.code = 'ROSTER_MOVEMENT_PLAYER_NOT_FOUND'
+      error.playerId = id
+      throw error
+    }
+  })
   const approvedMovement = resolveMovement({
     movement: requestedMovement,
     existingMovement,
@@ -1081,6 +1102,7 @@ export const buildRosterLoadWritePlan = ({
   participantDecisions = [],
   existingTeamRoot = null,
   existingTeamSeason = null,
+  previousTeamSeason = null,
   playerRootsById = {},
   existingPlayerSeasonsById = {},
   existingCounterpartTeamSeasonsById = {},
@@ -1101,8 +1123,35 @@ export const buildRosterLoadWritePlan = ({
   if (clean(clubProfile.clubId) !== clubId) throw new Error('Missing or mismatched ClubProfile')
   const { season: canonicalSeason, teamRow } = requireLeague({ league, leagueId, seasonId, teamId })
 
-  const resolvedRosterImport = resolveRosterImport(rosterImport)
+  const resolvedRosterImport = {
+    ...resolveRosterImport(rosterImport),
+    loadedAt: updatedAt || null,
+  }
   const existingPlayersById = object(existingTeamSeason && existingTeamSeason.roster && existingTeamSeason.roster.playersById)
+  const previousPlayersById = {}
+  if (previousTeamSeason) {
+    const previousRef = previousRosterSeasonRef({ teamRoot: existingTeamRoot, seasonId })
+    const identity = object(previousTeamSeason.identity)
+    if (
+      !previousRef ||
+      identity.teamId !== teamId ||
+      identity.seasonId !== previousRef.seasonId ||
+      identity.teamSeasonDocumentId !== buildTeamSeasonDocumentId({ teamId, seasonId: previousRef.seasonId })
+    ) {
+      throw new Error('סגל העונה הקודמת אינו תואם לקבוצה שנבחרה')
+    }
+    Object.entries(map(previousTeamSeason.roster?.playersById)).forEach(([id, player]) => {
+      if (!list(participantDecisions).some(row => clean(row.playerId) === id)) return
+      let resolved
+      try {
+        resolved = resolvePlayer({ player, birthYear, updatedAt })
+      } catch {
+        throw new Error(`זהות השחקן „${clean(player.fullName || player.name) || id}” בסגל הקודם אינה תקינה`)
+      }
+      if (resolved.playerId !== id) throw new Error(`זהות השחקן „${resolved.fullName || id}” בסגל הקודם אינה תקינה`)
+      previousPlayersById[id] = resolved
+    })
+  }
   const playersById = resolvePlayers({
     players,
     birthYear,
@@ -1122,6 +1171,7 @@ export const buildRosterLoadWritePlan = ({
     clubId,
     playersById,
     existingPlayersById,
+    previousPlayersById,
     removedPlayerIds,
     counterpartRequests,
     participantDecisions,
@@ -1216,6 +1266,7 @@ export const buildRosterLoadWritePlan = ({
       })),
     },
     leagueProjection: buildLeagueProjection({
+      loadedAt: object(object(teamSeason.roster).rosterImport).loadedAt,
       leagueId,
       seasonId,
       teamId,
@@ -1334,6 +1385,7 @@ export const buildRosterProjectionRepairPlan = ({
       deletes: staleIndexIds,
     },
     leagueProjection: buildLeagueProjection({
+      loadedAt: object(object(teamSeason.roster).rosterImport).loadedAt,
       leagueId: resolvedLeagueId,
       seasonId: resolvedSeasonId,
       teamId: resolvedTeamId,
@@ -1525,7 +1577,7 @@ export const buildRosterClearWritePlan = ({
       leagueId: resolvedLeagueId,
       seasonId: resolvedSeasonId,
       teamId: resolvedTeamId,
-      roster: { playersCount: 0, hasPlayers: false },
+      roster: { playersCount: 0, hasPlayers: false, loadedAt: null },
       updatedAt: updatedAt || null,
     },
     leaguesCenterProjection: {

@@ -1,4 +1,6 @@
+// src/features/firestoreUsage/components/UsageExpensiveActions.js
 import React from 'react'
+import { createIsraelDateTimeFormatter } from '../../../shared/format/dateUtils.js'
 import {
   Box,
   Card,
@@ -22,7 +24,7 @@ const formatDateTime = value => {
     return '-'
   }
 
-  return new Intl.DateTimeFormat('he-IL', {
+  return createIsraelDateTimeFormatter({
     dateStyle: 'short',
     timeStyle: 'medium',
   }).format(date)

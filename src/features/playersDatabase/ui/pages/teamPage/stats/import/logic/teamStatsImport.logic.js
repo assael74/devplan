@@ -27,6 +27,7 @@ const resolvePlayerIdFromUrl = value => {
 export const buildApprovedStatsImportPlayer = row => ({
   playerId: clean(row?.playerId),
   externalPlayerId: clean(row?.externalPlayerId),
+  playerUrl: clean(row?.playerUrl),
   identityKey: clean(row?.identityKey),
   fullName: clean(row?.fullName),
   normalizedName: clean(row?.normalizedName),

@@ -1,6 +1,7 @@
 // src/features/playersDatabase/ui/pages/teamPage/information/components/TeamInformationOverview.js
 
 import * as React from 'react'
+import { getFullDateTimeIl } from '../../../../../../../shared/format/dateUtils.js'
 import {
   Box,
   Button,
@@ -25,8 +26,15 @@ import {
 } from '../../structure/model/teamStructureFilter.model.js'
 import { buildTeamSeasonTabs } from '../model/teamSeasonTabs.model.js'
 
-const Section = ({ iconId = 'players', title, titleMeta = null, action = null, children }) => (
-  <Box sx={sx.section}>
+const Section = ({
+  iconId = 'players',
+  title,
+  titleMeta = null,
+  action = null,
+  compact = false,
+  children,
+}) => (
+  <Box sx={[sx.section, compact && sx.compactRosterSection]}>
     <Box sx={sx.sectionHeader}>
       <Box sx={sx.sectionTitleRow}>
         <Box sx={sx.sectionTitleIcon}>{iconUi({ id: iconId, size: 'sm' })}</Box>
@@ -193,8 +201,7 @@ export default function TeamInformationOverview({
     </Select>
   )
 
-  const rosterTableToolbar = (
-    <Box sx={sx.rosterTableToolbar}>
+  const rosterTableExport = (
       <Tooltip title='ייצוא כל נתוני הטבלה ל־Excel' placement='bottom'>
         <Button
           size='sm'
@@ -209,6 +216,26 @@ export default function TeamInformationOverview({
           Excel
         </Button>
       </Tooltip>
+  )
+
+  const rosterTableToolbar = (
+    <Box sx={sx.rosterTableToolbar}>
+      <Box sx={sx.loadTimes}>
+            <Tooltip title='טעינת סגל'>
+              <Typography level='body-xs' startDecorator={iconUi({ id: 'addPlayers', size: 'sm' })}>
+                {view.selectedTeamSeason?.roster?.rosterImport?.loadedAt
+                  ? getFullDateTimeIl(view.selectedTeamSeason.roster.rosterImport.loadedAt)
+                  : 'לא תועד'}
+              </Typography>
+            </Tooltip>
+            <Tooltip title='טעינת סטטס'>
+              <Typography level='body-xs' startDecorator={iconUi({ id: 'stats', size: 'sm' })}>
+                {view.selectedTeamSeason?.stats?.statsLoadState?.status === 'loaded'
+                  ? getFullDateTimeIl(view.selectedTeamSeason.stats.statsLoadState.updatedAt)
+                  : 'טרם נטען'}
+              </Typography>
+            </Tooltip>
+          </Box>
       {rosterProfileFilter}
     </Box>
   )
@@ -258,7 +285,9 @@ export default function TeamInformationOverview({
 
       <Section
         title='שחקני סגל'
+        compact
         titleMeta={rosterSeasonChips.length ? renderSeasonChips() : null}
+
       >
         {hasInsufficientSeasonSample ? (
           <Typography sx={sx.rosterSampleNotice}>
@@ -277,6 +306,7 @@ export default function TeamInformationOverview({
           structureFilter={structureFilter}
           embedded
           toolbar={rosterTableToolbar}
+          headerExport={rosterTableExport}
         />
       </Section>
     </Box>

@@ -1,6 +1,7 @@
 // src/features/playersDatabase/ui/pages/teamPage/TeamActionsPanel.js
 
 import * as React from 'react'
+import { useTheme } from '@mui/joy/styles'
 import {
   Box,
   Button,
@@ -51,6 +52,8 @@ export default function TeamActionsPanel({
   onTaskCreate,
   onTaskEdit,
 }) {
+  const theme = useTheme()
+  const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false)
   const hasSeason = Boolean(selectedSeasonOptionKey && seasonOptions.length)
   const selectedSeason = seasonOptions.find(option => (
     option.optionKey === selectedSeasonOptionKey
@@ -63,9 +66,20 @@ export default function TeamActionsPanel({
 
   return (
     <PageSidePanel
+      scrollable={false}
       collapsible={collapsible}
       collapsed={collapsed}
       onCollapsedChange={onCollapsedChange}
+      collapsedActions={[
+        {
+          label: hasTeamPlayers ? (hasTeamStats ? 'טעינת סטטיסטיקה מחדש' : 'טעינת סטטיסטיקה') : rosterAction.label,
+          iconId: hasTeamPlayers ? 'addStats' : rosterAction.iconId,
+          onClick: hasTeamPlayers ? onStatsImport : onPlayersImport,
+          disabled: !hasSeason,
+          disabledReason: rosterAction.disabledReason,
+        },
+        { label: 'עריכת קישור קבוצה', iconId: 'addLink', onClick: onTeamLink },
+      ]}
     >
       <Box sx={sx.actionsSection}>
         <Typography level='body-xs' sx={sx.sectionLabel}>
@@ -161,8 +175,11 @@ export default function TeamActionsPanel({
           </IconButton>
         </Tooltip>
 
-        <Dropdown>
-          <Tooltip title='הורדת נתוני הקבוצה כ־JSON'>
+        <Dropdown onOpenChange={(_event, open) => setDownloadMenuOpen(open)}>
+          <Tooltip
+            title={downloadMenuOpen ? '' : 'הורדת נתוני הקבוצה כ־JSON'}
+            placement={theme.direction === 'rtl' ? 'right' : 'left'}
+          >
             <span>
               <MenuButton
                 variant='outlined'
@@ -178,7 +195,7 @@ export default function TeamActionsPanel({
               </MenuButton>
             </span>
           </Tooltip>
-          <Menu placement='bottom-end'>
+          <Menu placement={theme.direction === 'rtl' ? 'left-start' : 'right-start'}>
             <MenuItem
               disabled={jsonDownloadBusy || jsonDownloadDisabled}
               onClick={onDownloadJson}

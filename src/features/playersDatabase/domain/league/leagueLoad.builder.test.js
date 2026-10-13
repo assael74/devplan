@@ -169,10 +169,12 @@ describe('buildLeagueLoadDocument', () => {
                 roster: {
                   playersCount: 18,
                   hasPlayers: true,
+                  loadedAt: '2026-10-12T10:00:00.000Z',
                 },
                 stats: {
                   hasStats: true,
                   statsComplete: false,
+                  loadedAt: '2026-10-13T10:00:00.000Z',
                 },
                 scouting: {
                   playersWithScoutProfileCount: 4,
@@ -206,10 +208,12 @@ describe('buildLeagueLoadDocument', () => {
     expect(team.roster).toEqual({
       playersCount: 18,
       hasPlayers: true,
+      loadedAt: '2026-10-12T10:00:00.000Z',
     })
     expect(team.stats).toEqual({
       hasStats: true,
       statsComplete: false,
+      loadedAt: '2026-10-13T10:00:00.000Z',
     })
     expect(team.scouting.playersWithScoutProfileCount).toBe(4)
     expect(result.season.gameDurationMinutes).toBe(70)

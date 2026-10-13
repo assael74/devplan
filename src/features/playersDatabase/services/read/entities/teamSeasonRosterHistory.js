@@ -2,6 +2,7 @@
 
 import { getTeamById } from './team.js'
 import { getTeamSeasonByDocumentId } from './teamSeason.js'
+import { previousRosterSeasonRef } from '../../../domain/roster/rosterHistory.js'
 
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 const object = value => value && typeof value === 'object' && !Array.isArray(value) ? value : {}
@@ -14,7 +15,10 @@ const toRosterReadModel = teamSeason => {
     ...teamSeason,
     seasonId: clean(teamSeason.identity?.seasonId),
     seasonKey: clean(teamSeason.identity?.seasonKey),
-    teamPlayers: Object.values(object(roster.playersById)),
+    teamPlayers: Object.entries(object(roster.playersById)).map(([playerId, player]) => ({
+      ...player,
+      playerUrl: clean(teamSeason.manual?.playersById?.[playerId]?.playerUrl || player.playerUrl),
+    })),
     rosterImport: object(roster.rosterImport),
     transfersIn: Object.values(object(movement.transfersInById)),
     transfersOut: Object.values(object(movement.transfersOutById)),
@@ -41,11 +45,10 @@ export async function readTeamSeasonRosterHistory({
     (targetSeasonId && clean(ref.seasonId) === targetSeasonId) ||
     (!targetSeasonId && clean(ref.seasonKey) === targetSeasonKey)
   )) || null
-  const ordered = refs.slice().sort((left, right) => clean(right.seasonId).localeCompare(clean(left.seasonId)))
-  const currentIndex = currentRef ? ordered.findIndex(ref => ref.seasonId === currentRef.seasonId) : -1
-  const previousRef = currentIndex >= 0
-    ? ordered[currentIndex + 1] || null
-    : ordered.find(ref => !targetSeasonId || clean(ref.seasonId) < targetSeasonId) || null
+  const previousRef = previousRosterSeasonRef({
+    teamRoot,
+    seasonId: targetSeasonId || currentRef?.seasonId || '\uffff',
+  })
   const [currentSeason, previousSeason] = await Promise.all([
     currentRef?.teamSeasonDocumentId ? getTeamSeasonByDocumentId(currentRef.teamSeasonDocumentId) : Promise.resolve(null),
     previousRef?.teamSeasonDocumentId ? getTeamSeasonByDocumentId(previousRef.teamSeasonDocumentId) : Promise.resolve(null),

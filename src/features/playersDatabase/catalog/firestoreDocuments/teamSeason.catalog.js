@@ -80,7 +80,8 @@ export const TEAM_SEASON_DOCUMENT = {
       },
     },
 
-    rosterImport: {},
+    // Last Roster Load time; Stats participation updates preserve it.
+    rosterImport: { loadedAt: null },
     updatedAt: null,
   },
 

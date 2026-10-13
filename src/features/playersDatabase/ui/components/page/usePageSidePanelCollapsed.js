@@ -4,9 +4,9 @@ import * as React from 'react'
 
 const readCollapsedState = storageKey => {
   try {
-    return window.localStorage.getItem(storageKey) === '1'
+    return window.localStorage.getItem(storageKey) !== '0'
   } catch {
-    return false
+    return true
   }
 }
 

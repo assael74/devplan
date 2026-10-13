@@ -1,4 +1,5 @@
 // src/features/notifications/logic/notifications.logic.js
+import { createIsraelDateTimeFormatter } from '../../../shared/format/dateUtils.js'
 
 export function sortNotificationsByCreatedAt(items = []) {
   return [...items].sort((a, b) => {
@@ -61,7 +62,7 @@ export function formatNotificationDateTime(item) {
   if (!value) return ''
 
   try {
-    return new Intl.DateTimeFormat('he-IL', {
+    return createIsraelDateTimeFormatter({
       day: '2-digit',
       month: '2-digit',
       year: '2-digit',

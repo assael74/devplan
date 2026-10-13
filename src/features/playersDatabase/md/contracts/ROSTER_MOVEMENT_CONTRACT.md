@@ -1,5 +1,9 @@
 # Roster and Movement Contract
 
+זמן טעינת הסגל נשמר ב־`TeamSeason.roster.rosterImport.loadedAt` מחותמת
+`updatedAt` של פעולת Roster Load. עדכוני השתתפות דרך Stats משמרים אותו.
+לעונות ישנות ללא השדה אין להסיק זמן טעינה מ־`roster.updatedAt`.
+
 ## אחריות Roster Load
 
 Roster Load כותב את Team Season snapshot, את הסגל, את מצב התנועה ואת
@@ -54,6 +58,10 @@ canonical → counterparts → playerSeasons → playerSearchIndexes
 - אין ליצור Team Root או Team Season כדי להשלים counterpart.
 - `unknown` הוא החלטה ידנית שהושלמה והופכת את השחקן ל־`pendingPlayers`, בלי
   להמציא תנועה.
+- החלטות על חסרים מהסגל הקודם מאומתות גם מול Team Season הקנוני האחרון
+  שקדם לעונה הנבחרת, בקריאה טרייה בהכנת הפעולה. זהות היסטורית אינה מוסיפה
+  חברות בסגל הנוכחי ואינה יוצרת Player Root. יעדי החלטות התנועה נקראים
+  באותו שלב כדי לעדכן counterpart רק אם מסמך העונה שלו קיים.
 - `joined` בלבד יוצר `transfersIn`;‏ `priorAgeException` ו־`confirmedInRoster`
   אינם יוצרים תנועה.
 
@@ -64,3 +72,7 @@ canonical → counterparts → playerSeasons → playerSearchIndexes
 
 Current Roster,‏ `playersCount`,‏ Team Balance, מבנה הקווים ו־scout summary
 כוללים `regular` בלבד. SearchIndex הוא projection ואינו מקור Movement.
+
+## זמני טעינה במסמך הליגה
+
+טעינת סגל מקרינה למסמך הליגה את `roster.loadedAt` מתוך `TeamSeason.roster.rosterImport.loadedAt`. שחזור הקרנות משתמש בתאריך הקנוני המקורי ולא בזמן השחזור. ניקוי סגל מאפס את התאריך ל־`null`. הכותב מעדכן רק את תחום הסגל וזמן העדכון הכללי, ומשמר את תחום הסטטס.

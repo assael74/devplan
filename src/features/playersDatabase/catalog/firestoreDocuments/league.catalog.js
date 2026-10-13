@@ -131,11 +131,13 @@ export const LEAGUE_DOCUMENT = {
             roster: {
               playersCount: null,
               hasPlayers: false,
+              loadedAt: null,
             },
 
             stats: {
               hasStats: false,
               statsComplete: false,
+              loadedAt: null,
             },
 
             scouting: {
@@ -196,10 +198,12 @@ export const LEAGUE_DOCUMENT = {
     roster: [
       'table.teamsById.*.roster.playersCount',
       'table.teamsById.*.roster.hasPlayers',
+      'table.teamsById.*.roster.loadedAt',
     ],
 
     stats: [
       'table.teamsById.*.stats.hasStats',
+      'table.teamsById.*.stats.loadedAt',
       'table.teamsById.*.stats.statsComplete',
       'table.teamsById.*.scouting.playersWithScoutProfileCount',
       'table.teamsById.*.scouting.teamTaskSignals',

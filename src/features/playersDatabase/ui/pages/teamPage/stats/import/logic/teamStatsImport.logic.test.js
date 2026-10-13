@@ -29,6 +29,7 @@ describe('buildApprovedStatsImportPlayer', () => {
       substituteIn: 3,
       substitutedOut: 4,
     })).toEqual({
+      playerUrl: '',
       playerId: 'player-1',
       externalPlayerId: '12345',
       identityKey: 'external:12345',

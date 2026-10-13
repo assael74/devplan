@@ -93,10 +93,22 @@ const statusSortValue = value => {
   return sortValue === undefined || sortValue === null ? -1 : sortValue
 }
 
+const dateSortValue = value => {
+  if (!value) return null
+  const timestamp = typeof value.toMillis === 'function'
+    ? value.toMillis()
+    : Number.isFinite(Number(value.seconds))
+      ? Number(value.seconds) * 1000
+      : new Date(value).getTime()
+  return Number.isFinite(timestamp) ? timestamp : null
+}
+
 const BASE_COLUMNS = [
   {
     key: 'leagueName',
     label: 'ליגה',
+    defaultSortDirection: 'asc',
+    getSortValue: row => Number(row.level) > 0 ? Number(row.level) : null,
     render: row => row.seasonUrl ? (
       <Link
         href={row.seasonUrl}
@@ -109,12 +121,13 @@ const BASE_COLUMNS = [
       </Link>
     ) : <LeagueName value={row.leagueName} level={row.level} showLevel fontSize={12} />,
   },
-  { key: 'ageGroupLabel', label: 'קבוצת גיל', render: row => row.ageGroupLabel || row.ageGroup || '-' },
-  { key: 'birthYear', label: 'שנתון' },
-  { key: 'seasonKey', label: 'עונה' },
+  { key: 'ageGroupLabel', label: 'קבוצת גיל', sortable: false, render: row => row.ageGroupLabel || row.ageGroup || '-' },
+  { key: 'birthYear', label: 'שנתון', sortable: false },
+  { key: 'seasonKey', label: 'עונה', sortable: false },
   {
     key: 'seasonWorkStatus',
     label: 'מצב עונה',
+    sortable: false,
     getSortValue: row => row.seasonWorkStatus,
     render: row => {
       const presentation = seasonStatusPresentation(row.seasonWorkStatus)
@@ -146,7 +159,7 @@ const BASE_COLUMNS = [
   {
     key: 'tableImportedAt',
     label: 'טעינה אחרונה',
-    getSortValue: row => row.tableImportedAt || '',
+    getSortValue: row => dateSortValue(row.tableImportedAt),
     render: row => (
       <Typography level='body-xs' sx={sx.dateFact}>
         {row.tableImportedAt

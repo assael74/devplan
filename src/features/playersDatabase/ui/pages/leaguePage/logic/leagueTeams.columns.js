@@ -1,8 +1,9 @@
-// features/playersDatabase/ui/pages/leaguePage/logic/leagueTeams.columns.js
+// src/features/playersDatabase/ui/pages/leaguePage/logic/leagueTeams.columns.js
 
 import {
   Box,
   IconButton,
+  Tooltip,
 } from '@mui/joy'
 
 import { buildTableColumnWidth } from '../../../components/tables/tableWidths.js'
@@ -15,6 +16,7 @@ import TeamName from '../../../components/entities/TeamName.js'
 import TeamTaskIndicator from '../../../components/teamTaskIndicator/TeamTaskIndicator.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import teamLogo from '../../../../../../ui/core/images/teamLogo.png'
+import { getFullDateTimeIl } from '../../../../../../shared/format/dateUtils.js'
 import { LEAGUE_TEAMS_TABLE_WIDTHS } from './leagueTableWidths.js'
 import { leagueTeamsColumnsSx as sx } from '../sx/leagueTeams.columns.sx.js'
 
@@ -309,19 +311,29 @@ export const buildLeagueTeamsColumns = ({
       toCount(row.profileAssignmentsCount)
     ),
     render: row => (
-      <Box sx={sx.rosterProfilesCell}>
-        <Box component='span' sx={sx.rosterProfilesValue}>
-          {row.playersCount || 0}
+      <Tooltip
+        placement='top'
+        title={(
+          <Box>
+            <Box>טעינת סגל: {row.rosterLoadedAt ? getFullDateTimeIl(row.rosterLoadedAt) : 'לא תועד'}</Box>
+            <Box>טעינת סטטס: {row.statsLoadedAt ? getFullDateTimeIl(row.statsLoadedAt) : 'לא תועד'}</Box>
+          </Box>
+        )}
+      >
+        <Box sx={sx.rosterProfilesCell} tabIndex={0}>
+          <Box component='span' sx={sx.rosterProfilesValue}>
+            {row.playersCount || 0}
+          </Box>
+          <Box component='span' sx={sx.rosterProfilesDivider}>/</Box>
+          <Box component='span' sx={sx.rosterProfilesValue}>
+            {row.profilesCount || 0}
+          </Box>
+          <Box component='span' sx={sx.rosterProfilesDivider}>/</Box>
+          <Box component='span' sx={sx.rosterProfilesValue}>
+            {row.profileAssignmentsCount || 0}
+          </Box>
         </Box>
-        <Box component='span' sx={sx.rosterProfilesDivider}>/</Box>
-        <Box component='span' sx={sx.rosterProfilesValue}>
-          {row.profilesCount || 0}
-        </Box>
-        <Box component='span' sx={sx.rosterProfilesDivider}>/</Box>
-        <Box component='span' sx={sx.rosterProfilesValue}>
-          {row.profileAssignmentsCount || 0}
-        </Box>
-      </Box>
+      </Tooltip>
     ),
   },
   {

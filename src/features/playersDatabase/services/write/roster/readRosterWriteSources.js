@@ -11,6 +11,8 @@ import {
   trackedGetDocsFromServer,
 } from '../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
+import { previousRosterSeasonRef } from '../../../domain/roster/rosterHistory.js'
+import { normalizeDecisionTeam } from '../../../domain/roster/rosterWritePlan.builder.js'
 import {
   buildPlayerId,
   buildPlayerSearchIndexDocumentId,
@@ -190,6 +192,14 @@ export const readRosterLoadSources = async ({ input = {} } = {}) => {
   ])
   if (!league) throw new Error('Canonical League document was not found')
 
+  const previousRef = previousRosterSeasonRef({ teamRoot: existingTeamRoot, seasonId })
+  const previousTeamSeason = list(source.participantDecisions).length && previousRef
+    ? await readDocument({
+        collectionName: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
+        documentId: buildTeamSeasonDocumentId({ teamId, seasonId: previousRef.seasonId }),
+      })
+    : null
+
   const leagueSeason = object(map(league.seasonsById)[seasonId])
   const teamRow = object(map(leagueSeason.table && leagueSeason.table.teamsById)[teamId])
   if (!Object.keys(teamRow).length) throw new Error('Team row was not found in canonical League season')
@@ -209,7 +219,13 @@ export const readRosterLoadSources = async ({ input = {} } = {}) => {
   const [playerRootsById, playerSeasonRowsById, existingCounterpartTeamSeasonsById, centers] = await Promise.all([
     readDocumentsByIds({ collectionName: PLAYERS_DATABASE_COLLECTIONS.playerRoots, documentIds: affectedPlayerIds }),
     readDocumentsByIds({ collectionName: PLAYERS_DATABASE_COLLECTIONS.playerSeasons, documentIds: playerSeasonDocumentIds }),
-    readCounterparts(source.counterpartRequests),
+    readCounterparts([
+      ...list(source.counterpartRequests),
+      ...list(source.participantDecisions)
+        .filter(row => ['joined', 'left'].includes(clean(row.decision || row.statsMovementDecision)))
+        .map(row => normalizeDecisionTeam({ value: row.team || row.statsMovementTeam, seasonId }))
+        .filter(Boolean),
+    ]),
     readCenters({ leagueId, seasonId, teamId }),
   ])
   const counterpartProjectionSourcesByDocumentId = await readCounterpartProjectionSources({
@@ -228,6 +244,7 @@ export const readRosterLoadSources = async ({ input = {} } = {}) => {
   return {
     existingTeamRoot,
     existingTeamSeason,
+    previousTeamSeason,
     league,
     clubProfile,
     playerRootsById,

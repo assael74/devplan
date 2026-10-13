@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/positionClassification/sx/teamPositionClassificationTable.sx.js
 import { COLORS, devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 const squadRowColors = {
@@ -85,6 +86,7 @@ export const teamPositionClassificationTableSx = {
   },
 
   tableContainer: {
+    width: '100%',
     minWidth: 0,
   },
 
@@ -92,10 +94,12 @@ export const teamPositionClassificationTableSx = {
     display: 'flex',
     justifyContent: 'flex-end',
     pt: 0,
-    pb: 0.75,
+    pb: 0,
+    mb: 0,
   },
 
   tableWrapEmbedded: {
+    mt: 0,
     width: '100%',
     maxWidth: '100%',
     mx: 0,
@@ -183,6 +187,10 @@ export const teamPositionClassificationTableSx = {
   openPlayerColumn: {
     width: '5%',
     textAlign: 'center',
+  },
+
+  exportColumn: {
+    width: 80,
   },
 
   openPlayerButton: {

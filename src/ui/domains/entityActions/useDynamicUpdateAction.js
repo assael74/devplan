@@ -1,4 +1,5 @@
-// src/ui/entityActions/useDynamicUpdateAction.js
+// src/ui/domains/entityActions/useDynamicUpdateAction.js
+import { getFullDateTimeIl } from '../../../shared/format/dateUtils.js'
 import { useCallback, useMemo, useState } from 'react'
 
 import { useSnackbar } from '../../core/feedback/snackbar/SnackbarProvider.js'
@@ -30,7 +31,7 @@ export function useDynamicUpdateAction({
   const lastUpdatedLabel = useMemo(() => {
     if (!lastUpdatedAt) return null
     try {
-      return new Date(lastUpdatedAt).toLocaleString('he-IL')
+      return getFullDateTimeIl(lastUpdatedAt)
     } catch {
       return null
     }

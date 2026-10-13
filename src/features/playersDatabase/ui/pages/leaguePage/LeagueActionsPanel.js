@@ -16,7 +16,6 @@ import {
 } from '@mui/joy'
 
 import PageSidePanel from '../../components/page/PageSidePanel.js'
-import ScoutPrioritySelect from '../../components/filters/ScoutPrioritySelect.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import { WorkTaskList } from '../../components/modals/index.js'
 import { leagueActionsPanelSx as sx } from './sx/leagueActionsPanel.sx.js'
@@ -29,12 +28,6 @@ export default function LeagueActionsPanel({
   seasonOptions = [],
   onSeasonChange,
   seasonDisabled = false,
-  attackPriorityFilter,
-  defensePriorityFilter,
-  attackPriorityCounts = {},
-  defensePriorityCounts = {},
-  onAttackPriorityFilterChange,
-  onDefensePriorityFilterChange,
   onLoad,
   onDownloadDocuments,
   onLeagueUrlEdit,
@@ -67,9 +60,14 @@ export default function LeagueActionsPanel({
 
   return (
     <PageSidePanel
+      scrollable={false}
       collapsible={collapsible}
       collapsed={collapsed}
       onCollapsedChange={onCollapsedChange}
+      collapsedActions={[
+        { label: 'טעינת נתוני הליגה', iconId: 'addTeams', onClick: onLoad, disabled: loadDisabled, disabledReason: loadDisabledReason },
+        { label: 'הגדרות עונת ליגה', iconId: 'edit', onClick: onLeagueUrlEdit, disabled: !onLeagueUrlEdit },
+      ]}
     >
       <Box sx={sx.actionSelectorsRow}>
         <Box sx={sx.actionSeasonBox}>
@@ -120,26 +118,6 @@ export default function LeagueActionsPanel({
             ))}
           </Select>
         </Box>
-      </Box>
-
-      <Box sx={sx.priorityFiltersRow}>
-        <ScoutPrioritySelect
-          label='עדיפות התקפית'
-          value={attackPriorityFilter}
-          fontSize={11}
-          thresholdMode
-          counts={attackPriorityCounts}
-          onChange={onAttackPriorityFilterChange}
-        />
-
-        <ScoutPrioritySelect
-          label='עדיפות הגנתית'
-          value={defensePriorityFilter}
-          fontSize={11}
-          thresholdMode
-          counts={defensePriorityCounts}
-          onChange={onDefensePriorityFilterChange}
-        />
       </Box>
 
       <Divider sx={sx.sidePanelDivider} />

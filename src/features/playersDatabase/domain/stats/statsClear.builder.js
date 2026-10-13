@@ -158,7 +158,7 @@ export const buildStatsClearApprovedState = ({
     updatedAt,
   })
   const leagueTeamPatch = {
-    stats: { hasStats: false, statsComplete: false },
+    stats: { hasStats: false, statsComplete: false, loadedAt: null },
     scouting: {
       playersWithScoutProfileCount: 0,
       teamTaskSignals: canonicalTeamSeason.teamTaskSignals,

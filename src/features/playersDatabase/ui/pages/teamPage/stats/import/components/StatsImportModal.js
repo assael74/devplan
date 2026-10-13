@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Chip,
+  IconButton,
   Stack,
   Tooltip,
   Typography,
@@ -23,6 +24,8 @@ import { importModalChromeSx as chromeSx } from '../../../../../components/modal
 import { pasteModalSx as pasteSx } from '../../../../../components/modals/paste/sx/pasteModal.sx.js'
 import { statsImportModalSx as sx } from '../sx/statsImportModal.sx.js'
 import StatsFinalSyncPanel from './StatsFinalSyncPanel.js'
+import StatsIdentityDetailsModal from './StatsIdentityDetailsModal.js'
+import { STATS_IDENTITY_STATUS } from '../../shared/logic/teamStatsMatch.logic.js'
 
 const STEPS = ['הקשר טעינה', 'קליטת נתונים', 'זיהוי ואישור', 'סנכרון']
 
@@ -152,9 +155,37 @@ export default function StatsImportModal({
   const leagueUrl = clean(source.leagueUrl || team?.domain?.metadata?.seasonUrl)
   const hasPreviewRows = controller.rows.length > 0
   const [activeStep, setActiveStep] = React.useState(0)
+  const [identitySelection, setIdentitySelection] = React.useState(null)
+  const identityColumns = columns.map(column => column.key === 'identityStatus' ? {
+    ...column,
+    render: props => {
+      const status = props.row.identityStatus
+      const hasResolutionControl = !props.row.requiresStatsMovementDecision && (
+        status === STATS_IDENTITY_STATUS.SYSTEM_CANDIDATE ||
+        status === STATS_IDENTITY_STATUS.AMBIGUOUS
+      )
+      if (status === STATS_IDENTITY_STATUS.ROSTER_MATCH || hasResolutionControl) {
+        return column.render(props)
+      }
+
+      return (
+        <IconButton
+          size='sm'
+          variant='plain'
+          disabled={controller.busy}
+          aria-label={`עריכת מזהה וקישור עבור ${props.row.fullName}`}
+          sx={{ minWidth: 24, minHeight: 24, p: 0 }}
+          onClick={() => setIdentitySelection({ row: props.row, rowIndex: props.rowIndex })}
+        >
+          {column.render(props)}
+        </IconButton>
+      )
+    },
+  } : column)
   const previewAdvanceRequestedRef = React.useRef(false)
   React.useEffect(() => {
     if (controller.open) {
+      setIdentitySelection(null)
       previewAdvanceRequestedRef.current = false
       setActiveStep(0)
     }
@@ -328,6 +359,7 @@ export default function StatsImportModal({
                 : 'בצע טעינת סטטיסטיקות'
 
   return (
+    <>
     <SteppedModal
       open={controller.open}
       activeStep={activeStep}
@@ -371,7 +403,8 @@ export default function StatsImportModal({
       {activeStep === 2 ? (
         <Box sx={sx.reviewStep}>
             <PreviewTable
-              columns={columns}
+              hoverRow={false}
+              columns={identityColumns}
               rows={controller.rows}
               onCellChange={controller.changeCell}
               getRowStatus={controller.getRowStatus}
@@ -444,5 +477,11 @@ export default function StatsImportModal({
         </Box>
       ) : null}
     </SteppedModal>
+    <StatsIdentityDetailsModal
+      selection={controller.open ? identitySelection : null}
+      onClose={() => setIdentitySelection(null)}
+      onSave={controller.saveIdentityDetails}
+    />
+    </>
   )
 }

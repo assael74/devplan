@@ -21,6 +21,7 @@ import {
   enrichStatsRowForPreview,
 } from '../../shared/logic/teamStatsMatch.logic.js'
 import { updateStatsImportRow } from '../logic/teamStatsRowEdit.logic.js'
+import { prepareStatsIdentityEdit } from '../logic/statsIdentityDetails.js'
 import {
   buildStatsMovementPreviewModel,
   buildStatsPreviewModel,
@@ -445,6 +446,37 @@ export default function useTeamStatsImport({
     )))
   }, [players])
 
+  const saveIdentityDetails = async ({ rowIndex, rowId, externalPlayerId, playerUrl }) => {
+    const row = rows[rowIndex]
+    if (!row || row.id !== rowId) throw new Error('שורת השחקן השתנתה. יש לפתוח את החלון מחדש')
+    const edited = prepareStatsIdentityEdit({ row, details: { externalPlayerId, playerUrl } })
+    if (rows.some((other, index) => index !== rowIndex && clean(other.externalPlayerId) === edited.externalPlayerId)) {
+      throw new Error('מזהה השחקן כבר מופיע בשורה אחרת בטבלה')
+    }
+    const [resolvedPlayer] = await resolveCanonicalTeamPlayerIdentities({
+      players: [edited],
+      season: {
+        seasonId: selectedSeasonOption.seasonId,
+        seasonKey: selectedSeasonOption.seasonKey,
+        birthYear: selectedTeamSeason?.identity?.birthYear || selectedSeasonOption.birthYear || team?.birthYear,
+      },
+    })
+    if (!resolvedPlayer?.identityValid || !resolvedPlayer.playerId) {
+      throw new Error(resolvedPlayer?.identityMessage || 'לא ניתן לאמת את מזהה השחקן')
+    }
+    const resolved = applyResolvedStatsIdentity({ row: edited, resolvedPlayer })
+    setRows(current => current.map((item, index) => index === rowIndex && item === row ? {
+      ...resolved,
+      birthYear: resolvedPlayer.identityBirthYear || resolvedPlayer.birthYear || row.birthYear,
+      playerUrl: edited.playerUrl,
+      rosterStatus: row.rosterStatus,
+      isYoungerAgeGroup: row.isYoungerAgeGroup,
+      statsMovementDecision: row.statsMovementDecision,
+      statsMovementTeam: row.statsMovementTeam,
+      requiresStatsMovementDecision: row.requiresStatsMovementDecision,
+    } : item))
+  }
+
   const validation = React.useMemo(() => appendPlanError({
     validation: leagueValidation,
     approvedStatsPlanError,
@@ -533,6 +565,7 @@ export default function useTeamStatsImport({
     changeSeasonStatus: () => {},
     parse,
     changeCell,
+    saveIdentityDetails,
     applyEqualMinutesReduction,
     getRowStatus,
     getCellStatus,

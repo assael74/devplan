@@ -34,6 +34,7 @@ const projection = {
     leagueId: 'league-a',
     stats: { statsStatus: 'loaded' },
     scouting: {},
+    manual: { playerUrl: 'https://www.football.org.il/players/player/?player_id=12345', goalDistribution: {} },
     updatedAt: 'updated',
   },
 }
@@ -88,11 +89,15 @@ describe('writeStatsPlayerSeasons', () => {
           [teamId]: {
             stats: projection.team.stats,
             scouting: projection.team.scouting,
+            manual: { playerUrl: projection.team.manual.playerUrl },
             updatedAt: projection.team.updatedAt,
           },
         },
       }),
       expect.objectContaining({ mergeFields: expect.any(Array) })
     )
+    const mergePaths = setDoc.mock.calls[0][2].mergeFields.map(path => path.segments)
+    expect(mergePaths).toContainEqual(['teamsById', teamId, 'manual', 'playerUrl'])
+    expect(mergePaths).not.toContainEqual(['teamsById', teamId, 'manual'])
   })
 })

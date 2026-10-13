@@ -14,6 +14,7 @@ export const workTaskListSx = {
 
   header: {
     minWidth: 0,
+    flexShrink: 0,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -58,11 +59,13 @@ export const workTaskListSx = {
     flex: 1,
     overflowY: 'auto',
     overflowX: 'hidden',
+    scrollbarGutter: 'stable',
     pr: 0.25,
   },
 
   item: {
     minWidth: 0,
+    flexShrink: 0,
     p: 0.65,
     display: 'flex',
     flexDirection: 'column',

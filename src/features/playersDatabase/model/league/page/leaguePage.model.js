@@ -190,6 +190,8 @@ const buildTeamRow = ([teamId, team], clubsDirectory) => {
     playersCount: toNumberOrZero(roster.playersCount),
     hasPlayers: Boolean(roster.hasPlayers),
     statsComplete: Boolean(stats.statsComplete),
+    rosterLoadedAt: roster.loadedAt || null,
+    statsLoadedAt: stats.loadedAt || null,
     profilesCount: toNumberOrZero(scouting.playersWithScoutProfileCount),
     profileAssignmentsCount: toNumberOrZero(scouting.playersWithScoutProfileCount),
     attackPriority: performanceView.offense.priority.level,

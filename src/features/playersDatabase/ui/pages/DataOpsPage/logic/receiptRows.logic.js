@@ -1,4 +1,5 @@
 // src/features/playersDatabase/ui/pages/DataOpsPage/logic/receiptRows.logic.js
+import { createIsraelDateTimeFormatter } from '../../../../../../shared/format/dateUtils.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
@@ -33,7 +34,7 @@ const formatReceiptTime = value => {
   const date = toDate(value)
   if (!date) return '—'
 
-  return new Intl.DateTimeFormat('he-IL', {
+  return createIsraelDateTimeFormatter({
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(date)

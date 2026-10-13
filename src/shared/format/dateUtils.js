@@ -1,4 +1,4 @@
-// C:\projects\devplan\src\shared\format\dateUtils.js
+// src/shared/format/dateUtils.js
 import moment from 'moment'
 import 'moment/locale/he'
 
@@ -7,6 +7,11 @@ moment.locale('he')
 const to2 = (n) => String(n).padStart(2, '0')
 const clean = (v) => String(v ?? '').trim()
 const IL_TIME_ZONE = 'Asia/Jerusalem'
+export const createIsraelDateTimeFormatter = options => new Intl.DateTimeFormat('he-IL', {
+  ...options,
+  timeZone: IL_TIME_ZONE,
+  hourCycle: 'h23',
+})
 const ilDateTimeFormatter = new Intl.DateTimeFormat('en-GB', {
   timeZone: IL_TIME_ZONE,
   day: '2-digit',

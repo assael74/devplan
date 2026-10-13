@@ -1,4 +1,10 @@
-import { Box, Sheet, Typography } from '@mui/joy'
+// src/features/squadSimulator/ui/print/SquadSimulatorPrintReport.js
+import {
+  Box,
+  Sheet,
+  Typography,
+} from '@mui/joy'
+import { createIsraelDateTimeFormatter } from '../../../../shared/format/dateUtils.js'
 
 import playerImage from '../../../../ui/core/images/playerImage.jpg'
 import { CONFIDENCE_LEVEL_OPTIONS, ROLE_OPTIONS } from '../simulatorUi.constants.js'
@@ -136,7 +142,7 @@ export default function SquadSimulatorPrintReport({
   minutesDistribution = [],
 }) {
   const targetLabel = model?.targetContext?.label || targetProfile || targetPosition
-  const generatedAt = new Intl.DateTimeFormat('he-IL', {
+  const generatedAt = createIsraelDateTimeFormatter({
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(new Date())

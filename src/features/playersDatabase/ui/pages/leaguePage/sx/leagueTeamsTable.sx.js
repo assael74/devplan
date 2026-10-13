@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/leaguePage/sx/leagueTeamsTable.sx.js
+// src/features/playersDatabase/ui/pages/leaguePage/sx/leagueTeamsTable.sx.js
 
 import { dataTableVariantsSx as variantSx } from '../../../components/tables/dataTable/sx/dataTableVariants.sx.js'
 

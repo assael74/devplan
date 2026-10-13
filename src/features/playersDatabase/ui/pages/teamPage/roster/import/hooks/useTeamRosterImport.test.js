@@ -92,3 +92,19 @@ test('reload failure retains findings and stays on the independent path when ret
   expect(getWriteActionReceipt).not.toHaveBeenCalled()
   expect(repairWriteActionReceipt).not.toHaveBeenCalled()
 })
+
+test('keeps the named preparation error visible and clears it after a successful retry', async () => {
+  const errorLog = jest.spyOn(console, 'error').mockImplementation(() => {})
+  const message = 'לא ניתן לאמת את השחקן ישראל ישראלי בסגל השמור'
+  prepareRosterLoad.mockRejectedValueOnce(new Error(message)).mockResolvedValueOnce(approvedState)
+  const { result } = renderHook(() => useTeamRosterImport({ ...props, repairReload: false }))
+  await act(async () => result.current.openModal())
+  await act(async () => result.current.preparePlan())
+  expect(result.current.planError).toBe(message)
+  expect(result.current.rosterImportPlan).toBeNull()
+  expect(loadRoster).not.toHaveBeenCalled()
+  await act(async () => result.current.preparePlan())
+  expect(result.current.planError).toBe('')
+  expect(result.current.rosterImportPlan).toBe(approvedState)
+  errorLog.mockRestore()
+})

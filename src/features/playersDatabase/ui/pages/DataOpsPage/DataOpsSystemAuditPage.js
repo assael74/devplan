@@ -1,4 +1,5 @@
 // src/features/playersDatabase/ui/pages/DataOpsPage/DataOpsSystemAuditPage.js
+import { createIsraelDateTimeFormatter } from '../../../../../shared/format/dateUtils.js'
 
 import { useMemo, useState } from 'react'
 import {
@@ -130,7 +131,7 @@ const clean = value => String(value === null || value === undefined ? '' : value
 const formatTime = value => {
   const date = value ? new Date(value) : null
   if (!date || Number.isNaN(date.getTime())) return 'לא ידוע'
-  return new Intl.DateTimeFormat('he-IL', {
+  return createIsraelDateTimeFormatter({
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(date)

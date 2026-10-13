@@ -228,6 +228,7 @@ export default function LeagueTeamsTable({
     >
       <DataTable
         className='dpScrollThin'
+        hoverRow={false}
         columns={columns}
         rows={rows}
         getRowKey={row => row.id}

@@ -25,6 +25,9 @@ export default function ClubsFilters({
       collapsible={collapsible}
       collapsed={collapsed}
       onCollapsedChange={onCollapsedChange}
+      collapsedActions={[
+        { label: 'איפוס סינון', iconId: 'reset', onClick: model.resetFilters },
+      ]}
     >
       <Box sx={sx.sideSection}>
         <Typography level='title-sm' sx={sx.sideTitle}>סינון מועדונים</Typography>

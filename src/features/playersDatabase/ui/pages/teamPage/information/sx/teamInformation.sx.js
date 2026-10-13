@@ -1,6 +1,30 @@
+// src/features/playersDatabase/ui/pages/teamPage/information/sx/teamInformation.sx.js
 import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 export const teamInformationSx = {
+  compactRosterSection: {
+    width: '100%',
+    minWidth: 0,
+    px: 0,
+    py: 0.5,
+    '& > :first-child': { px: 1, mb: 0.5 },
+  },
+  loadTimes: {
+    my: 0.3,
+    mb: 0,
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 1,
+    '& > *': {
+      whiteSpace: 'nowrap',
+      fontSize: '0.65rem',
+    },
+    '& > * + *': {
+      borderInlineStart: `1px solid ${devPlanColors.border}`,
+      paddingInlineStart: 1,
+    },
+  },
   content: {
     minWidth: 0,
     minHeight: 0,
@@ -112,6 +136,7 @@ export const teamInformationSx = {
 
   sectionHeader: {
     display: 'flex',
+    flexWrap: 'wrap',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 1,
@@ -220,10 +245,14 @@ export const teamInformationSx = {
   },
 
   rosterTableToolbar: {
+    width: '100%',
+    mb: 0.5,
+    pl: 1,
+    py: 0,
     display: 'flex',
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     gap: 0.6,
   },
 

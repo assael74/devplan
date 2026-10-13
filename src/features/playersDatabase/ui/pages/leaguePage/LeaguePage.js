@@ -36,10 +36,6 @@ import {
   TaskEditModal,
   WorkTaskModal,
 } from '../../components/modals/index.js'
-import {
-  buildPriorityCounts,
-  filterTeamsByPriority,
-} from './logic/leaguePriorityFilters.logic.js'
 import { splitLeagueTitle } from './logic/leaguePage.logic.js'
 import { ReportPreviewModal } from '../../../../reports/publicApi.js'
 import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
@@ -57,8 +53,6 @@ function LeaguePageContent() {
   const favorites = usePlayersDatabaseFavorites()
   const tasksModel = usePlayersDatabaseTasks()
   const taskActions = usePlayersDatabaseTaskActions()
-  const [attackPriorityFilter, setAttackPriorityFilter] = React.useState('')
-  const [defensePriorityFilter, setDefensePriorityFilter] = React.useState('')
   const [sidePanelCollapsed, setSidePanelCollapsed] = usePageSidePanelCollapsed(
     'playersDatabase:leagueSidePanelCollapsed'
   )
@@ -125,28 +119,6 @@ function LeaguePageContent() {
     }))
   ), [favorites, teams])
 
-  const attackPriorityCounts = React.useMemo(
-    () => buildPriorityCounts(teamsWithFavorites, 'attack'),
-    [teamsWithFavorites]
-  )
-  const defensePriorityCounts = React.useMemo(
-    () => buildPriorityCounts(teamsWithFavorites, 'defense'),
-    [teamsWithFavorites]
-  )
-
-  const filteredTeams = React.useMemo(() => (
-    filterTeamsByPriority({
-      teams: teamsWithFavorites,
-      attackThreshold: attackPriorityFilter,
-      defenseThreshold: defensePriorityFilter,
-    })
-  ), [
-    teamsWithFavorites,
-    attackPriorityFilter,
-    defensePriorityFilter,
-  ])
-
-
   const leagueTasks = React.useMemo(() => (
     tasksModel.tasks.filter(task => {
       const context = task?.workContext || {}
@@ -211,7 +183,7 @@ function LeaguePageContent() {
   const isActiveLeague = String(selectedSeasonOption?.season?.seasonStatus || '').toLowerCase() === 'active'
   const leagueReport = useLeagueReport({
     league,
-    teams: filteredTeams,
+    teams: teamsWithFavorites,
     summary,
     seasonKey: selectedSeasonKey,
   })
@@ -312,7 +284,7 @@ function LeaguePageContent() {
             />
 
             <LeagueTeamsTable
-              rows={filteredTeams}
+              rows={teamsWithFavorites}
               loading={loading}
               error={error || selectionError}
               selectedSeasonOption={selectedSeasonOption}
@@ -336,12 +308,6 @@ function LeaguePageContent() {
             seasonOptions={seasonOptions}
             onSeasonChange={setSelectedSeasonKey}
             seasonDisabled={repairReload || leagueImport.open}
-            attackPriorityFilter={attackPriorityFilter}
-            defensePriorityFilter={defensePriorityFilter}
-            attackPriorityCounts={attackPriorityCounts}
-            defensePriorityCounts={defensePriorityCounts}
-            onAttackPriorityFilterChange={setAttackPriorityFilter}
-            onDefensePriorityFilterChange={setDefensePriorityFilter}
             onLoad={leagueImport.handleOpen}
             onDownloadDocuments={handleDownloadDocuments}
             onLeagueUrlEdit={leagueDoc && selectedSeasonOption?.seasonId

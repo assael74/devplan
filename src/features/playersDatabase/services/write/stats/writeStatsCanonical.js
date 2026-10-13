@@ -19,9 +19,18 @@ export const writeStatsCanonical = async ({ approvedState = {} } = {}) => {
     throw new Error('Stats Team Season target identity mismatch')
   }
 
+  const playerUrlPatch = {}
+  Object.entries(approvedState.playerUrlsById || {}).forEach(([playerId, playerUrl]) => {
+    if (!document.roster?.playersById?.[playerId] || !/^player__[0-9]{4}__[0-9]+$/.test(playerId)) {
+      throw new Error('Invalid player identity for approved URL')
+    }
+    playerUrlPatch[`manual.playersById.${playerId}.playerUrl`] = playerUrl
+    playerUrlPatch[`manual.playersById.${playerId}.updatedAt`] = approvedState.updatedAt || null
+  })
   await updateDoc(
     doc(db, PLAYERS_DATABASE_COLLECTIONS.teamSeasons, teamSeasonDocumentId),
     {
+      ...playerUrlPatch,
       stats: document.stats,
       scouting: document.scouting,
       teamTaskSignals: document.teamTaskSignals,

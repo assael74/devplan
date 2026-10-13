@@ -25,6 +25,7 @@ export default function TeamPositionClassificationTable({
   structureFilter = TEAM_STRUCTURE_FILTER.CLASSIFIED,
   embedded = false,
   toolbar = null,
+  headerExport = null,
 }) {
   const filteredRows = rows.filter(row => (
     Array.isArray(row.structureFilterKeys) && row.structureFilterKeys.includes(structureFilter)
@@ -86,8 +87,11 @@ export default function TeamPositionClassificationTable({
       <Box sx={sx.tableContainer}>
         {toolbar ? <Box sx={sx.tableToolbar}>{toolbar}</Box> : null}
         <DataTable
+          hoverRow={false}
           className='dpScrollThin'
-          columns={columns}
+          columns={columns.map(column => column.key === 'openPlayer' && headerExport
+            ? { ...column, sx: { ...column.sx, ...sx.exportColumn }, headerContent: headerExport }
+            : column)}
           rows={visibleRows}
           getRowKey={row => row.id}
           defaultSort={structureFilter === TEAM_STRUCTURE_FILTER.ALL_SQUAD

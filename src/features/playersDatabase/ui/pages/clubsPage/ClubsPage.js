@@ -1,5 +1,6 @@
 // src/features/playersDatabase/ui/pages/clubsPage/ClubsPage.js
 import { useCallback, useState } from 'react'
+import { useTheme } from '@mui/joy/styles'
 import {
   Box,
   Button,
@@ -37,6 +38,8 @@ import {
 import { clubsPageSx as sx } from './sx/clubsPage.sx.js'
 
 export default function ClubsPage() {
+  const theme = useTheme()
+  const [downloadMenuOpen, setDownloadMenuOpen] = useState(false)
   const navigate = useNavigate()
   const { notify } = useSnackbar()
   const model = useClubsPage()
@@ -115,8 +118,11 @@ export default function ClubsPage() {
         </Chip>
       </Tooltip>
 
-      <Dropdown>
-        <Tooltip title='הורדת מסמכי JSON'>
+      <Dropdown onOpenChange={(_event, open) => setDownloadMenuOpen(open)}>
+        <Tooltip
+          title={downloadMenuOpen ? '' : 'הורדת מסמכי JSON'}
+          placement={theme.direction === 'rtl' ? 'right' : 'left'}
+        >
           <span>
             <MenuButton
               size='sm'
@@ -130,7 +136,7 @@ export default function ClubsPage() {
           </span>
         </Tooltip>
 
-        <Menu placement='bottom-end'>
+        <Menu placement={theme.direction === 'rtl' ? 'left-start' : 'right-start'}>
           {jsonOptions.map(option => (
             <MenuItem
               key={option.id}

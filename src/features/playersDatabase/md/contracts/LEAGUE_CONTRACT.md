@@ -107,3 +107,7 @@ League קנונית אחרת.
 
 במסלול League הפעיל אין Job, Queue, lease, retry אוטומטי או background worker.
 ניסיון חוזר או תיקון מתבצעים רק בפעולה מפורשת לפי כללי הקבלה שלעיל.
+
+## זמני טעינה במסמך הליגה
+
+לכל קבוצה ב־`seasonsById[seasonId].table.teamsById[teamId]` נשמרים `roster.loadedAt` ו־`stats.loadedAt`. אלה הקרנות של זמני הטעינה הקנוניים ב־Team Season, בנפרד מ־`updatedAt` הכללי. טעינת טבלת ליגה חוזרת משמרת אותם. שדה חסר נשאר `null`; אין להסיק תאריך מזמן עדכון כללי.

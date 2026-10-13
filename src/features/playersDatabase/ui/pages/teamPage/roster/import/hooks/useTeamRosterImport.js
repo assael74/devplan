@@ -70,6 +70,7 @@ export default function useTeamRosterImport({
   const [teamRootOptions, setTeamRootOptions] = React.useState([])
   const [busy, setBusy] = React.useState(false)
   const [rosterImportPlan, setRosterImportPlan] = React.useState(null)
+  const [planError, setPlanError] = React.useState('')
   const [receiptId, setReceiptId] = React.useState('')
   const [auditResult, setAuditResult] = React.useState(null)
   const [executionReceipt, setExecutionReceipt] = React.useState(null)
@@ -327,6 +328,7 @@ export default function useTeamRosterImport({
 
   React.useEffect(() => {
     setRosterImportPlan(null)
+    setPlanError('')
     resetExecution()
   }, [missingRosterPlayers, resetExecution, rows])
 
@@ -405,6 +407,7 @@ export default function useTeamRosterImport({
 
   const preparePlan = React.useCallback(async () => {
     if (!selectedSeasonOption || hasIdentityErrors || !hasMissingRosterApprovals) return null
+    setPlanError('')
     setBusy(true)
     try {
       const prepare = repairReload ? prepareRosterForAuditRepair : prepareRosterLoad
@@ -413,6 +416,7 @@ export default function useTeamRosterImport({
       return plan
     } catch (error) {
       console.error('[playersDatabase/roster-plan]', error)
+      setPlanError(error?.message || 'לא ניתן להכין את הסגל לטעינה')
       notify({
         status: SNACK_STATUS.ERROR,
         title: 'בדיקת הסגל נכשלה',
@@ -606,6 +610,7 @@ export default function useTeamRosterImport({
     missingRosterPlayers,
     teamRootOptions,
     rosterImportPlan,
+    planError,
     receiptId,
     auditResult,
     listenerConfirmed,

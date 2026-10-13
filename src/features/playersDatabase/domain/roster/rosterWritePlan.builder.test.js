@@ -93,6 +93,59 @@ const buildLoad = overrides => buildRosterLoadWritePlan({
   ...overrides,
 })
 
+describe('previous roster identity decisions', () => {
+  const previousSeasonId = '2024_2025'
+  const previousDocumentId = `${teamId}__${previousSeasonId}`
+  const historicalSources = {
+    existingTeamRoot: { identity: { ...team, teamId }, seasonRefsById: {
+      [previousSeasonId]: { teamSeasonDocumentId: previousDocumentId },
+    } },
+    previousTeamSeason: {
+      identity: { teamId, seasonId: previousSeasonId, teamSeasonDocumentId: previousDocumentId },
+      roster: { playersById: { [playerId]: { ...player, playerId } } },
+    },
+  }
+  const decision = {
+    playerId,
+    fullName: 'Player One',
+    decision: 'left',
+    team: { teamId: 'club-b_2010_1', clubId: 'club-b', teamSlot: 1 },
+  }
+
+  test.each(['left', 'unknown'])('accepts historical %s without adding current roster membership', resolution => {
+    const plan = buildLoad({
+      ...historicalSources,
+      players: [],
+      participantDecisions: [{ ...decision, decision: resolution }],
+    })
+    expect(plan.canonical.teamSeason.roster.playersById).toEqual({})
+    const movement = plan.canonical.teamSeason.movement
+    if (resolution === 'left') {
+      expect(Object.values(movement.transfersOutById)[0].playerId).toBe(playerId)
+      expect(plan.counterparts).toEqual([])
+    } else {
+      expect(plan.canonical.teamSeason.roster.pendingById[playerId].fullName).toBe('Player One')
+    }
+  })
+
+  test('rejects an unverified decision with the player name', () => {
+    expect(() => buildLoad({ players: [], participantDecisions: [decision] }))
+      .toThrow('Player One')
+  })
+
+  test('rejects a historical document belonging to another team', () => {
+    expect(() => buildLoad({
+      ...historicalSources,
+      players: [],
+      participantDecisions: [decision],
+      previousTeamSeason: {
+        ...historicalSources.previousTeamSeason,
+        identity: { ...historicalSources.previousTeamSeason.identity, teamId: 'other' },
+      },
+    })).toThrow('סגל העונה הקודמת אינו תואם')
+  })
+})
+
 describe('roster target write plan', () => {
   test('builds Player Season with catalog identity and no Player Root write', () => {
     const plan = buildLoad()
@@ -104,6 +157,8 @@ describe('roster target write plan', () => {
       teamSlot: 1,
     })
     expect(plan.canonical.teamSeason.identity.teamSeasonDocumentId).toBe(teamSeasonDocumentId)
+    expect(plan.canonical.teamSeason.roster.rosterImport.loadedAt).toBe(updatedAt)
+    expect(plan.leagueProjection.roster.loadedAt).toBe(updatedAt)
     expect(plan.playerSeasons).toHaveLength(1)
     expect(plan.playerSeasons[0]).toMatchObject({
       operation: 'UPSERT_TEAM',
@@ -220,7 +275,7 @@ describe('roster target write plan', () => {
       playerRootsById: {},
       existingPlayerSeasonsById: {},
       existingPlayerSearchIndexes: [],
-      updatedAt,
+      updatedAt: '2026-10-14T10:00:00.000Z',
     })
 
     expect(repairPlan).not.toHaveProperty('canonical')
@@ -231,6 +286,7 @@ describe('roster target write plan', () => {
     expect(repairPlan.leagueProjection.roster).toEqual({
       playersCount: 1,
       hasPlayers: true,
+      loadedAt: updatedAt,
     })
   })
 

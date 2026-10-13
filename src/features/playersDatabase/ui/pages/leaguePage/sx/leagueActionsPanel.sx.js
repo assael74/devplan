@@ -93,13 +93,6 @@ export const leagueActionsPanelSx = {
     lineHeight: 1.2,
   },
 
-  priorityFiltersRow: {
-    width: '100%',
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gap: 0.75,
-  },
-
   sidePanelDivider: {
     my: 0.15,
     borderColor: devPlanColors.border,
@@ -205,6 +198,8 @@ export const leagueActionsPanelSx = {
   taskSection: {
     minHeight: 0,
     flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
     mt: 0.25,
     pt: 1,
     borderTop: '2px solid #d6e2eb',

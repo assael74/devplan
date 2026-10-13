@@ -113,11 +113,13 @@ const normalizePerformance = value => {
 const normalizeRosterProjection = value => ({
   playersCount: toNullableNumber(value && value.playersCount),
   hasPlayers: Boolean(value && value.hasPlayers),
+  loadedAt: value && value.loadedAt || null,
 })
 
 const normalizeStatsProjection = value => ({
   hasStats: Boolean(value && value.hasStats),
   statsComplete: Boolean(value && value.statsComplete),
+  loadedAt: value && value.loadedAt || null,
 })
 
 const normalizeScoutingProjection = value => ({

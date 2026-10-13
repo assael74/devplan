@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/pages/teamPage/sx/teamActionsPanel.sx.js
+
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const teamActionsPanelSx = {
@@ -352,7 +354,11 @@ export const teamActionsPanelSx = {
 
   tasksSection: {
     width: '100%',
-    display: 'grid',
+    minHeight: 0,
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
     gap: 0.5,
   },
 

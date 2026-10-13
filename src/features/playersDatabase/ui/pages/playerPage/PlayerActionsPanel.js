@@ -1,5 +1,7 @@
 // src/features/playersDatabase/ui/pages/playerPage/PlayerActionsPanel.js
 
+import { useState } from 'react'
+import { useTheme } from '@mui/joy/styles'
 import {
   Box,
   Button,
@@ -31,11 +33,18 @@ export default function PlayerActionsPanel({
   downloadDisabled = false,
   downloadBusy = false,
 }) {
+  const theme = useTheme()
+  const [downloadMenuOpen, setDownloadMenuOpen] = useState(false)
   return (
     <PageSidePanel
+      scrollable={false}
       collapsible={collapsible}
       collapsed={collapsed}
       onCollapsedChange={onCollapsedChange}
+      collapsedActions={[
+        { label: 'פיזור שערים', iconId: 'goals', onClick: () => onAction('additional') },
+        { label: 'קישור לאתר ההתאחדות', iconId: 'addLink', onClick: () => onAction('link') },
+      ]}
     >
       <Box sx={sx.recommendedBox}>
         <Box sx={sx.sectionHeading}>
@@ -101,8 +110,11 @@ export default function PlayerActionsPanel({
 
       <Box sx={sx.actionList}>
         <Box sx={sx.dataActionsRow}>
-          <Dropdown>
-            <Tooltip title='הורדת מסמכים'>
+          <Dropdown onOpenChange={(_event, open) => setDownloadMenuOpen(open)}>
+            <Tooltip
+              title={downloadMenuOpen ? '' : 'הורדת מסמכים'}
+              placement={theme.direction === 'rtl' ? 'right' : 'left'}
+            >
               <span>
                 <MenuButton
                   size='md'
@@ -115,7 +127,7 @@ export default function PlayerActionsPanel({
                 </MenuButton>
               </span>
             </Tooltip>
-            <Menu placement='bottom-end'>
+            <Menu placement={theme.direction === 'rtl' ? 'left-start' : 'right-start'}>
               <MenuItem disabled={downloadBusy} onClick={onDownloadDocuments}>
                 הורדת מסמכי העמוד
               </MenuItem>

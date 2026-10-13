@@ -56,6 +56,7 @@ export const writeStatsPlayerSeasons = async ({ approvedState = {} } = {}) => {
         [teamId]: {
           stats: projection.team.stats,
           scouting: projection.team.scouting,
+          manual: { playerUrl: projection.team.manual?.playerUrl || '' },
           updatedAt: projection.team.updatedAt,
         },
       },
@@ -67,6 +68,7 @@ export const writeStatsPlayerSeasons = async ({ approvedState = {} } = {}) => {
         new FieldPath('identity', 'seasonStatus'),
         new FieldPath('teamsById', teamId, 'stats'),
         new FieldPath('teamsById', teamId, 'scouting'),
+        new FieldPath('teamsById', teamId, 'manual', 'playerUrl'),
         new FieldPath('teamsById', teamId, 'updatedAt'),
         new FieldPath('timestamps', 'updatedAt'),
       ],

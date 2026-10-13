@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/components/tables/dataTable/sx/dataTable.sx.js
+// src/features/playersDatabase/ui/components/tables/dataTable/sx/dataTable.sx.js
 
 import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
@@ -19,32 +19,25 @@ export const dataTableSx = {
     display: 'grid',
     gridTemplateRows: 'auto minmax(0, 1fr)',
     overflow: 'hidden',
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    '& thead th': {
+      borderTopLeftRadius: 0,
+      borderTopRightRadius: 0,
+    },
   },
 
   headerWrap: {
     minWidth: 0,
-    overflowX: 'hidden',
-    overflowY: 'scroll',
+    overflow: 'hidden',
+    bgcolor: '#f5f8fd',
     borderBottom: '1px solid #dbe5f4',
-    // Reserve the same scrollbar gutter as the scrollable body table.
-    // Without it, the split header has a few pixels more width and its
-    // column boundaries drift from the body in RTL layouts.
-    scrollbarWidth: 'thin',
-    scrollbarColor: 'transparent transparent',
-
-    '&::-webkit-scrollbar': {
-      width: 6,
-    },
-
-    '&::-webkit-scrollbar-track, &::-webkit-scrollbar-thumb': {
-      background: 'transparent',
-    },
   },
 
   bodyWrap: {
     minWidth: 0,
     minHeight: 0,
-    overflowY: 'auto',
+    overflowY: 'scroll',
     overflowX: 'hidden',
   },
 
@@ -94,6 +87,9 @@ export const dataTableSx = {
       pl: 1.5,
     },
 
+  },
+
+  rowHover: {
     '& tbody tr:hover': {
       bgcolor: devPlanColors.primaryLight,
     },

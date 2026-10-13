@@ -593,8 +593,22 @@ export const buildStatsLoadApprovedState = ({
     reason: clean(scoutAvailability.availabilityReason) || (leagueContext.teamGamePlayed < 8 ? 'season_sample_insufficient' : ''),
   }
 
+  const playerUrlsById = {}
+  const manual = clone(object(existingTeamSeason.manual))
+  normalizedIncoming.forEach(row => {
+    const playerUrl = clean(row.playerUrl)
+    if (!playerUrl) return
+    playerUrlsById[row.playerId] = playerUrl
+    manual.playersById = { ...object(manual.playersById) }
+    manual.playersById[row.playerId] = {
+      ...object(manual.playersById[row.playerId]),
+      playerUrl,
+      updatedAt: updatedAt || null,
+    }
+  })
   const teamSeason = {
     ...existingTeamSeason,
+    manual,
     roster: {
       ...object(existingTeamSeason.roster),
       playersById: rosterPlayersById,
@@ -629,6 +643,7 @@ export const buildStatsLoadApprovedState = ({
     stats: {
       hasStats: Object.values(nextStatsPlayers).some(player => clean(player.statsStatus) === 'loaded'),
       statsComplete: true,
+      loadedAt: teamSeason.stats.statsLoadState.updatedAt || null,
     },
     scouting: {
       playersWithScoutProfileCount,
@@ -720,6 +735,7 @@ export const buildStatsLoadApprovedState = ({
       },
     },
     canonicalTeamSeason: teamSeason,
+    playerUrlsById,
     rosterParticipationPatch: participantDecisions.length ? {
       teamSeasonDocumentId: buildTeamSeasonDocumentId({ teamId: resolvedTeamId, seasonId: resolvedSeasonId }),
       roster: teamSeason.roster,
@@ -883,6 +899,9 @@ export const buildStatsProjectionRepairApprovedState = ({
         stats: {
           hasStats: loadedStatsPlayers.length > 0,
           statsComplete: clean(object(object(teamSeason.stats).statsLoadState).status) === 'loaded',
+          loadedAt: clean(object(object(teamSeason.stats).statsLoadState).status) === 'loaded'
+            ? object(object(teamSeason.stats).statsLoadState).updatedAt || null
+            : null,
         },
         scouting: {
           playersWithScoutProfileCount,

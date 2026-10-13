@@ -13,15 +13,16 @@ import { pageSidePanelSx as sx } from './sx/pageSidePanel.sx.js'
 
 export default function PageSidePanel({
   children,
-  scrollable = false,
+  scrollable = true,
   collapsible = false,
   collapsed: controlledCollapsed,
-  defaultCollapsed = false,
+  defaultCollapsed = true,
+  collapsedActions = [],
   onCollapsedChange,
 }) {
   const [uncontrolledCollapsed, setUncontrolledCollapsed] = React.useState(defaultCollapsed)
   const isControlled = typeof controlledCollapsed === 'boolean'
-  const collapsed = isControlled ? controlledCollapsed : uncontrolledCollapsed
+  const collapsed = collapsible && (isControlled ? controlledCollapsed : uncontrolledCollapsed)
 
   const handleCollapsedChange = () => {
     const nextCollapsed = !collapsed
@@ -32,6 +33,25 @@ export default function PageSidePanel({
 
   return (
     <InfoPanel sx={[sx.panel, collapsed && sx.collapsedPanel]}>
+      {collapsible && collapsed && collapsedActions.length ? (
+        <Stack spacing={0.75} sx={sx.collapsedActions}>
+          {collapsedActions.map(action => (
+            <Tooltip key={action.label} title={action.disabled && action.disabledReason ? action.disabledReason : action.label} placement='top'>
+              <span>
+                <IconButton
+                  aria-label={action.label}
+                  variant='outlined'
+                  disabled={action.disabled}
+                  onClick={action.onClick}
+                  sx={sx.floatingActionButton}
+                >
+                  {iconUi({ id: action.iconId, size: 'sm' })}
+                </IconButton>
+              </span>
+            </Tooltip>
+          ))}
+        </Stack>
+      ) : null}
       {collapsible ? (
         <Tooltip title={collapsed ? 'פתיחת סרגל הצד' : 'קיפול סרגל הצד'}>
           <IconButton

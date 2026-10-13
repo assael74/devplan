@@ -1,5 +1,7 @@
 // src/features/playersDatabase/ui/pages/leagueCenterPage/logic/leagueCenterTableGroups.js
 
+import { sortDataTableRows } from '../../../components/tables/dataTable/dataTable.sort.js'
+
 const toNumber = value => Number(value || 0)
 
 const seasonOrder = seasonKey => (
@@ -43,4 +45,24 @@ export const buildLeagueCenterTableGroups = rows => {
       }, row]
       : [row]
   })
+}
+
+// Section headers stay in place; only leagues within the same season/year are sorted.
+export const sortLeagueCenterTableRows = ({ rows, column, direction }) => {
+  const result = []
+  let section = []
+  const flush = () => {
+    result.push(...sortDataTableRows({ rows: section, column, direction }))
+    section = []
+  }
+  rows.forEach(row => {
+    if (row.fullWidthMessage) {
+      flush()
+      result.push(row)
+    } else {
+      section.push(row)
+    }
+  })
+  flush()
+  return result
 }

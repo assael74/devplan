@@ -19,6 +19,9 @@ export default function LeagueCenterSidePanel({
       collapsible={collapsible}
       collapsed={collapsed}
       onCollapsedChange={onCollapsedChange}
+      collapsedActions={[
+        { label: 'פתיחת משימה', iconId: 'add', onClick: onOpenTask },
+      ]}
     >
       <LeagueCenterWorkArea
         tasks={tasks}

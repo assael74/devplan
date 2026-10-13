@@ -20,6 +20,7 @@ import ImportActionArea from '../../../../../components/modals/ImportActionArea.
 import ClubSlotSelect from '../../../../../components/modals/components/ClubSlotSelect.js'
 import ImportModalContextDescription from '../../../../../components/modals/ImportModalContextDescription.js'
 import { PLAYER_ROSTER_COLUMNS, PLAYER_ROSTER_PLACEHOLDER } from '../logic/rosterImport.constants.js'
+import { buildRosterImportSummary } from '../logic/rosterImportSummary.model.js'
 import PasteArea from '../../../../../components/modals/paste/PasteArea.js'
 import PreviewTable from '../../../../../components/modals/paste/PreviewTable.js'
 import StatusCell from '../../../../../components/modals/paste/StatusCell.js'
@@ -49,11 +50,12 @@ const teamSlotOf = team => Number(team?.birthTeamSlot || team?.teamSlot || 1)
 
 function RosterImportSummary({ controller, onBackToMissing }) {
   const plan = controller.rosterImportPlan
-  const preview = plan?.preview || {}
-  const counterparts = Array.isArray(plan?.counterpartStates) ? plan.counterpartStates : []
-  const persistedPlayers = Array.isArray(plan?.persistedSeason?.teamPlayers)
-    ? plan.persistedSeason.teamPlayers
-    : []
+  const { preview, counterparts, players: persistedPlayers, pendingPlayers } = buildRosterImportSummary({
+    plan,
+    rows: controller.rows,
+    missingPlayers: controller.missingRosterPlayers,
+    teamOptions: controller.teamRootOptions,
+  })
   const isEmptyPreview = !persistedPlayers.length &&
     !(preview.transfersInCount || 0) &&
     !(preview.transfersOutCount || 0) &&
@@ -87,7 +89,7 @@ function RosterImportSummary({ controller, onBackToMissing }) {
       <Card variant='soft' sx={[sx.summaryLeadCard, isEmptyPreview ? sx.summaryLeadCardEmpty : null]}>
         <Typography level='title-md'>סיכום לפני טעינה</Typography>
         <Typography level='body-sm'>
-          {preview.playersCount || 0} שחקנים בסגל · {preview.transfersInCount || 0} הצטרפו · {preview.transfersOutCount || 0} עזבו · {preview.pendingPlayersCount || 0} ממתינים
+          {preview.playersCount || 0} שחקנים בסגל הפעיל · {preview.transfersInCount || 0} הצטרפו · {preview.transfersOutCount || 0} עזבו · {preview.pendingPlayersCount || 0} ממתינים
         </Typography>
       </Card>
 
@@ -97,19 +99,23 @@ function RosterImportSummary({ controller, onBackToMissing }) {
           זה הסגל שיישמר במקור האמת לאחר האישור.
         </Typography>
         <Stack spacing={0.5}>
+          {!persistedPlayers.length ? (
+            <Typography level='body-sm'>אין שחקנים בסגל המתוכנן לשמירה.</Typography>
+          ) : null}
           {persistedPlayers.map((player, index) => (
             <Typography
               key={player.playerId || `${playerName(player)}-${index}`}
               level='body-sm'
             >
               {index + 1}. {playerName(player) || player.playerId || 'שחקן'}
+              {player.rosterStatus === 'left' ? ' · עזב' : player.rosterStatus === 'youngerAgeGroup' ? ' · משנתון צעיר' : ''}
             </Typography>
           ))}
         </Stack>
       </Card>
 
       <Card variant='outlined' sx={[sx.summaryCard, !preview.teamBalance ? sx.summaryCardEmpty : null]}>
-        <Typography level='title-sm'>איזון הסגל לאחר העדכון</Typography>
+        <Typography level='title-sm'>נתוני איזון שמורים</Typography>
         {preview.teamBalance ? (
           <Stack spacing={0.5} sx={{ mt: 0.75 }}>
             <Typography level='body-sm'>
@@ -124,6 +130,17 @@ function RosterImportSummary({ controller, onBackToMissing }) {
         )}
       </Card>
 
+      {pendingPlayers.length ? (
+        <Card variant='outlined' sx={sx.summaryCard}>
+          <Typography level='title-sm'>שחקנים שמצבם לא ידוע</Typography>
+          {pendingPlayers.map(player => (
+            <Typography key={player.playerId} level='body-sm'>
+              {playerName(player) || player.playerId}
+            </Typography>
+          ))}
+        </Card>
+      ) : null}
+
       {counterparts.length ? (
         <Card variant='outlined' sx={sx.summaryCard}>
           <Typography level='title-sm'>מעברים ומסמכים מקבילים</Typography>
@@ -131,12 +148,12 @@ function RosterImportSummary({ controller, onBackToMissing }) {
             {counterparts.map((row, index) => (
               <Box key={`${row.movementId || row.playerId}-${index}`}>
                 <Typography level='body-sm' fontWeight='lg'>
-                  {row.playerName || row.playerId || 'שחקן'} · {row.teamName || row.birthTeamDocumentId}
+                  {row.playerName || row.playerId || 'שחקן'} · {row.direction === 'in' ? 'הצטרף מ־' : 'עזב ל־'}{row.teamName}
                 </Typography>
                 <Typography level='body-xs' color={row.exists ? 'success' : 'neutral'}>
                   {row.exists
                     ? 'נמצא מסמך קבוצה מקביל — מתוכנן עדכון לאחר שמירת מקור האמת'
-                    : 'לא נמצא מסמך קבוצה מקביל לעדכון'}
+                    : 'לא מתוכנן עדכון למסמך קבוצה מקביל בפעולה הזו'}
                 </Typography>
               </Box>
             ))}
@@ -178,7 +195,8 @@ function RosterClubSlotSelect({
       getSlotValue={teamIdOf}
       getSlotLabel={teamSlotOf}
       onClubChange={club => {
-        const team = (club?.availableTeams || []).find(item => teamSlotOf(item) === 1) || null
+        const availableTeams = club?.availableTeams || []
+        const team = availableTeams.find(item => teamSlotOf(item) === 1) || availableTeams[0] || null
         onChange?.({ club, team })
       }}
       onSlotChange={nextTeamId => {
@@ -419,12 +437,20 @@ function MissingRosterStep({ controller }) {
     return (
       <Card variant='soft'>
         <Typography level='title-sm'>כל שחקני הסגל הקודם נמצאו בסגל החדש</Typography>
+        {controller.planError ? (
+          <Typography role='alert' level='body-sm' color='danger'>{controller.planError}</Typography>
+        ) : null}
       </Card>
     )
   }
 
   return (
     <Card sx={{ minWidth: 0, overflow: 'hidden' }}>
+      {controller.planError ? (
+        <Typography role='alert' level='body-sm' color='danger'>
+          {controller.planError}
+        </Typography>
+      ) : null}
       <Box sx={sx.missingRosterHeader}>
         <Box>
           <Typography level='title-sm'>חסרים מהסגל הקודם · {players.length} שחקנים</Typography>

@@ -14,14 +14,24 @@ function clean(value) {
   ).trim()
 }
 
-const buildClubOptions = clubs => clubs.map(club => ({
-  value: club.id,
-  label: club.name,
-  displayLabel: club.shortName || club.name,
-  searchText: clubIdentityNames(club)
-    .filter(Boolean)
-    .join(' '),
-}))
+const clubCatalogOrder = new Map(
+  PLAYERS_DATABASE_CLUBS_CATALOG.map((club, index) => [club.id, index])
+)
+
+const clubOrder = club => clubCatalogOrder.has(club.id)
+  ? clubCatalogOrder.get(club.id)
+  : PLAYERS_DATABASE_CLUBS_CATALOG.length
+
+const buildClubOptions = clubs => [...clubs]
+  .sort((left, right) => clubOrder(left) - clubOrder(right))
+  .map(club => ({
+    value: club.id,
+    label: club.name,
+    displayLabel: club.shortName || club.name,
+    searchText: clubIdentityNames(club)
+      .filter(Boolean)
+      .join(' '),
+  }))
 
 const teamSlotOptions = [
   {

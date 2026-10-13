@@ -1,4 +1,6 @@
+// src/features/firestoreUsage/components/UsageDrilldownDrawer.js
 import React from 'react'
+import { createIsraelDateTimeFormatter } from '../../../shared/format/dateUtils.js'
 import {
   Box,
   Chip,
@@ -20,7 +22,7 @@ const formatDateTime = value => {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '-'
 
-  return new Intl.DateTimeFormat('he-IL', {
+  return createIsraelDateTimeFormatter({
     dateStyle: 'short',
     timeStyle: 'medium',
   }).format(date)

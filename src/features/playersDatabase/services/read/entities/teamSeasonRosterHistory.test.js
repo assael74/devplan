@@ -47,4 +47,14 @@ describe('readTeamSeasonRosterHistory', () => {
       { playerId: 'player__2011__10000' },
     ])
   })
+
+  test('includes the stored manual link for players in the previous roster', async () => {
+    getTeamSeasonByDocumentId.mockResolvedValue({
+      identity: { seasonId: '2025_2026' },
+      roster: { playersById: { p1: { playerId: 'p1', fullName: 'Player' } } },
+      manual: { playersById: { p1: { playerUrl: '/players/player/?player_id=12345' } } },
+    })
+    const result = await readTeamSeasonRosterHistory({ birthTeamDocumentId: 'team-1', seasonId: '2026_2027' })
+    expect(result.previousSeason.teamPlayers[0].playerUrl).toBe('/players/player/?player_id=12345')
+  })
 })
