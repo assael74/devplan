@@ -18,17 +18,19 @@ export default function LeagueCenterHeader({
   const actions = (
     <Stack direction='row' spacing={1} sx={sx.headerActions}>
       <Button
+        size='sm'
         sx={sx.primaryButton}
         startDecorator={iconUi({id: 'playerDatabase', size: 'sm'})}
         onClick={onNavigateToSearch}
       >
-        מעבר לעמוד חיפוש
+        לעמוד חיפוש
       </Button>
 
       <Button
+        size='sm'
         variant='outlined'
         sx={sx.secondaryButton}
-        startDecorator={iconUi({id: 'back', size: 'sm'})}
+        endDecorator={iconUi({id: 'back', size: 'sm'})}
         onClick={onNavigateToEntry}
       >
         חזרה לדף הפתיחה

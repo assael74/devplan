@@ -339,7 +339,6 @@ export default function StatsImportModal({
   const handleClose = () => {
     if (syncLocked) return
 
-    controller.clearPaste()
     controller.close()
   }
   const confirmLabel = collectingDocuments

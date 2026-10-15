@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/positionClassification/model/teamPositionClassificationRows.model.js
 import {
   buildTeamPlayerLineClassificationEvaluation,
   isTeamLineBalanceRelevantPlayer,
@@ -192,6 +193,7 @@ export const buildPositionClassificationRows = ({
 
       return {
         id: clean(player?.playerId || player?.playerDocumentId || player?.id || index),
+        favoriteKey: getPlayerIdentityKeys(player)[0] || '',
         sourceIndex: clean(player?.index || player?.statsIndex),
         player: playerWithScoutProfile,
         name: clean(player?.fullName || player?.name || player?.playerName) || 'שחקן ללא שם',

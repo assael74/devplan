@@ -1,23 +1,27 @@
-import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
+// src/features/playersDatabase/ui/pages/teamPage/yearDevelopment/sx/teamYearMetricsSection.sx.js
+import { COLORS, devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 export const teamYearMetricsSectionSx = {
-  ageGroup: {
-    color: devPlanColors.secondary,
-    fontSize: 10,
-    fontWeight: 700,
-    whiteSpace: 'nowrap',
-  },
-
-  cardSeason: {
-    color: devPlanColors.secondary,
-    fontSize: 11,
+  metricContext: {
+    minWidth: 0,
+    color: COLORS.status.warning.text,
+    bgcolor: COLORS.status.warning.softBg,
+    px: 0.6,
+    py: 0.35,
+    borderRadius: 5,
+    fontSize: 10.5,
     fontWeight: 800,
+    lineHeight: 1.2,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
 
   cell: {
     minWidth: 0,
-    minHeight: 43,
-    p: 0.65,
+    minHeight: 34,
+    px: 0.55,
+    py: 0.2,
     borderInlineStart: `1px solid ${devPlanColors.border}`,
     borderTop: `1px solid ${devPlanColors.border}`,
     bgcolor: devPlanColors.surface,
@@ -25,43 +29,11 @@ export const teamYearMetricsSectionSx = {
 
   currentSeasonHead: {
     bgcolor: devPlanColors.primaryLight,
+    borderBottomColor: devPlanColors.tertiaryDark,
   },
 
   currentValueCell: {
     bgcolor: devPlanColors.primaryLight,
-  },
-
-  leagueCard: {
-    minWidth: 0,
-    p: 0.85,
-    border: `1px solid ${devPlanColors.border}`,
-    borderRadius: 9,
-    bgcolor: devPlanColors.surface,
-    display: 'grid',
-    alignContent: 'start',
-    gap: 0.35,
-  },
-
-  leagueCardCurrent: {
-    bgcolor: devPlanColors.primaryLight,
-    borderColor: devPlanColors.primary,
-  },
-
-  leagueCardHead: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 0.5,
-  },
-
-  leaguePath: {
-    display: 'grid',
-    gridTemplateColumns: {
-      xs: '1fr',
-      sm: 'repeat(2, minmax(0, 1fr))',
-      lg: 'repeat(4, minmax(0, 1fr))',
-    },
-    gap: 1,
   },
 
   metricGroup: {
@@ -71,9 +43,12 @@ export const teamYearMetricsSectionSx = {
   metricHead: {
     borderInlineStart: 0,
     borderTop: 0,
+    borderBottom: `2px solid ${devPlanColors.tertiary}`,
     bgcolor: devPlanColors.secondaryLight,
-    minHeight: 30,
-    p: 0.25,
+    minHeight: 36,
+    p: 0.35,
+    display: 'flex',
+    alignItems: 'center',
   },
 
   metricIcon: {
@@ -100,15 +75,13 @@ export const teamYearMetricsSectionSx = {
 
   seasonHead: {
     borderTop: 0,
+    borderBottom: `2px solid ${devPlanColors.tertiary}`,
     bgcolor: devPlanColors.secondaryLight,
-    minHeight: 30,
-    py: 0.25,
-  },
-
-  seasonTitle: {
-    color: devPlanColors.primaryDark,
-    fontSize: 12,
-    fontWeight: 900,
+    minHeight: 36,
+    py: 0.35,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   timeline: {
@@ -139,6 +112,10 @@ export const teamYearMetricsSectionSx = {
     display: 'inline-flex',
     alignItems: 'center',
     minWidth: 0,
+  },
+
+  valueWarning: {
+    color: COLORS.status.warning.text,
   },
 
   valueChangeChip: {

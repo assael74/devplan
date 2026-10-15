@@ -58,8 +58,9 @@ export default function DataOpsLayout() {
   const actions = (
     <Button
       type='button'
+      size='sm'
       variant='outlined'
-      startDecorator={iconUi({ id: 'back', size: 'sm' })}
+      endDecorator={iconUi({ id: 'back', size: 'sm' })}
       onClick={() => navigate(returnPath, { state: location.state })}
       sx={sx.backButton}
     >
@@ -87,7 +88,7 @@ export default function DataOpsLayout() {
                 {iconUi({ id: 'playersDatabase', size: 'lg' })}
               </Box>
             )}
-            <Typography level='h2'>{pageMeta.title}</Typography>
+            <Typography level='h1' sx={sx.headerTitle}>{pageMeta.title}</Typography>
           </Box>
         </PageHeader>
 

@@ -19,6 +19,7 @@ export default function DataOpsQuickAccessButton() {
   return (
     <Button
       type='button'
+      size='sm'
       variant='solid'
       startDecorator={iconUi({ id: 'data', size: 'sm' })}
       onClick={() => navigate(
@@ -26,8 +27,6 @@ export default function DataOpsQuickAccessButton() {
         { state: buildDataOpsNavigationState(location) }
       )}
       sx={{
-        minHeight: 38,
-        px: 2,
         whiteSpace: 'nowrap',
         bgcolor: '#173f5f',
         '&:hover': {

@@ -21,6 +21,7 @@ const downloadJson = ({ data, fileName }) => {
 }
 
 export const downloadTeamPageDocumentsJson = ({
+  clubsDirectoryDocument = null,
   leagueDocument = null,
   leagueDocuments = [],
   teamDocument = null,
@@ -45,6 +46,13 @@ export const downloadTeamPageDocumentsJson = ({
       fileName: `league-${safeFilePart(document.id || document.leagueId)}.json`,
     })
   })
+
+  if (clubsDirectoryDocument && clubsDirectoryDocument.documentExists !== false) {
+    downloadJson({
+      data: clubsDirectoryDocument,
+      fileName: 'clubs-directory-all.json',
+    })
+  }
 
   if (teamDocument) {
     downloadJson({

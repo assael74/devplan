@@ -1,14 +1,16 @@
+// src/features/playersDatabase/ui/pages/teamPage/sx/teamHeader.sx.js
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
+import {
+  pageHeaderContextChipSx,
+  pageHeaderFavoriteSx,
+  pageHeaderMediaSx,
+  pageHeaderTitleSx,
+} from '../../../components/page/sx/pageHeader.sx.js'
 
 export const teamHeaderSx = {
   pageTitle: {
+    ...pageHeaderTitleSx,
     color: devPlanColors.primaryDark,
-    fontSize: {
-      xs: 34,
-      md: 44,
-    },
-    lineHeight: 1.05,
-    fontWeight: 700,
   },
 
   pageTitleLink: {
@@ -36,8 +38,7 @@ export const teamHeaderSx = {
   },
 
   teamLogo: {
-    width: 42,
-    height: 42,
+    ...pageHeaderMediaSx,
     flex: '0 0 auto',
     objectFit: 'contain',
     border: `1px solid ${devPlanColors.primary}`,
@@ -46,35 +47,25 @@ export const teamHeaderSx = {
   },
 
   favoriteButton: {
-    width: 34,
-    height: 34,
-    minWidth: 34,
-    minHeight: 34,
-    '--Icon-fontSize': '25px',
+    ...pageHeaderFavoriteSx,
   },
 
   contextChip: {
-    minHeight: 34,
-    px: 1.4,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 999,
+    ...pageHeaderContextChipSx,
     bgcolor: '#fff',
     border: `1px solid ${devPlanColors.primary}`,
     color: devPlanColors.primaryDark,
-    fontSize: 13,
-    fontWeight: 700,
-    lineHeight: 1,
-    whiteSpace: 'nowrap',
   },
 
   birthYearChip: {
     bgcolor: devPlanColors.tertiary,
     color: '#fff',
     borderColor: devPlanColors.primary,
-    fontSize: 15,
     boxShadow: '0 6px 16px rgba(47, 134, 199, 0.20)',
+  },
+
+  clubLevelChip: {
+    fontWeight: 800,
   },
 
   headerActions: {
@@ -89,8 +80,6 @@ export const teamHeaderSx = {
   },
 
   primaryButton: {
-    minHeight: 38,
-    px: 2,
     bgcolor: devPlanColors.primary,
     color: '#fff',
 
@@ -100,8 +89,6 @@ export const teamHeaderSx = {
   },
 
   secondaryButton: {
-    minHeight: 38,
-    px: 2,
     bgcolor: '#fff',
     color: devPlanColors.primary,
     borderColor: devPlanColors.primary,

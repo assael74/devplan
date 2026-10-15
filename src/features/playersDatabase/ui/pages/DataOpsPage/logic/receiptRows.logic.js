@@ -21,6 +21,21 @@ const DOMAIN_LABELS = Object.freeze({
   stats: 'סטטיסטיקות',
 })
 
+const RECEIPT_DETAIL_LABELS = {
+  confirmed: 'נשמר בהצלחה', pending: 'ממתין לשמירה', failed_or_unknown: 'השמירה לא אושרה',
+  running: 'בתהליך', failed: 'נעצר', succeeded: 'הושלם',
+  canonical: 'שמירת הנתונים הראשיים', counterparts: 'עדכון מעברים בין קבוצות',
+  playerRoots: 'עדכון שחקנים', playerSeasons: 'עדכון עונות השחקנים',
+  playerSearchIndexes: 'עדכון חיפוש השחקנים', leagueProjection: 'עדכון נתוני הליגה',
+  leaguesCenter: 'מרכז הליגות', clubsCenter: 'מרכז המועדונים', audit: 'בדיקת סנכרון',
+  teamRoot: 'פרטי הקבוצה', teamSeason: 'עונת הקבוצה', counterpartTeamSeasons: 'עונות הקבוצות הקשורות',
+  leagueMetadata: 'נתוני הקבוצה בליגה', league: 'נתוני הליגה',
+  teamSeasonCompetitionSnapshots: 'נתוני הליגה בעונות הקבוצות',
+  AUDIT_FINDINGS: 'נמצאו הבדלים בין הנתונים שנשמרו', AUDIT_PARTIAL: 'לא ניתן היה לבדוק את כל הנתונים',
+}
+
+export const receiptDetailLabel = value => RECEIPT_DETAIL_LABELS[clean(value)] || 'פרט נוסף'
+
 const toDate = value => {
   if (value && typeof value.toDate === 'function') return value.toDate()
   if (value instanceof Date) return value
@@ -105,19 +120,19 @@ export const buildReceiptDetails = receipt => {
   return {
     ...row,
     actionType: clean(receipt.actionType),
-    canonicalOutcome: clean(receipt.canonicalOutcome) || 'pending',
-    executionStatus: clean(receipt.executionStatus),
+    canonicalOutcome: receiptDetailLabel(receipt.canonicalOutcome || 'pending'),
+    executionStatus: receipt.executionStatus ? receiptDetailLabel(receipt.executionStatus) : 'לא ידוע',
     recoveryRequired: receipt.recoveryRequired === true,
     target: [
-      ['ליגה', clean(target.leagueId)],
-      ['קבוצה', clean(target.teamId)],
-      ['עונה', clean(target.seasonId)],
-      ['מועדון', clean(target.clubId)],
+      ['ליגה', clean(receipt.display?.leagueName || target.leagueId)],
+      ['קבוצה', clean(receipt.display?.teamName || target.teamId)],
+      ['עונה', clean(receipt.display?.seasonKey || target.seasonKey || target.seasonId).replace(/^(20)?(\d{2})[_-](20)?(\d{2})$/, '$2/$4')],
+      ['מועדון', clean(receipt.display?.clubName || target.clubId)],
       ['שחקן', clean(target.playerId)],
     ].filter(([, value]) => Boolean(value)),
-    completedStages: Object.keys(completedByStage),
-    failedStage: clean(failed.stageId),
-    failedReason: clean(failed.errorCode),
+    completedStages: Object.keys(completedByStage).map(receiptDetailLabel),
+    failedStage: failed.stageId ? receiptDetailLabel(failed.stageId) : '',
+    failedReason: failed.errorCode ? (RECEIPT_DETAIL_LABELS[clean(failed.errorCode)] || 'הפעולה נעצרה עקב שגיאה') : '',
     auditCoverage: clean(receipt.audit && receipt.audit.coverage),
     findingsCount: receipt.audit && Number.isFinite(Number(receipt.audit.findingsCount))
       ? Number(receipt.audit.findingsCount)

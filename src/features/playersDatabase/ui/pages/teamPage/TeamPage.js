@@ -3,7 +3,6 @@
 import * as React from 'react'
 import {
   Box,
-  Button,
   CircularProgress,
   Typography,
 } from '@mui/joy'
@@ -16,6 +15,7 @@ import { PLAYERS_DATABASE_FAVORITE_TYPES } from '../../../constants/pdb.constant
 import { usePlayersDatabaseFavorites } from '../../favorites/index.js'
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import { useTeamPage } from './hooks/useTeamPage.js'
+import useTeamClubIntelligence from './hooks/useTeamClubIntelligence.js'
 import usePlayersDatabaseTasks from '../../hooks/usePlayersDatabaseTasks.js'
 import usePlayersDatabaseTaskActions from '../../hooks/usePlayersDatabaseTaskActions.js'
 import {
@@ -29,8 +29,9 @@ import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarPr
 import TeamHeader from './TeamHeader.js'
 import TeamActionsPanel from './TeamActionsPanel.js'
 import TeamInformationOverview from './information/components/TeamInformationOverview.js'
-import TeamYearDevelopment from './yearDevelopment/components/TeamYearDevelopment.js'
 import { buildTeamInformationView } from './information/model/teamInformation.model.js'
+import { buildTeamWorkspaceSeasonContext } from './information/model/teamWorkspaceSeason.model.js'
+import { resolveTeamWorkspace } from './information/model/teamWorkspace.navigation.js'
 import {
   buildTeamProfileFilterOptions,
   filterTeamPlayersByProfile,
@@ -69,6 +70,28 @@ const sx = {
 }
 const cleanKey = value => String(value || '').trim()
 
+const buildSeasonInformationView = ({
+  seasonContext,
+  seasonOption,
+  selectedSeasonKey,
+  seasonOptions,
+  seasonSnapshots,
+  clubsDirectory,
+  profileFilterKey,
+}) => buildTeamInformationView({
+  team: seasonContext.team,
+  teamSeasons: seasonSnapshots,
+  selectedTeamSeason: seasonContext.season,
+  selectedSeasonKey: seasonOption?.seasonKey || selectedSeasonKey,
+  selectedSeasonOption: seasonOption,
+  seasonOptions,
+  clubsDirectory,
+  players: seasonContext.visiblePlayers,
+  playerIdsFilter: profileFilterKey === 'all' ? null : seasonContext.visiblePlayers.map(player => (
+    player.playerId || player.id
+  )).filter(Boolean),
+})
+
 function TeamPageContent() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -77,8 +100,6 @@ function TeamPageContent() {
   const tasksModel = usePlayersDatabaseTasks()
   const taskActions = usePlayersDatabaseTaskActions()
   const [profileFilterKey, setProfileFilterKey] = React.useState('all')
-  const [activeView, setActiveView] = React.useState('team')
-  const [jsonDownloadBusy, setJsonDownloadBusy] = React.useState(false)
   const [sidePanelCollapsed, setSidePanelCollapsed] = usePageSidePanelCollapsed(
     'playersDatabase:teamSidePanelCollapsed'
   )
@@ -100,15 +121,32 @@ function TeamPageContent() {
     selectedSeasonOption,
     selectedLeagueSeason,
     selectedTeamSeason,
-    setSelectedSeasonKey,
     loading,
     error,
     refreshError,
     selectionError,
   } = useTeamPage()
-  const auditFindingId = React.useMemo(() => (
-    new URLSearchParams(location.search).get('auditFinding') || ''
-  ), [location.search])
+  const workspace = React.useMemo(
+    () => resolveTeamWorkspace(location.search),
+    [location.search]
+  )
+  const workspaceSeasonOption = React.useMemo(() => (
+    workspace.mode === 'overview'
+      ? selectedSeasonOption
+      : seasonOptions.find(option => option.target === 'current') ||
+        seasonOptions.find(option => option.target !== 'future') ||
+        seasonOptions[0]
+  ), [seasonOptions, selectedSeasonOption, workspace.mode])
+  const overviewRosterSeasonOption = React.useMemo(() => {
+    const params = new URLSearchParams(location.search)
+    const optionKey = params.get('rosterSeason') || params.get('analysisSeason') || ''
+    return seasonOptions.find(option => option.optionKey === optionKey) || workspaceSeasonOption
+  }, [location.search, seasonOptions, workspaceSeasonOption])
+  const clubIntelligence = useTeamClubIntelligence({
+    clubId: team?.clubId,
+    club: clubDoc,
+    seasonOption: workspaceSeasonOption,
+  })
   const statsImportRequest = React.useMemo(() => {
     const params = new URLSearchParams(location.search)
 
@@ -129,10 +167,6 @@ function TeamPageContent() {
   const handledRosterImportRequestRef = React.useRef('')
 
   const selectedLeagueDocument = selectedLeagueSeason?.leagueDoc || leagueDoc
-  const handleRosterSeasonSelect = React.useCallback(optionKey => {
-    setSelectedSeasonKey(optionKey)
-  }, [setSelectedSeasonKey])
-
   const sharedActionContext = {
     leagueId,
     leagueDoc: selectedLeagueDocument,
@@ -267,10 +301,6 @@ function TeamPageContent() {
       },
       { label: team.name },
     ])
-  const profileFilterOptions = React.useMemo(
-    () => buildTeamProfileFilterOptions(players),
-    [players]
-  )
   const visiblePlayers = React.useMemo(() => {
     const filteredPlayers = filterTeamPlayersByProfile({
       players,
@@ -297,32 +327,108 @@ function TeamPageContent() {
 
     setProfileFilterKey(value)
   }, [])
-  const profileFilteredPlayerIds = React.useMemo(() => (
-    profileFilterKey === 'all'
-      ? null
-      : visiblePlayers.map(player => (
-        player.playerId || player.id
-      )).filter(Boolean)
-  ), [profileFilterKey, visiblePlayers])
-  const teamInformationView = React.useMemo(() => buildTeamInformationView({
-    team,
-    teamSeasons: seasonSnapshots,
-    selectedTeamSeason,
-    selectedSeasonKey,
+  const seasonContexts = React.useMemo(() => {
+    const source = {
+      selectedSeasonOption,
+      team,
+      selectedTeamSeason,
+      players,
+      clubsDirectory,
+      leagueDoc,
+      leagueDocuments,
+      teamDoc,
+      teamSeasons,
+    }
+    const buildContext = seasonOption => {
+      const context = buildTeamWorkspaceSeasonContext({ ...source, seasonOption })
+      if (!seasonOption || seasonOption.optionKey === selectedSeasonOption?.optionKey) {
+        return { ...context, visiblePlayers }
+      }
+
+      return {
+        ...context,
+        visiblePlayers: filterTeamPlayersByProfile({
+          players: context.players,
+          profileFilterKey,
+          profileOnly: profileFilterKey !== 'all',
+        }).map(player => ({
+          ...player,
+          favorite: favorites.isPlayerFavorite(player.playerId),
+          favoritePending: favorites.isFavoritePending(
+            PLAYERS_DATABASE_FAVORITE_TYPES.PLAYER,
+            player.playerId
+          ),
+        })),
+      }
+    }
+    const workspaceContext = buildContext(workspaceSeasonOption)
+    const rosterContext = overviewRosterSeasonOption?.optionKey !== workspaceSeasonOption?.optionKey
+      ? buildContext(overviewRosterSeasonOption)
+      : workspaceContext
+
+    return { workspace: workspaceContext, roster: rosterContext }
+  }, [
+    clubsDirectory,
+    favorites.pendingKeysRevision,
+    favorites.playerFavoritesMap,
+    leagueDoc,
+    leagueDocuments,
+    overviewRosterSeasonOption,
+    players,
+    profileFilterKey,
     selectedSeasonOption,
-    seasonOptions,
-    players: visiblePlayers,
-    playerIdsFilter: profileFilteredPlayerIds,
-  }), [
+    selectedTeamSeason,
+    team,
+    teamDoc,
+    teamSeasons,
     visiblePlayers,
-    profileFilteredPlayerIds,
-    selectedSeasonKey,
-    selectedSeasonOption,
-    seasonOptions,
-    selectedTeamSeason,
-    team,
-    seasonSnapshots,
+    workspaceSeasonOption,
   ])
+  const workspaceSeasonContext = seasonContexts.workspace
+  const overviewRosterSeasonContext = seasonContexts.roster
+  const teamInformationView = React.useMemo(() => buildSeasonInformationView({
+    seasonContext: workspaceSeasonContext,
+    seasonOption: workspaceSeasonOption,
+    selectedSeasonKey,
+    seasonOptions,
+    seasonSnapshots,
+    clubsDirectory,
+    profileFilterKey,
+  }), [
+    clubsDirectory,
+    profileFilterKey,
+    selectedSeasonKey,
+    seasonOptions,
+    seasonSnapshots,
+    workspaceSeasonContext,
+    workspaceSeasonOption,
+  ])
+  const overviewRosterView = React.useMemo(() => {
+    if (overviewRosterSeasonContext === workspaceSeasonContext) return teamInformationView
+
+    return buildSeasonInformationView({
+      seasonContext: overviewRosterSeasonContext,
+      seasonOption: overviewRosterSeasonOption,
+      selectedSeasonKey,
+      seasonOptions,
+      seasonSnapshots,
+      clubsDirectory,
+      profileFilterKey,
+    })
+  }, [
+    clubsDirectory,
+    overviewRosterSeasonContext,
+    overviewRosterSeasonOption,
+    profileFilterKey,
+    seasonOptions,
+    seasonSnapshots,
+    selectedSeasonKey,
+    teamInformationView,
+    workspaceSeasonContext,
+  ])
+  const overviewRosterProfileFilterOptions = React.useMemo(() => (
+    buildTeamProfileFilterOptions(overviewRosterSeasonContext.players)
+  ), [overviewRosterSeasonContext.players])
   const hasTeamStats = React.useMemo(() => (
     players.some(player => (
       player.statsStatus === PLAYER_STATS_STATUS.LOADED ||
@@ -338,12 +444,13 @@ function TeamPageContent() {
 
   const handleDownloadJson = React.useCallback(() => {
     downloadTeamPageDocumentsJson({
+      clubsDirectoryDocument: clubsDirectory,
       leagueDocument: selectedLeagueDocument,
       leagueDocuments,
       teamDocument: teamDoc,
       teamSeasons,
     })
-  }, [leagueDocuments, selectedLeagueDocument, teamDoc, teamSeasons])
+  }, [clubsDirectory, leagueDocuments, selectedLeagueDocument, teamDoc, teamSeasons])
 
   const handleBackToLeague = () => {
     navigate(leagueBackPath, {
@@ -379,20 +486,22 @@ function TeamPageContent() {
     const source = row?.player || row || {}
     const playerId = source.playerId || source.id
     if (!playerId) return
+    const playerContext = overviewRosterSeasonContext
+    const playerSeasonOption = overviewRosterSeasonOption
 
     navigate(
       PLAYERS_DATABASE_UI_ROUTES.player({
         playerId,
-        teamId: team.birthTeamId || team.id,
-        leagueId: selectedSeasonOption?.leagueId || leagueId,
+        teamId: playerContext.team.birthTeamId || team.id,
+        leagueId: playerSeasonOption?.leagueId || leagueId,
         fromTeam: `${location.pathname}${location.search}`,
       }),
       {
         state: {
           playerTeamSource: {
-            team,
+            team: playerContext.team,
             teamDoc,
-            selectedTeamSeason,
+            selectedTeamSeason: playerContext.season,
           },
         },
       }
@@ -402,8 +511,8 @@ function TeamPageContent() {
     location.pathname,
     location.search,
     navigate,
-    selectedSeasonOption?.leagueId,
-    selectedTeamSeason,
+    overviewRosterSeasonContext,
+    overviewRosterSeasonOption,
     team,
     teamDoc,
   ])
@@ -437,7 +546,7 @@ function TeamPageContent() {
           breadcrumbs={breadcrumbs}
           team={team}
           clubUrl={clubDoc?.clubUrl || ''}
-          seasonKey={selectedSeasonKey}
+          clubLevel={clubDoc?.clubLevel}
           favorite={teamFavorite}
           favoritePending={teamFavoritePending}
           onFavoriteToggle={() => {
@@ -450,47 +559,19 @@ function TeamPageContent() {
 
         <Box sx={[sx.contentGrid, sidePanelCollapsed && sx.contentGridCollapsed]}>
           <Box sx={sx.mainColumn}>
-            <Box sx={sx.viewTabsToolbar}>
-              <Box sx={sx.viewTabs}>
-                <Button
-                  variant='plain'
-                  color='neutral'
-                  sx={[sx.viewTab, activeView === 'team' && sx.viewTabActive]}
-                  aria-pressed={activeView === 'team'}
-                  onClick={() => setActiveView('team')}
-                >
-                  {`מצב שנתון${team.birthYear ? ` · ${team.birthYear}` : ''}`}
-                </Button>
-                <Button
-                  variant='plain'
-                  color='neutral'
-                  sx={[sx.viewTab, activeView === 'players' && sx.viewTabActive]}
-                  aria-pressed={activeView === 'players'}
-                  onClick={() => setActiveView('players')}
-                >
-                  {`התפתחות שנתון${team.birthYear ? ` · ${team.birthYear}` : ''}`}
-                </Button>
-              </Box>
-            </Box>
-
-            {activeView === 'team' ? (
-              <TeamInformationOverview
-                view={teamInformationView}
-                seasonSnapshots={seasonSnapshots}
-                seasonOptions={seasonOptions}
-                onSeasonSelect={handleRosterSeasonSelect}
-                profileFilterKey={profileFilterKey}
-                profileFilterOptions={profileFilterOptions}
-                onProfileFilterChange={handleProfileFilterChange}
-                onPlayerRoleEdit={roleEditor.open}
-                onPlayerOpen={handlePlayerOpen}
-              />
-            ) : (
-              <TeamYearDevelopment
-                timeline={teamInformationView.developmentTimeline}
-                overview={teamInformationView.yearDevelopment}
-              />
-            )}
+            <TeamInformationOverview
+              view={teamInformationView}
+              overviewRosterView={overviewRosterView}
+              club={clubDoc}
+              clubIntelligence={clubIntelligence}
+              seasonSnapshots={seasonSnapshots}
+              seasonOptions={seasonOptions}
+              profileFilterKey={profileFilterKey}
+              overviewRosterProfileFilterOptions={overviewRosterProfileFilterOptions}
+              onProfileFilterChange={handleProfileFilterChange}
+              onPlayerRoleEdit={roleEditor.open}
+              onPlayerOpen={handlePlayerOpen}
+            />
           </Box>
 
           <TeamActionsPanel
@@ -514,10 +595,10 @@ function TeamPageContent() {
             jsonDownloadDisabled={Boolean(
               !selectedLeagueDocument &&
               !leagueDocuments.length &&
+              !(clubsDirectory && clubsDirectory.documentExists !== false) &&
               !teamDoc &&
               !teamSeasons.length
             )}
-            jsonDownloadBusy={jsonDownloadBusy}
             tasks={teamPageTasks.tasks}
             tasksLoading={tasksModel.loading}
             onTaskCreate={teamPageTasks.openCreate}

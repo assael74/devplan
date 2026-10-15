@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/stats/clear/components/ClearStatsModal.test.js
 import { fireEvent, render, screen, within } from '@testing-library/react'
 
 import ClearStatsModal from './ClearStatsModal.js'

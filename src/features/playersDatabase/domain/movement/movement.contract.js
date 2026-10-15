@@ -47,14 +47,14 @@ export const resolveMovementDirection = ({
   const from = Number(fromClubLevel)
   const to = Number(toClubLevel)
 
-  // Club rank can compare primary teams only. A second/third Team Root of a
-  // different club may compete at another level, so it remains unresolved
-  // until a Team-level comparison contract is agreed.
+  // An external move from a weaker club into a level-1 club's second team
+  // uses the destination club's primary-team rank.
   if (
     clean(fromClubId) &&
     clean(toClubId) &&
     clean(fromClubId) !== clean(toClubId) &&
-    Number(toBirthTeamSlot) > 1
+    toSlot > 1 &&
+    !(toSlot === 2 && to === 1 && from > 1)
   ) {
     return 'unknown'
   }

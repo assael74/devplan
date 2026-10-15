@@ -1,3 +1,4 @@
+// src/ui/patterns/scout/ScoutPriority.js
 import * as React from 'react'
 import {
   Box,
@@ -20,6 +21,7 @@ export default function ScoutPriority({
   short = false,
   tooltip,
   fontSize = 13,
+  number,
 }) {
   const meta = resolveScoutPriority(value)
   const colors = meta.colors
@@ -29,6 +31,7 @@ export default function ScoutPriority({
   const tooltipTitle = React.isValidElement(tooltipLabel)
     ? tooltipLabel
     : <Box sx={sx.tooltipContent}>{tooltipLabel}</Box>
+  const hasNumber = typeof number === 'number' && Number.isFinite(number)
 
   return (
     <Tooltip title={tooltipTitle} arrow>
@@ -42,6 +45,11 @@ export default function ScoutPriority({
         <Typography component='span' sx={sx.label({ colors, fontSize })}>
           {displayLabel}
         </Typography>
+        {hasNumber ? (
+          <Typography component='span' sx={sx.number({ colors, fontSize })}>
+            {number}
+          </Typography>
+        ) : null}
       </Box>
     </Tooltip>
   )

@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/yearDevelopment/sx/teamYearDevelopmentShared.sx.js
 import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 export const teamYearDevelopmentSharedSx = {
@@ -129,10 +130,11 @@ export const teamYearDevelopmentSharedSx = {
     maxWidth: '100%',
     px: 0.6,
     py: 0.15,
-    border: `1px solid ${devPlanColors.border}`,
+    border: `1px solid ${devPlanColors.tertiary}`,
     borderRadius: 99,
-    bgcolor: devPlanColors.secondaryLight,
+    bgcolor: devPlanColors.surface,
     color: devPlanColors.primaryDark,
+    boxShadow: '0 1px 3px rgba(16, 43, 64, 0.08)',
   },
 
   seasonSummary: {
@@ -178,8 +180,8 @@ export const teamYearDevelopmentSharedSx = {
 
   seasonSummaryChipText: {
     color: devPlanColors.primaryDark,
-    fontSize: 10.5,
-    fontWeight: 800,
+    fontSize: 11,
+    fontWeight: 900,
     whiteSpace: 'nowrap',
   },
 

@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/scouting/sx/teamDiagnosticSignalsModal.sx.js
 import { COLORS, devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 export const teamDiagnosticSignalsModalSx = {

@@ -54,17 +54,19 @@ export default function LeagueHeader({
 
       <Stack direction='row' spacing={1} sx={sx.actions}>
         <Button
+          size='sm'
           sx={sx.primaryButton}
           startDecorator={iconUi({id: 'playerDatabase', size: 'sm'})}
           onClick={onSearch}
         >
-          מעבר לעמוד חיפוש
+          לעמוד חיפוש
         </Button>
 
         <Button
+          size='sm'
           variant='outlined'
           sx={sx.secondaryButton}
-          startDecorator={iconUi({id: 'back', size: 'sm'})}
+          endDecorator={iconUi({id: 'back', size: 'sm'})}
           onClick={onBack}
         >
           חזרה למרכז ליגות
@@ -76,7 +78,6 @@ export default function LeagueHeader({
   return (
     <PageHeader
       breadcrumbs={breadcrumbs}
-      sx={sx.header}
       actions={actions}
     >
       <Box sx={sx.titleRow}>

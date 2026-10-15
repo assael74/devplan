@@ -3,6 +3,7 @@
 import { Box, Button, Tooltip, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
+import TeamAnalysisCard from '../../information/components/TeamAnalysisCard.js'
 import { TEAM_STRUCTURE_FILTER } from '../model/teamStructureFilter.model.js'
 import { teamStructureSx as sx } from '../sx/teamStructure.sx.js'
 
@@ -76,27 +77,13 @@ const LineCard = ({ definition, structure, selectedFilter, onFilterChange }) => 
   const state = resolveLineState({ definition, structure })
   const selected = definition.filterKey === selectedFilter
   const clickable = Boolean(onFilterChange)
-  const handleCardKeyDown = event => {
-    if (!clickable || !['Enter', ' '].includes(event.key)) return
-    event.preventDefault()
-    onFilterChange(definition.filterKey)
-  }
-
   return (
-    <Box
-      component='div'
-      onClick={clickable ? () => onFilterChange(definition.filterKey) : undefined}
-      onKeyDown={handleCardKeyDown}
-      sx={[
-        sx.lineCard,
-        state.isInteresting ? sx.lineCardReview : sx.lineCardClear,
-        clickable && sx.lineCardClickable,
-        selected && (state.isInteresting ? sx.lineCardReviewSelected : sx.lineCardSelected),
-      ]}
-      aria-pressed={clickable ? selected : undefined}
-      role={clickable ? 'button' : undefined}
-      tabIndex={clickable ? 0 : undefined}
-      aria-label={clickable ? `הצגת שחקני ${definition.label}` : undefined}
+    <TeamAnalysisCard
+      tone={state.isInteresting ? 'review' : 'muted'}
+      selected={selected}
+      onSelect={clickable ? () => onFilterChange(definition.filterKey) : undefined}
+      ariaLabel={`הצגת שחקני ${definition.label}`}
+      cardSx={sx.lineCard}
     >
       <Box sx={sx.lineBody}>
         <Box sx={sx.lineHeader}>
@@ -120,7 +107,7 @@ const LineCard = ({ definition, structure, selectedFilter, onFilterChange }) => 
           ) : null}
         </Box>
       </Box>
-    </Box>
+    </TeamAnalysisCard>
   )
 }
 
@@ -131,27 +118,13 @@ const CoverageStrip = ({ structure, selectedFilter, onFilterChange }) => {
     String(structure?.classificationCoverageBenchmark?.state || '').trim()
   ] || CLASSIFICATION_COVERAGE_CARD_STATE.typical
   const clickable = Boolean(onFilterChange)
-  const handleCardKeyDown = event => {
-    if (!clickable || !['Enter', ' '].includes(event.key)) return
-    event.preventDefault()
-    onFilterChange(TEAM_STRUCTURE_FILTER.ALL_SQUAD)
-  }
-
   return (
-    <Box
-      component='div'
-      onClick={clickable ? () => onFilterChange(TEAM_STRUCTURE_FILTER.ALL_SQUAD) : undefined}
-      onKeyDown={handleCardKeyDown}
-      sx={[
-        sx.lineCard,
-        coverageState.tone === 'review' ? sx.lineCardReview : sx.lineCardClear,
-        clickable && sx.lineCardClickable,
-        selected && (coverageState.tone === 'review' ? sx.lineCardReviewSelected : sx.lineCardSelected),
-      ]}
-      aria-pressed={clickable ? selected : undefined}
-      role={clickable ? 'button' : undefined}
-      tabIndex={clickable ? 0 : undefined}
-      aria-label={clickable ? 'הצגת כל שחקני הסגל' : undefined}
+    <TeamAnalysisCard
+      tone={coverageState.tone === 'review' ? 'review' : 'muted'}
+      selected={selected}
+      onSelect={clickable ? () => onFilterChange(TEAM_STRUCTURE_FILTER.ALL_SQUAD) : undefined}
+      ariaLabel='הצגת כל שחקני הסגל'
+      cardSx={sx.lineCard}
     >
       <Box sx={sx.lineBody}>
         <Box sx={sx.lineHeader}>
@@ -171,7 +144,7 @@ const CoverageStrip = ({ structure, selectedFilter, onFilterChange }) => {
           </Box>
         </Box>
       </Box>
-    </Box>
+    </TeamAnalysisCard>
   )
 }
 

@@ -1,16 +1,12 @@
-// features/playersDatabase/ui/pages/leagueCenterPage/sx/LeagueCenterHeader.sx.js
+// src/features/playersDatabase/ui/pages/leagueCenterPage/sx/leagueCenterHeader.sx.js
 
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
+import { pageHeaderTitleSx } from '../../../components/page/sx/pageHeader.sx.js'
 
 export const leagueCenterHeaderSx = {
   pageTitle: {
+    ...pageHeaderTitleSx,
     color: '#0b1f4d',
-    fontSize: {
-      xs: 38,
-      md: 48,
-    },
-    lineHeight: 1,
-    fontWeight: 700,
   },
 
   headerActions: {

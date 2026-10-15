@@ -80,17 +80,19 @@ export default function ClubsPage() {
     <Stack sx={sx.headerActionsPanel}>
       <Stack direction='row' spacing={1} sx={sx.headerActions}>
         <Button
+          size='sm'
           sx={sx.primaryButton}
           startDecorator={iconUi({ id: 'playerDatabase', size: 'sm' })}
           onClick={() => navigate(PLAYERS_DATABASE_UI_ROUTES.search)}
         >
-          מעבר לעמוד חיפוש
+          לעמוד חיפוש
         </Button>
 
         <Button
+          size='sm'
           variant='outlined'
           sx={sx.secondaryButton}
-          startDecorator={iconUi({ id: 'back', size: 'sm' })}
+          endDecorator={iconUi({ id: 'back', size: 'sm' })}
           onClick={() => navigate(PLAYERS_DATABASE_UI_ROUTES.entry)}
         >
           חזרה לדף הפתיחה

@@ -34,6 +34,8 @@ export const ADMIN_ROUTES = {
   playersDatabaseLegacyScan: '/players-database/scan',
   playersDatabaseLeague: '/players-database/leagues/:leagueId',
   playersDatabaseTeam: '/players-database/leagues/:leagueId/teams/:teamId',
+  playersDatabaseTeamV1: '/players-database/leagues/:leagueId/teams/:teamId/v1',
+  playersDatabaseTeamV2: '/players-database/leagues/:leagueId/teams/:teamId/v2',
   playersDatabasePlayer: '/players-database/players/:playerId',
   abilitiesExplainer: '/abilities/explainer',
   squadSimulator: '/squad-simulator',

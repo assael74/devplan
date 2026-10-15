@@ -1,116 +1,156 @@
 // src/features/playersDatabase/ui/pages/teamPage/information/components/TeamInformationOverview.js
 
 import * as React from 'react'
-import { getFullDateTimeIl } from '../../../../../../../shared/format/dateUtils.js'
-import {
-  Box,
-  Button,
-  Chip,
-  Option,
-  Select,
-  Tooltip,
-  Typography,
-} from '@mui/joy'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Box, Button, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import useScrollToTopOnChange from '../../../../../../../ui/core/useScrollToTopOnChange.js'
 import { teamInformationSx as sx } from '../sx/teamInformation.sx.js'
-import TeamKpiOverview from '../../performance/components/TeamKpiOverview.js'
-import TeamPerformanceContextBar from '../../performance/components/TeamPerformanceContextBar.js'
-import TeamPositionClassificationTable from '../../positionClassification/components/TeamPositionClassificationTable.js'
-import TeamScoutingSummary from '../../scouting/components/TeamScoutingSummary.js'
-import TeamStructureSection from '../../structure/components/TeamStructureSection.js'
-import exportTeamPositionClassificationToXlsx from '../../positionClassification/logic/teamPositionClassification.export.js'
 import {
   resolveDefaultTeamStructureFilter,
+  TEAM_STRUCTURE_FILTER,
 } from '../../structure/model/teamStructureFilter.model.js'
 import { buildTeamSeasonTabs } from '../model/teamSeasonTabs.model.js'
+import TeamWorkspaceNavigation from './TeamWorkspaceNavigation.js'
+import TeamInsightContent from './TeamInsightContent.js'
+import TeamRosterWorkspace from './TeamRosterWorkspace.js'
+import { buildTeamInsightsPresentation } from '../model/teamInsights.presentation.js'
+import {
+  TEAM_INSIGHTS,
+  resolveTeamWorkspace,
+  buildTeamWorkspaceUrl,
+  buildTeamRosterSeasonUrl,
+} from '../model/teamWorkspace.navigation.js'
 
-const Section = ({
-  iconId = 'players',
-  title,
-  titleMeta = null,
-  action = null,
-  compact = false,
-  children,
-}) => (
-  <Box sx={[sx.section, compact && sx.compactRosterSection]}>
-    <Box sx={sx.sectionHeader}>
-      <Box sx={sx.sectionTitleRow}>
-        <Box sx={sx.sectionTitleIcon}>{iconUi({ id: iconId, size: 'sm' })}</Box>
-        <Typography sx={sx.sectionTitle}>{title}</Typography>
-        {titleMeta}
-      </Box>
-      {action}
-    </Box>
-    {children}
-  </Box>
-)
+const PERFORMANCE_CHANGE_LABELS = {
+  significant: 'שינוי משמעותי · לחקירה',
+  minor: 'שינוי קטן · למעקב',
+  steady: 'ללא שינוי',
+  limited: 'השוואה חלקית',
+}
+
+const rosterBalanceTaskLabel = presentation => {
+  if (!presentation.rosterBalanceAvailable) return 'ניתוח טרם זמין'
+  if (presentation.rosterBalanceStatus === 'multiple') {
+    return `${presentation.rosterBalanceTaskCount} משימות · לחקירה`
+  }
+  return presentation.rosterBalanceStatus === 'single'
+    ? 'משימה אחת · למעקב'
+    : 'ללא משימות'
+}
+
+const insightSlideDirection = (previous, current) => {
+  if (previous.mode !== 'insight' || current.mode !== 'insight' ||
+    previous.seasonKey !== current.seasonKey) return 0
+
+  const previousIndex = TEAM_INSIGHTS.findIndex(insight => insight.id === previous.insightId)
+  const currentIndex = TEAM_INSIGHTS.findIndex(insight => insight.id === current.insightId)
+  if (previousIndex < 0 || currentIndex < 0 || previousIndex === currentIndex) return 0
+
+  if (currentIndex === (previousIndex + 1) % TEAM_INSIGHTS.length) return 1
+  if (currentIndex === (previousIndex - 1 + TEAM_INSIGHTS.length) % TEAM_INSIGHTS.length) return -1
+  return 0
+}
 
 export default function TeamInformationOverview({
   view,
+  overviewRosterView = null,
+  club = null,
+  clubIntelligence = null,
   seasonSnapshots = [],
   seasonOptions = [],
-  onSeasonSelect,
   profileFilterKey = 'all',
-  profileFilterOptions = [],
+  overviewRosterProfileFilterOptions = [],
   onProfileFilterChange,
   onPlayerRoleEdit,
   onPlayerOpen,
 }) {
-  const hasInsufficientSeasonSample = view?.structure?.availabilityReason ===
-    'season_sample_insufficient'
-  const hasRosterPlayers = Boolean(view?.positionClassificationRows?.length)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const workspace = resolveTeamWorkspace(location.search)
+  const toOverview = buildTeamWorkspaceUrl({ location, mode: 'overview' })
+  const toInsight = insightId => buildTeamWorkspaceUrl({
+    location,
+    mode: 'insight',
+    insightId,
+  })
+  const toRoster = buildTeamWorkspaceUrl({
+    location,
+    mode: 'roster',
+    sourceInsightId: workspace.insightId,
+  })
+  const handleRosterSeasonSelect = optionKey => {
+    navigate(buildTeamRosterSeasonUrl({ location, optionKey }), {
+      state: location.state,
+    })
+  }
   const defaultStructureFilter = resolveDefaultTeamStructureFilter({
     structure: view?.structure,
     rows: view?.positionClassificationRows,
   })
   const [structureFilter, setStructureFilter] = React.useState(defaultStructureFilter)
-  const [showPerformanceContext, setShowPerformanceContext] = React.useState(false)
+  const [favoritePlayerKeys, setFavoritePlayerKeys] = React.useState(() => new Set())
   const contentRef = React.useRef(null)
-  const selectedProfileFilter = profileFilterOptions.find(option => (
-    option.value === profileFilterKey
-  )) || profileFilterOptions[0]
-  const rosterSeasonChips = React.useMemo(() => buildTeamSeasonTabs({
+  const teamId = view.team?.birthTeamId || view.team?.id || ''
+  React.useLayoutEffect(() => {
+    setFavoritePlayerKeys(new Set())
+  }, [teamId])
+  const handleFavoriteToggle = React.useCallback(row => {
+    const key = row?.favoriteKey
+    if (!key) return
+    setFavoritePlayerKeys(current => {
+      const next = new Set(current)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }, [])
+  const rosterView = overviewRosterView || view
+  const overviewRosterSeasons = React.useMemo(() => buildTeamSeasonTabs({
     seasonOptions,
     seasonSnapshots,
-    selectedOptionKey: view.selectedSeasonOption?.optionKey,
-    selectedSeasonKey: view.selectedSeasonKey,
+    selectedOptionKey: rosterView.selectedSeasonOption?.optionKey,
+    selectedSeasonKey: rosterView.selectedSeasonKey,
   }), [
     seasonOptions,
     seasonSnapshots,
-    view.selectedSeasonKey,
-    view.selectedSeasonOption?.optionKey,
+    rosterView.selectedSeasonKey,
+    rosterView.selectedSeasonOption?.optionKey,
   ])
-  const performanceRef = React.useRef(null)
-  useScrollToTopOnChange(contentRef, view.selectedSeasonKey)
-  const renderSeasonChip = (season, interactive = true) => (
-    <Chip
-      key={season.key}
-      component={interactive ? 'button' : 'span'}
-      type={interactive ? 'button' : undefined}
-      aria-pressed={interactive ? season.selected : undefined}
-      size='sm'
-      variant='soft'
-      color='neutral'
-      sx={[
-        sx.rosterSeasonChip,
-        season.selected && sx.rosterSeasonChipSelected,
-        !interactive && sx.rosterSeasonChipStatic,
-      ]}
-      onClick={interactive ? () => onSeasonSelect?.(season.optionKey) : undefined}
-    >
-      <Box sx={sx.rosterSeasonChipContent}>
-        <Typography component='span' sx={sx.rosterSeasonChipText}>{season.label}</Typography>
-      </Box>
-    </Chip>
-  )
-  const renderSeasonChips = () => (
-    <Box sx={sx.rosterSeasonChips} aria-label='בחירת עונה לשנתון'>
-      {rosterSeasonChips.map(season => renderSeasonChip(season))}
-    </Box>
-  )
-  const selectedSeasonChip = rosterSeasonChips.find(season => season.selected)
+  const rosterProps = {
+    view,
+    tableView: rosterView,
+    seasons: overviewRosterSeasons,
+    onSeasonSelect: handleRosterSeasonSelect,
+    profileFilterKey,
+    profileFilterOptions: overviewRosterProfileFilterOptions,
+    onProfileFilterChange,
+    onPlayerRoleEdit,
+    onPlayerOpen,
+    structureFilter,
+    favoritePlayerKeys,
+    onFavoriteToggle: handleFavoriteToggle,
+  }
+  const workspaceKey = `${view.selectedSeasonKey}:${workspace.mode}:${workspace.insightId}`
+  const previousWorkspaceRef = React.useRef({
+    mode: workspace.mode,
+    insightId: workspace.insightId,
+    seasonKey: view.selectedSeasonKey,
+  })
+  const slideDirection = React.useMemo(() => insightSlideDirection(previousWorkspaceRef.current, {
+    mode: workspace.mode,
+    insightId: workspace.insightId,
+    seasonKey: view.selectedSeasonKey,
+  }), [workspace.mode, workspace.insightId, view.selectedSeasonKey])
+  React.useLayoutEffect(() => {
+    previousWorkspaceRef.current = {
+      mode: workspace.mode,
+      insightId: workspace.insightId,
+      seasonKey: view.selectedSeasonKey,
+    }
+  }, [workspace.mode, workspace.insightId, view.selectedSeasonKey])
+  useScrollToTopOnChange(contentRef, workspaceKey, { behavior: 'auto' })
 
   React.useEffect(() => {
     // Before stats are loaded, position classification is intentionally not
@@ -119,196 +159,122 @@ export default function TeamInformationOverview({
     setStructureFilter(defaultStructureFilter)
   }, [defaultStructureFilter, view.selectedSeasonKey])
 
-  React.useEffect(() => {
-    const root = contentRef.current
-    const target = performanceRef.current
-    if (!root || !target) return undefined
-
-    const observer = new IntersectionObserver(([entry]) => {
-      setShowPerformanceContext(!entry.isIntersecting)
-    }, { root, threshold: 0.05 })
-
-    observer.observe(target)
-    return () => observer.disconnect()
-  }, [view.selectedSeasonKey])
-
-  const handlePositionClassificationExport = React.useCallback(() => {
-    exportTeamPositionClassificationToXlsx({
-      rows: view.positionClassificationRows,
-      seasonDoc: view.selectedTeamSeason,
-      teamName: view.team?.name,
-      seasonKey: view.selectedSeasonKey,
-      birthYear: selectedSeasonChip?.birthYear || view.team?.birthYear,
-      ageGroupLabel: selectedSeasonChip?.ageGroupLabel,
-    })
-  }, [
-    selectedSeasonChip?.ageGroupLabel,
-    selectedSeasonChip?.birthYear,
-    view.positionClassificationRows,
-    view.selectedTeamSeason,
-    view.selectedSeasonKey,
-    view.team?.birthYear,
-    view.team?.name,
-  ])
-
-  const handleReturnToPerformance = React.useCallback(() => {
-    performanceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [])
-
-  const rosterProfileFilter = (
-    <Select
-      size='sm'
-      value={profileFilterKey || 'all'}
-      onChange={(_, value) => onProfileFilterChange?.(value || 'all')}
-      disabled={!profileFilterOptions.length}
-      indicator={null}
-      sx={sx.rosterProfileFilterSelect}
-      slotProps={{
-        listbox: {
-          className: 'dpScrollThin',
-          sx: sx.rosterProfileFilterListbox,
-        },
-      }}
-      renderValue={() => {
-        if (!selectedProfileFilter) return 'כל הפרופילים'
-
-        return (
-          <Box sx={sx.rosterProfileFilterValue}>
-            <Box sx={sx.rosterProfileFilterIcon}>
-              {iconUi({ id: selectedProfileFilter.iconId || 'profile', size: 'sm' })}
-            </Box>
-            <Typography sx={sx.rosterProfileFilterValuePrimary}>
-              {selectedProfileFilter.label}
-            </Typography>
-            <Typography sx={sx.rosterProfileFilterValueCount}>
-              {selectedProfileFilter.count}
-            </Typography>
-          </Box>
-        )
-      }}
-    >
-      {profileFilterOptions.map(option => (
-        <Option key={option.value} value={option.value} sx={sx.rosterProfileFilterOption}>
-          <Box sx={sx.rosterProfileFilterOptionContent}>
-            <Box sx={sx.rosterProfileFilterIcon}>
-              {iconUi({ id: option.iconId || 'profile', size: 'sm' })}
-            </Box>
-            <Typography sx={sx.rosterProfileFilterOptionLabel}>{option.label}</Typography>
-            <Box component='span' sx={sx.rosterProfileFilterOptionCount}>{option.count}</Box>
-          </Box>
-        </Option>
-      ))}
-    </Select>
-  )
-
-  const rosterTableExport = (
-      <Tooltip title='ייצוא כל נתוני הטבלה ל־Excel' placement='bottom'>
-        <Button
-          size='sm'
-          variant='outlined'
-          color='neutral'
-          aria-label='ייצוא נתוני סיווג העמדה ל־Excel'
-          sx={sx.sectionExportButton}
-          disabled={!view.positionClassificationRows?.length}
-          onClick={handlePositionClassificationExport}
-          startDecorator={iconUi({ id: 'download', size: 'sm' })}
-        >
-          Excel
-        </Button>
-      </Tooltip>
-  )
-
-  const rosterTableToolbar = (
-    <Box sx={sx.rosterTableToolbar}>
-      <Box sx={sx.loadTimes}>
-            <Tooltip title='טעינת סגל'>
-              <Typography level='body-xs' startDecorator={iconUi({ id: 'addPlayers', size: 'sm' })}>
-                {view.selectedTeamSeason?.roster?.rosterImport?.loadedAt
-                  ? getFullDateTimeIl(view.selectedTeamSeason.roster.rosterImport.loadedAt)
-                  : 'לא תועד'}
-              </Typography>
-            </Tooltip>
-            <Tooltip title='טעינת סטטס'>
-              <Typography level='body-xs' startDecorator={iconUi({ id: 'stats', size: 'sm' })}>
-                {view.selectedTeamSeason?.stats?.statsLoadState?.status === 'loaded'
-                  ? getFullDateTimeIl(view.selectedTeamSeason.stats.statsLoadState.updatedAt)
-                  : 'טרם נטען'}
-              </Typography>
-            </Tooltip>
-          </Box>
-      {rosterProfileFilter}
-    </Box>
-  )
+  const insightPresentation = buildTeamInsightsPresentation({ view, club, clubIntelligence })
+  const performanceChangeStatus = view.performanceInsight?.changeStatus || 'limited'
 
   return (
-    <Box ref={contentRef} className='dpScrollThin' sx={sx.content}>
-      <Box ref={performanceRef} sx={sx.performanceAnchor}>
-        <TeamKpiOverview
-          team={view.team}
-          title='ביצוע השנתון'
-          titleMeta={rosterSeasonChips.length ? renderSeasonChips() : null}
-          tablePositionTimeline={view.seasonTimeline}
-          offensePriorityTimeline={view.offensePriorityTimeline}
-          defensePriorityTimeline={view.defensePriorityTimeline}
-        />
-      </Box>
+    <Box
+      ref={contentRef}
+      className='dpScrollThin'
+      sx={[sx.content, workspace.mode === 'insight' && sx.contentInsight]}
+    >
+      <Box key={workspaceKey} sx={sx.workspaceRoute}>
+      <TeamWorkspaceNavigation
+        workspace={workspace}
+        toOverview={toOverview}
+        toInsight={toInsight}
+      />
 
-      {showPerformanceContext ? (
-        <TeamPerformanceContextBar
-          offensePriority={view.offensePriorityTimeline?.[0]?.level}
-          defensePriority={view.defensePriorityTimeline?.[0]?.level}
-          squadUsageState={view.structure?.classificationCoverageBenchmark?.state}
-          seasonChip={selectedSeasonChip ? renderSeasonChip(selectedSeasonChip, false) : null}
-          onReturnToPerformance={handleReturnToPerformance}
-        />
+      {workspace.mode === 'overview' ? (
+        <>
+          <Box sx={sx.sectionTiles} aria-label='איתותי הקבוצה'>
+            {TEAM_INSIGHTS.map((tile, index) => {
+              const tileStatus = tile.id === 'performance'
+                ? performanceChangeStatus
+                : tile.id === 'roster-balance' ? insightPresentation.rosterBalanceStatus : null
+              const note = tile.id === 'roster-balance'
+                ? insightPresentation.rosterBalanceTitles
+                  .map(title => title.replace(/[.!?]+$/, ''))
+                  .join(' · ')
+                : insightPresentation.signalSummaries[tile.id].replace(/[.!?]+$/, '')
+              const reliability = tile.id === 'performance'
+                ? view.performanceInsight?.reliability || 'מהימנות הנתונים טרם ידועה'
+                : insightPresentation.signalReliability[tile.id]
+              const secondaryNote = tile.id === 'performance'
+                ? view.performanceInsight?.profileSummary || ''
+                : ''
+              return (
+                <Button
+                  key={tile.id}
+                  component={Link}
+                  to={toInsight(tile.id)}
+                  variant='plain'
+                  color='neutral'
+                  sx={[
+                    sx.sectionTile,
+                    index < 2 ? sx.sectionTileFirstRow : sx.sectionTileSecondRow,
+                    tileStatus && sx.insightTileShadow(tileStatus),
+                  ]}
+                >
+                  <Box sx={sx.sectionTileHeader}>
+                    <Box sx={sx.sectionTileIdentity}>
+                      <Box className='team-insight-icon' sx={sx.sectionTileIcon}>
+                        {iconUi({ id: tile.iconId, size: 'sm' })}
+                      </Box>
+                      <Box sx={sx.sectionTileCopy}>
+                        <Typography sx={sx.sectionTileTitle}>{tile.title}</Typography>
+                        <Typography sx={sx.sectionTileSubtitle}>{tile.subtitle}</Typography>
+                      </Box>
+                    </Box>
+                    <Typography sx={[
+                      sx.sectionTileAction,
+                      tileStatus && sx.insightTileStatus(tileStatus),
+                    ]}>
+                      {tile.id === 'performance'
+                        ? PERFORMANCE_CHANGE_LABELS[performanceChangeStatus]
+                        : tile.id === 'roster-balance'
+                          ? rosterBalanceTaskLabel(insightPresentation)
+                          : 'לחקירה'}
+                    </Typography>
+                  </Box>
+                  <Box sx={sx.sectionTileBody}>
+                    <Typography
+                      title={secondaryNote ? `${note} · ${secondaryNote}` : note}
+                      sx={sx.sectionTileNotes}
+                    >
+                      {note}
+                      {secondaryNote ? (
+                        <Typography component='span' sx={sx.sectionTileSecondaryNote}>
+                          {' · '}{secondaryNote}
+                        </Typography>
+                      ) : null}
+                    </Typography>
+                    <Typography title={reliability} sx={sx.sectionTileReliability}>
+                      {reliability}
+                    </Typography>
+                  </Box>
+                </Button>
+              )
+            })}
+          </Box>
+          <Box sx={sx.overviewRoster}>
+            <TeamRosterWorkspace
+              {...rosterProps}
+              overview
+              structureFilter={TEAM_STRUCTURE_FILTER.ALL_SQUAD}
+            />
+          </Box>
+        </>
       ) : null}
 
-      <TeamScoutingSummary
-        structure={view.structure}
-        balance={view.balance}
-        hasRosterPlayers={hasRosterPlayers}
-        title='איזון חלוקת הדקות'
-        titleMeta={rosterSeasonChips.length ? renderSeasonChips() : null}
-        selectedFilter={structureFilter}
-        onFilterChange={setStructureFilter}
-      />
-
-      <TeamStructureSection
-        structure={view.structure}
-        hasRosterPlayers={hasRosterPlayers}
-        title='איזון מבנה העמדות'
-        titleMeta={rosterSeasonChips.length ? renderSeasonChips() : null}
-        seasonKey={view.selectedSeasonKey}
-        selectedFilter={structureFilter}
-        onFilterChange={setStructureFilter}
-      />
-
-      <Section
-        title='שחקני סגל'
-        compact
-        titleMeta={rosterSeasonChips.length ? renderSeasonChips() : null}
-
-      >
-        {hasInsufficientSeasonSample ? (
-          <Typography sx={sx.rosterSampleNotice}>
-            המדגם עדיין קטן — נתוני השחקנים מוצגים, אך ניתוח הסגל והביצועים הוא ראשוני ותחזיתי.
-          </Typography>
-        ) : null}
-        <TeamPositionClassificationTable
-          rows={view.positionClassificationRows}
-          seasonDoc={view.selectedTeamSeason}
-          teamName={view.team?.name}
-          seasonKey={view.selectedSeasonKey}
-          birthYear={selectedSeasonChip?.birthYear || view.team?.birthYear}
-          ageGroupLabel={selectedSeasonChip?.ageGroupLabel}
-          onPlayerRoleEdit={onPlayerRoleEdit}
-          onPlayerOpen={onPlayerOpen}
+      {workspace.mode === 'insight' ? (
+        <TeamInsightContent
+          insightId={workspace.insightId}
+          slideDirection={slideDirection}
+          view={view}
+          presentation={insightPresentation}
           structureFilter={structureFilter}
-          embedded
-          toolbar={rosterTableToolbar}
-          headerExport={rosterTableExport}
+          onStructureFilterChange={setStructureFilter}
+          toOverview={toOverview}
+          toInsight={toInsight}
+          toRoster={toRoster}
+          rosterProps={rosterProps}
         />
-      </Section>
+      ) : null}
+      {workspace.mode === 'roster' ? (
+        <TeamRosterWorkspace {...rosterProps} />
+      ) : null}
+      </Box>
     </Box>
   )
 }

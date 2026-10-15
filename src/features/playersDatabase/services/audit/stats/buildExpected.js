@@ -144,6 +144,9 @@ export const buildStatsAuditExpected = ({
         stats: {
           hasStats: Object.values(object(stats.playersById)).some(player => clean(player && player.statsStatus) === 'loaded'),
           statsComplete: clean(object(stats.statsLoadState).status) === 'loaded',
+          loadedAt: clean(object(stats.statsLoadState).status) === 'loaded'
+            ? object(stats.statsLoadState).updatedAt || null
+            : null,
         },
         scouting: {
           playersWithScoutProfileCount,

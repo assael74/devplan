@@ -69,7 +69,7 @@ describe('Stats audit expected state', () => {
           },
           competitionSnapshot: { clubLevel: 2, clubStrengthLevel: 3 },
           roster: { playersById: {} },
-          stats: { playersById: {}, statsLoadState: { status: 'loaded' } },
+          stats: { playersById: {}, statsLoadState: { status: 'loaded', updatedAt: '2026-10-13T14:35:11.676Z' } },
           scouting: { playersById: {} },
           teamTaskSignals: {},
         },
@@ -98,6 +98,7 @@ describe('Stats audit expected state', () => {
     })
 
     expect(result.complete).toBe(true)
+    expect(result.expected.leagueTeamPatch.stats.loadedAt).toBe('2026-10-13T14:35:11.676Z')
     expect(result.reason).toBe('')
     expect(result.expected.playerSeasonsById).toHaveProperty(statsOnlyPlayerId)
     expect(result.expected.playerSearchIndexesById).toHaveProperty(statsOnlyPlayerId)

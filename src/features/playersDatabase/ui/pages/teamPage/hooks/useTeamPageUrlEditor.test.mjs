@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/hooks/useTeamPageUrlEditor.test.mjs
 import assert from 'node:assert/strict'; import test from 'node:test'; import vm from 'node:vm'; import fs from 'node:fs/promises'; import path from 'node:path'; import { fileURLToPath } from 'node:url'
 const file=path.join(path.dirname(fileURLToPath(import.meta.url)),'useTeamPageUrlEditor.js'); let context
 const synthetic=(name,exports)=>new vm.SyntheticModule(Object.keys(exports),function(){Object.entries(exports).forEach(([k,v])=>this.setExport(k,v))},{identifier:name,context})

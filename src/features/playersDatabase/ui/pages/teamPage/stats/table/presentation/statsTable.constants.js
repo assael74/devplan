@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/stats/table/presentation/statsTable.constants.js
 import { TEAM_STATS_IMPORT_TABLE_WIDTHS } from '../sx/statsTableWidths.sx.js'
 
 export const PLAYER_STATS_BASE_COLUMNS = [

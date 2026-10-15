@@ -1,3 +1,4 @@
+// src/ui/patterns/scout/scoutPriority.presentation.js
 export const scoutPriorityColors = {
   leadingTarget: {
     main: '#5B963F',
@@ -103,5 +104,14 @@ export const scoutPrioritySx = {
     lineHeight: 1,
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+  }),
+  number: ({ colors, fontSize }) => ({
+    flexShrink: 0,
+    paddingInlineStart: 1,
+    borderInlineStart: `1px solid ${colors.main}55`,
+    color: colors.text,
+    fontSize,
+    fontWeight: 800,
+    lineHeight: 1,
   }),
 }

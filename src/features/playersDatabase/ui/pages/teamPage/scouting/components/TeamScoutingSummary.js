@@ -3,40 +3,21 @@
 import { Box, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
-import { TEAM_STRUCTURE_FILTER } from '../../structure/model/teamStructureFilter.model.js'
+import TeamAnalysisCard from '../../information/components/TeamAnalysisCard.js'
 import { teamScoutingSummarySx as sx } from '../sx/teamScoutingSummary.sx.js'
 import TeamDiagnosticSignalsModal from './TeamDiagnosticSignalsModal.js'
 import {
-  getTeamDiagnosticSignalLabel,
   getTeamDiagnosticSignalTaskLabel,
 } from '../model/teamDiagnosticSignalTask.presentation.js'
-import { getTeamSquadUsageLabel } from '../../structure/model/teamSquadUsage.presentation.js'
 import {
   getTeamLineActionsPresentation,
 } from '../model/teamInterest.presentation.js'
+import {
+  TEAM_SCOUTING_SUMMARY_ITEMS,
+  getTeamScoutingSummaryTitle,
+} from '../model/teamScoutingSummary.presentation.js'
 
-const SUMMARY_ITEMS = Object.freeze([
-  {
-    key: 'defense',
-    label: 'הגנה',
-    iconId: 'defense',
-    filterKey: TEAM_STRUCTURE_FILTER.DEFENSE,
-  },
-  {
-    key: 'offense',
-    label: 'התקפה',
-    iconId: 'attack',
-    filterKey: TEAM_STRUCTURE_FILTER.ATTACK,
-  },
-  {
-    key: 'squad',
-    label: 'שימוש בסגל',
-    iconId: 'group',
-    filterKey: TEAM_STRUCTURE_FILTER.ALL_SQUAD,
-  },
-])
-
-const resolveSquadUsageState = structure => {
+const resolveSquadUsageState = (structure, item) => {
   return {
     tone: 'clear',
     status: '',
@@ -45,17 +26,16 @@ const resolveSquadUsageState = structure => {
     isExcludedSquadCase: false,
     actions: null,
     emphasizeValue: true,
-    title: getTeamSquadUsageLabel(structure?.classificationCoverageBenchmark?.state),
+    title: getTeamScoutingSummaryTitle({ structure, item }),
   }
 }
 
 const resolveItemState = ({ structure, item }) => {
-  if (item.key === 'squad') return resolveSquadUsageState(structure)
+  if (item.key === 'squad') return resolveSquadUsageState(structure, item)
 
   const interest = item.key === 'squad'
     ? structure?.teamInterest?.squad
     : structure?.teamInterest?.lines?.[item.key]
-  const presentation = structure?.interestPresentation?.[item.key]
   const isInteresting = Boolean(interest?.isInteresting)
   const matrixSelection = structure?.lineInterpretation?.[item.key] || null
   const signalId = interest?.finding || interest?.reason || ''
@@ -63,7 +43,6 @@ const resolveItemState = ({ structure, item }) => {
     'ATTACK_CLASSIFICATION_MISSING',
     'DEFENSE_CLASSIFICATION_MISSING',
   ].includes(signalId)
-  const signalLabel = getTeamDiagnosticSignalLabel(signalId)
   const taskLabel = getTeamDiagnosticSignalTaskLabel(signalId)
   const actions = getTeamLineActionsPresentation(structure?.lineInterpretation?.[item.key]?.actions)
   const isExcludedSquadCase = false
@@ -75,9 +54,10 @@ const resolveItemState = ({ structure, item }) => {
       signalId,
       matrixSelection,
       isExcludedSquadCase,
-      actions,
-      title: item.key === 'offense' ? 'אין שחקני התקפה בסגל' : `אין שחקנים מסווגים ל${item.label}`,
+      actions: null,
+      title: getTeamScoutingSummaryTitle({ structure, item }),
       explanation: taskLabel,
+      actionPlaceholder: 'טרם ניתן לקבוע',
     }
   }
 
@@ -89,7 +69,7 @@ const resolveItemState = ({ structure, item }) => {
       matrixSelection,
       isExcludedSquadCase,
       actions,
-      title: signalLabel || presentation?.label || item.label,
+      title: getTeamScoutingSummaryTitle({ structure, item }),
       explanation: taskLabel,
     }
   }
@@ -101,9 +81,7 @@ const resolveItemState = ({ structure, item }) => {
     matrixSelection,
     isExcludedSquadCase,
     actions,
-    title: signalId === 'REVIEW_REQUIRED'
-      ? 'אירוע למעקב ולבחינה עתידית.'
-      : signalLabel || item.label,
+    title: getTeamScoutingSummaryTitle({ structure, item }),
     explanation: taskLabel,
   }
 }
@@ -150,31 +128,18 @@ export default function TeamScoutingSummary({
       </Box>
 
       <Box sx={sx.grid}>
-        {SUMMARY_ITEMS.map(item => {
+        {TEAM_SCOUTING_SUMMARY_ITEMS.map(item => {
           const state = resolveItemState({ structure, item })
           const clickable = Boolean(item.filterKey && onFilterChange)
           const selected = item.filterKey === selectedFilter
-          const handleCardKeyDown = event => {
-            if (!clickable || !['Enter', ' '].includes(event.key)) return
-            event.preventDefault()
-            onFilterChange(item.filterKey)
-          }
-
           return (
-            <Box
+            <TeamAnalysisCard
               key={item.key}
-              component='div'
-              onClick={clickable ? () => onFilterChange(item.filterKey) : undefined}
-              onKeyDown={handleCardKeyDown}
-              sx={[
-                sx.card,
-                state.tone === 'review' ? sx.cardReview : sx.cardClear,
-                clickable && sx.cardClickable,
-                selected && (state.tone === 'review' ? sx.cardReviewSelected : sx.cardSelected),
-              ]}
-              role={clickable ? 'button' : undefined}
-              tabIndex={clickable ? 0 : undefined}
-              aria-pressed={clickable ? selected : undefined}
+              tone={state.tone === 'review' ? 'review' : 'muted'}
+              selected={selected}
+              onSelect={clickable ? () => onFilterChange(item.filterKey) : undefined}
+              ariaLabel={`הצגת שחקני ${item.label}`}
+              cardSx={sx.card}
             >
               <Box sx={sx.cardBody}>
                 <Box sx={sx.cardTop}>
@@ -216,20 +181,20 @@ export default function TeamScoutingSummary({
                     <Typography sx={sx.cardAction}>
                       <Box component='span' sx={sx.cardActionLabel}>לקבוצה: </Box>
                       <Box component='span' sx={!state.actions?.teamNeed ? sx.cardActionEmpty : undefined}>
-                        {state.actions?.teamNeed?.label || 'אין צורך מזוהה'}
+                        {state.actions?.teamNeed?.label || state.actionPlaceholder || 'אין צורך מזוהה'}
                       </Box>
                     </Typography>
                     <Typography sx={sx.cardAction}>
                       <Box component='span' sx={sx.cardActionLabel}>לשוק: </Box>
                       <Box component='span' sx={!state.actions?.marketOpportunity ? sx.cardActionEmpty : undefined}>
-                        {state.actions?.marketOpportunity?.label || 'אין הזדמנות מזוהה'}
+                        {state.actions?.marketOpportunity?.label || state.actionPlaceholder || 'אין הזדמנות מזוהה'}
                       </Box>
                     </Typography>
                   </Box>
                 ) : null}
 
               </Box>
-            </Box>
+            </TeamAnalysisCard>
           )
         })}
       </Box>

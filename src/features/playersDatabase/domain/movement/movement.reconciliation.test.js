@@ -6,8 +6,32 @@ import {
   buildRosterSnapshotContentHash,
   buildRosterSnapshotEventKey,
   reconcileRosterMovement,
+  resolveMovementDirection,
   resolveRosterPlayersLocally,
 } from './index.js'
+
+test('compares a move from a weaker club to a level-1 club second team', () => {
+  expect(resolveMovementDirection({
+    fromClubId: 'club-a', toClubId: 'club-b',
+    fromClubLevel: 3, toClubLevel: 1,
+    fromBirthTeamSlot: 1, toBirthTeamSlot: 2,
+  })).toBe('up')
+  expect(resolveMovementDirection({
+    fromClubId: 'club-a', toClubId: 'club-b',
+    fromClubLevel: 1, toClubLevel: 1,
+    fromBirthTeamSlot: 1, toBirthTeamSlot: 2,
+  })).toBe('unknown')
+  expect(resolveMovementDirection({
+    fromClubId: 'club-a', toClubId: 'club-b',
+    fromClubLevel: 3, toClubLevel: 1,
+    fromBirthTeamSlot: 1, toBirthTeamSlot: 3,
+  })).toBe('unknown')
+  expect(resolveMovementDirection({
+    fromClubId: 'club-a', toClubId: 'club-b',
+    fromClubLevel: 3, toClubLevel: 2,
+    fromBirthTeamSlot: 1, toBirthTeamSlot: 2,
+  })).toBe('unknown')
+})
 
 describe('Movement reconciliation', () => {
   test('resolves continuing players from Team Season before broad identity lookup', () => {
@@ -219,7 +243,7 @@ describe('Movement reconciliation', () => {
     })])
   })
 
-  test('keeps an external move to a secondary team unresolved', () => {
+  test('keeps a level-1 to level-1 second-team move unresolved', () => {
     const result = reconcileRosterMovement({
       seasonKey: '25/26',
       team: {

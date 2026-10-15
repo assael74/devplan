@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/teamPage/stats/table/sx/useTeamStatsColumns.sx.js
+// src/features/playersDatabase/ui/pages/teamPage/stats/table/sx/useTeamStatsColumns.sx.js
 
 export const teamStatsColumnsSx = {
   tableHeaderIcon: {

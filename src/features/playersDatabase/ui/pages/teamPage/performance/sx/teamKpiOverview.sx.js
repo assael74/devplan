@@ -1,68 +1,58 @@
+// src/features/playersDatabase/ui/pages/teamPage/performance/sx/teamKpiOverview.sx.js
+
 import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 export const teamKpiOverviewSx = {
-  kpiSection: {
-    minWidth: 0,
-    display: 'grid',
-    gridTemplateColumns: '1fr',
-    gap: 1.25,
-    alignItems: 'stretch',
-  },
-
-  performanceSection: {
-    minWidth: 0,
-    p: {
-      xs: 1.25,
-      md: 1.5,
-    },
-    border: `1px solid ${devPlanColors.border}`,
-    borderRadius: 10,
-    bgcolor: devPlanColors.surface,
-  },
-
-  performanceHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 1,
-    mb: 2,
-  },
-
-  performanceTitleRow: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 0.65,
-  },
-
-  performanceTitleIcon: {
-    display: 'grid',
-    placeItems: 'center',
-    width: 23,
-    height: 23,
-    borderRadius: 7,
-    border: `1px solid ${devPlanColors.primaryDark}`,
-    bgcolor: devPlanColors.primary,
-    color: devPlanColors.surface,
-    '& svg': {
-      color: `${devPlanColors.surface} !important`,
-      fontSize: 14,
-    },
-  },
-
-  performanceTitle: {
-    color: devPlanColors.primaryDark,
-    fontSize: 15,
-    fontWeight: 800,
-  },
-
-  performanceMeta: {
-    color: devPlanColors.secondary,
-    fontSize: 11,
-  },  kpiRow: {
+  kpiRow: {
+    gridAutoRows: '1fr',
     gridTemplateColumns: {
       xs: '1fr',
       sm: 'repeat(2, minmax(0, 1fr))',
-      lg: 'repeat(3, minmax(0, 1fr))',
+      lg: 'minmax(0, 0.9fr) minmax(0, 1fr) repeat(2, minmax(0, 1.3fr))',
+    },
+  },
+
+  competitionCurrent: {
+    color: devPlanColors.primaryDark,
+    fontSize: 24,
+    fontWeight: 800,
+    lineHeight: 1,
+    whiteSpace: 'nowrap',
+  },
+
+  competitionPrevious: {
+    color: devPlanColors.secondary,
+    fontSize: 15,
+    fontWeight: 700,
+    lineHeight: 1,
+    whiteSpace: 'nowrap',
+  },
+
+  competitionAgeGroups: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.3,
+  },
+
+  competitionAgeGroup: {
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    color: devPlanColors.secondary,
+    fontSize: 10.5,
+    fontWeight: 700,
+    lineHeight: 1.2,
+  },
+
+  competitionAgeGroupArrow: {
+    display: 'inline-flex',
+    flexShrink: 0,
+    color: devPlanColors.secondary,
+    opacity: 0.65,
+    '& svg': {
+      fontSize: 12,
     },
   },
 
@@ -92,7 +82,7 @@ export const teamKpiOverviewSx = {
     alignItems: 'center',
     justifyContent: 'center',
     color: devPlanColors.primaryDark,
-    fontSize: 26,
+    fontSize: 24,
     lineHeight: 1,
     fontWeight: 800,
   },
@@ -113,7 +103,7 @@ export const teamKpiOverviewSx = {
 
   priorityCurrentScore: {
     color: devPlanColors.primaryDark,
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: 800,
     lineHeight: 1,
   },
@@ -128,7 +118,7 @@ export const teamKpiOverviewSx = {
 
   priorityPreviousScore: {
     color: devPlanColors.secondary,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 700,
     lineHeight: 1,
   },  positionPrevious: {
@@ -138,7 +128,7 @@ export const teamKpiOverviewSx = {
     alignItems: 'center',
     justifyContent: 'center',
     color: devPlanColors.secondary,
-    fontSize: 16,
+    fontSize: 15,
     lineHeight: 1,
     fontWeight: 700,
   },

@@ -513,11 +513,10 @@ export default function useTeamStatsImport({
 
   const close = React.useCallback(() => {
     if (busy || finalSync.running) return
-    if (approvedForSync && !finalSync.syncComplete) return
     setOpen(false)
     setPasteValue('')
     setRows([])
-  }, [approvedForSync, busy, finalSync.running, finalSync.syncComplete])
+  }, [busy, finalSync.running])
 
   const confirm = React.useCallback(async () => {
     if (!approvedStatsPlan || !approvedActionInput || approvedStatsPlanPreparing || approvedStatsPlanSourceKey !== approvedPlanSourceKey) {

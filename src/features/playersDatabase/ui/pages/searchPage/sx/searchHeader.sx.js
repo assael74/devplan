@@ -1,7 +1,11 @@
+// src/features/playersDatabase/ui/pages/searchPage/sx/searchHeader.sx.js
+
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
+import { pageHeaderSurfaceSx, pageHeaderTitleSx } from '../../../components/page/sx/pageHeader.sx.js'
 
 export const searchHeaderSx = {
   root: {
+    ...pageHeaderSurfaceSx,
     minWidth: 0,
     display: 'grid',
     gridTemplateColumns: {
@@ -14,18 +18,13 @@ export const searchHeaderSx = {
 
   copy: {
     minWidth: 0,
-    gap: 0.4,
+    gap: 0.75,
     alignItems: 'flex-start',
   },
 
   title: {
+    ...pageHeaderTitleSx,
     color: devPlanColors.primaryDark,
-    fontSize: {
-      xs: 32,
-      md: 40,
-    },
-    lineHeight: 1.05,
-    fontWeight: 700,
   },
 
   actions: {
@@ -34,8 +33,6 @@ export const searchHeaderSx = {
   },
 
   auditButton: {
-    minHeight: 38,
-    px: 2,
     bgcolor: '#fff',
     color: devPlanColors.primary,
     borderColor: 'divider',
@@ -46,8 +43,6 @@ export const searchHeaderSx = {
   },
 
   reportButton: {
-    minHeight: 38,
-    px: 2,
     bgcolor: devPlanColors.primary,
     color: '#FFFFFF',
     borderColor: devPlanColors.primary,
@@ -63,8 +58,6 @@ export const searchHeaderSx = {
   },
 
   leaguesButton: {
-    minHeight: 38,
-    px: 2,
     bgcolor: '#fff',
     color: devPlanColors.primary,
     borderColor: devPlanColors.primary,

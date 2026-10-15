@@ -1,7 +1,10 @@
-// features/playersDatabase/ui/pages/entryPage/sx/EntryHeader.sx.js
+// src/features/playersDatabase/ui/pages/entryPage/sx/entryHeader.sx.js
+
+import { pageHeaderSurfaceSx } from '../../../components/page/sx/pageHeader.sx.js'
 
 export const entryHeaderSx = {
   header: {
+    ...pageHeaderSurfaceSx,
     minWidth: 0,
     display: 'grid',
     gridTemplateColumns: {

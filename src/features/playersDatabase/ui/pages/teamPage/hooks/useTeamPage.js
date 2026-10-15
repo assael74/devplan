@@ -29,10 +29,6 @@ import {
 } from '../../../../services/read/index.js'
 import { buildTeamPageDataCacheKey } from '../../../../services/cache/index.js'
 import usePlayersDatabaseReadStoreEntry from '../../../hooks/usePlayersDatabaseReadStoreEntry.js'
-import {
-  PLAYERS_DATABASE_QUERY_KEYS as queryKeys,
-  PLAYERS_DATABASE_UI_ROUTES,
-} from '../../../logic/routeBuilders.js'
 
 function cleanValue(value) {
   return String(value || '').trim()
@@ -62,11 +58,7 @@ export function useTeamPage() {
   const navigate = useNavigate()
   const { leagueId = '', teamId = '' } = useParams()
   const [searchParams] = useSearchParams()
-  const fromLeague = cleanValue(
-    searchParams.get(queryKeys.fromLeague) || searchParams.get('fromLeague')
-  )
   const auditSeasonKey = cleanValue(searchParams.get('auditSeason'))
-  const fromClubs = (searchParams.get(queryKeys.fromClubs) || searchParams.get('fromClubs')) === '1'
   const pageStoreKey = buildTeamPageDataCacheKey({ leagueId, teamId })
   const pageEntry = usePlayersDatabaseReadStoreEntry(pageStoreKey)
   const clubsDirectoryEntry = usePlayersDatabaseReadStoreEntry(
@@ -250,37 +242,6 @@ export function useTeamPage() {
     selectedSeasonOption,
   ])
 
-  const changeSeason = useCallback(value => {
-    const nextOption = seasonOptions.find(option => (
-      option.optionKey === value
-    ))
-
-    if (!nextOption) return
-
-    setSelectedOptionKey(nextOption.optionKey)
-
-    const nextPath = PLAYERS_DATABASE_UI_ROUTES.team({
-      leagueId,
-      teamId,
-      fromLeague,
-      fromClubs,
-    })
-
-    navigate(nextPath, {
-      replace: true,
-      state: location.state,
-    })
-  }, [
-    fromLeague,
-    fromClubs,
-    leagueId,
-    location.state,
-    navigate,
-    setSelectedOptionKey,
-    seasonOptions,
-    teamId,
-  ])
-
   return {
     leagueId,
     leagueDoc,
@@ -301,7 +262,6 @@ export function useTeamPage() {
     selectedSeasonOption,
     selectedLeagueSeason,
     selectedTeamSeason,
-    setSelectedSeasonKey: changeSeason,
     reload,
     loading,
     refreshing,

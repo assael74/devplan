@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/stats/table/logic/teamStatsScoutMarks.logic.js
 export const toFiniteNumber = value => {
   const numberValue = Number(value)
 

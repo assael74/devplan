@@ -1,23 +1,34 @@
-import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
+// src/features/playersDatabase/ui/pages/teamPage/performance/sx/teamKpiCard.sx.js
+import { COLORS, devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 export const teamKpiCardSx = {
   teamKpiCard: {
-    minWidth: 0,
     minHeight: 104,
     p: 1,
     display: 'grid',
     gridTemplateRows: 'minmax(0, 1fr) auto',
     gap: 0.55,
-    borderRadius: 8,
-    border: '1px solid #dbe5f4',
+    borderColor: '#dbe5f4',
     boxShadow: '0 8px 22px rgba(11, 31, 77, 0.05)',
-    overflow: 'hidden',
   },
 
   teamKpiPerformanceCard: {
-    minHeight: 124,
+    minHeight: 104,
+    p: 0.75,
     gridTemplateRows: 'auto auto',
     gap: 0.55,
+    boxShadow: '0 4px 14px rgba(16, 43, 64, 0.1)',
+  },
+
+  teamKpiWithInsight: {
+    gridTemplateRows: 'auto auto 1fr',
+  },
+
+  teamKpiWithInsightOnly: {
+    gridTemplateRows: 'auto 1fr',
+    '& > :last-child': {
+      alignSelf: 'end',
+    },
   },
 
   teamKpiMain: {
@@ -42,9 +53,9 @@ export const teamKpiCardSx = {
   },
 
   teamKpiTitle: {
-    color: devPlanColors.secondary,
-    fontWeight: 700,
-    fontSize: 13,
+    color: devPlanColors.primary,
+    fontWeight: 800,
+    fontSize: 12.5,
     lineHeight: 1.2,
   },
 
@@ -58,7 +69,7 @@ export const teamKpiCardSx = {
 
   teamKpiValue: {
     color: devPlanColors.primaryDark,
-    fontSize: 26,
+    fontSize: 24,
     lineHeight: 1,
     fontWeight: 700,
   },
@@ -74,6 +85,15 @@ export const teamKpiCardSx = {
     color: devPlanColors.primary,
     bgcolor: devPlanColors.primaryLight,
     marginInlineEnd: -0.25,
+  },
+
+  teamKpiPerformanceIcon: {
+    color: devPlanColors.tertiaryDark,
+    bgcolor: devPlanColors.tertiaryLight,
+    border: `1px solid ${devPlanColors.tertiary}55`,
+    '& svg': {
+      color: 'inherit',
+    },
   },
 
   teamKpiIconPriority: colors => ({
@@ -118,8 +138,13 @@ export const teamKpiCardSx = {
     borderTop: '1px solid #e4edf6',
   },
 
+  teamKpiCustomDetails: {
+    gridTemplateColumns: 'minmax(0, 1fr)',
+  },
+
   teamKpiDetail: {
     minWidth: 0,
+    minHeight: 24,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -136,7 +161,7 @@ export const teamKpiCardSx = {
   teamKpiDetailLabel: {
     minWidth: 0,
     color: devPlanColors.secondary,
-    fontSize: 11,
+    fontSize: 10.5,
     lineHeight: 1.15,
     fontWeight: 600,
     whiteSpace: 'nowrap',
@@ -147,8 +172,32 @@ export const teamKpiCardSx = {
   teamKpiDetailValue: {
     flexShrink: 0,
     color: devPlanColors.primaryDark,
-    fontSize: 13,
+    fontSize: 12,
     lineHeight: 1.2,
     fontWeight: 700,
+  },
+
+  teamKpiInsights: {
+    display: 'grid',
+    alignContent: 'start',
+    gap: 0.25,
+    pt: 0.5,
+    borderTop: `1px solid ${devPlanColors.border}`,
+  },
+
+  teamKpiInsight: {
+    color: devPlanColors.secondary,
+    px: 0.6,
+    py: 0.35,
+    borderRadius: 5,
+    bgcolor: devPlanColors.secondaryLight,
+    fontSize: 10.5,
+    lineHeight: 1.35,
+  },
+
+  teamKpiInsightTone: tone => {
+    const colors = tone === 'positive' ? COLORS.status.success
+      : tone === 'negative' ? COLORS.status.warning : COLORS.status.neutral
+    return { bgcolor: colors.softBg, color: colors.text }
   },
 }

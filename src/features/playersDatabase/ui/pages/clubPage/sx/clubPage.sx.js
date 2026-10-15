@@ -1,11 +1,14 @@
+// src/features/playersDatabase/ui/pages/clubPage/sx/clubPage.sx.js
+
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 import { pageCoreLayoutSx } from '../../../components/page/sx/pageCoreLayout.sx.js'
+import { pageHeaderTitleSx } from '../../../components/page/sx/pageHeader.sx.js'
 
 export const clubPageSx = {
   ...pageCoreLayoutSx,
   pageTitle: {
+    ...pageHeaderTitleSx,
     color: devPlanColors.primaryDark,
-    fontWeight: 800,
   },
 
   stateBox: {

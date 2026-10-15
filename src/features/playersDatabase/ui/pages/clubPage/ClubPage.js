@@ -54,10 +54,11 @@ export default function ClubPage() {
           <Chip size='sm' color='warning' variant='soft'>רענון התצוגה נכשל</Chip>
         </Tooltip>
       ) : null}
-      <Button disabled={!model.club || model.loading} onClick={urlEditor.show}>
+      <Button size='sm' disabled={!model.club || model.loading} onClick={urlEditor.show}>
         עריכת קישור מועדון
       </Button>
       <Button
+        size='sm'
         variant='outlined'
         onClick={() => navigate(PLAYERS_DATABASE_UI_ROUTES.clubs)}
       >

@@ -144,21 +144,37 @@ export const teamPositionClassificationTableSx = {
   playerColumn: {
     width: '12%',
     whiteSpace: 'nowrap',
+  },
 
-    '& > a': {
-      width: '100%',
+  playerNameLink: {
+    px: 0.4,
+    gap: 0.3,
+    '& > span:first-of-type': {
       minWidth: 0,
-    },
-
-    '& > a > span:first-of-type': {
-      minWidth: 0,
-      flex: '1 1 auto',
-    },
-
-    '& [data-link-indicator]': {
-      flex: '0 0 auto',
+      flex: '0 1 auto',
     },
   },
+
+  favoriteColumn: {
+    width: '5%',
+    px: 0.25,
+    textAlign: 'center',
+    whiteSpace: 'nowrap',
+  },
+
+  favoriteButton: selected => ({
+    width: 25,
+    height: 25,
+    minWidth: 25,
+    minHeight: 25,
+    p: 0,
+    color: selected ? COLORS.entity.tag.accent : devPlanColors.secondary,
+    '&:hover': {
+      bgcolor: selected ? COLORS.status.warning.softBg : devPlanColors.primaryLight,
+      color: selected ? COLORS.entity.tag.accent : devPlanColors.primary,
+    },
+    '& svg': { fontSize: 18 },
+  }),
 
   gamesStartsColumn: {
     width: '9%',
@@ -187,10 +203,6 @@ export const teamPositionClassificationTableSx = {
   openPlayerColumn: {
     width: '5%',
     textAlign: 'center',
-  },
-
-  exportColumn: {
-    width: 80,
   },
 
   openPlayerButton: {
@@ -269,7 +281,7 @@ export const teamPositionClassificationTableSx = {
 
   player: {
     minWidth: 0,
-    flex: '1 1 auto',
+    flex: '0 1 auto',
     color: devPlanColors.primaryDark,
     fontSize: 12,
     fontWeight: 700,
@@ -279,12 +291,12 @@ export const teamPositionClassificationTableSx = {
   },
 
   playerNameContent: {
-    width: '100%',
+    width: 'auto',
     maxWidth: '100%',
     minWidth: 0,
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 0.55,
+    gap: 0.3,
     overflow: 'hidden',
   },
 

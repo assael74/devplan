@@ -86,6 +86,8 @@ function renderAdminRoutes() {
         <Route path={ADMIN_ROUTES.playersDatabaseLegacyScan} element={<Navigate to={ROUTE_REDIRECTS.playersDatabaseSearch} replace />} />
         <Route path={ADMIN_ROUTES.playersDatabaseLeague} element={lazyRoute(<PlayersDatabaseLeaguePage />)} />
         <Route path={ADMIN_ROUTES.playersDatabaseTeam} element={lazyRoute(<PlayersDatabaseTeamPage />)} />
+        <Route path={ADMIN_ROUTES.playersDatabaseTeamV1} element={lazyRoute(<PlayersDatabaseTeamPage />)} />
+        <Route path={ADMIN_ROUTES.playersDatabaseTeamV2} element={lazyRoute(<PlayersDatabaseTeamPage />)} />
         <Route path={ADMIN_ROUTES.playersDatabasePlayer} element={lazyRoute(<PlayersDatabasePlayerPage />)} />
       </Route>
 

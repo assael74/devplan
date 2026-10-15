@@ -1,4 +1,4 @@
-// Central width controls for the Stats Import modal preview table.
+// src/features/playersDatabase/ui/pages/teamPage/stats/table/sx/statsTableWidths.sx.js
 // Adjust the percentages here; both Team Page routes consume this map.
 
 export const TEAM_STATS_IMPORT_TABLE_WIDTHS = {

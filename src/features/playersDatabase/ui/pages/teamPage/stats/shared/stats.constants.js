@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/stats/shared/stats.constants.js
 export const STATS_ROSTER_STATUS_OPTIONS = [
   {
     value: 'regular',

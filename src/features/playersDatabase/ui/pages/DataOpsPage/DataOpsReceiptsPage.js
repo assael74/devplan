@@ -25,7 +25,7 @@ import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 import InfoPanel from '../../components/page/InfoPanel.js'
 import useWriteActionReceipts from './hooks/useWriteActionReceipts.js'
 import { downloadDataOpsJson } from './logic/dataOpsJsonDownload.logic.js'
-import { buildReceiptDetails, buildReceiptRows } from './logic/receiptRows.logic.js'
+import { buildReceiptDetails, buildReceiptRows, receiptDetailLabel } from './logic/receiptRows.logic.js'
 import { dataOpsPageSx as sx } from './sx/dataOpsPage.sx.js'
 
 const toneToJoyColor = tone => {
@@ -122,7 +122,7 @@ function ReceiptDetailsDialog({ model }) {
       <ModalDialog sx={sx.receiptDialog}>
         <ModalClose disabled={model.repairing || model.checkingSync} />
         <DialogTitle>פרטי קבלה</DialogTitle>
-        <DialogContent>
+        <DialogContent className='dpScrollThin' sx={sx.receiptDialogContent}>
           <Stack spacing={1.5}>
             <Box sx={sx.receiptDetailHeader}>
               <Box>
@@ -135,9 +135,9 @@ function ReceiptDetailsDialog({ model }) {
             </Box>
 
             <Box sx={sx.receiptDetailGrid}>
-              <Box><Typography level='body-xs'>כתיבה קנונית</Typography><Typography level='body-sm'>{details.canonicalOutcome}</Typography></Box>
+              <Box><Typography level='body-xs'>שמירת הנתונים</Typography><Typography level='body-sm'>{details.canonicalOutcome}</Typography></Box>
               <Box><Typography level='body-xs'>מצב ביצוע</Typography><Typography level='body-sm'>{details.executionStatus || 'לא ידוע'}</Typography></Box>
-              <Box><Typography level='body-xs'>ממצאים שמורים</Typography><Typography level='body-sm'>{details.findingsCount === null ? 'לא ידוע' : details.findingsCount}</Typography></Box>
+              <Box><Typography level='body-xs'>בעיות בבדיקה הקודמת</Typography><Typography level='body-sm'>{details.findingsCount === null ? 'לא ידוע' : details.findingsCount}</Typography></Box>
             </Box>
 
             {details.target.length ? (
@@ -168,7 +168,7 @@ function ReceiptDetailsDialog({ model }) {
             <Box sx={sx.receiptSyncCheck}>
               <Box>
                 <Typography level='title-sm'>בדיקת סנכרון נוכחית</Typography>
-                <Typography level='body-xs'>קריאה טרייה של מקור האמת ותוצרי הקבלה.</Typography>
+                <Typography level='body-xs'>בדיקת הנתונים העדכניים בכל המקומות שבהם נשמרו. קבלה תקינה תיסגר אוטומטית.</Typography>
               </Box>
               {syncAudit ? (
                 <Box sx={sx.receiptSyncResult}>
@@ -184,7 +184,7 @@ function ReceiptDetailsDialog({ model }) {
                         : `${syncFindings.length} ממצאים`}
                   </Chip>
                   <Typography level='body-xs'>
-                    {coveredTargets.length ? `נבדקו: ${coveredTargets.join(', ')}` : 'לא דווחו רכיבים שנבדקו'}
+                    {coveredTargets.length ? `נבדקו: ${coveredTargets.map(receiptDetailLabel).join(', ')}` : 'לא דווחו רכיבים שנבדקו'}
                   </Typography>
                 </Box>
               ) : null}
@@ -193,7 +193,9 @@ function ReceiptDetailsDialog({ model }) {
               ) : null}
             </Box>
 
-            {!model.repairEligibility.allowed ? (
+            {model.syncClean ? (
+              <Typography level='body-sm' color='success'>הבדיקה הנוכחית תקינה — אין צורך בתיקון.</Typography>
+            ) : !model.repairEligibility.allowed ? (
               <Box sx={sx.receiptRepairBlocked}>
                 <Typography level='title-sm'>לא ניתן לתקן אוטומטית</Typography>
                 <Typography level='body-sm'>{model.repairEligibility.reason}</Typography>
@@ -201,12 +203,12 @@ function ReceiptDetailsDialog({ model }) {
             ) : (
               <>
                 <Typography level='body-sm'>
-                  התיקון יקרא מקורות קנוניים טריים, יבנה מחדש תוצרים בלבד ויריץ Audit חוזר.
+                  התיקון יעדכן את הנתונים הנגזרים לפי הנתונים הראשיים, ואז יבדוק שוב.
                 </Typography>
                 <Checkbox
                   checked={confirmed}
                   disabled={model.repairing}
-                  label='אני מאשר לתקן את תוצרי הקבלה'
+                  label='אני מאשר לתקן את הנתונים הקשורים לפעולה'
                   onChange={event => setConfirmed(event.target.checked)}
                 />
               </>
@@ -230,10 +232,10 @@ function ReceiptDetailsDialog({ model }) {
             type='button'
             color='warning'
             loading={model.repairing}
-            disabled={model.checkingSync || !model.repairEligibility.allowed || !confirmed}
+            disabled={model.syncClean || model.checkingSync || !model.repairEligibility.allowed || !confirmed}
             onClick={repair}
           >
-            תקן תוצרים והריץ בדיקה
+            תקן נתונים ובדוק שוב
           </Button>
           <Button type='button' variant='outlined' color='neutral' onClick={close}>סגור</Button>
         </DialogActions>

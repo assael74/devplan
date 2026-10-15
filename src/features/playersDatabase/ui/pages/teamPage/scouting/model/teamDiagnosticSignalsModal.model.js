@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/scouting/model/teamDiagnosticSignalsModal.model.js
 import { getTeamDiagnosticSignalLabel } from './teamDiagnosticSignalTask.presentation.js'
 
 export const SIGNAL_GROUPS = Object.freeze({

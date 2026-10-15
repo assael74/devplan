@@ -31,6 +31,9 @@ Team Interest משתמש רק ב־Attack וב־Defense. `midfieldCore` ו־
 `teamNeed` ו־`marketOpportunity` הם runtime interpretation ואינם נשמרים
 כפעולות ב־Team Season או ב־SearchIndex.
 
+כאשר אין שחקנים מסווגים בקו התקפה או הגנה, ה־finding הוא בקשת בדיקת סיווג.
+המצב אינו קובע חוסר איכות ואינו מפיק `teamNeed` או `marketOpportunity` לקו.
+
 ## Invalidation
 
 שינוי תפקיד ידני מחייב בנייה מחדש של `lineClassification`,‏ Team Balance,

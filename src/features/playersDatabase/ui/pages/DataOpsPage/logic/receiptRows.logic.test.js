@@ -74,10 +74,10 @@ describe('DataOps receipt rows', () => {
       },
     })).toMatchObject({
       id: 'receipt-3',
-      canonicalOutcome: 'confirmed',
-      completedStages: ['canonical', 'counterparts'],
-      failedStage: 'playerSearchIndexes',
-      failedReason: 'write failed',
+      canonicalOutcome: 'נשמר בהצלחה',
+      completedStages: ['שמירת הנתונים הראשיים', 'עדכון מעברים בין קבוצות'],
+      failedStage: 'עדכון חיפוש השחקנים',
+      failedReason: 'הפעולה נעצרה עקב שגיאה',
       auditCoverage: 'partial',
       findingsCount: 2,
     })

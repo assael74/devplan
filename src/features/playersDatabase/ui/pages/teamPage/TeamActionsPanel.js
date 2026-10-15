@@ -46,7 +46,6 @@ export default function TeamActionsPanel({
   onTeamLink,
   onDownloadJson,
   jsonDownloadDisabled = false,
-  jsonDownloadBusy = false,
   tasks = [],
   tasksLoading,
   onTaskCreate,
@@ -184,10 +183,7 @@ export default function TeamActionsPanel({
               <MenuButton
                 variant='outlined'
                 aria-label='הורדת נתוני הקבוצה כ־JSON'
-                disabled={
-                  jsonDownloadBusy ||
-                  jsonDownloadDisabled
-                }
+                disabled={jsonDownloadDisabled}
                 sx={sx.secondaryIconButton}
                 size='sm'
               >
@@ -197,7 +193,7 @@ export default function TeamActionsPanel({
           </Tooltip>
           <Menu placement={theme.direction === 'rtl' ? 'left-start' : 'right-start'}>
             <MenuItem
-              disabled={jsonDownloadBusy || jsonDownloadDisabled}
+              disabled={jsonDownloadDisabled}
               onClick={onDownloadJson}
             >
               הורדת כל מסמכי העמוד

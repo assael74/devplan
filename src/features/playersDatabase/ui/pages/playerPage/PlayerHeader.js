@@ -45,17 +45,19 @@ export default function PlayerHeader({
     <Stack sx={sx.headerActionsPanel}>
       <Stack direction='row' spacing={1} sx={sx.headerActions}>
         <Button
+          size='sm'
           sx={sx.primaryButton}
           startDecorator={iconUi({id: 'playerDatabase', size: 'sm'})}
           onClick={onSearch}
         >
-          מעבר לעמוד חיפוש
+          לעמוד חיפוש
         </Button>
 
         <Button
+          size='sm'
           variant='outlined'
           sx={sx.secondaryButton}
-          startDecorator={iconUi({id: 'back', size: 'sm'})}
+          endDecorator={iconUi({id: 'back', size: 'sm'})}
           disabled={!canNavigateToTeam}
           onClick={onTeam}
         >
@@ -88,6 +90,7 @@ export default function PlayerHeader({
           loading={favoriteLoading}
           label={fullName}
           onToggle={onFavoriteToggle}
+          sx={sx.favoriteButton}
         />
 
         {birthYear ? (
@@ -101,10 +104,10 @@ export default function PlayerHeader({
             <Box component='img' src={teamLogo} alt='' sx={sx.teamAvatar} />
             {clean(clubUrl) ? (
               <Box component='a' href={clean(clubUrl)} target='_blank' rel='noopener noreferrer' sx={{ color: 'inherit', textDecoration: 'none' }}>
-                <TeamName value={clubName} slot={teamSlot} fontSize={13} />
+                <TeamName value={clubName} slot={teamSlot} fontSize={14} />
               </Box>
             ) : (
-              <TeamName value={clubName} slot={teamSlot} fontSize={13} />
+              <TeamName value={clubName} slot={teamSlot} fontSize={14} />
             )}
           </Box>
         ) : null}

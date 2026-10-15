@@ -153,9 +153,16 @@ export default function useWriteActionReceipts({ autoLoad = true, maxProblemResu
     const receiptId = selectedReceipt && selectedReceipt.id
     if (!receiptId) throw new Error('חסר מזהה קבלה')
     setCheckingSync(true)
+    setSyncCheck(null)
     setSyncCheckError('')
     try {
-      const result = await auditWriteActionReceipt({ receiptId })
+      const result = await auditWriteActionReceipt({ receiptId, closeIfClean: true })
+      const [receipt] = await Promise.all([
+        getWriteActionReceipt({ receiptId }),
+        loadProblems({ refresh: true }),
+      ])
+      setSelectedReceipt(receipt)
+      setHistoryReceipts(current => current.map(item => item.id === receiptId ? receipt : item))
       setSyncCheck(result.audit)
       return result.audit
     } catch (checkError) {
@@ -164,9 +171,18 @@ export default function useWriteActionReceipts({ autoLoad = true, maxProblemResu
     } finally {
       setCheckingSync(false)
     }
-  }, [selectedReceipt])
+  }, [loadProblems, selectedReceipt])
+
+  const syncClean = Boolean(
+    syncCheck &&
+    String(syncCheck.status || syncCheck.result || '').toUpperCase() === 'CLEAN' &&
+    syncCheck.coverage?.complete === true &&
+    Array.isArray(syncCheck.findings) &&
+    syncCheck.findings.length === 0
+  )
 
   const repairReceipt = useCallback(async () => {
+    if (syncClean || checkingSync || repairing) return
     const receiptId = selectedReceipt && selectedReceipt.id
     if (!receiptId) throw new Error('חסר מזהה קבלה')
     setRepairing(true)
@@ -185,7 +201,7 @@ export default function useWriteActionReceipts({ autoLoad = true, maxProblemResu
     } finally {
       setRepairing(false)
     }
-  }, [loadProblems, selectedReceipt])
+  }, [checkingSync, loadProblems, repairing, selectedReceipt, syncClean])
 
   const repairEligibility = inspectWriteActionRepair(selectedReceipt)
 
@@ -208,6 +224,7 @@ export default function useWriteActionReceipts({ autoLoad = true, maxProblemResu
     actionError,
     checkingSync,
     syncCheck,
+    syncClean,
     syncCheckError,
     repairEligibility,
     openReceipt,

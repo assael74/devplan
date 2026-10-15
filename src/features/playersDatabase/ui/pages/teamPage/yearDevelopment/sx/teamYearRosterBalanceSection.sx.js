@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/yearDevelopment/sx/teamYearRosterBalanceSection.sx.js
 import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 export const teamYearRosterBalanceSectionSx = {

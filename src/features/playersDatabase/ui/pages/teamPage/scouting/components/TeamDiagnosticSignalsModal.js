@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/scouting/components/TeamDiagnosticSignalsModal.js
 import * as React from 'react'
 import { Box, IconButton, Typography } from '@mui/joy'
 

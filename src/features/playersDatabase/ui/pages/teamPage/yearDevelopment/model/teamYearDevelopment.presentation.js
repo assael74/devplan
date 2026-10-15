@@ -1,12 +1,14 @@
+// src/features/playersDatabase/ui/pages/teamPage/yearDevelopment/model/teamYearDevelopment.presentation.js
 import { resolveScoutProfileDefinition } from '../../../../../../../shared/scouting/players/profiles.js'
 
 export const TEAM_YEAR_METRICS = Object.freeze([
   { key: 'tableRank', label: 'מיקום בטבלה', iconId: 'league', presentation: 'tableRank', betterDirection: 'lower' },
-  { key: 'games', label: 'משחקים', iconId: 'gamesCount' },
+  { key: 'games', label: 'משחקים', iconId: 'gamesCount', showChange: false },
+  { key: 'successPercent', label: 'אחוז הצלחה', iconId: 'percent', percent: true },
   { key: 'goalsForPerGame', label: 'שערים למשחק', iconId: 'goals', decimal: true },
   { key: 'goalsAgainstPerGame', label: 'ספיגה למשחק', iconId: 'defensive', decimal: true, betterDirection: 'lower' },
-  { key: 'tableAttackRank', label: 'תיעדוף התקפה', iconId: 'offensive', priorityKey: 'offensePriorityLevel' },
-  { key: 'tableDefenseRank', label: 'תיעדוף הגנה', iconId: 'defensive', priorityKey: 'defensePriorityLevel' },
+  { key: 'professionalProfiles', label: 'פרופילים מקצועיים', iconId: 'scouting' },
+  { key: 'underuseProfiles', label: 'פרופילי חוסר שימוש', iconId: 'underusedProspect', betterDirection: 'lower' },
 ])
 
 export const LINE_DISTRIBUTION_COLORS = Object.freeze({
@@ -21,7 +23,7 @@ export const directionPresentation = direction => ({
   up: { label: 'עבר לרמה גבוהה יותר', color: 'success', iconId: 'sortUp' },
   down: { label: 'עבר לרמה נמוכה יותר', color: 'warning', iconId: 'sortDown' },
   lateral: { label: 'עבר לרמה דומה', color: 'primary', iconId: 'swapVert' },
-}[direction] || { label: 'עזב במהלך העונה', color: 'neutral', iconId: 'rosterLeft' })
+}[direction] || { label: 'רמת מעבר לא ידועה', color: 'neutral', iconId: 'swapVert' })
 
 export const linePresentation = line => ({
   GOALKEEPER: { label: 'שוער', iconId: 'goalkeeping' },

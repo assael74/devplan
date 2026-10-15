@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react'
+// src/ui/core/useScrollToTopOnChange.js
+
+import { useLayoutEffect, useRef } from 'react'
 
 /**
- * Smoothly returns a scroll container to its top when a meaningful view key changes.
+ * Returns a scroll container to its top when a meaningful view key changes.
  * The initial value is intentionally ignored, so opening a page preserves its normal
  * initial scroll position.
  */
@@ -15,7 +17,7 @@ export default function useScrollToTopOnChange(
 ) {
   const previousKeyRef = useRef(changeKey)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const previousKey = previousKeyRef.current
     previousKeyRef.current = changeKey
 

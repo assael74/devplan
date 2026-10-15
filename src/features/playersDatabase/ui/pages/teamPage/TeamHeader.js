@@ -18,7 +18,7 @@ export default function TeamHeader({
   breadcrumbs,
   team,
   clubUrl = '',
-  seasonKey,
+  clubLevel = null,
   favorite = false,
   favoritePending = false,
   onFavoriteToggle,
@@ -27,23 +27,27 @@ export default function TeamHeader({
   backLabel = 'חזרה לליגה',
 }) {
   const resolvedClubUrl = String(clubUrl || '').trim()
-  const headerSeason = String(seasonKey || '').trim() || '-'
+  const resolvedClubLevel = Number(
+    clubLevel === null || clubLevel === undefined ? team?.clubLevel : clubLevel
+  )
   const actions = (
     <Stack sx={sx.headerActionsPanel}>
 
       <Stack direction='row' spacing={1} sx={sx.headerActions}>
         <Button
+          size='sm'
           sx={sx.primaryButton}
           startDecorator={iconUi({id: 'playerDatabase', size: 'sm'})}
           onClick={onSearch}
         >
-          מעבר לעמוד חיפוש
+          לעמוד חיפוש
         </Button>
 
         <Button
+          size='sm'
           variant='outlined'
           sx={sx.secondaryButton}
-          startDecorator={iconUi({id: 'back', size: 'sm'})}
+          endDecorator={iconUi({id: 'back', size: 'sm'})}
           onClick={onLeague}
         >
           {backLabel}
@@ -105,9 +109,12 @@ export default function TeamHeader({
           שנתון {team.birthYear}
         </Box>
 
-        <Box sx={sx.contextChip}>
-          עונה {headerSeason}
+        <Box sx={[sx.contextChip, sx.clubLevelChip]}>
+          {Number.isFinite(resolvedClubLevel) && resolvedClubLevel > 0
+            ? `רמת מועדון ${resolvedClubLevel}`
+            : 'רמת מועדון לא ידועה'}
         </Box>
+
       </Box>
     </PageHeader>
   )

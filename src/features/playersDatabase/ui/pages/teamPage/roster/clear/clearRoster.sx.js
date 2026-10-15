@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/roster/clear/clearRoster.sx.js
 export const clearRosterSx = {
   body: { display: 'grid', gap: 2 },
   loading: { display: 'flex', alignItems: 'center', gap: 1 },

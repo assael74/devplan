@@ -2,6 +2,7 @@
 
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 import { pageCoreLayoutSx } from '../../../components/page/sx/pageCoreLayout.sx.js'
+import { pageHeaderMediaSx, pageHeaderTitleSx } from '../../../components/page/sx/pageHeader.sx.js'
 
 const toneColors = {
   success: { bg: '#ECFDF5', color: '#065F46', border: '#A7F3D0' },
@@ -53,22 +54,23 @@ export const dataOpsPageSx = {
   },
 
   headerIcon: {
-    width: 38,
-    height: 38,
+    ...pageHeaderMediaSx,
     display: 'grid',
     placeItems: 'center',
-    flexShrink: 0,
     borderRadius: 'md',
     bgcolor: devPlanColors.primaryLight,
     color: devPlanColors.primary,
   },
 
   headerVisual: {
-    width: 46,
-    height: 46,
+    ...pageHeaderMediaSx,
     display: 'grid',
     placeItems: 'center',
-    flexShrink: 0,
+  },
+
+  headerTitle: {
+    ...pageHeaderTitleSx,
+    color: devPlanColors.primaryDark,
   },
 
   headerVisualImage: {
@@ -79,8 +81,6 @@ export const dataOpsPageSx = {
   },
 
   backButton: {
-    minHeight: 38,
-    px: 2,
     bgcolor: '#fff',
     color: devPlanColors.primary,
     borderColor: devPlanColors.primary,
@@ -456,7 +456,14 @@ export const dataOpsPageSx = {
   receiptDialog: {
     width: 'min(680px, calc(100vw - 24px))',
     maxHeight: 'min(760px, calc(100vh - 24px))',
+    overflow: 'hidden',
+  },
+
+  receiptDialogContent: {
+    minHeight: 0,
     overflowY: 'auto',
+    overflowX: 'hidden',
+    scrollbarGutter: 'stable',
   },
 
   receiptDetailHeader: {

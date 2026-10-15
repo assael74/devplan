@@ -22,10 +22,11 @@ export default function TeamPositionClassificationTable({
   ageGroupLabel = '',
   onPlayerRoleEdit,
   onPlayerOpen,
+  favoritePlayerKeys,
+  onFavoriteToggle,
   structureFilter = TEAM_STRUCTURE_FILTER.CLASSIFIED,
   embedded = false,
   toolbar = null,
-  headerExport = null,
 }) {
   const filteredRows = rows.filter(row => (
     Array.isArray(row.structureFilterKeys) && row.structureFilterKeys.includes(structureFilter)
@@ -50,7 +51,12 @@ export default function TeamPositionClassificationTable({
     ? row => sx.squadClassificationRow(row.squadClassificationStatus)
     : undefined
   const tableWrapSx = embedded ? [sx.tableWrap, sx.tableWrapEmbedded] : sx.tableWrap
-  const columns = useTeamPositionClassificationColumns({ onPlayerOpen, onPlayerRoleEdit })
+  const columns = useTeamPositionClassificationColumns({
+    onPlayerOpen,
+    onPlayerRoleEdit,
+    favoritePlayerKeys,
+    onFavoriteToggle,
+  })
 
   return (
     <Box sx={[sx.section, embedded && sx.sectionEmbedded]}>
@@ -89,9 +95,7 @@ export default function TeamPositionClassificationTable({
         <DataTable
           hoverRow={false}
           className='dpScrollThin'
-          columns={columns.map(column => column.key === 'openPlayer' && headerExport
-            ? { ...column, sx: { ...column.sx, ...sx.exportColumn }, headerContent: headerExport }
-            : column)}
+          columns={columns}
           rows={visibleRows}
           getRowKey={row => row.id}
           defaultSort={structureFilter === TEAM_STRUCTURE_FILTER.ALL_SQUAD

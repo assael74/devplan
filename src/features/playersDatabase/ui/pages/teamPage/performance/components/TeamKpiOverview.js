@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/performance/components/TeamKpiOverview.js
 import { Box, Tooltip, Typography } from '@mui/joy'
 
 import KpiRow from '../../../../components/kpi/KpiRow.js'
@@ -15,6 +16,41 @@ import { pickDefinedValue } from '../../../../../model/shared/value.model.js'
 
 const resolveSide = (team, side) => (
   team?.performanceView?.[side] || {}
+)
+
+const CompetitionTimeline = ({
+  currentLevel,
+  previousLevel,
+}) => (
+  <Box sx={sx.positionTimeline}>
+    <Typography component='span' sx={sx.competitionCurrent}>
+      {currentLevel === null || currentLevel === undefined ? 'רמה לא ידועה' : `רמה ${currentLevel}`}
+    </Typography>
+    {previousLevel !== null && previousLevel !== undefined ? (
+      <>
+        <Box sx={sx.positionTimelineArrow}>{iconUi({ id: 'back', size: 'sm' })}</Box>
+        <Typography component='span' sx={sx.competitionPrevious}>
+          {previousLevel}
+        </Typography>
+      </>
+    ) : null}
+  </Box>
+)
+
+const CompetitionAgeGroups = ({ currentAgeGroup, previousAgeGroup, hasPreviousSeason }) => (
+  <Box sx={sx.competitionAgeGroups}>
+    <Typography component='span' sx={sx.competitionAgeGroup} title={currentAgeGroup}>
+      {currentAgeGroup || 'קבוצת גיל לא ידועה'}
+    </Typography>
+    {hasPreviousSeason ? (
+      <>
+        <Box sx={sx.competitionAgeGroupArrow}>{iconUi({ id: 'back', size: 'sm' })}</Box>
+        <Typography component='span' sx={sx.competitionAgeGroup} title={previousAgeGroup}>
+          {previousAgeGroup || 'קבוצת גיל לא ידועה'}
+        </Typography>
+      </>
+    ) : null}
+  </Box>
 )
 
 const TablePositionTimeline = ({ seasons = [] }) => (
@@ -71,29 +107,42 @@ const PriorityTimeline = ({ seasons = [] }) => (
 )
 export default function TeamKpiOverview({
   team,
-  title = 'ביצוע הקבוצה',
-  titleMeta = null,
+  competitionLevels = {},
+  leaguePath = [],
   tablePositionTimeline = [],
   offensePriorityTimeline = [],
   defensePriorityTimeline = [],
+  insightDetails = {},
 }) {
   const offense = resolveSide(team, 'offense')
   const defense = resolveSide(team, 'defense')
+  const ageGroupFor = seasonKey => leaguePath.find(season => season.seasonKey === seasonKey)?.ageGroupLabel || ''
+  const currentSeasonKey = tablePositionTimeline[0]?.seasonKey
+  const previousSeasonKey = tablePositionTimeline[1]?.seasonKey
   return (
-    <Box sx={sx.performanceSection}>
-      <Box sx={sx.performanceHeader}>
-        <Box sx={sx.performanceTitleRow}>
-          <Box sx={sx.performanceTitleIcon}>{iconUi({ id: 'stats', size: 'sm' })}</Box>
-          <Typography sx={sx.performanceTitle}>{title}</Typography>
-          {titleMeta}
-        </Box>
-      </Box>
-      <KpiRow sx={sx.kpiRow}>
+    <KpiRow sx={sx.kpiRow}>
+        <TeamKpiCard
+          performance
+          title='רמת התחרות'
+          valueContent={<CompetitionTimeline
+            currentLevel={competitionLevels.currentLevel}
+            previousLevel={competitionLevels.previousLevel}
+          />}
+          detailsContent={<CompetitionAgeGroups
+            currentAgeGroup={ageGroupFor(currentSeasonKey)}
+            previousAgeGroup={ageGroupFor(previousSeasonKey)}
+            hasPreviousSeason={Boolean(previousSeasonKey)}
+          />}
+          iconId='league'
+          insightNotes={[insightDetails.competition].filter(detail => detail?.text)}
+        />
+
         <TeamKpiCard
           performance
           title='מצב בטבלה'
           valueContent={<TablePositionTimeline seasons={tablePositionTimeline} />}
           iconId='points'
+          insightNotes={[insightDetails.rank].filter(detail => detail?.text)}
           details={[
             {
               label: 'שערי זכות',
@@ -111,6 +160,7 @@ export default function TeamKpiOverview({
           title='ביצוע התקפי'
           valueContent={<PriorityTimeline seasons={offensePriorityTimeline} />}
           iconId='stats'
+          insightNotes={[insightDetails.offense].filter(detail => detail?.text)}
           iconPriority={offensePriorityTimeline[0]?.level}
           details={[
             {
@@ -131,6 +181,7 @@ export default function TeamKpiOverview({
           title='ביצוע הגנתי'
           valueContent={<PriorityTimeline seasons={defensePriorityTimeline} />}
           iconId='defensive'
+          insightNotes={[insightDetails.defense].filter(detail => detail?.text)}
           iconPriority={defensePriorityTimeline[0]?.level}
           details={[
             {
@@ -145,8 +196,7 @@ export default function TeamKpiOverview({
             },
           ]}
         />
-      </KpiRow>
-    </Box>
+    </KpiRow>
   )
 }
 

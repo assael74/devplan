@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/yearDevelopment/components/TeamYearDevelopmentShared.js
 import * as React from 'react'
 import { Box, Chip, Typography } from '@mui/joy'
 
@@ -5,7 +6,13 @@ import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import LeagueName from '../../../../components/entities/LeagueName.js'
 import { teamYearDevelopmentSharedSx as sx } from '../sx/teamYearDevelopmentShared.sx.js'
 
-export const TeamYearSection = ({ iconId, title, titleExtra, children }) => (
+export const TeamYearSection = ({
+  iconId,
+  title,
+  titleExtra,
+  titleExtraSx,
+  children,
+}) => (
   <Box sx={sx.section}>
     <Box sx={sx.header}>
       <Box sx={sx.titleContainer}>
@@ -14,7 +21,7 @@ export const TeamYearSection = ({ iconId, title, titleExtra, children }) => (
             <Box sx={sx.titleIcon}>{iconUi({ id: iconId, size: 'sm' })}</Box>
             <Typography sx={sx.title}>{title}</Typography>
           </Box>
-          {titleExtra ? <Box sx={sx.titleExtra}>{titleExtra}</Box> : null}
+          {titleExtra ? <Box sx={[sx.titleExtra, titleExtraSx]}>{titleExtra}</Box> : null}
         </Box>
       </Box>
     </Box>
@@ -22,8 +29,8 @@ export const TeamYearSection = ({ iconId, title, titleExtra, children }) => (
   </Box>
 )
 
-export const SummaryChip = ({ iconId, label, value }) => (
-  <Box sx={sx.evolutionSummaryChip}>
+export const SummaryChip = ({ iconId, label, value, title }) => (
+  <Box sx={sx.evolutionSummaryChip} title={title}>
     {iconUi({ id: iconId, size: 'sm' })}
     <Typography>{label}</Typography>
     <Box sx={sx.evolutionSummaryValue}><Typography>{value}</Typography></Box>
@@ -51,7 +58,12 @@ export const SeasonSummaryChip = ({ season = {} }) => {
 
   return (
     <Box sx={sx.seasonSummary}>
-      <Chip size='sm' variant='soft' color='neutral' sx={sx.seasonSummaryChip}>
+      <Chip
+        size='sm'
+        variant='soft'
+        color='neutral'
+        sx={sx.seasonSummaryChip}
+      >
         <Box sx={sx.seasonSummaryChipContent}>
           <Typography component='span' sx={sx.seasonSummaryChipText}>{seasonKey}</Typography>
           {leagueName ? <Typography component='span' sx={sx.seasonSummaryChipSeparator}>·</Typography> : null}

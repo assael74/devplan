@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/scouting/model/teamDiagnosticSignalTask.presentation.js
 const TASK_LABEL_BY_SIGNAL = Object.freeze({
   ATTACK_CONCENTRATION: 'מומלץ לעקוב אחרי הבאנקרים בהתקפה',
   ATTACK_ESTABLISHED: 'אין משימת סקאוט מיידית',
@@ -5,7 +6,7 @@ const TASK_LABEL_BY_SIGNAL = Object.freeze({
   ATTACK_DEPTH_REVIEW: 'קבוצה צריכה שחקני התקפה איכותיים',
   ATTACK_POSSIBLE_GAP: 'קבוצה חייבת שחקני התקפה איכותיים',
   ATTACK_QUALITY_REVIEW: 'קבוצה חייבת שחקני התקפה איכותיים',
-  ATTACK_CLASSIFICATION_MISSING: 'קבוצה חייבת שחקני התקפה איכותיים',
+  ATTACK_CLASSIFICATION_MISSING: 'יש לבדוק את סיווג שחקני ההתקפה',
   DEFENSE_CONCENTRATION: 'מומלץ לעקוב אחרי הבאנקרים בהגנה',
   DEFENSE_ESTABLISHED: 'אין משימת סקאוט מיידית',
   DEFENSE_DEPTH_REVIEW: 'קבוצה צריכה שחקני הגנה איכותיים',
@@ -13,7 +14,7 @@ const TASK_LABEL_BY_SIGNAL = Object.freeze({
   DEFENSE_QUALITY_REVIEW: 'קבוצה חייבת שחקני הגנה איכותיים',
   DEFENSE_QUALITY_SEARCH: 'איתור ומעקב של שחקני ההגנה',
   DEFENSE_LOW_QUALITY_OVERLOAD: 'קבוצה חייבת שחקני הגנה איכותיים',
-  DEFENSE_CLASSIFICATION_MISSING: 'קבוצה חייבת שחקני הגנה איכותיים',
+  DEFENSE_CLASSIFICATION_MISSING: 'יש לבדוק את סיווג שחקני ההגנה',
   NO_CLEAR_FINDING: 'אין משימת סקאוט מיידית',
   REVIEW_REQUIRED: 'מעקב ובחינה עתידית',
 })

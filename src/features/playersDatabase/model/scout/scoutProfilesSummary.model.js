@@ -1,6 +1,11 @@
 // features/playersDatabase/model/scout/scoutProfilesSummary.model.js
 
 import { isCurrentRosterPlayer } from '../team/rosterStatus.model.js'
+import { SCOUT_PROFILE_IDENTITY } from '../../../../shared/scouting/players/ids.js'
+import {
+  isProfessionalScoutProfile,
+  resolveScoutProfileIdentity,
+} from '../../../../shared/scouting/players/profiles.js'
 
 const clean = value => String(value || '').trim()
 
@@ -87,5 +92,31 @@ export const buildScoutProfilesSummary = (players = []) => {
   return {
     total,
     profileCounts,
+  }
+}
+
+export const buildScoutProfileGroupCounts = (players = []) => {
+  const playerIds = {
+    professional: new Set(),
+    underuse: new Set(),
+  }
+
+  ;(Array.isArray(players) ? players : []).filter(isCurrentRosterPlayer).forEach((player, index) => {
+    const playerId = clean(
+      player?.playerId || player?.id || player?.playerDocumentId || player?.externalPlayerId
+    ) || `row-${index}`
+    const profileIds = resolveActiveProfessionalProfileIds(player)
+      .filter(isProfessionalScoutProfile)
+    if (profileIds.some(profileId => (
+      resolveScoutProfileIdentity(profileId) === SCOUT_PROFILE_IDENTITY.CORE
+    ))) playerIds.professional.add(playerId)
+    if (profileIds.some(profileId => (
+      resolveScoutProfileIdentity(profileId) === SCOUT_PROFILE_IDENTITY.OPPORTUNITY
+    ))) playerIds.underuse.add(playerId)
+  })
+
+  return {
+    professional: playerIds.professional.size,
+    underuse: playerIds.underuse.size,
   }
 }

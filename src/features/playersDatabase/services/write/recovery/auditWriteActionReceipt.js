@@ -3,7 +3,7 @@
 import { auditLeague } from '../../audit/league/index.js'
 import { auditRoster } from '../../audit/roster/index.js'
 import { auditStats } from '../../audit/stats/index.js'
-import { getWriteActionReceipt } from '../receipt/index.js'
+import { completeWriteActionAudit, getWriteActionReceipt } from '../receipt/index.js'
 import {
   prepareRosterReceiptState,
   prepareStatsReceiptState,
@@ -37,7 +37,7 @@ const runReceiptAudit = async ({ actionType, target }) => {
   throw new Error('סוג הפעולה אינו תומך בבדיקת סנכרון')
 }
 
-export const auditWriteActionReceipt = async ({ receiptId = '' } = {}) => {
+export const auditWriteActionReceipt = async ({ receiptId = '', closeIfClean = false } = {}) => {
   const id = clean(receiptId)
   if (!id) throw new Error('חסר מזהה קבלה')
 
@@ -50,6 +50,18 @@ export const auditWriteActionReceipt = async ({ receiptId = '' } = {}) => {
   }
   const target = requireWriteActionReceiptTarget(receipt)
   const audit = await runReceiptAudit({ actionType, target })
+
+  if (
+    closeIfClean &&
+    receipt.status !== 'closed' &&
+    receipt.executionStatus !== 'running' &&
+    receipt.canonicalOutcome === 'confirmed' &&
+    audit?.coverage?.complete === true &&
+    Array.isArray(audit.findings) &&
+    audit.findings.length === 0
+  ) {
+    await completeWriteActionAudit({ receiptId: id, audit })
+  }
 
   return {
     receiptId: id,

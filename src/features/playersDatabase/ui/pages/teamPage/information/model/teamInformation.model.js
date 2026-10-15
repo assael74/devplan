@@ -8,17 +8,16 @@ import {
 } from '../../scouting/model/teamInterest.presentation.js'
 
 import { clean, numberOrNull } from '../../model/teamInformation.utils.js'
-import { buildBalance } from './teamBalanceInformation.model.js'
 import { buildPositionClassificationRows } from '../../positionClassification/model/teamPositionClassificationRows.model.js'
 import {
   buildDevelopmentTimeline,
   buildPerformance,
   buildPriorityTimeline,
-  buildSeasonChange,
   buildSeasonTimeline,
   buildYearDevelopmentOverview,
   findPreviousSeason,
 } from './teamInformationDevelopment.model.js'
+import { buildTeamPerformanceInsight } from './teamPerformanceInsight.model.js'
 
 const buildStructure = ({ seasonDoc, lineInterpretation = null }) => {
   const balance = seasonDoc?.teamBalance
@@ -99,12 +98,14 @@ export const buildTeamInformationView = ({
   selectedSeasonKey = '',
   selectedSeasonOption = null,
   seasonOptions = [],
+  clubsDirectory = null,
   players = [],
   playerIdsFilter = null,
 } = {}) => {
   const previousSeason = findPreviousSeason({ teamSeasons, selectedSeasonKey })
-  const balance = buildBalance({ seasonDoc: selectedTeamSeason })
-  const previousBalance = buildBalance({ seasonDoc: previousSeason })
+  const currentSeason = teamSeasons.find(season => (
+    clean(season?.seasonKey || season?.seasonId) === clean(selectedSeasonKey)
+  )) || null
   const positionClassificationRows = buildPositionClassificationRows({
     seasonDoc: selectedTeamSeason,
     players,
@@ -131,14 +132,24 @@ export const buildTeamInformationView = ({
     selectedTeamSeason,
     selectedSeasonKey: clean(selectedSeasonKey),
     selectedSeasonOption,
-    balance,
     structure,
     positionClassificationRows,
     lineInterpretation,
     performance: buildPerformance(team),
+    performanceInsight: buildTeamPerformanceInsight({
+      team,
+      currentSeason,
+      previousSeason,
+      selectedTeamSeason,
+      selectedSeasonOption,
+    }),
     seasonTimeline: buildSeasonTimeline({ team, teamSeasons, selectedSeasonKey, selectedSeasonOption }),
-    developmentTimeline: buildDevelopmentTimeline({ team, teamSeasons, seasonOptions }),
-    yearDevelopment: buildYearDevelopmentOverview({ team, teamSeasons, seasonOptions }),
+    developmentTimeline: buildDevelopmentTimeline({
+      team, teamSeasons, seasonOptions, selectedTeamSeason, selectedSeasonKey,
+    }),
+    yearDevelopment: buildYearDevelopmentOverview({
+      team, teamSeasons, seasonOptions, clubsDirectory, selectedSeasonKey,
+    }),
     offensePriorityTimeline: buildPriorityTimeline({
       side: 'offense', team, teamSeasons, selectedSeasonKey, selectedSeasonOption,
     }),
@@ -146,6 +157,5 @@ export const buildTeamInformationView = ({
       side: 'defense', team, teamSeasons, selectedSeasonKey, selectedSeasonOption,
     }),
     previousSeasonKey: clean(previousSeason?.seasonKey || previousSeason?.seasonId),
-    seasonChange: buildSeasonChange({ balance, previousBalance, season: selectedTeamSeason, previousSeason }),
   }
 }

@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/model/teamInformation.utils.js
 export const clean = value => String(value === undefined || value === null ? '' : value).trim()
 
 export const withFallback = (value, fallback) => (

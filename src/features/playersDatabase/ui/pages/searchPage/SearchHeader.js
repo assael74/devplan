@@ -30,6 +30,7 @@ export default function SearchHeader({
 
       <Stack direction='row' spacing={1} sx={sx.actions}>
         <Button
+          size='sm'
           variant='outlined'
           sx={sx.auditButton}
           startDecorator={iconUi({
@@ -42,6 +43,7 @@ export default function SearchHeader({
         </Button>
 
         <Button
+          size='sm'
           variant='solid'
           disabled={reportDisabled}
           sx={sx.reportButton}
@@ -55,6 +57,7 @@ export default function SearchHeader({
         </Button>
 
         <Button
+          size='sm'
           variant='outlined'
           sx={sx.leaguesButton}
           startDecorator={iconUi({

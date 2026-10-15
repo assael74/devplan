@@ -1,5 +1,12 @@
+// src/features/playersDatabase/ui/pages/teamPage/information/model/teamInformationDevelopment.model.js
 import { clean, numberOrNull, withFallback } from '../../model/teamInformation.utils.js'
 import { countCurrentRosterPlayers } from '../../../../../model/team/rosterStatus.model.js'
+import { buildTeamDisplayName } from '../../../../../catalog/teamDisplay.js'
+import { resolveMovementDirection } from '../../../../../domain/movement/index.js'
+import { buildTeamPlayerLineClassificationEvaluation } from '../../../../../../../shared/scouting/teams/index.js'
+import { buildScoutProfileGroupCounts } from '../../../../../model/scout/scoutProfilesSummary.model.js'
+import { SCOUT_PROFILE_IDENTITY } from '../../../../../../../shared/scouting/players/ids.js'
+import { resolveScoutProfileIdentity } from '../../../../../../../shared/scouting/players/profiles.js'
 
 const seasonOrder = season => {
   const match = clean(season?.seasonKey || season?.seasonId).match(/^(\d{2})[/_-](\d{2})$/)
@@ -48,6 +55,40 @@ const seasonSummaryMeta = season => ({
   ageGroupLabel: clean(season?.ageGroupLabel || season?.ageGroup?.label),
 })
 
+const largestProfessionalProfileChange = (timeline, selectedSeasonKey) => {
+  const currentIndex = timeline.findIndex(season => season?.seasonKey === clean(selectedSeasonKey))
+  const current = timeline[currentIndex]
+  const previous = timeline[currentIndex + 1]
+  if (!current || !previous || current.total === null || previous.total === null ||
+    !current.groupCounts || !previous.groupCounts) return null
+
+  const counts = season => new Map(
+    (season.profileGroups.find(group => group.key === 'professional')?.profiles || [])
+      .map(profile => [profile.profileId, profile.count])
+  )
+  const currentCounts = counts(current)
+  const previousCounts = counts(previous)
+  const profileIds = new Set([...currentCounts.keys(), ...previousCounts.keys()])
+  const changes = [...profileIds].map(profileId => {
+    const currentCount = currentCounts.get(profileId) || 0
+    const previousCount = previousCounts.get(profileId) || 0
+    return {
+      profileId,
+      current: currentCount,
+      previous: previousCount,
+      delta: currentCount - previousCount,
+      seasonKey: current.seasonKey,
+    }
+  }).filter(change => Math.abs(change.delta) >= 3)
+    .sort((left, right) => (
+      Math.abs(right.delta) - Math.abs(left.delta) ||
+      right.delta - left.delta ||
+      left.profileId.localeCompare(right.profileId)
+    ))
+
+  return changes[0] || null
+}
+
 export const findPreviousSeason = ({ teamSeasons, selectedSeasonKey }) => {
   const rows = (Array.isArray(teamSeasons) ? teamSeasons : [])
     .filter(Boolean)
@@ -79,37 +120,60 @@ export const buildSeasonTimeline = ({ team = {}, teamSeasons = [], selectedSeaso
   ].filter(entry => entry.seasonKey)
 }
 
-export const buildDevelopmentTimeline = ({ team = {}, teamSeasons = [], seasonOptions = [] } = {}) => {
+export const buildDevelopmentTimeline = ({
+  team = {},
+  teamSeasons = [],
+  seasonOptions = [],
+  selectedTeamSeason = null,
+  selectedSeasonKey = '',
+} = {}) => {
   const rows = buildAllDevelopmentSeasons({ teamSeasons, seasonOptions })
   const metric = (season, key) => withFallback(
     numberOrNull(season?.[key]),
     season.isCurrent ? numberOrNull(team?.[key]) : null
   )
-  const toEntry = season => ({
-    ...seasonSummaryMeta(season),
-    isCurrent: Boolean(season.isCurrent),
-    status: season.isUpcoming ? 'upcoming' : 'available',
-    tableRank: metric(season, 'tableRank'),
-    games: withFallback(metric(season, 'games'), numberOrNull(season?.teamStats?.teamGamePlayed)),
-    goalsForPerGame: metric(season, 'goalsForPerGame'),
-    goalsAgainstPerGame: metric(season, 'goalsAgainstPerGame'),
-    tableAttackRank: metric(season, 'tableAttackRank'),
-    tableDefenseRank: metric(season, 'tableDefenseRank'),
-    offensePriorityLevel: clean(
-      season?.performance?.offense?.priorityLevel ||
-      (season.isCurrent ? team?.performanceView?.offense?.priority?.level : '')
-    ),
-    defensePriorityLevel: clean(
-      season?.performance?.defense?.priorityLevel ||
-      (season.isCurrent ? team?.performanceView?.defense?.priority?.level : '')
-    ),
-  })
+  const toEntry = season => {
+    const selectedProfileSource = season.seasonKey === clean(selectedSeasonKey) &&
+      numberOrNull(selectedTeamSeason?.scoutProfilesSummary?.total) !== null &&
+      Array.isArray(selectedTeamSeason?.teamPlayers)
+    const profileSource = selectedProfileSource ? selectedTeamSeason : season
+    const profileCounts = numberOrNull(profileSource?.scoutProfilesSummary?.total) !== null &&
+      Array.isArray(profileSource?.teamPlayers)
+      ? buildScoutProfileGroupCounts(profileSource.teamPlayers)
+      : null
+    const games = withFallback(metric(season, 'games'), numberOrNull(season?.teamStats?.teamGamePlayed))
+    const points = withFallback(
+      numberOrNull(season?.teamStats?.points),
+      season.isCurrent ? numberOrNull(team?.points) : null
+    )
+    return {
+      ...seasonSummaryMeta(season),
+      isCurrent: Boolean(season.isCurrent),
+      status: season.isUpcoming ? 'upcoming' : 'available',
+      tableRank: metric(season, 'tableRank'),
+      games,
+      successPercent: !season.isUpcoming && games > 0 && points !== null
+        ? Math.round((points / (games * 3)) * 100)
+        : null,
+      goalsForPerGame: metric(season, 'goalsForPerGame'),
+      goalsAgainstPerGame: metric(season, 'goalsAgainstPerGame'),
+      professionalProfiles: profileCounts ? profileCounts.professional : null,
+      underuseProfiles: profileCounts ? profileCounts.underuse : null,
+    }
+  }
 
   return rows.map(toEntry).filter(entry => entry.seasonKey)
 }
 
-export const buildYearDevelopmentOverview = ({ team = {}, teamSeasons = [], seasonOptions = [] } = {}) => {
+export const buildYearDevelopmentOverview = ({
+  team = {},
+  teamSeasons = [],
+  seasonOptions = [],
+  clubsDirectory = null,
+  selectedSeasonKey = '',
+} = {}) => {
   const seasons = buildAllDevelopmentSeasons({ teamSeasons, seasonOptions })
+  const clubsById = clubsDirectory?.clubsById || {}
 
   const seasonKey = season => clean(season.seasonKey || season.seasonId)
   const seasonOptionByKey = new Map(
@@ -152,69 +216,134 @@ export const buildYearDevelopmentOverview = ({ team = {}, teamSeasons = [], seas
     const profileCounts = summary.profileCounts && typeof summary.profileCounts === 'object'
       ? summary.profileCounts
       : {}
+    const profiles = Object.entries(profileCounts)
+      .map(([profileId, count]) => ({ profileId, count: numberOrNull(count) || 0 }))
+      .filter(profile => profile.profileId && profile.count > 0)
+      .sort((left, right) => right.count - left.count || left.profileId.localeCompare(right.profileId))
+    const profileGroups = [
+      { key: 'professional', label: 'פרופילים מקצועיים', identity: SCOUT_PROFILE_IDENTITY.CORE },
+      { key: 'underuse', label: 'פרופילים ללא שימוש', identity: SCOUT_PROFILE_IDENTITY.OPPORTUNITY },
+    ].map(group => ({
+      key: group.key,
+      label: group.label,
+      profiles: profiles.filter(profile => resolveScoutProfileIdentity(profile.profileId) === group.identity),
+    }))
+    const otherProfiles = profiles.filter(profile => ![
+      SCOUT_PROFILE_IDENTITY.CORE,
+      SCOUT_PROFILE_IDENTITY.OPPORTUNITY,
+    ].includes(resolveScoutProfileIdentity(profile.profileId)))
+    if (otherProfiles.length) {
+      profileGroups.push({ key: 'other', label: 'פרופילים נוספים', profiles: otherProfiles })
+    }
 
     return {
       ...seasonSummaryMeta(season),
       isCurrent: season.isCurrent,
       total: numberOrNull(summary.total),
-      profiles: Object.entries(profileCounts)
-        .map(([profileId, count]) => ({ profileId, count: numberOrNull(count) || 0 }))
-        .filter(profile => profile.profileId && profile.count > 0)
-        .sort((left, right) => right.count - left.count || left.profileId.localeCompare(right.profileId)),
+      profiles,
+      profileGroups,
+      groupCounts: Array.isArray(season?.teamPlayers)
+        ? buildScoutProfileGroupCounts(season.teamPlayers)
+        : null,
     }
   }
+  const profileTimeline = seasons.map(buildProfileDistribution)
+  const profileChange = largestProfessionalProfileChange(profileTimeline, selectedSeasonKey)
   const playerById = new Map()
   seasons.forEach(season => {
     ;(Array.isArray(season?.teamPlayers) ? season.teamPlayers : []).forEach(player => {
       const playerId = clean(player?.playerId)
-      if (playerId) playerById.set(playerId, player)
+      if (playerId && !playerById.has(playerId)) playerById.set(playerId, player)
     })
   })
-  const resolveMovementLine = fact => {
-    const player = playerById.get(clean(fact?.playerId)) || {}
-    const value = clean(
-      player?.lineClassification?.line ||
-      player?.line ||
-      player?.primaryPosition
-    ).toUpperCase()
+  const resolveMovementPlayer = (fact, season) => (
+    (Array.isArray(season?.teamPlayers) ? season.teamPlayers : [])
+      .find(player => clean(player?.playerId) === clean(fact?.playerId)) ||
+    playerById.get(clean(fact?.playerId)) || {}
+  )
+  const teamSlotFromId = value => {
+    const match = clean(value).match(/_([1-9]\d*)$/)
+    return match ? Number(match[1]) : null
+  }
+  const resolveFactDirection = fact => {
+    const storedDirection = clean(fact?.levelDirection || fact?.direction) || 'unknown'
+    if (storedDirection !== 'unknown') return storedDirection
 
-    if (['GOALKEEPER', 'GK', 'GOALIE'].includes(value)) return 'GOALKEEPER'
-    if (['DEFENSE', 'DEFENDER', 'FULLBACK'].includes(value)) return 'DEFENSE'
-    if (['MIDFIELD', 'MIDFIELDER', 'ATTACKING_MIDFIELDER'].includes(value)) return 'MIDFIELD'
-    if (['ATTACK', 'ATTACKER', 'FORWARD', 'STRIKER'].includes(value)) return 'ATTACK'
-    return 'UNKNOWN'
+    const fromClubId = clean(fact?.fromClubId)
+    const toClubId = clean(fact?.toClubId)
+    if (!fromClubId || !toClubId || fromClubId === toClubId) return storedDirection
+
+    const fromLevel = numberOrNull(clubsById[fromClubId]?.clubLevel)
+    const toLevel = numberOrNull(clubsById[toClubId]?.clubLevel)
+    const fromSlot = teamSlotFromId(fact?.fromTeamId || fact?.fromBirthTeamDocumentId)
+    const toSlot = teamSlotFromId(fact?.toTeamId || fact?.toBirthTeamDocumentId)
+    if (!fromSlot || fromLevel === null || fromLevel <= 1 || toLevel !== 1 || toSlot !== 2) {
+      return storedDirection
+    }
+
+    return resolveMovementDirection({
+      fromClubId,
+      toClubId,
+      fromClubLevel: fromLevel,
+      toClubLevel: toLevel,
+      fromBirthTeamSlot: fromSlot,
+      toBirthTeamSlot: toSlot,
+    })
+  }
+  const resolveLevelChange = (fact, direction) => {
+    const fromClubId = clean(fact?.fromClubId)
+    const toClubId = clean(fact?.toClubId)
+    if (!fromClubId || !toClubId || fromClubId === toClubId || direction === 'unknown') return null
+
+    const fromLevel = numberOrNull(clubsById[fromClubId]?.clubLevel)
+    const toLevel = numberOrNull(clubsById[toClubId]?.clubLevel)
+    if (fromLevel === null || toLevel === null || fromLevel <= 0 || toLevel <= 0) return null
+
+    const change = fromLevel - toLevel
+    if ((change > 0 && direction !== 'up') ||
+      (change < 0 && direction !== 'down') ||
+      (change === 0 && direction !== 'lateral')) return null
+
+    return Math.abs(change)
   }
   const movementSeasons = seasons.map(season => {
     const left = Array.isArray(season?.transfersOut) ? season.transfersOut : []
     const joined = Array.isArray(season?.transfersIn) ? season.transfersIn : []
-    const directionCounts = left.reduce((counts, fact) => {
-      const direction = clean(fact?.direction) || 'unknown'
+    const movements = [
+      ...left.map(fact => ({ fact, side: 'out' })),
+      ...joined.map(fact => ({ fact, side: 'in' })),
+    ]
+    const directionCounts = movements.reduce((counts, { fact }) => {
+      const direction = resolveFactDirection(fact)
       return { ...counts, [direction]: (counts[direction] || 0) + 1 }
     }, {})
-    const lineCounts = left.reduce((counts, fact) => {
-      const line = resolveMovementLine(fact)
-      return { ...counts, [line]: (counts[line] || 0) + 1 }
-    }, {})
-
     return {
       ...seasonSummaryMeta(season),
       isUpcoming: Boolean(season.isUpcoming),
       leftCount: left.length,
       joinedCount: joined.length,
       directionCounts,
-      lineCounts,
-      movements: left.map(fact => {
-        const player = playerById.get(clean(fact?.playerId)) || {}
+      movements: movements.map(({ fact, side }) => {
+        const player = resolveMovementPlayer(fact, season)
+        const evaluation = buildTeamPlayerLineClassificationEvaluation({ player })
+        const direction = resolveFactDirection(fact)
+        const otherClubId = clean(side === 'out' ? fact?.toClubId : fact?.fromClubId)
+        const otherTeamId = clean(side === 'out' ? fact?.toTeamId : fact?.fromTeamId)
 
         return {
+          movementId: clean(fact?.movementId),
           seasonKey: seasonKey(season),
           name: clean(player?.fullName || player?.name || player?.playerName) || 'שחקן ללא שם',
-          direction: clean(fact?.direction) || 'unknown',
-          line: resolveMovementLine(fact),
-          hasScoutProfile: Boolean(
-            clean(player?.primaryScoutProfileId) ||
-            (Array.isArray(player?.professionalScoutProfileIds) && player.professionalScoutProfileIds.length)
-          ),
+          side,
+          direction,
+          player,
+          classification: player?.lineClassification || evaluation.classification || null,
+          otherTeamName: buildTeamDisplayName({
+            clubNames: clubsById[otherClubId]?.names,
+            clubId: otherClubId,
+            teamId: otherTeamId,
+          }),
+          levelChange: resolveLevelChange(fact, direction),
         }
       }),
     }
@@ -250,7 +379,8 @@ export const buildYearDevelopmentOverview = ({ team = {}, teamSeasons = [], seas
       isCurrent: season.isCurrent,
     })),
     rosterBalanceTimeline: seasons.map(buildLineDistribution),
-    scoutProfileDistributionTimeline: seasons.map(buildProfileDistribution),
+    scoutProfileDistributionTimeline: profileTimeline,
+    largestProfessionalProfileChange: profileChange,
     movements,
     movementSeasons,
     birthYear: numberOrNull(team?.birthYear),
@@ -291,19 +421,3 @@ export const buildPerformance = team => [
   ['דירוג התקפה', numberOrNull(team?.tableAttackRank)],
   ['דירוג הגנה', numberOrNull(team?.tableDefenseRank)],
 ]
-
-export const buildSeasonChange = ({ balance, previousBalance, season, previousSeason }) => {
-  if (!previousSeason || !previousBalance || !balance) return []
-  const playersCount = Array.isArray(season?.teamPlayers) ? countCurrentRosterPlayers(season.teamPlayers) : null
-  const previousPlayersCount = Array.isArray(previousSeason?.teamPlayers) ? countCurrentRosterPlayers(previousSeason.teamPlayers) : null
-  const previousCard = key => previousBalance.cards.find(card => card.key === key)
-  const currentCard = key => balance.cards.find(card => card.key === key)
-
-  return [
-    ['גודל סגל', previousPlayersCount, playersCount],
-    ['פיזור דקות', previousCard('minutes')?.value, currentCard('minutes')?.value],
-    ['עומק שימוש', previousCard('depth')?.value, currentCard('depth')?.value],
-    ['ריכוז תפוקה', previousCard('production')?.value, currentCard('production')?.value],
-    ['רוטציה', previousCard('rotation')?.value, currentCard('rotation')?.value],
-  ]
-}

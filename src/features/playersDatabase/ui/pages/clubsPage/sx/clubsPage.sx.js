@@ -1,17 +1,13 @@
 // src/features/playersDatabase/ui/pages/clubsPage/sx/clubsPage.sx.js
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 import { pageCoreLayoutSx } from '../../../components/page/sx/pageCoreLayout.sx.js'
+import { pageHeaderTitleSx } from '../../../components/page/sx/pageHeader.sx.js'
 
 export const clubsPageSx = {
   ...pageCoreLayoutSx,
   pageTitle: {
+    ...pageHeaderTitleSx,
     color: devPlanColors.primaryDark,
-    fontSize: {
-      xs: 34,
-      md: 44,
-    },
-    lineHeight: 1.05,
-    fontWeight: 700,
   },
 
   headerActionsPanel: {
@@ -26,8 +22,6 @@ export const clubsPageSx = {
   },
 
   primaryButton: {
-    minHeight: 38,
-    px: 2,
     bgcolor: devPlanColors.primary,
     color: '#fff',
 
@@ -37,8 +31,6 @@ export const clubsPageSx = {
   },
 
   secondaryButton: {
-    minHeight: 38,
-    px: 2,
     bgcolor: '#fff',
     color: devPlanColors.primary,
     borderColor: devPlanColors.primary,

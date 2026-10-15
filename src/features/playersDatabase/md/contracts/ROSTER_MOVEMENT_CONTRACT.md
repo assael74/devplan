@@ -46,6 +46,10 @@ canonical → counterparts → playerSeasons → playerSearchIndexes
 ## Movement
 
 - `transfersIn` ו־`transfersOut` הם עובדות קנוניות של Team Season.
+- במעבר ממועדון שרמתו נמוכה מ־`1` (`clubLevel > 1`) אל קבוצה שנייה
+  (`teamSlot = 2`) במועדון רמה `1`, קבוצה 2 מושווית כאילו הייתה קבוצה 1.
+  במעברים פנימיים כיוון המעבר נקבע עדיין לפי מספר הקבוצה. מעבר חיצוני אל
+  קבוצה נוספת אחרת נשאר `unknown` ללא השוואת רמות קבוצתית.
 - שני צדי המעבר עצמאיים: כל Team Season בעלים רק על צד המעבר
   שנשמר בו.
 - Roster Clear מוחק רק את ה־Team Season של הקבוצה שהפעילה את

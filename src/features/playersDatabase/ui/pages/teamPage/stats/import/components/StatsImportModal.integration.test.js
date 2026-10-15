@@ -6,8 +6,9 @@ import StatsImportModal from './StatsImportModal.js'
 
 jest.mock('../../../../../components/modals/RegularModal.js', () => ({
   __esModule: true,
-  default: ({ open, confirmLabel, footerActions, onConfirm, children }) => open ? (
+  default: ({ open, confirmLabel, footerActions, onConfirm, onClose, children }) => open ? (
     <div>
+      <button type='button' onClick={onClose}>close-modal</button>
       <button type='button' onClick={onConfirm}>{confirmLabel}</button>
       {footerActions}
       {children}
@@ -75,6 +76,23 @@ describe('StatsImportModal active Stats Load flow', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'המשך לקליטת נתונים' }))
     expect(screen.getByRole('button', { name: 'המשך לזיהוי ואישור' })).toBeInTheDocument()
+  })
+
+  test.each(['failed', 'audit_failed', 'writing'])('close behavior after %s', async executionStatus => {
+    const state = controller({
+      rows: [{ id: 'player-1' }],
+      pasteValue: 'player data',
+      validation: { checks: [], valid: true },
+      finalSync: { executionStatus, syncComplete: false },
+    })
+    render(<StatsImportModal team={{ name: 'Team' }} seasonKey='26/27' columns={[]} source={{}} controller={state} />)
+    fireEvent.click(screen.getByRole('button', { name: 'המשך לקליטת נתונים' }))
+    fireEvent.click(screen.getByRole('button', { name: 'המשך לזיהוי ואישור' }))
+    fireEvent.click(screen.getByRole('button', { name: 'עבור לסנכרון' }))
+    await waitFor(() => expect(screen.getByText('final-sync')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'close-modal' }))
+    expect(state.close).toHaveBeenCalledTimes(executionStatus === 'writing' ? 0 : 1)
+    expect(state.clearPaste).not.toHaveBeenCalled()
   })
 
   test('does not allow returning to approval after synchronization succeeded', async () => {

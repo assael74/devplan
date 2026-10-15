@@ -1,25 +1,15 @@
 // src/features/playersDatabase/ui/pages/leaguePage/sx/leagueHeader.sx.js
 
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
+import {
+  pageHeaderContextChipSx,
+  pageHeaderMediaSx,
+  pageHeaderTitleSx,
+} from '../../../components/page/sx/pageHeader.sx.js'
 
 export const leagueHeaderSx = {
-  header: {
-    gridTemplateColumns: {
-      xs: '1fr',
-      lg: 'minmax(760px, 1fr) auto',
-    },
-  },
-
   leagueAvatar: {
-    width: {
-      xs: 42,
-      md: 52,
-    },
-    height: {
-      xs: 42,
-      md: 52,
-    },
-    flexShrink: 0,
+    ...pageHeaderMediaSx,
     bgcolor: '#fff',
     border: `1px solid ${devPlanColors.primaryLight}`,
   },
@@ -35,15 +25,10 @@ export const leagueHeaderSx = {
   },
 
   pageTitle: {
+    ...pageHeaderTitleSx,
     flexShrink: 0,
     whiteSpace: 'nowrap',
     color: devPlanColors.primaryDark,
-    fontSize: {
-      xs: 34,
-      md: 44,
-    },
-    lineHeight: 1.05,
-    fontWeight: 700,
   },
 
   titleRow: {
@@ -59,29 +44,16 @@ export const leagueHeaderSx = {
   },
 
   titleRegion: {
+    ...pageHeaderTitleSx,
     color: devPlanColors.tertiary,
-    fontSize: {
-      xs: 34,
-      md: 44,
-    },
-    fontWeight: 700,
-    lineHeight: 1.05,
   },
 
   titleChip: {
-    minHeight: 28,
-    px: 1.2,
-    display: 'inline-flex',
+    ...pageHeaderContextChipSx,
     flexShrink: 0,
-    alignItems: 'center',
-    borderRadius: 999,
     bgcolor: devPlanColors.primaryLight,
     border: `1px solid ${devPlanColors.primary}`,
     color: devPlanColors.primary,
-    fontSize: 13,
-    fontWeight: 700,
-    lineHeight: 1,
-    whiteSpace: 'nowrap',
   },
 
   titleChips: {
@@ -110,8 +82,6 @@ export const leagueHeaderSx = {
   },
 
   primaryButton: {
-    minHeight: 38,
-    px: 2,
     bgcolor: devPlanColors.primary,
     color: '#fff',
 
@@ -121,8 +91,6 @@ export const leagueHeaderSx = {
   },
 
   secondaryButton: {
-    minHeight: 38,
-    px: 2,
     bgcolor: '#fff',
     color: devPlanColors.primary,
     borderColor: devPlanColors.primary,

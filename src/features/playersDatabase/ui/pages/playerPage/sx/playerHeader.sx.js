@@ -1,4 +1,12 @@
+// src/features/playersDatabase/ui/pages/playerPage/sx/playerHeader.sx.js
+
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
+import {
+  pageHeaderContextChipSx,
+  pageHeaderFavoriteSx,
+  pageHeaderMediaSx,
+  pageHeaderTitleSx,
+} from '../../../components/page/sx/pageHeader.sx.js'
 
 export const playerHeaderSx = {
   header: {
@@ -14,14 +22,7 @@ export const playerHeaderSx = {
   },
 
   playerAvatar: {
-    width: {
-      xs: 52,
-      md: 58,
-    },
-    height: {
-      xs: 52,
-      md: 58,
-    },
+    ...pageHeaderMediaSx,
     display: 'block',
     objectFit: 'cover',
     borderRadius: '50%',
@@ -30,33 +31,23 @@ export const playerHeaderSx = {
   },
 
   pageTitle: {
+    ...pageHeaderTitleSx,
     minWidth: 0,
     color: devPlanColors.primaryDark,
-    fontSize: {
-      xs: 34,
-      md: 44,
-    },
-    lineHeight: 1.05,
-    fontWeight: 700,
+  },
+
+  favoriteButton: {
+    ...pageHeaderFavoriteSx,
   },
 
   teamChip: {
+    ...pageHeaderContextChipSx,
     minWidth: 0,
     maxWidth: 180,
-    minHeight: 30,
-    px: 1.25,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
     gap: 0.55,
-    borderRadius: 999,
     bgcolor: '#fff',
     border: `1px solid ${devPlanColors.border}`,
     color: devPlanColors.primaryDark,
-    fontSize: 13,
-    fontWeight: 700,
-    lineHeight: 1,
-    whiteSpace: 'nowrap',
   },
 
   teamAvatar: {
@@ -69,53 +60,26 @@ export const playerHeaderSx = {
   },
 
   birthYearChip: {
-    minHeight: 34,
-    px: 1.55,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 999,
+    ...pageHeaderContextChipSx,
     bgcolor: devPlanColors.tertiary,
     border: `1px solid ${devPlanColors.primary}`,
     color: '#fff',
-    fontSize: 17,
-    fontWeight: 700,
-    lineHeight: 1,
-    whiteSpace: 'nowrap',
     boxShadow: '0 8px 20px rgba(47, 134, 199, 0.24)',
   },
 
   seasonChip: {
-    minHeight: 30,
-    px: 1.25,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 999,
+    ...pageHeaderContextChipSx,
     bgcolor: devPlanColors.primaryLight,
     border: `1px solid ${devPlanColors.primary}`,
     color: devPlanColors.primary,
-    fontSize: 13,
-    fontWeight: 700,
-    lineHeight: 1,
-    whiteSpace: 'nowrap',
   },
 
   leagueChip: {
-    minHeight: 30,
+    ...pageHeaderContextChipSx,
     maxWidth: 290,
-    px: 1.15,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 999,
     bgcolor: '#fff',
     border: `1px solid ${devPlanColors.primary}`,
     color: devPlanColors.primaryDark,
-    fontSize: 12,
-    fontWeight: 700,
-    lineHeight: 1,
-    whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
@@ -133,8 +97,6 @@ export const playerHeaderSx = {
   },
 
   primaryButton: {
-    minHeight: 38,
-    px: 2,
     gap: 0.75,
     bgcolor: devPlanColors.primary,
     color: '#fff',
@@ -145,8 +107,6 @@ export const playerHeaderSx = {
   },
 
   secondaryButton: {
-    minHeight: 38,
-    px: 2,
     gap: 0.75,
     bgcolor: '#fff',
     color: devPlanColors.primary,

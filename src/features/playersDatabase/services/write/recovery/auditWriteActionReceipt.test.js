@@ -4,7 +4,7 @@ import { auditWriteActionReceipt } from './auditWriteActionReceipt.js'
 import { auditLeague } from '../../audit/league/index.js'
 import { auditRoster } from '../../audit/roster/index.js'
 import { auditStats } from '../../audit/stats/index.js'
-import { getWriteActionReceipt } from '../receipt/index.js'
+import { completeWriteActionAudit, getWriteActionReceipt } from '../receipt/index.js'
 import {
   prepareRosterReceiptState,
   prepareStatsReceiptState,
@@ -14,7 +14,7 @@ import {
 jest.mock('../../audit/league/index.js', () => ({ auditLeague: jest.fn() }))
 jest.mock('../../audit/roster/index.js', () => ({ auditRoster: jest.fn() }))
 jest.mock('../../audit/stats/index.js', () => ({ auditStats: jest.fn() }))
-jest.mock('../receipt/index.js', () => ({ getWriteActionReceipt: jest.fn() }))
+jest.mock('../receipt/index.js', () => ({ getWriteActionReceipt: jest.fn(), completeWriteActionAudit: jest.fn() }))
 jest.mock('./repairWriteAction.js', () => ({
   prepareRosterReceiptState: jest.fn(),
   prepareStatsReceiptState: jest.fn(),
@@ -77,3 +77,18 @@ describe('auditWriteActionReceipt', () => {
     expect(auditStats).toHaveBeenCalledWith({ ...target, approvedState: statsState })
   })
 })
+
+ test.each([
+  ['confirmed', 'failed', true, [], 1],
+  ['confirmed', 'failed', false, [], 0],
+  ['confirmed', 'failed', true, [{ type: 'mismatch' }], 0],
+  ['pending', 'failed', true, [], 0],
+  ['confirmed', 'running', true, [], 0],
+ ])('closes only clean, complete and confirmed receipts: %s %s %s', async (canonicalOutcome, executionStatus, complete, findings, calls) => {
+   const audit = { coverage: { complete }, findings }
+   getWriteActionReceipt.mockResolvedValue({ id: 'receipt-close', actionType: 'statsLoad', status: 'open', canonicalOutcome, executionStatus, target })
+   auditStats.mockResolvedValue(audit)
+   await auditWriteActionReceipt({ receiptId: 'receipt-close', closeIfClean: true })
+   expect(completeWriteActionAudit).toHaveBeenCalledTimes(calls)
+   if (calls) expect(completeWriteActionAudit).toHaveBeenCalledWith({ receiptId: 'receipt-close', audit })
+ })

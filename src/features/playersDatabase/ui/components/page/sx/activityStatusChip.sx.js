@@ -2,7 +2,7 @@
 
 export const activityStatusChipSx = {
   root: ({ backgroundColor, color, textColor }) => ({
-    minHeight: 28,
+    minHeight: 30,
     px: 1.2,
     display: 'inline-flex',
     alignItems: 'center',

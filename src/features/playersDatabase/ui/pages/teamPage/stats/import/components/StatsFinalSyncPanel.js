@@ -77,6 +77,14 @@ export default function StatsFinalSyncPanel({ controller }) {
             <Typography level='body-xs'>
               {`${findingsCount} ממצאים. ניתן לנסות שוב עם אותה קבלה.`}
             </Typography>
+            {Array.isArray(audit?.findings) ? audit.findings.map((finding, index) => (
+              <Typography key={finding.id || index} level='body-xs'>
+                {finding.title || finding.type || finding.target || 'ממצא ללא תיאור'}
+              </Typography>
+            )) : null}
+            <Typography level='body-xs'>
+              ניתן לסגור את החלון. הסגירה אינה מבטלת נתונים שכבר נשמרו ואינה מסמנת את הבדיקה כהצלחה.
+            </Typography>
           </Box>
         </Alert>
       ) : null}

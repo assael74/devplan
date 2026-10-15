@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/scouting/model/teamInterest.presentation.js
 const TEAM_LINE_INTEREST_PRESENTATION = Object.freeze({
   ATTACK_CONCENTRATION: Object.freeze({
     label: 'שחקני התקפה איכותיים מצומצם',
@@ -12,7 +13,7 @@ const TEAM_LINE_INTEREST_PRESENTATION = Object.freeze({
     explanation: 'ביצוע התקפי נמוך עם מעט שחקני התקפה איכותיים',
   }),
   ATTACK_CLASSIFICATION_MISSING: Object.freeze({
-    label: 'אין שחקני התקפה בסגל',
+    label: 'אין שחקני התקפה מסווגים',
     explanation: 'נדרש סיווג של שחקני התקפה לפני שאפשר להסיק על עומק או באנקרים בחוליה.',
   }),
   DEFENSE_CONCENTRATION: Object.freeze({
@@ -41,7 +42,7 @@ const TEAM_LINE_INTEREST_PRESENTATION = Object.freeze({
   }),
   DEFENSE_CLASSIFICATION_MISSING: Object.freeze({
     label: 'אין שחקנים מסווגים להגנה',
-    explanation: 'קבוצה שחייבת שחקני הגנה איכותיים',
+    explanation: 'נדרש סיווג של שחקני הגנה לפני שאפשר להסיק על עומק או איכות החוליה.',
   }),
 })
 

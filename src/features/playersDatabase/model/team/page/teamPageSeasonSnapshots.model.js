@@ -1,9 +1,10 @@
 // src/features/playersDatabase/model/team/page/teamPageSeasonSnapshots.model.js
 
-import { buildLeagueTeamSeasons } from '../../../domain/index.js'
+import { adaptLeagueTableTeam } from '../../../domain/adapters/leagueTableTeam.adapter.js'
+import { roundPerGameRate } from '../../shared/rate.model.js'
 import { cleanValue } from '../../shared/value.model.js'
-import { normalizeTeamIdentity } from '../teamIdentity.model.js'
 import { buildTeamPageSeasonView } from './teamPagePlayer.model.js'
+import { findTeamPageTableRow } from './teamPageSeason.model.js'
 
 const seasonKeyOf = season => cleanValue(
   season?.identity?.seasonKey ||
@@ -13,61 +14,81 @@ const seasonKeyOf = season => cleanValue(
   season?.id
 )
 
-const teamMatches = ({ candidate, teamId }) => {
-  const identity = normalizeTeamIdentity({ team: candidate })
-  const key = cleanValue(teamId)
-
-  return [
-    identity.teamId,
-    identity.birthTeamId,
-    identity.teamDocumentId,
-    identity.birthTeamDocumentId,
-    identity.teamSlotId,
-  ].includes(key)
+const numberOrNull = value => {
+  if (value === null || value === undefined || value === '') return null
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
 }
+
+const goalsPerGame = (goals, games) => (
+  goals !== null && games !== null && games > 0
+    ? roundPerGameRate(goals / games)
+    : null
+)
 
 const getLeagueSeasonCandidates = ({ leagueDocuments = [], teamId = '' } = {}) => (
   (Array.isArray(leagueDocuments) ? leagueDocuments : []).flatMap(leagueDocument => {
-    const sourceSeasons = [
-      leagueDocument?.current && { season: leagueDocument.current, target: 'current' },
-      ...(Array.isArray(leagueDocument?.history)
-        ? leagueDocument.history.map(season => ({ season, target: 'history' }))
-        : []),
-    ].filter(Boolean)
+    const seasonsById = leagueDocument?.seasonsById || {}
 
-    return sourceSeasons.flatMap(({ season, target }) => (
-      buildLeagueTeamSeasons({
+    return Object.entries(seasonsById).flatMap(([seasonId, season]) => {
+      const tableRow = findTeamPageTableRow({ season, teamId })
+      if (!tableRow) return []
+
+      const games = numberOrNull(tableRow.officialTable?.teamGamePlayed)
+      const goalsFor = numberOrNull(tableRow.officialTable?.goalsFor)
+      const goalsAgainst = numberOrNull(tableRow.officialTable?.goalsAgainst)
+      const normalizedRow = {
+        ...tableRow,
+        teamStats: {
+          ...tableRow.teamStats,
+          goalsForPerGame: goalsPerGame(goalsFor, games),
+          goalsAgainstPerGame: goalsPerGame(goalsAgainst, games),
+        },
+      }
+      const normalizedSeason = {
+        ...season,
+        seasonId: cleanValue(season?.seasonId || seasonId),
+      }
+      const target = cleanValue(season?.seasonStatus).toLowerCase() === 'completed'
+        ? 'history'
+        : 'current'
+      const candidate = adaptLeagueTableTeam({
         leagueDocument,
-        seasonDocument: season,
+        seasonDocument: normalizedSeason,
+        tableRow: normalizedRow,
         target,
       })
-        .filter(candidate => teamMatches({ candidate: candidate.identity, teamId }))
-        .map(candidate => ({
-          ...candidate,
-          seasonKey: seasonKeyOf(candidate?.season),
-          seasonId: cleanValue(candidate?.season?.seasonId),
-          leagueId: cleanValue(candidate?.league?.leagueId),
-          leagueName: cleanValue(
-            leagueDocument?.leagueName || leagueDocument?.name || leagueDocument?.id
-          ),
-          ageGroupId: cleanValue(candidate?.league?.ageGroupId),
-          ageGroupLabel: cleanValue(candidate?.league?.ageGroupLabel),
-          tableRank: candidate?.ranking?.tableRank ?? null,
-          games: candidate?.stats?.actual?.gamesPlayed ?? null,
-          goalsForPerGame: candidate?.stats?.actual?.goalsForPerGame ?? null,
-          goalsAgainstPerGame: candidate?.stats?.actual?.goalsAgainstPerGame ?? null,
-          tableAttackRank: candidate?.ranking?.attackRank ?? null,
-          tableDefenseRank: candidate?.ranking?.defenseRank ?? null,
-          teamStats: {
-            teamGamePlayed: candidate?.stats?.actual?.gamesPlayed ?? null,
-            points: candidate?.stats?.actual?.points ?? null,
-            goalsFor: candidate?.stats?.actual?.goalsFor ?? null,
-            goalsAgainst: candidate?.stats?.actual?.goalsAgainst ?? null,
-          },
-          source: 'league',
-          sourceDocumentId: cleanValue(candidate?.metadata?.sourceDocumentId),
-        }))
-    ))
+      const performance = tableRow.performance || null
+
+      return [{
+        ...candidate,
+        seasonKey: seasonKeyOf(candidate.season),
+        seasonId: cleanValue(candidate.season.seasonId),
+        leagueId: cleanValue(candidate.league.leagueId),
+        leagueName: cleanValue(
+          leagueDocument?.names?.display || leagueDocument?.names?.official ||
+          leagueDocument?.leagueId || leagueDocument?.id
+        ),
+        ageGroupId: cleanValue(candidate.league.ageGroupId),
+        ageGroupLabel: cleanValue(candidate.league.ageGroupLabel),
+        leagueLevel: numberOrNull(candidate.league.leagueLevel),
+        tableRank: numberOrNull(candidate.ranking.tableRank),
+        games,
+        goalsForPerGame: goalsPerGame(goalsFor, games),
+        goalsAgainstPerGame: goalsPerGame(goalsAgainst, games),
+        tableAttackRank: numberOrNull(performance?.offense?.rank),
+        tableDefenseRank: numberOrNull(performance?.defense?.rank),
+        teamStats: {
+          teamGamePlayed: games,
+          points: numberOrNull(tableRow.officialTable?.points),
+          goalsFor,
+          goalsAgainst,
+        },
+        performance,
+        source: 'league',
+        sourceDocumentId: cleanValue(candidate.metadata.sourceDocumentId),
+      }]
+    })
   })
 )
 

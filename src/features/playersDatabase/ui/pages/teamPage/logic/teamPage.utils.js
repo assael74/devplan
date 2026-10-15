@@ -17,6 +17,7 @@ export const formatRate = value => {
 }
 
 export const formatScore = value => {
+  if (value === null || value === undefined || value === '') return '-'
   const numberValue = Number(value)
   if (!Number.isFinite(numberValue)) return '-'
 

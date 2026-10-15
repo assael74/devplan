@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/teamPage/hooks/useTeamRoleEditor.js
+// src/features/playersDatabase/ui/pages/teamPage/hooks/useTeamRoleEditor.js
 
 import * as React from 'react'
 

@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/teamPage/stats/table/hooks/useTeamStatsColumns.js
+// src/features/playersDatabase/ui/pages/teamPage/stats/table/hooks/useTeamStatsColumns.js
 
 import * as React from 'react'
 import {

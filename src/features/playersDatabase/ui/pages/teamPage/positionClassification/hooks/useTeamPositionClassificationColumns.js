@@ -1,3 +1,4 @@
+// src/features/playersDatabase/ui/pages/teamPage/positionClassification/hooks/useTeamPositionClassificationColumns.js
 import * as React from 'react'
 import { Box, IconButton, Tooltip, Typography } from '@mui/joy'
 
@@ -93,7 +94,12 @@ const renderScoutProfile = row => {
   )
 }
 
-export default function useTeamPositionClassificationColumns({ onPlayerOpen, onPlayerRoleEdit }) {
+export default function useTeamPositionClassificationColumns({
+  onPlayerOpen,
+  onPlayerRoleEdit,
+  favoritePlayerKeys,
+  onFavoriteToggle,
+}) {
   return React.useMemo(() => [
     {
       key: 'index',
@@ -120,8 +126,41 @@ export default function useTeamPositionClassificationColumns({ onPlayerOpen, onP
       sx: sx.playerColumn,
       getHref: row => row.playerUrl,
       getLinkAriaLabel: row => `פתיחת עמוד השחקן ${row.name}`,
+      linkSx: sx.playerNameLink,
       getSortValue: row => row.name,
       render: renderPlayerName,
+    },
+    {
+      key: 'favorite',
+      label: 'מועדף',
+      sortable: false,
+      sx: sx.favoriteColumn,
+      render: row => {
+        const selected = Boolean(row.favoriteKey && favoritePlayerKeys?.has(row.favoriteKey))
+        const label = selected ? 'הסרה מהמועדפים הזמניים' : 'הוספה למועדפים זמניים'
+
+        return (
+          <Tooltip title={row.favoriteKey ? label : 'לא ניתן לסמן שחקן ללא מזהה'}>
+            <span>
+              <IconButton
+                type='button'
+                size='sm'
+                variant='plain'
+                aria-label={`${label}: ${row.name}`}
+                aria-pressed={selected}
+                disabled={!row.favoriteKey || !onFavoriteToggle}
+                sx={sx.favoriteButton(selected)}
+                onClick={event => {
+                  event.stopPropagation()
+                  onFavoriteToggle?.(row)
+                }}
+              >
+                {iconUi({ id: selected ? 'favorite' : 'favoriteOutline', size: 'sm' })}
+              </IconButton>
+            </span>
+          </Tooltip>
+        )
+      },
     },
     {
       key: 'gamesStarts',
@@ -215,5 +254,5 @@ export default function useTeamPositionClassificationColumns({ onPlayerOpen, onP
         </IconButton>
       ),
     },
-  ], [onPlayerOpen, onPlayerRoleEdit])
+  ], [favoritePlayerKeys, onFavoriteToggle, onPlayerOpen, onPlayerRoleEdit])
 }

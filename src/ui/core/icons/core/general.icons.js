@@ -1,3 +1,5 @@
+// src/ui/core/icons/core/general.icons.js
+
 import {
   Assignment,
   AssistantPhoto,
@@ -22,6 +24,8 @@ import {
   ScheduleSend,
   Summarize,
   Stars,
+  Star,
+  StarBorder,
   FamilyRestroom
 } from '@mui/icons-material';
 
@@ -30,6 +34,8 @@ export const generalIcons = {
   age: <PermContactCalendar />,
   immediacy: <Bolt />,
   interest: <Stars />,
+  favorite: <Star />,
+  favoriteOutline: <StarBorder />,
   date: <Today />,
   details: <Details />,
   help: <LiveHelp />,

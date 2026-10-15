@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/pages/teamPage/structure/sx/teamStructure.sx.js
+
 import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 export const teamStructureSx = {
@@ -47,26 +49,6 @@ export const teamStructureSx = {
     fontWeight: 800,
   },
 
-  meta: {
-    color: devPlanColors.secondary,
-    fontSize: 11,
-    mt: 0.2,
-  },
-
-  info: {
-    color: devPlanColors.secondary,
-    display: 'inline-flex',
-    cursor: 'help',
-    mt: 0.25,
-  },
-
-  headerActions: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 0.5,
-    flexShrink: 0,
-  },
-
   exportButton: {
     minHeight: 28,
     px: 0.8,
@@ -79,6 +61,8 @@ export const teamStructureSx = {
 
   linesGrid: {
     display: 'grid',
+    gridAutoRows: '1fr',
+    alignItems: 'stretch',
     gridTemplateColumns: {
       xs: '1fr',
       sm: 'repeat(2, minmax(0, 1fr))',
@@ -89,50 +73,11 @@ export const teamStructureSx = {
 
   lineCard: {
     position: 'relative',
-    minWidth: 0,
-    overflow: 'hidden',
     display: 'grid',
     gridTemplateColumns: 'minmax(0, 1fr)',
-    borderRadius: 9,
-    border: `1px solid ${devPlanColors.border}`,
     p: 0,
     textAlign: 'inherit',
     font: 'inherit',
-    bgcolor: devPlanColors.surface,
-  },
-
-  lineCardReview: {
-    bgcolor: devPlanColors.petrolLight,
-  },
-
-  lineCardClear: {
-    bgcolor: 'rgba(101, 118, 132, 0.16)',
-  },
-
-  lineCardClickable: {
-    cursor: 'pointer',
-    transition: 'transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease',
-    '&:hover': {
-      transform: 'translateY(-2px)',
-      boxShadow: '0 7px 16px rgba(23, 59, 87, 0.16)',
-    },
-    '&:active': {
-      transform: 'translateY(0)',
-    },
-  },
-
-  lineCardSelected: {
-    border: `1px solid ${devPlanColors.secondary}`,
-    borderColor: devPlanColors.secondary,
-    bgcolor: 'rgba(101, 118, 132, 0.24)',
-    boxShadow: '0 5px 12px rgba(78, 91, 102, 0.16), inset 0 0 0 1px rgba(78, 91, 102, 0.22)',
-  },
-
-  lineCardReviewSelected: {
-    border: `1px solid ${devPlanColors.petrol}`,
-    borderColor: devPlanColors.petrol,
-    bgcolor: devPlanColors.petrolLight,
-    boxShadow: `0 6px 14px rgba(43, 124, 130, 0.18), inset 0 0 0 1px ${devPlanColors.petrol}`,
   },
 
   lineBody: {
@@ -174,54 +119,6 @@ export const teamStructureSx = {
     color: devPlanColors.primaryDark,
     fontSize: 12,
     fontWeight: 800,
-  },
-
-  lineStatus: {
-    appearance: 'none',
-    font: 'inherit',
-    cursor: 'pointer',
-    transition: 'transform 150ms ease, box-shadow 150ms ease',
-    boxShadow: '0 2px 5px rgba(16, 43, 64, 0.12)',
-    '&:hover': {
-      transform: 'translateY(-1px)',
-      boxShadow: '0 4px 9px rgba(16, 43, 64, 0.18)',
-    },
-    '&:focus-visible': {
-      outline: `2px solid ${devPlanColors.tertiary}`,
-      outlineOffset: 2,
-    },
-    flexShrink: 0,
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 0.25,
-    px: 0.55,
-    py: 0.25,
-    borderRadius: 99,
-    bgcolor: devPlanColors.surface,
-    '& svg': {
-      fontSize: 12,
-    },
-  },
-
-  lineStatusReview: {
-    color: devPlanColors.surface,
-    bgcolor: devPlanColors.petrol,
-    border: `1px solid ${devPlanColors.petrolDark}`,
-    '& svg, & p': {
-      color: `${devPlanColors.surface} !important`,
-    },
-  },
-
-  lineStatusClear: {
-    color: devPlanColors.secondary,
-    border: `1px solid ${devPlanColors.border}`,
-  },
-
-  lineStatusText: {
-    color: 'inherit',
-    fontSize: 9.5,
-    fontWeight: 900,
-    whiteSpace: 'nowrap',
   },
 
   lineMetricRow: {
@@ -268,78 +165,10 @@ export const teamStructureSx = {
     whiteSpace: 'nowrap',
   },
 
-  lineConclusion: {
-    color: devPlanColors.secondary,
-    fontSize: 10.5,
-    lineHeight: 1.4,
-    minHeight: 0,
-  },
-
-  coverageStrip: {
-    minWidth: 0,
-    p: 0.75,
-    borderRadius: 9,
-    border: `1px solid ${devPlanColors.border}`,
-    bgcolor: devPlanColors.secondaryLight,
-    display: 'grid',
-    alignContent: 'start',
-    gap: 0.45,
-  },
-
-  coverageStripSelected: {
-    borderColor: devPlanColors.primary,
-    boxShadow: `inset 0 0 0 1px ${devPlanColors.primary}`,
-  },
-
-  coverageContent: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: 0.65,
-    minWidth: 0,
-  },
-
-  coverageIcon: {
-    width: 27,
-    height: 27,
-    flexShrink: 0,
-    display: 'grid',
-    placeItems: 'center',
-    borderRadius: 7,
-    bgcolor: devPlanColors.primaryLight,
-    color: devPlanColors.primary,
-  },
-
-  coverageTitle: {
-    color: devPlanColors.primaryDark,
-    fontSize: 11.5,
-    fontWeight: 800,
-  },
-
   coverageText: {
     color: devPlanColors.secondary,
     fontSize: 10.5,
     lineHeight: 1.4,
-  },
-
-  coverageAction: {
-    border: 0,
-    bgcolor: 'transparent',
-    color: devPlanColors.primary,
-    font: 'inherit',
-    fontSize: 10.5,
-    fontWeight: 800,
-    cursor: 'pointer',
-    justifySelf: 'start',
-    px: 0.35,
-    py: 0.2,
-    borderRadius: 6,
-    '&:hover': {
-      bgcolor: devPlanColors.primaryLight,
-    },
-  },
-
-  coverageActionSelected: {
-    bgcolor: devPlanColors.primaryLight,
   },
 
   tableContent: {
@@ -383,9 +212,4 @@ export const teamStructureSx = {
     fontWeight: 800,
   },
 
-  tableMeta: {
-    color: devPlanColors.secondary,
-    fontSize: 10.5,
-    mt: 0.15,
-  },
 }

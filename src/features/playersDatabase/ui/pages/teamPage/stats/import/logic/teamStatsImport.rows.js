@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/teamPage/stats/import/logic/teamStatsImport.rows.js
+// src/features/playersDatabase/ui/pages/teamPage/stats/import/logic/teamStatsImport.rows.js
 
 import {
   clean,
