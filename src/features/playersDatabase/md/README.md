@@ -19,6 +19,7 @@
 | Roster או Movement | `contracts/ROSTER_MOVEMENT_CONTRACT.md` |
 | Stats Load | `contracts/STATS_LOAD_CONTRACT.md` |
 | Team Balance או שמירת סקאוט | `contracts/TEAM_BALANCE_CONTRACT.md` |
+| חריגות שנתון ביחס לשנתוני המועדון | `contracts/CLUB_COHORT_COMPARISON_CONTRACT.md` |
 | פרמטרי מנוע Player Scout, חסמים ופערי חיבור | `contracts/PLAYER_SCOUT_ENGINE_CONTRACT.md` |
 | Audit או Repair | `contracts/AUDIT_REPAIR_CONTRACT.md` וחוזה הזרימה |
 | ניקוי סגל או ליגה | חוזה הזרימה המתאים ו־`contracts/AUDIT_REPAIR_CONTRACT.md` |

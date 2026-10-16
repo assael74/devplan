@@ -5,7 +5,7 @@ export const TEAM_INSIGHTS = Object.freeze([
   { id: 'roster-balance', title: 'איזון הסגל', subtitle: 'חלוקת דקות ועמדות', iconId: 'scouting' },
   { id: 'year-movements', title: 'תנועת השנתון', subtitle: 'מצטרפים ועוזבים לאורך עונות', iconId: 'swapVert' },
   { id: 'future-competition', title: 'שינוי בצפי התחרות', subtitle: 'רמת התחרות בעונות הבאות', iconId: 'league' },
-  { id: 'club-gap', title: 'השנתון מול המועדון', subtitle: 'התאמה לרמת המועדון', iconId: 'players' },
+  { id: 'club-gap', title: 'השנתון בתוך המועדון', subtitle: 'השוואה לנורמת המועדון', iconId: 'players' },
 ])
 
 const insightIds = new Set(TEAM_INSIGHTS.map(insight => insight.id))

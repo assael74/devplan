@@ -9,6 +9,7 @@ import { teamYearDevelopmentSharedSx as sx } from '../sx/teamYearDevelopmentShar
 export const TeamYearSection = ({
   iconId,
   title,
+  titleAfter,
   titleExtra,
   titleExtraSx,
   children,
@@ -20,6 +21,7 @@ export const TeamYearSection = ({
           <Box sx={sx.titleIdentity}>
             <Box sx={sx.titleIcon}>{iconUi({ id: iconId, size: 'sm' })}</Box>
             <Typography sx={sx.title}>{title}</Typography>
+            {titleAfter}
           </Box>
           {titleExtra ? <Box sx={[sx.titleExtra, titleExtraSx]}>{titleExtra}</Box> : null}
         </Box>

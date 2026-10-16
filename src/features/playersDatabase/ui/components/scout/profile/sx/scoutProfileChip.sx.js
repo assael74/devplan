@@ -1,6 +1,10 @@
+// src/features/playersDatabase/ui/components/scout/profile/sx/scoutProfileChip.sx.js
+
 import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 export const scoutProfileChipSx = {
+  muted: { filter: 'grayscale(1)' },
+
   root: ({ interactive, compact, width, isFilter = false, selected = false }) => ({
     position: 'relative',
     width: width || (compact ? 146 : 176),

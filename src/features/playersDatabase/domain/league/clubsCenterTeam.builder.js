@@ -174,7 +174,7 @@ export const buildClubsCenterTransfersProjection = teamSeason => {
   }
 }
 
-export const buildTeamCompetitionProjection = ({ league, season, teamId, teamRow }) => {
+export const buildTeamCompetitionState = ({ league, season, teamId, teamRow }) => {
   const rows = Object.entries(object(season && season.table && season.table.teamsById))
     .map(([rowTeamId, row]) => {
       const officialTable = object(row && row.officialTable)
@@ -206,13 +206,18 @@ export const buildTeamCompetitionProjection = ({ league, season, teamId, teamRow
   })
 
   return {
-    effective: {
-      projectedNextLeagueLevel: toNullableNumber(effective.projectedNextLeagueLevel),
-      status: clean(effective.status) || 'UNKNOWN',
-      source: clean(effective.source) || 'AUTOMATIC',
+    unavailableReasons: automatic.unavailableReasons || [],
+    projection: {
+      effective: {
+        projectedNextLeagueLevel: toNullableNumber(effective.projectedNextLeagueLevel),
+        status: clean(effective.status) || 'UNKNOWN',
+        source: clean(effective.source) || 'AUTOMATIC',
+      },
     },
   }
 }
+
+export const buildTeamCompetitionProjection = input => buildTeamCompetitionState(input).projection
 
 export const buildClubsCenterTeamProjection = ({
   league,

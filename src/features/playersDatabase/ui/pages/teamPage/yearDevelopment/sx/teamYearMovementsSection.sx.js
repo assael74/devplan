@@ -2,10 +2,21 @@
 import { COLORS, devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 const statusColors = COLORS.status
-const movementColumns = {
-  xs: 'repeat(2, minmax(0, 1fr))',
-  md: 'minmax(150px, 1.2fr) minmax(80px, .6fr) minmax(130px, 1fr) minmax(180px, 1.2fr) minmax(100px, .7fr)',
-}
+// Investigation table only; these widths sum to 100%.
+export const MOVEMENT_TABLE_COLUMN_WIDTHS = Object.freeze({
+  index: 3,
+  avatar: 3,
+  name: 12,
+  favorite: 3,
+  gamesStarts: 6,
+  minutes: 9,
+  substitutedOut: 8,
+  goals: 9,
+  lineClassification: 8,
+  scoutProfile: 15,
+  transition: 20,
+  openPlayer: 4,
+})
 
 const resolveMovementTagTone = color => {
   if (color === 'success') {
@@ -46,121 +57,124 @@ export const teamYearMovementsSectionSx = {
     py: 1,
   },
 
-  movementAvatar: {
-    width: 24,
-    height: 24,
-    flexShrink: 0,
-    fontSize: 10,
-    bgcolor: devPlanColors.primaryLight,
+  movementSeasonContent: {
+    display: 'grid',
+    gap: 1,
+    minWidth: 0,
   },
 
-  movementCollapse: {
-    border: `1px solid ${devPlanColors.border}`,
-    borderRadius: 8,
-    overflow: 'hidden',
-    bgcolor: devPlanColors.primaryLight,
-  },
-
-  movementCollapseBody: {
-    p: 0.75,
-    borderTop: `1px solid ${devPlanColors.border}`,
-  },
-
-  movementCollapseHeader: {
-    px: 1,
-    py: 0.55,
-    bgcolor: devPlanColors.primaryLight,
-    '&:hover': {
-      bgcolor: '#DCE8F0',
+  movementHeaderSummary: {
+    flexShrink: 1,
+    minWidth: 0,
+    justifyContent: 'flex-end',
+    '& > div': {
+      justifyContent: 'flex-end',
     },
   },
 
-  movementItem: {
-    display: 'grid',
-    gridTemplateColumns: movementColumns,
+  movementInsights: {
+    display: 'flex',
     alignItems: 'center',
-    gap: 1,
-    p: 0.75,
-    border: `1px solid ${devPlanColors.border}`,
-    borderRadius: 8,
-    bgcolor: devPlanColors.surface,
+    flexWrap: 'wrap',
+    gap: 0.75,
+    px: 1,
+    py: 0.7,
+    borderRadius: 7,
+    bgcolor: devPlanColors.primaryLight,
+    minWidth: 0,
   },
 
-  movementList: {
-    display: 'grid',
-    gap: 0.75,
+  movementInsightsTitle: {
+    color: devPlanColors.primaryDark,
+    fontSize: 11,
+    fontWeight: 900,
+  },
+
+  movementInsightsUnavailable: {
+    color: devPlanColors.secondary,
+    fontSize: 11,
+  },
+
+  movementSignalStatus: status => {
+    const tone = status === 'multiple'
+      ? statusColors.warning
+      : status === 'single' ? statusColors.info : statusColors.neutral
+
+    return {
+      px: 0.6,
+      py: 0.2,
+      border: `1px solid ${tone.solid}`,
+      borderRadius: 99,
+      bgcolor: tone.softBg,
+      color: tone.text,
+      fontSize: 10.5,
+      fontWeight: 800,
+      whiteSpace: 'nowrap',
+    }
+  },
+
+  movementInsightItem: active => ({
+    color: active ? statusColors.warning.text : devPlanColors.secondary,
+    fontSize: 11,
+    fontWeight: active ? 800 : 600,
+  }),
+
+  movementTableScroll: {
+    minWidth: 0,
+    overflowX: 'auto',
+  },
+
+  movementTableWrap: {
+    height: 'auto',
+    minWidth: { xs: 1100, xl: 0 },
+  },
+
+  movementTableBody: {
+    overflowY: 'auto',
+  },
+
+  movementRow: side => ({
+    '& > td': {
+      bgcolor: side === 'out' ? statusColors.warning.softBg : statusColors.success.softBg,
+    },
+  }),
+
+  movementTable: {
+    minWidth: { xs: 1100, xl: 0 },
+    tableLayout: 'fixed',
+    '& th[data-column="name"], & td[data-column="name"], & th[data-column="transition"], & td[data-column="transition"]': {
+      textAlign: 'left',
+    },
+    '& th[data-column="index"], & td[data-column="index"], & th[data-column="avatar"], & td[data-column="avatar"], & th[data-column="favorite"], & td[data-column="favorite"], & th[data-column="openPlayer"], & td[data-column="openPlayer"]': {
+      px: 0.25,
+    },
   },
 
   movementGroups: {
     display: 'grid',
-    gap: 1.5,
+    gap: 2,
+    '& > div + div': {
+      pt: 1.5,
+      borderTop: `2px solid ${devPlanColors.border}`,
+    },
   },
 
   movementGroup: {
     display: 'grid',
-    gap: 0.5,
+    gap: 0.4,
+    minWidth: 0,
   },
 
   movementGroupTitle: {
     color: devPlanColors.primaryDark,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 900,
   },
 
-  movementTableHeader: {
-    display: { xs: 'none', md: 'grid' },
-    gridTemplateColumns: movementColumns,
-    gap: 1,
-    px: 0.75,
-    color: devPlanColors.secondary,
-  },
-
-  movementMobileSort: {
-    display: { xs: 'flex', md: 'none' },
-    gap: 0.5,
-    overflowX: 'auto',
-    pb: 0.25,
-  },
-
-  movementSortButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 0.4,
-    border: 0,
-    borderRadius: 4,
-    px: 0.4,
-    py: 0.3,
-    bgcolor: 'transparent',
-    color: devPlanColors.secondary,
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    fontSize: 10,
-    fontWeight: 800,
-    whiteSpace: 'nowrap',
-    '&:hover': { bgcolor: devPlanColors.primaryLight },
-    '&:focus-visible': { outline: `2px solid ${devPlanColors.primary}` },
-  },
-
-  movementSortButtonActive: {
-    color: devPlanColors.primaryDark,
-    bgcolor: devPlanColors.primaryLight,
-  },
-
-  movementSortIcon: {
-    fontSize: 14,
-    flexShrink: 0,
-  },
-
-  movementCell: {
-    display: 'grid',
-    gap: 0.2,
-    minWidth: 0,
-  },
-
-  movementMobileLabel: {
-    display: { xs: 'block', md: 'none' },
-    color: devPlanColors.secondary,
-    fontSize: 10,
+  movementHeaderLabel: {
+    display: 'block',
+    width: '100%',
+    textAlign: 'left',
   },
 
   movementDetail: {
@@ -174,23 +188,21 @@ export const teamYearMovementsSectionSx = {
     fontWeight: 700,
   },
 
-  movementName: {
-    color: devPlanColors.primaryDark,
-    fontSize: 12,
-    fontWeight: 900,
-  },
-
-  movementPlayer: {
-    display: 'flex',
+  movementTransition: {
+    display: 'inline-flex',
     alignItems: 'center',
+    justifyContent: 'flex-start',
+    flexWrap: 'wrap',
     gap: 0.5,
     minWidth: 0,
-    gridColumn: { xs: '1 / -1', md: 'auto' },
   },
 
   movementSeasons: {
     display: 'grid',
-    gap: 0.35,
+    gap: 3,
+    '& > div': {
+      borderTop: `3px solid ${devPlanColors.primary}`,
+    },
   },
 
   movementTag: color => {
@@ -200,7 +212,6 @@ export const teamYearMovementsSectionSx = {
       display: 'inline-flex',
       alignItems: 'center',
       gap: 0.35,
-      justifySelf: 'start',
       px: 0.65,
       py: 0.3,
       borderRadius: 99,

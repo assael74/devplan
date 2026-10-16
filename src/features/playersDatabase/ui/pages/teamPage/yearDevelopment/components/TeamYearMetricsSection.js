@@ -2,10 +2,9 @@
 import { Box, Chip, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
-import { formatLtrNumber } from '../../../../../../../shared/format/direction.js'
 import TableRankBadge from '../../../../components/tables/TableRankBadge.js'
 import { ADEQUATE_RELIABILITY_GAMES } from '../../information/model/teamPerformanceInsight.model.js'
-import { TEAM_YEAR_METRICS } from '../model/teamYearDevelopment.presentation.js'
+import { TEAM_YEAR_METRICS, buildTeamYearMetricChange } from '../model/teamYearDevelopment.presentation.js'
 import { SeasonSummaryChip } from './TeamYearDevelopmentShared.js'
 import { teamYearDevelopmentSharedSx } from '../sx/teamYearDevelopmentShared.sx.js'
 import { teamYearMetricsSectionSx } from '../sx/teamYearMetricsSection.sx.js'
@@ -15,38 +14,6 @@ const sx = { ...teamYearDevelopmentSharedSx, ...teamYearMetricsSectionSx }
 const displayValue = ({ value, decimal = false }) => {
   if (value === null || value === undefined) return '—'
   return decimal ? Number(value).toFixed(1) : value
-}
-
-const valueChange = ({ metric, season, previousSeason }) => {
-  if (metric.showChange === false) return null
-  const rawValue = season?.[metric.key]
-  const rawPreviousValue = previousSeason?.[metric.key]
-  if (rawValue === null || rawValue === undefined || rawValue === '' ||
-    rawPreviousValue === null || rawPreviousValue === undefined || rawPreviousValue === '') {
-    return null
-  }
-
-  const value = Number(rawValue)
-  const previousValue = Number(rawPreviousValue)
-  if (!Number.isFinite(value) || !Number.isFinite(previousValue)) return null
-
-  const delta = value - previousValue
-  const displayDelta = metric.presentation === 'tableRank' ? -delta : delta
-  const direction = displayDelta === 0 ? 'same' : displayDelta > 0 ? 'up' : 'down'
-  const isImproved = direction === 'same'
-    ? null
-    : metric.betterDirection === 'lower'
-      ? delta < 0
-      : direction === 'up'
-  return {
-    direction,
-    color: isImproved === null ? 'neutral' : isImproved ? 'success' : 'danger',
-    iconId: direction === 'up' ? 'sortUp' : direction === 'down' ? 'sortDown' : 'remove',
-    label: formatLtrNumber(
-      metric.decimal ? Number(displayDelta.toFixed(1)) : displayDelta,
-      { signed: true }
-    ),
-  }
 }
 
 const renderMetricValue = ({ metric, season, previousSeason }) => {
@@ -61,7 +28,7 @@ const renderMetricValue = ({ metric, season, previousSeason }) => {
     content = display === '—' ? display : `${display}${metric.percent ? '%' : ''}`
   }
 
-  const change = valueChange({ metric, season, previousSeason })
+  const change = buildTeamYearMetricChange({ metric, season, previousSeason })
   const gameSampleWarning = metric.key === 'games' && season.status !== 'upcoming' &&
     value !== null && value !== undefined && Number(value) < ADEQUATE_RELIABILITY_GAMES
   return (

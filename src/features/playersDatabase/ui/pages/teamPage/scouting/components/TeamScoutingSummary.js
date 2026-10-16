@@ -3,7 +3,7 @@
 import { Box, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
-import TeamAnalysisCard from '../../information/components/TeamAnalysisCard.js'
+import TeamAnalysisCard, { TeamAnalysisComparison } from '../../information/components/TeamAnalysisCard.js'
 import { teamScoutingSummarySx as sx } from '../sx/teamScoutingSummary.sx.js'
 import TeamDiagnosticSignalsModal from './TeamDiagnosticSignalsModal.js'
 import {
@@ -91,6 +91,7 @@ export default function TeamScoutingSummary({
   hasRosterPlayers = false,
   title = 'תמונת סקאוטינג',
   titleMeta = null,
+  comparison = null,
   selectedFilter = null,
   onFilterChange,
 }) {
@@ -176,6 +177,7 @@ export default function TeamScoutingSummary({
                 <Typography sx={[sx.cardTitle, state.emphasizeValue && sx.cardTitleProminent]}>
                   {state.title}
                 </Typography>
+                <TeamAnalysisComparison comparison={comparison?.[item.key]} />
                 {item.key !== 'squad' ? (
                   <Box sx={sx.cardActions}>
                     <Typography sx={sx.cardAction}>

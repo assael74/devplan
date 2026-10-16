@@ -10,6 +10,9 @@ import {
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import ScoutProfileChip from '../../../../../components/scout/profile/ScoutProfileChip.js'
+import PlayerGoalsValue from '../../../../../components/playerMeta/PlayerGoalsValue.js'
+import PreviewCell from '../../../../../components/modals/paste/PreviewCell.js'
+import { buildTeamPlayerGoalProjection } from '../../../model/teamPlayerGoals.model.js'
 import PlayerLineClassificationChip from '../../../../../components/playerMeta/PlayerLineClassificationChip.js'
 import PlayerNameLink from '../../../../../components/playerMeta/PlayerNameLink.js'
 import { resolvePlayerUrl } from '../../../../../components/playerMeta/playerUrl.presentation.js'
@@ -97,6 +100,11 @@ export default function useTeamStatsColumns({
     ...PLAYER_STATS_BASE_COLUMNS[3],
     headerContent: <TableHeaderIcon id='goals' label='שערים' />,
     sortable: true,
+    render: props => (
+      <PlayerGoalsValue {...buildTeamPlayerGoalProjection({ player: props.row, goals: props.row.goals })}>
+        <PreviewCell {...props} column={{ ...props.column, render: undefined, inputSx: sx.goalsInput }} />
+      </PlayerGoalsValue>
+    ),
     sortValue: row => {
       const goals = toFiniteNumber(row.goals)
       return goals === null ? -1 : goals

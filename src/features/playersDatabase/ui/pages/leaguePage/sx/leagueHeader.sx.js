@@ -34,10 +34,7 @@ export const leagueHeaderSx = {
   titleRow: {
     minWidth: 0,
     display: 'flex',
-    flexWrap: {
-      xs: 'wrap',
-      md: 'nowrap',
-    },
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 1,
     justifyContent: 'flex-start',
@@ -59,7 +56,9 @@ export const leagueHeaderSx = {
   titleChips: {
     display: 'inline-flex',
     flexShrink: 0,
+    minWidth: 0,
     alignItems: 'center',
+    flexWrap: { xs: 'wrap', md: 'nowrap' },
     gap: 1,
     pt: 1,
   },
@@ -68,12 +67,6 @@ export const leagueHeaderSx = {
     bgcolor: devPlanColors.tertiaryLight,
     borderColor: devPlanColors.tertiary,
     color: devPlanColors.tertiary,
-  },
-
-  actionsPanel: {
-    gap: 1,
-    alignItems: 'flex-end',
-    justifyContent: 'flex-end',
   },
 
   actions: {

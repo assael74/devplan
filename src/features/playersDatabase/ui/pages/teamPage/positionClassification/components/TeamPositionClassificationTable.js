@@ -27,6 +27,8 @@ export default function TeamPositionClassificationTable({
   structureFilter = TEAM_STRUCTURE_FILTER.CLASSIFIED,
   embedded = false,
   toolbar = null,
+  selectedPlayerKey = '',
+  onPlayerSelect,
 }) {
   const filteredRows = rows.filter(row => (
     Array.isArray(row.structureFilterKeys) && row.structureFilterKeys.includes(structureFilter)
@@ -47,15 +49,19 @@ export default function TeamPositionClassificationTable({
         left.index - right.index
       ))
       .map(item => item.row)
-  const getRowSx = structureFilter === TEAM_STRUCTURE_FILTER.ALL_SQUAD
-    ? row => sx.squadClassificationRow(row.squadClassificationStatus)
-    : undefined
+  const getRowSx = row => [
+    structureFilter === TEAM_STRUCTURE_FILTER.ALL_SQUAD && sx.squadClassificationRow(row.squadClassificationStatus),
+    onPlayerSelect && sx.selectableRow,
+    selectedPlayerKey && (row.favoriteKey || row.id) === selectedPlayerKey && sx.selectedRow,
+  ]
   const tableWrapSx = embedded ? [sx.tableWrap, sx.tableWrapEmbedded] : sx.tableWrap
   const columns = useTeamPositionClassificationColumns({
     onPlayerOpen,
     onPlayerRoleEdit,
     favoritePlayerKeys,
     onFavoriteToggle,
+    onRowSelect: onPlayerSelect,
+    selectedRowKey: selectedPlayerKey,
   })
 
   return (
@@ -97,7 +103,9 @@ export default function TeamPositionClassificationTable({
           className='dpScrollThin'
           columns={columns}
           rows={visibleRows}
-          getRowKey={row => row.id}
+          getRowKey={row => row.favoriteKey || row.id}
+          selectedRowKey={selectedPlayerKey}
+          onRowSelect={onPlayerSelect}
           defaultSort={structureFilter === TEAM_STRUCTURE_FILTER.ALL_SQUAD
             ? { key: '', direction: 'asc' }
             : { key: 'lineClassification', direction: 'asc' }}

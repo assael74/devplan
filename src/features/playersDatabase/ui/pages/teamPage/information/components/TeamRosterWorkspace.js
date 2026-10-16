@@ -14,6 +14,7 @@ import { teamInformationSx as sx } from '../sx/teamInformation.sx.js'
 export default function TeamRosterWorkspace({
   overview = false,
   collapsible = false,
+  showProfiles = true,
   view,
   tableView = null,
   seasons,
@@ -27,12 +28,18 @@ export default function TeamRosterWorkspace({
   favoritePlayerKeys,
   onFavoriteToggle,
   insightNotes = [],
+  selectedPlayer = null,
+  onPlayerSelect,
+  onSelectionClear,
 }) {
   const [rosterOpen, setRosterOpen] = React.useState(true)
   const [now, setNow] = React.useState(() => Date.now())
   const [openProfileSeasonKey, setOpenProfileSeasonKey] = React.useState('')
   const canCollapse = overview || collapsible
   const selectedView = tableView || view
+  const selectedPlayerInSeason = selectedPlayer && selectedView.allPositionClassificationRows?.some(row => (
+    (row.favoriteKey || row.id) === selectedPlayer.key
+  ))
   const rosterContentId = React.useId()
   const selectedSeason = seasons.find(season => season.selected)
   const selectedProfileFilter = profileFilterOptions.find(option => (
@@ -135,7 +142,7 @@ export default function TeamRosterWorkspace({
 
   return (
     <>
-      {!overview ? (
+      {!overview && showProfiles ? (
         <TeamYearScoutProfilesSection
           overview={view.yearDevelopment}
           openSeasonKey={openProfileSeasonKey}
@@ -203,6 +210,18 @@ export default function TeamRosterWorkspace({
               favoritePlayerKeys={favoritePlayerKeys}
               onFavoriteToggle={onFavoriteToggle}
               structureFilter={structureFilter}
+              selectedPlayerKey={selectedPlayer?.key || ''}
+              onPlayerSelect={onPlayerSelect}
+              toolbar={onPlayerSelect ? (
+                <Box sx={sx.rosterSelectionToolbar}>
+                  <Typography level='body-sm' aria-live='polite'>
+                    {selectedPlayer
+                      ? `${selectedPlayer.name} · ${selectedPlayerInSeason ? 'הסימון נשמר בהחלפת עונה' : `אינו מופיע בנתוני עונת ${selectedView.selectedSeasonKey}`}`
+                      : 'לחצו על שורה או על מספר השחקן כדי לסמן אותו להשוואה בין העונות'}
+                  </Typography>
+                  {selectedPlayer ? <Button size='sm' variant='plain' onClick={onSelectionClear}>ביטול סימון</Button> : null}
+                </Box>
+              ) : null}
               embedded
             />
           </Box>

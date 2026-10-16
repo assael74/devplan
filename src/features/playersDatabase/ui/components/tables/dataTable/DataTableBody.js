@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/components/tables/dataTable/DataTableBody.js
+// src/features/playersDatabase/ui/components/tables/dataTable/DataTableBody.js
 
 import * as React from 'react'
 import {
@@ -19,6 +19,8 @@ export default function DataTableBody({
   onToggleExpandedRow,
   renderExpandedRow,
   getRowSx,
+  selectedRowKey,
+  onRowSelect,
 }) {
   return (
     <tbody>
@@ -81,6 +83,17 @@ export default function DataTableBody({
             <React.Fragment key={rowKey}>
               <Box
                 component='tr'
+                aria-selected={onRowSelect ? rowKey === selectedRowKey : undefined}
+                tabIndex={onRowSelect ? 0 : undefined}
+                onClick={onRowSelect ? event => {
+                  if (event.target.closest('a, button, input, select, textarea, [role="button"], [role="checkbox"], [role="combobox"]')) return
+                  onRowSelect(row)
+                } : undefined}
+                onKeyDown={onRowSelect ? event => {
+                  if (event.target !== event.currentTarget || !['Enter', ' '].includes(event.key)) return
+                  event.preventDefault()
+                  onRowSelect(row)
+                } : undefined}
                 sx={typeof getRowSx === 'function'
                   ? getRowSx(row, index)
                   : getRowSx}

@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/components/tables/dataTable/DataTableHeader.js
+// src/features/playersDatabase/ui/components/tables/dataTable/DataTableHeader.js
 
 import * as React from 'react'
 import {
@@ -9,6 +9,7 @@ import {
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
+import { getSortDirectionIcon } from '../../../../../../ui/patterns/sort/sort.utils.js'
 import { dataTableHeaderSx as sx } from './sx/dataTableHeader.sx.js'
 import { DATA_TABLE_SORT_DIRECTIONS } from './dataTable.sort.js'
 
@@ -31,148 +32,170 @@ export default function DataTableHeader({
     sx.headerActionAlign.center
   )
 
+  const grouped = columns.some(column => column.headerGroup)
+  const headerGroups = []
+  columns.forEach(column => {
+    const group = column.headerGroup
+    const previous = headerGroups[headerGroups.length - 1]
+    if (group && previous?.group?.key === group.key) {
+      previous.columns.push(column)
+    } else {
+      headerGroups.push({ group, columns: [column] })
+    }
+  })
+  const renderCell = (column, rowSpan = undefined) => {
+    const sortable = column.sortable !== false
+    const active = sortState.key === column.key
+    const direction = active ? sortState.direction : ''
+    const showExportButton = hasExport && column.key === exportColumnKey
+
+    return (
+      <Box
+        component='th'
+        key={column.key}
+        data-column={column.key}
+        scope='col'
+        rowSpan={rowSpan}
+        aria-sort={
+          active
+            ? direction === DATA_TABLE_SORT_DIRECTIONS.ASC
+              ? 'ascending'
+              : 'descending'
+            : 'none'
+        }
+        sx={[
+          column.sx,
+          column.headerSx,
+        ]}
+      >
+        {showExportButton ? (
+          <Box
+            sx={[
+              sx.headerActionWrap,
+              exportAlignSx,
+            ]}
+          >
+            <Tooltip title={exportConfig.tooltip || exportConfig.buttonLabel || 'Excel'}>
+              {exportConfig.showLabel ? (
+                <Button
+                  size='sm'
+                  variant='outlined'
+                  color='neutral'
+                  aria-label={exportConfig.ariaLabel || exportConfig.buttonLabel || 'Excel'}
+                  sx={[sx.headerActionButton, sx.headerActionButtonLabeled]}
+                  disabled={!canExport}
+                  startDecorator={iconUi({ id: exportConfig.iconId || 'download', size: 'sm' })}
+                  onClick={event => {
+                    event.stopPropagation()
+                    onExport()
+                  }}
+                >
+                  {exportConfig.buttonLabel || 'Excel'}
+                </Button>
+              ) : (
+                <IconButton
+                  size='sm'
+                  variant='outlined'
+                  color='neutral'
+                  aria-label={exportConfig.ariaLabel || exportConfig.buttonLabel || 'Excel'}
+                  sx={sx.headerActionButton}
+                  disabled={!canExport}
+                  onClick={event => {
+                    event.stopPropagation()
+                    onExport()
+                  }}
+                >
+                  {iconUi({
+                    id: exportConfig.iconId || 'download',
+                    size: 'sm',
+                  })}
+                </IconButton>
+              )}
+            </Tooltip>
+            {headerActions.map(action => (
+              <Tooltip
+                key={action.id || action.buttonLabel}
+                title={action.tooltip || action.buttonLabel}
+              >
+                {action.showLabel ? (
+                  <Button
+                    size='sm'
+                    variant='outlined'
+                    color='neutral'
+                    aria-label={action.ariaLabel || action.buttonLabel}
+                    sx={[sx.headerActionButton, sx.headerActionButtonLabeled]}
+                    disabled={action.enabled === false}
+                    startDecorator={iconUi({ id: action.iconId || 'download', size: 'sm' })}
+                    onClick={event => {
+                      event.stopPropagation()
+                      action.onClick?.()
+                    }}
+                  >
+                    {action.buttonLabel}
+                  </Button>
+                ) : (
+                  <IconButton
+                    size='sm'
+                    variant='outlined'
+                    color='neutral'
+                    aria-label={action.ariaLabel || action.buttonLabel}
+                    sx={sx.headerActionButton}
+                    disabled={action.enabled === false}
+                    onClick={event => {
+                      event.stopPropagation()
+                      action.onClick?.()
+                    }}
+                  >
+                    {iconUi({ id: action.iconId || 'download', size: 'sm' })}
+                  </IconButton>
+                )}
+              </Tooltip>
+            ))}
+          </Box>
+        ) : sortable ? (
+          <Box
+            component='button'
+            type='button'
+            onClick={() => onSort(column)}
+            aria-label={`מיון לפי ${column.headerAriaLabel || column.label}`}
+            sx={[
+              sx.sortButton,
+              active && sx.sortButtonActive,
+            ]}
+          >
+            <Box component='span' sx={sx.sortLabel}>
+              {column.headerContent || column.label}
+            </Box>
+
+            {active && (
+              <Box
+                component='span'
+                aria-hidden='true'
+                sx={sx.sortIndicatorActive}
+              >
+                {iconUi({ id: getSortDirectionIcon(direction), size: 'sm' })}
+              </Box>
+            )}
+          </Box>
+        ) : (column.headerContent || column.label)}
+      </Box>
+    )
+  }
+
   return (
     <thead>
       <tr>
-        {columns.map(column => {
-          const sortable = column.sortable !== false
-          const active = sortState.key === column.key
-          const direction = active ? sortState.direction : ''
-          const showExportButton = hasExport && column.key === exportColumnKey
-
-          return (
-            <Box
-              component='th'
-              key={column.key}
-              data-column={column.key}
-              aria-sort={
-                active
-                  ? direction === DATA_TABLE_SORT_DIRECTIONS.ASC
-                    ? 'ascending'
-                    : 'descending'
-                  : 'none'
-              }
-              sx={[
-                column.sx,
-                column.headerSx,
-              ]}
-            >
-              {showExportButton ? (
-                <Box
-                  sx={[
-                    sx.headerActionWrap,
-                    exportAlignSx,
-                  ]}
-                >
-                  <Tooltip title={exportConfig.tooltip || exportConfig.buttonLabel || 'Excel'}>
-                    {exportConfig.showLabel ? (
-                      <Button
-                        size='sm'
-                        variant='outlined'
-                        color='neutral'
-                        aria-label={exportConfig.ariaLabel || exportConfig.buttonLabel || 'Excel'}
-                        sx={[sx.headerActionButton, sx.headerActionButtonLabeled]}
-                        disabled={!canExport}
-                        startDecorator={iconUi({ id: exportConfig.iconId || 'download', size: 'sm' })}
-                        onClick={event => {
-                          event.stopPropagation()
-                          onExport()
-                        }}
-                      >
-                        {exportConfig.buttonLabel || 'Excel'}
-                      </Button>
-                    ) : (
-                      <IconButton
-                        size='sm'
-                        variant='outlined'
-                        color='neutral'
-                        aria-label={exportConfig.ariaLabel || exportConfig.buttonLabel || 'Excel'}
-                        sx={sx.headerActionButton}
-                        disabled={!canExport}
-                        onClick={event => {
-                          event.stopPropagation()
-                          onExport()
-                        }}
-                      >
-                        {iconUi({
-                          id: exportConfig.iconId || 'download',
-                          size: 'sm',
-                        })}
-                      </IconButton>
-                    )}
-                  </Tooltip>
-                  {headerActions.map(action => (
-                    <Tooltip
-                      key={action.id || action.buttonLabel}
-                      title={action.tooltip || action.buttonLabel}
-                    >
-                      {action.showLabel ? (
-                        <Button
-                          size='sm'
-                          variant='outlined'
-                          color='neutral'
-                          aria-label={action.ariaLabel || action.buttonLabel}
-                          sx={[sx.headerActionButton, sx.headerActionButtonLabeled]}
-                          disabled={action.enabled === false}
-                          startDecorator={iconUi({ id: action.iconId || 'download', size: 'sm' })}
-                          onClick={event => {
-                            event.stopPropagation()
-                            action.onClick?.()
-                          }}
-                        >
-                          {action.buttonLabel}
-                        </Button>
-                      ) : (
-                        <IconButton
-                          size='sm'
-                          variant='outlined'
-                          color='neutral'
-                          aria-label={action.ariaLabel || action.buttonLabel}
-                          sx={sx.headerActionButton}
-                          disabled={action.enabled === false}
-                          onClick={event => {
-                            event.stopPropagation()
-                            action.onClick?.()
-                          }}
-                        >
-                          {iconUi({ id: action.iconId || 'download', size: 'sm' })}
-                        </IconButton>
-                      )}
-                    </Tooltip>
-                  ))}
-                </Box>
-              ) : sortable ? (
-                <Box
-                  component='button'
-                  type='button'
-                  onClick={() => onSort(column)}
-                  aria-label={`מיון לפי ${column.headerAriaLabel || column.label}`}
-                  sx={[
-                    sx.sortButton,
-                    active && sx.sortButtonActive,
-                  ]}
-                >
-                  <Box component='span' sx={sx.sortLabel}>
-                    {column.headerContent || column.label}
-                  </Box>
-
-                  {active && (
-                    <Box
-                      component='span'
-                      aria-hidden='true'
-                      sx={sx.sortIndicatorActive}
-                    >
-                      {direction === DATA_TABLE_SORT_DIRECTIONS.ASC
-                        ? '▲'
-                        : '▼'}
-                    </Box>
-                  )}
-                </Box>
-              ) : (column.headerContent || column.label)}
+        {grouped ? headerGroups.map(({ group, columns: groupColumns }) => (
+          group ? (
+            <Box component='th' key={group.key} scope='colgroup' colSpan={groupColumns.length}>
+              {group.label}
             </Box>
-          )
-        })}
+          ) : renderCell(groupColumns[0], 2)
+        )) : columns.map(column => renderCell(column))}
       </tr>
+      {grouped ? (
+        <tr>{columns.filter(column => column.headerGroup).map(column => renderCell(column))}</tr>
+      ) : null}
     </thead>
   )
 }

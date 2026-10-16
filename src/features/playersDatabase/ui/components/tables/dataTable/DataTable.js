@@ -44,6 +44,8 @@ export default function DataTable({
   getRowSx,
   exportConfig = null,
   hoverRow = true,
+  selectedRowKey = '',
+  onRowSelect,
 }) {
   const bodyScrollRef = React.useRef(null)
   const [headerColumnWidths, setHeaderColumnWidths] = React.useState([])
@@ -99,6 +101,17 @@ export default function DataTable({
     column: sortableColumns.get(sortState.key),
     direction: sortState.direction,
   }), [rows, sortState, sortableColumns, sortRows])
+
+  React.useLayoutEffect(() => {
+    if (!selectedRowKey) return
+    const container = bodyScrollRef.current
+    const selectedRow = container?.querySelector('tr[aria-selected="true"]')
+    if (!selectedRow) return
+    const bounds = container.getBoundingClientRect()
+    const rowBounds = selectedRow.getBoundingClientRect()
+    if (rowBounds.top < bounds.top) container.scrollTop += rowBounds.top - bounds.top
+    else if (rowBounds.bottom > bounds.bottom) container.scrollTop += rowBounds.bottom - bounds.bottom
+  }, [selectedRowKey, sortedRows])
 
   const handleSort = column => {
     if (column.sortable === false) return
@@ -167,6 +180,8 @@ export default function DataTable({
       onToggleExpandedRow={toggleExpandedRow}
       renderExpandedRow={renderExpandedRow}
       getRowSx={getRowSx}
+      selectedRowKey={selectedRowKey}
+      onRowSelect={onRowSelect}
     />
   )
 

@@ -21,7 +21,7 @@ const buildConditions = ({ classification, evaluation, stats }) => {
   if (evaluation?.reasonCode !== TEAM_LINE_CLASSIFICATION_REASON.CLASSIFIED) return []
 
   const games = Number(stats?.games)
-  const goals = Number(stats?.goals)
+  const goals = Number(evaluation?.classificationGoals)
   const conditions = []
 
   if (Number.isFinite(games)) {
@@ -33,12 +33,20 @@ const buildConditions = ({ classification, evaluation, stats }) => {
   }
 
   if (goals >= 10) {
-    conditions.push({ id: 'elite_goals', label: '10 שערים ומעלה', iconId: 'goals' })
+    conditions.push({
+      id: 'elite_goals',
+      label: evaluation?.goalsProjected ? 'צפי של 10 שערים ומעלה לעונה' : '10 שערים ומעלה',
+      iconId: 'goals',
+    })
     return conditions
   }
 
   if (goals >= 5) {
-    conditions.push({ id: 'goals', label: '5 שערים ומעלה', iconId: 'goals' })
+    conditions.push({
+      id: 'goals',
+      label: evaluation?.goalsProjected ? 'צפי של 5 שערים ומעלה לעונה' : '5 שערים ומעלה',
+      iconId: 'goals',
+    })
     return conditions
   }
 

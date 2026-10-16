@@ -3,6 +3,7 @@ import * as React from 'react'
 import { Box, IconButton, Tooltip, Typography } from '@mui/joy'
 
 import PlayerLineClassificationChip from '../../../../components/playerMeta/PlayerLineClassificationChip.js'
+import PlayerGoalsValue from '../../../../components/playerMeta/PlayerGoalsValue.js'
 import ScoutProfileChip from '../../../../components/scout/profile/ScoutProfileChip.js'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import playerImage from '../../../../../../../ui/core/images/playerImage.jpg'
@@ -18,14 +19,14 @@ import {
 import { buildTableScoutProfileChip } from '../model/teamPositionScoutProfile.presentation.js'
 import { teamPositionClassificationTableSx as sx } from '../sx/teamPositionClassificationTable.sx.js'
 
-const renderPlayerName = row => {
+const renderPlayerName = (row, showTooltips) => {
   const status = getPlayerStatusPresentation(row)
 
   return (
     <Box sx={sx.playerNameContent}>
       <Typography sx={sx.player}>{row.name}</Typography>
       {status ? (
-        <Tooltip title={status.label}>
+        <Tooltip title={showTooltips ? status.label : ''}>
           <Box component='span' aria-label={status.label} sx={sx.playerStatusBadge(status.color)}>
             {iconUi({ id: status.iconId, size: 'sm' })}
           </Box>
@@ -35,12 +36,12 @@ const renderPlayerName = row => {
   )
 }
 
-const renderMinutes = row => {
+const renderMinutes = (row, showTooltips) => {
   const presentation = getMinutesPresentation(row)
 
   return (
     <Tooltip
-      title={presentation.tooltip}
+      title={showTooltips ? presentation.tooltip : ''}
       placement='bottom'
       variant='soft'
       color={presentation.tooltipColor}
@@ -59,12 +60,12 @@ const renderMinutes = row => {
   )
 }
 
-const renderSubstitutions = row => {
+const renderSubstitutions = (row, showTooltips) => {
   const presentation = getSubstitutionPresentation(row)
 
   return (
     <Tooltip
-      title={presentation.tooltip}
+      title={showTooltips ? presentation.tooltip : ''}
       placement='bottom'
       variant='soft'
       color={presentation.tooltipColor}
@@ -83,13 +84,13 @@ const renderSubstitutions = row => {
   )
 }
 
-const renderScoutProfile = row => {
+const renderScoutProfile = (row, showTooltips) => {
   const scoutProfileChip = buildTableScoutProfileChip(row.player)
   if (!scoutProfileChip) return null
 
   return (
     <Box sx={sx.scoutProfileCell}>
-      <ScoutProfileChip {...scoutProfileChip} size='compact' showConditions showConditionsDepth />
+      <ScoutProfileChip {...scoutProfileChip} size='compact' showTooltip={showTooltips} showConditions showConditionsDepth />
     </Box>
   )
 }
@@ -99,6 +100,10 @@ export default function useTeamPositionClassificationColumns({
   onPlayerRoleEdit,
   favoritePlayerKeys,
   onFavoriteToggle,
+  showTooltips = true,
+  showProfileTooltips = showTooltips,
+  onRowSelect,
+  selectedRowKey = '',
 }) {
   return React.useMemo(() => [
     {
@@ -106,7 +111,18 @@ export default function useTeamPositionClassificationColumns({
       label: '#',
       sortable: false,
       sx: sx.indexColumn,
-      render: (_, index) => <Typography sx={sx.index}>{index + 1}</Typography>,
+      render: (row, index) => onRowSelect ? (
+        <IconButton
+          size='sm'
+          variant={(row.favoriteKey || row.id) === selectedRowKey ? 'soft' : 'plain'}
+          color={(row.favoriteKey || row.id) === selectedRowKey ? 'primary' : 'neutral'}
+          aria-label={`סימון השחקן ${row.name}`}
+          aria-pressed={(row.favoriteKey || row.id) === selectedRowKey}
+          onClick={() => onRowSelect(row)}
+        >
+          {index + 1}
+        </IconButton>
+      ) : <Typography sx={sx.index}>{index + 1}</Typography>,
     },
     {
       key: 'avatar',
@@ -128,7 +144,7 @@ export default function useTeamPositionClassificationColumns({
       getLinkAriaLabel: row => `פתיחת עמוד השחקן ${row.name}`,
       linkSx: sx.playerNameLink,
       getSortValue: row => row.name,
-      render: renderPlayerName,
+      render: row => renderPlayerName(row, showTooltips),
     },
     {
       key: 'favorite',
@@ -140,7 +156,7 @@ export default function useTeamPositionClassificationColumns({
         const label = selected ? 'הסרה מהמועדפים הזמניים' : 'הוספה למועדפים זמניים'
 
         return (
-          <Tooltip title={row.favoriteKey ? label : 'לא ניתן לסמן שחקן ללא מזהה'}>
+          <Tooltip title={showTooltips ? (row.favoriteKey ? label : 'לא ניתן לסמן שחקן ללא מזהה') : ''}>
             <span>
               <IconButton
                 type='button'
@@ -164,7 +180,7 @@ export default function useTeamPositionClassificationColumns({
     },
     {
       key: 'gamesStarts',
-      label: 'משחקים / הרכב',
+      label: 'משחקים',
       sx: sx.gamesStartsColumn,
       getSortValue: row => Number(row.games) || 0,
       render: displayGamesStarts,
@@ -174,21 +190,21 @@ export default function useTeamPositionClassificationColumns({
       label: 'כמות דקות',
       sx: sx.minutesColumn,
       getSortValue: row => row.minutes,
-      render: renderMinutes,
+      render: row => renderMinutes(row, showTooltips),
     },
     {
       key: 'substitutedOut',
       label: 'כמות חילופים',
       sx: sx.substitutionsColumn,
       getSortValue: row => row.substitutedOut,
-      render: renderSubstitutions,
+      render: row => renderSubstitutions(row, showTooltips),
     },
     {
       key: 'goals',
       label: 'שערים',
       sx: sx.goalsColumn,
       getSortValue: row => row.goals,
-      render: row => displayClassificationValue(row.goals),
+      render: row => <PlayerGoalsValue goals={row.goals} projectedGoals={row.projectedGoals} />,
     },
     {
       key: 'lineClassification',
@@ -230,7 +246,7 @@ export default function useTeamPositionClassificationColumns({
         const chip = buildTableScoutProfileChip(row.player)
         return chip ? chip.label || '' : ''
       },
-      render: renderScoutProfile,
+      render: row => renderScoutProfile(row, showProfileTooltips),
     },
     {
       key: 'openPlayer',
@@ -254,5 +270,5 @@ export default function useTeamPositionClassificationColumns({
         </IconButton>
       ),
     },
-  ], [favoritePlayerKeys, onFavoriteToggle, onPlayerOpen, onPlayerRoleEdit])
+  ], [favoritePlayerKeys, onFavoriteToggle, onPlayerOpen, onPlayerRoleEdit, showTooltips, showProfileTooltips, onRowSelect, selectedRowKey])
 }

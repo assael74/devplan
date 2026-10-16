@@ -183,7 +183,14 @@ const buildScoutingState = ({
     primaryPosition: clean(root.primaryPosition),
     positionLayer: clean(root.positionLayer),
   }
-  const lineClassification = buildPlayerLineClassificationState({ player })
+  const lineClassification = buildPlayerLineClassificationState({
+    player,
+    team: { teamGamePlayed: leagueContext.teamGamePlayed },
+    season: {
+      seasonStatus: leagueContext.seasonStatus,
+      leagueTotalRound: leagueContext.season.leagueTotalRound,
+    },
+  })
   const teamContext = {
     teamId: teamIdentity.teamId,
     clubId: teamIdentity.clubId,

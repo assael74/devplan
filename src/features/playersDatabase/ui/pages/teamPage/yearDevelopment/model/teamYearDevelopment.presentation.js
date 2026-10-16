@@ -1,5 +1,38 @@
 // src/features/playersDatabase/ui/pages/teamPage/yearDevelopment/model/teamYearDevelopment.presentation.js
 import { resolveScoutProfileDefinition } from '../../../../../../../shared/scouting/players/profiles.js'
+import { formatLtrNumber } from '../../../../../../../shared/format/direction.js'
+
+export const buildTeamYearMetricChange = ({ metric, season, previousSeason }) => {
+  if (metric.showChange === false) return null
+  const rawValue = season?.[metric.key]
+  const rawPreviousValue = previousSeason?.[metric.key]
+  if (rawValue === null || rawValue === undefined || rawValue === '' ||
+    rawPreviousValue === null || rawPreviousValue === undefined || rawPreviousValue === '') {
+    return null
+  }
+
+  const value = Number(rawValue)
+  const previousValue = Number(rawPreviousValue)
+  if (!Number.isFinite(value) || !Number.isFinite(previousValue)) return null
+
+  const delta = value - previousValue
+  const displayDelta = metric.presentation === 'tableRank' ? -delta : delta
+  const direction = displayDelta === 0 ? 'same' : displayDelta > 0 ? 'up' : 'down'
+  const isImproved = direction === 'same'
+    ? null
+    : metric.betterDirection === 'lower'
+      ? delta < 0
+      : direction === 'up'
+  return {
+    direction,
+    color: isImproved === null ? 'neutral' : isImproved ? 'success' : 'danger',
+    iconId: direction === 'up' ? 'sortUp' : direction === 'down' ? 'sortDown' : 'remove',
+    label: formatLtrNumber(
+      metric.decimal ? Number(displayDelta.toFixed(1)) : displayDelta,
+      { signed: true }
+    ),
+  }
+}
 
 export const TEAM_YEAR_METRICS = Object.freeze([
   { key: 'tableRank', label: 'מיקום בטבלה', iconId: 'league', presentation: 'tableRank', betterDirection: 'lower' },

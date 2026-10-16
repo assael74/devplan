@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/components/playerMeta/PlayerMetaChip.js
+
 import { Chip, Tooltip } from '@mui/joy'
 
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
@@ -12,6 +14,7 @@ export default function PlayerMetaChip({
   clickable = false,
   buttonLike = false,
   compact = false,
+  muted = false,
   onClick,
   tooltipSx,
 }) {
@@ -22,7 +25,7 @@ export default function PlayerMetaChip({
       startDecorator={startIconId ? iconUi({ id: startIconId, size: 'sm' }) : null}
       endDecorator={endIconId ? iconUi({ id: endIconId, size: 'sm' }) : null}
       onClick={onClick}
-      sx={sx.root({ selected, clickable, buttonLike, compact })}
+      sx={[sx.root({ selected, clickable, buttonLike, compact }), muted && sx.muted]}
     >
       {label}
     </Chip>

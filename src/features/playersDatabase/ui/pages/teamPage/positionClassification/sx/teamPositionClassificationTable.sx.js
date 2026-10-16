@@ -9,6 +9,16 @@ const squadRowColors = {
 }
 
 export const teamPositionClassificationTableSx = {
+  selectableRow: {
+    cursor: 'pointer',
+
+    '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.outlinedBorder', outlineOffset: -2 },
+  },
+
+  selectedRow: {
+    '& > td': { bgcolor: 'primary.softBg', borderTop: '1px solid', borderBottom: '1px solid', borderColor: 'primary.outlinedBorder' },
+  },
+
   section: {
     p: {
       xs: 1.25,
@@ -189,7 +199,7 @@ export const teamPositionClassificationTableSx = {
   },
 
   goalsColumn: {
-    width: '7%',
+    width: '9%',
   },
 
   scoutProfileColumn: {
@@ -197,7 +207,7 @@ export const teamPositionClassificationTableSx = {
   },
 
   lineClassificationColumn: {
-    width: '15%',
+    width: '13%',
   },
 
   openPlayerColumn: {

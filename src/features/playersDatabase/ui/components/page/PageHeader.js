@@ -2,7 +2,6 @@
 
 import {
   Box,
-  Stack,
 } from '@mui/joy'
 import { useLocation } from 'react-router-dom'
 
@@ -22,10 +21,9 @@ export default function PageHeader({
 
   return (
     <Box sx={[sx.header, externalSx]}>
-      <Stack sx={sx.copy}>
+      <Box sx={sx.breadcrumbs}>
         <Breadcrumbs items={breadcrumbs} />
-        {children}
-      </Stack>
+      </Box>
 
       {actions || showDataOpsAccess ? (
         <Box sx={sx.actions}>
@@ -33,6 +31,10 @@ export default function PageHeader({
           {actions}
         </Box>
       ) : null}
+
+      <Box sx={sx.title}>
+        {children}
+      </Box>
     </Box>
   )
 }

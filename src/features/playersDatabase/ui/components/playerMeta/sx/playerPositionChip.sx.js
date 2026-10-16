@@ -3,6 +3,8 @@
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const playerPositionChipSx = {
+  muted: { filter: 'grayscale(1)' },
+
   root: ({ selected = false, clickable = false, buttonLike = false, compact = false } = {}) => ({
     minHeight: buttonLike ? 30 : compact ? 22 : 25,
     width: buttonLike ? '100%' : 'auto',

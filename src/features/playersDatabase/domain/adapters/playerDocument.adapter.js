@@ -163,6 +163,7 @@ export const adaptPlayerDocumentSeason = ({
       context: {
         teamMinutes: toNullablePositiveNumber(stats.teamMinutes),
         teamGames: toNullablePositiveNumber(stats.teamGames),
+        leagueTotalRound: toNullablePositiveNumber(seasonDocument.leagueTotalRound),
         teamRank: toDomainNumber(stats.teamRank),
         teamGoalsFor: toDomainNumber(stats.teamGoalsFor),
         teamGoalsAgainst: toDomainNumber(stats.teamGoalsAgainst),

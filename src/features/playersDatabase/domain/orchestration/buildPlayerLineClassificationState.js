@@ -4,6 +4,10 @@ import {
   buildTeamPlayerLineClassification,
 } from '../../../../shared/scouting/teams/index.js'
 
-export const buildPlayerLineClassificationState = ({ player = {} } = {}) => (
-  buildTeamPlayerLineClassification({ player })
+export const buildPlayerLineClassificationState = ({
+  player = {},
+  team = {},
+  season = {},
+} = {}) => (
+  buildTeamPlayerLineClassification({ player, team, season })
 )

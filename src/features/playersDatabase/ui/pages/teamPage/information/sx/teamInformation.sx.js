@@ -9,9 +9,12 @@ const INSIGHT_STATUS_COLORS = {
   multiple: COLORS.status.warning,
   single: COLORS.status.info,
   none: COLORS.status.neutral,
+  risk: COLORS.status.warning,
+  upside: COLORS.status.success,
 }
 
 export const teamInformationSx = {
+  rosterSelectionToolbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, pb: 0.75 },
   workspaceHeader: {
     position: 'sticky',
     top: 0,
@@ -173,9 +176,18 @@ export const teamInformationSx = {
     bgcolor: devPlanColors.surface,
     textAlign: 'start',
     boxShadow: '0 2px 8px rgba(17, 58, 90, 0.04)',
+    transition: 'transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease, border-color 180ms ease',
     '&:hover': {
       bgcolor: devPlanColors.primaryLight,
       borderColor: devPlanColors.primary,
+      boxShadow: '0 6px 16px rgba(17, 58, 90, 0.12)',
+    },
+    '@media (hover: hover) and (pointer: fine)': {
+      '&:hover': { transform: 'translateY(-3px)' },
+    },
+    '@media (prefers-reduced-motion: reduce)': {
+      transition: 'none',
+      '&:hover': { transform: 'none' },
     },
     '&:hover .team-insight-icon, &:focus-visible .team-insight-icon': {
       bgcolor: devPlanColors.primaryLight,
@@ -196,13 +208,24 @@ export const teamInformationSx = {
   },
 
   insightTileShadow: status => ({
-    boxShadow: `inset 9px 0 14px -12px ${INSIGHT_STATUS_COLORS[status].solid}, 0 2px 8px rgba(17, 58, 90, 0.04)`,
+    bgcolor: INSIGHT_STATUS_COLORS[status] === COLORS.status.warning
+      ? COLORS.status.warning.softBg
+      : devPlanColors.surface,
+    boxShadow: status === 'none' || status === 'limited'
+      ? '0 2px 8px rgba(17, 58, 90, 0.04)'
+      : `inset 9px 0 14px -12px ${INSIGHT_STATUS_COLORS[status].solid}, 0 2px 8px rgba(17, 58, 90, 0.04)`,
   }),
 
   insightTileStatus: status => ({
-    bgcolor: INSIGHT_STATUS_COLORS[status].softBg,
-    borderColor: INSIGHT_STATUS_COLORS[status].solid,
-    color: INSIGHT_STATUS_COLORS[status].text,
+    bgcolor: INSIGHT_STATUS_COLORS[status] === COLORS.status.warning
+      ? COLORS.status.warning.solid
+      : INSIGHT_STATUS_COLORS[status].softBg,
+    borderColor: INSIGHT_STATUS_COLORS[status] === COLORS.status.warning
+      ? 'common.white'
+      : INSIGHT_STATUS_COLORS[status].solid,
+    color: INSIGHT_STATUS_COLORS[status] === COLORS.status.warning
+      ? 'common.white'
+      : INSIGHT_STATUS_COLORS[status].text,
     whiteSpace: 'nowrap',
   }),
 
@@ -292,6 +315,9 @@ export const teamInformationSx = {
     color: devPlanColors.secondary,
     fontSize: 11,
     fontWeight: 600,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
 
   sectionTileAction: {

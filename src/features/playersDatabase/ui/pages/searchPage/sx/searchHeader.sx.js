@@ -28,6 +28,7 @@ export const searchHeaderSx = {
   },
 
   actions: {
+    alignSelf: 'start',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
   },

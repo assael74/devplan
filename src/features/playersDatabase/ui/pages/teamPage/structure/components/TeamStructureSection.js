@@ -3,7 +3,7 @@
 import { Box, Button, Tooltip, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
-import TeamAnalysisCard from '../../information/components/TeamAnalysisCard.js'
+import TeamAnalysisCard, { TeamAnalysisComparison } from '../../information/components/TeamAnalysisCard.js'
 import { TEAM_STRUCTURE_FILTER } from '../model/teamStructureFilter.model.js'
 import { teamStructureSx as sx } from '../sx/teamStructure.sx.js'
 
@@ -73,7 +73,13 @@ const resolveLineState = ({ definition, structure }) => {
   }
 }
 
-const LineCard = ({ definition, structure, selectedFilter, onFilterChange }) => {
+const LineCard = ({
+  definition,
+  structure,
+  selectedFilter,
+  onFilterChange,
+  comparison,
+}) => {
   const state = resolveLineState({ definition, structure })
   const selected = definition.filterKey === selectedFilter
   const clickable = Boolean(onFilterChange)
@@ -106,14 +112,15 @@ const LineCard = ({ definition, structure, selectedFilter, onFilterChange }) => 
             </Box>
           ) : null}
         </Box>
+        <TeamAnalysisComparison comparison={comparison} />
       </Box>
     </TeamAnalysisCard>
   )
 }
 
-const CoverageStrip = ({ structure, selectedFilter, onFilterChange }) => {
+const CoverageStrip = ({ structure, selectedFilter, onFilterChange, comparison }) => {
   const classified = structure?.lines?.classified
-  const selected = selectedFilter === TEAM_STRUCTURE_FILTER.ALL_SQUAD
+  const selected = selectedFilter === TEAM_STRUCTURE_FILTER.CLASSIFIED
   const coverageState = CLASSIFICATION_COVERAGE_CARD_STATE[
     String(structure?.classificationCoverageBenchmark?.state || '').trim()
   ] || CLASSIFICATION_COVERAGE_CARD_STATE.typical
@@ -122,8 +129,8 @@ const CoverageStrip = ({ structure, selectedFilter, onFilterChange }) => {
     <TeamAnalysisCard
       tone={coverageState.tone === 'review' ? 'review' : 'muted'}
       selected={selected}
-      onSelect={clickable ? () => onFilterChange(TEAM_STRUCTURE_FILTER.ALL_SQUAD) : undefined}
-      ariaLabel='הצגת כל שחקני הסגל'
+      onSelect={clickable ? () => onFilterChange(TEAM_STRUCTURE_FILTER.CLASSIFIED) : undefined}
+      ariaLabel='הצגת השחקנים המסווגים'
       cardSx={sx.lineCard}
     >
       <Box sx={sx.lineBody}>
@@ -143,6 +150,7 @@ const CoverageStrip = ({ structure, selectedFilter, onFilterChange }) => {
             <Typography component='span' sx={sx.referenceChipText}>יעד 10–13</Typography>
           </Box>
         </Box>
+        <TeamAnalysisComparison comparison={comparison} />
       </Box>
     </TeamAnalysisCard>
   )
@@ -153,6 +161,7 @@ export default function TeamStructureSection({
   hasRosterPlayers = false,
   title = 'מבנה הסגל',
   titleMeta = null,
+  comparison = null,
   seasonKey = '',
   selectedFilter = TEAM_STRUCTURE_FILTER.CLASSIFIED,
   onFilterChange,
@@ -213,12 +222,14 @@ export default function TeamStructureSection({
           <LineCard
             key={definition.key}
             definition={definition}
+            comparison={comparison?.[definition.key]}
             structure={structure}
             selectedFilter={selectedFilter}
             onFilterChange={onFilterChange}
           />
         ))}
         <CoverageStrip
+          comparison={comparison?.classified}
           structure={structure}
           selectedFilter={selectedFilter}
           onFilterChange={onFilterChange}

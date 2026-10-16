@@ -39,6 +39,7 @@ export default function PlayerLineClassificationChip({
   clickable = false,
   buttonLike = false,
   compact = false,
+  muted = false,
 }) {
   const line = clean(classification?.line)
   const position = clean(classification?.position)
@@ -64,6 +65,7 @@ export default function PlayerLineClassificationChip({
         clickable={clickable}
         buttonLike={buttonLike}
         compact={compact}
+        muted={muted}
       />
     )
   }
@@ -87,6 +89,7 @@ export default function PlayerLineClassificationChip({
       clickable={clickable}
       buttonLike={buttonLike}
       compact={compact}
+      muted={muted}
     />
   )
 }

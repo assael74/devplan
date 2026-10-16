@@ -1,8 +1,18 @@
 // src/features/playersDatabase/ui/pages/teamPage/information/components/TeamAnalysisCard.js
 
-import { Card } from '@mui/joy'
+import { Card, Typography } from '@mui/joy'
 
+import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import { teamAnalysisCardSx as sx } from '../sx/teamAnalysisCard.sx.js'
+
+export const TeamAnalysisComparison = ({ comparison }) => comparison ? (
+  <Typography
+    sx={sx.comparison(comparison.iconId)}
+    endDecorator={iconUi({ id: comparison.iconId, size: 'sm' })}
+  >
+    {comparison.text}
+  </Typography>
+) : null
 
 export default function TeamAnalysisCard({
   children,
@@ -16,8 +26,8 @@ export default function TeamAnalysisCard({
   const customStyles = Array.isArray(cardSx) ? cardSx : [cardSx]
   const handleClick = event => {
     if (!interactive) return
-    if (event.target !== event.currentTarget &&
-      event.target.closest('button, a, [role="button"]')) return
+    const action = event.target.closest('button, a, [role="button"]')
+    if (action && action !== event.currentTarget) return
     onSelect(event)
   }
   const handleKeyDown = event => {

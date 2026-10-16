@@ -1,6 +1,7 @@
 // src/features/playersDatabase/ui/pages/teamPage/information/model/teamInformation.model.js
 
-import { buildTeamLineInterpretationState } from '../../../../../domain/index.js'
+import { buildTeamBalanceState, buildTeamLineInterpretationState } from '../../../../../domain/index.js'
+import { isPreviousSeasonKey } from '../../../../../domain/movement/index.js'
 import {
   getTeamLineInterestPresentation,
   getTeamSquadActionsPresentation,
@@ -91,6 +92,23 @@ const buildStructure = ({ seasonDoc, lineInterpretation = null }) => {
   }
 }
 
+const withCurrentBalance = (seasonDoc, rows = null, context = null) => {
+  if (!seasonDoc) return null
+  if (!seasonDoc.teamPlayers?.length && seasonDoc.stats?.statsLoadState?.status !== 'loaded') return seasonDoc
+  const allRows = rows || buildPositionClassificationRows({ seasonDoc })
+  // Cards and filters must consume the same seasonal classifications. Saved
+  // balance summaries can predate the current classification model.
+  const teamBalance = buildTeamBalanceState({
+    seasonDocument: {
+      ...seasonDoc,
+      teamStats: context?.teamStats || seasonDoc.teamStats,
+      performance: context?.performance || seasonDoc.performance,
+      teamPlayers: allRows.map(row => ({ ...row.player, lineClassification: row.classification })),
+    },
+  })
+  return { ...seasonDoc, teamBalance }
+}
+
 export const buildTeamInformationView = ({
   team = {},
   teamSeasons = [],
@@ -102,15 +120,21 @@ export const buildTeamInformationView = ({
   players = [],
   playerIdsFilter = null,
 } = {}) => {
+  const allPositionRows = buildPositionClassificationRows({ seasonDoc: selectedTeamSeason, players })
+  const selectedSnapshot = teamSeasons.find(season => (
+    clean(season?.seasonKey || season?.seasonId) === clean(selectedSeasonKey)
+  ))
+  selectedTeamSeason = withCurrentBalance(selectedTeamSeason, allPositionRows, selectedSnapshot)
+  teamSeasons = teamSeasons.map(season => withCurrentBalance(season))
   const previousSeason = findPreviousSeason({ teamSeasons, selectedSeasonKey })
   const currentSeason = teamSeasons.find(season => (
     clean(season?.seasonKey || season?.seasonId) === clean(selectedSeasonKey)
   )) || null
-  const positionClassificationRows = buildPositionClassificationRows({
+  const positionClassificationRows = playerIdsFilter ? buildPositionClassificationRows({
     seasonDoc: selectedTeamSeason,
     players,
     playerIdsFilter,
-  })
+  }) : allPositionRows
   const persistedLineInterpretation = selectedTeamSeason?.teamBalance?.scoutInterpretation || null
   const lineInterpretation = persistedLineInterpretation || (selectedTeamSeason
     ? buildTeamLineInterpretationState({
@@ -126,6 +150,22 @@ export const buildTeamInformationView = ({
     seasonDoc: selectedTeamSeason,
     lineInterpretation,
   })
+  const previousRosterSeasonKey = clean(previousSeason?.seasonKey || previousSeason?.seasonId)
+  const comparisonSeason = previousSeason && isPreviousSeasonKey({
+    previousSeasonKey: previousRosterSeasonKey,
+    seasonKey: selectedSeasonKey,
+  }) ? previousSeason : null
+  const previousRosterBalance = comparisonSeason ? {
+    seasonKey: previousRosterSeasonKey,
+    structure: buildStructure({
+      seasonDoc: comparisonSeason,
+      lineInterpretation: comparisonSeason.teamBalance?.scoutInterpretation || buildTeamLineInterpretationState({
+        teamDocument: team,
+        seasonDocument: comparisonSeason,
+        balanceState: comparisonSeason.teamBalance || null,
+      }),
+    }),
+  } : null
 
   return {
     team,
@@ -133,6 +173,8 @@ export const buildTeamInformationView = ({
     selectedSeasonKey: clean(selectedSeasonKey),
     selectedSeasonOption,
     structure,
+    previousRosterBalance,
+    allPositionClassificationRows: allPositionRows,
     positionClassificationRows,
     lineInterpretation,
     performance: buildPerformance(team),

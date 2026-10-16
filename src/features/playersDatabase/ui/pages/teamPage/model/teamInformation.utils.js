@@ -18,3 +18,11 @@ export const percent = value => {
   return next <= 1 ? Math.round(next * 100) : Math.round(next)
 }
 
+export const calculateSuccessPercent = (points, games) => {
+  const totalPoints = numberOrNull(points)
+  const played = numberOrNull(games)
+  return totalPoints !== null && played > 0
+    ? Math.round((totalPoints / (played * 3)) * 100)
+    : null
+}
+

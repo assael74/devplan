@@ -1,6 +1,8 @@
 // src/features/playersDatabase/ui/pages/teamPage/stats/table/sx/useTeamStatsColumns.sx.js
 
 export const teamStatsColumnsSx = {
+  goalsInput: { minWidth: 0, width: '3ch', px: 0.25 },
+
   tableHeaderIcon: {
     display: 'inline-flex',
     alignItems: 'center',

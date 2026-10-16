@@ -89,7 +89,6 @@ function SeasonCard({ player, row, previousRow = null }) {
     row.teamDefensePerformance?.priority?.level ||
     row.teamDefenseLevel
   )
-  const hasLineClassification = Boolean(clean(row.lineClassification?.line))
   const hasKnownPosition = Boolean(clean(row.primaryPosition || row.position?.primary || row.positionLayer || row.position?.layer))
   const lineClassificationEvaluation = React.useMemo(() => (
     buildTeamPlayerLineClassificationEvaluation({
@@ -106,8 +105,17 @@ function SeasonCard({ player, row, previousRow = null }) {
           substitutedOut: row.substitutedOut,
         },
       },
+      team: { teamGamePlayed: row.teamGames },
+      season: {
+        seasonStatus: row.seasonStatus,
+        leagueTotalRound: row.leagueTotalRound,
+      },
     })
   ), [row])
+  const lineClassification = lineClassificationEvaluation.eligible === false
+    ? null
+    : lineClassificationEvaluation.classification || row.lineClassification
+  const hasLineClassification = Boolean(clean(lineClassification?.line))
 
   return (
     <Box sx={sx.seasonCard}>
@@ -173,12 +181,12 @@ function SeasonCard({ player, row, previousRow = null }) {
           <Typography level='body-xs' sx={sx.areaLabel}>פרופיל סקאוט בעונה</Typography>
           {hasLineClassification ? (
             <PlayerLineClassificationChip
-              classification={row.lineClassification}
+              classification={lineClassification}
               primaryPosition={row.primaryPosition || row.position?.primary || ''}
               positionLayer={row.positionLayer || row.position?.layer || ''}
               showTooltip
               tooltipContent={<PlayerLineClassificationTooltip
-                classification={row.lineClassification}
+                classification={lineClassification}
                 evaluation={lineClassificationEvaluation}
                 stats={row}
                 compact

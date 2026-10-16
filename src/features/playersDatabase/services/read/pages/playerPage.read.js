@@ -150,6 +150,7 @@ const canonicalSeasonSource = ({ playerRoot, playerSeason, teamId, team }) => {
     ...playerStats,
     teamGames: playerStats.teamGamePlayed || context.teamGamePlayed,
     teamMinutes: playerStats.teamMinutes || context.teamMinutesPlayed,
+    leagueTotalRound: context.leagueTotalRound,
     teamRank: context.teamTableRank,
     teamGoalsFor: context.teamGoalsFor,
     teamGoalsAgainst: context.teamGoalsAgainst,

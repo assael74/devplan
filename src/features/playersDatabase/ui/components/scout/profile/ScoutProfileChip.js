@@ -22,8 +22,10 @@ export default function ScoutProfileChip({
   isCombination = false,
   shortLabel = false,
   selected = false,
+  muted = false,
   tooltipSize = 'default',
   tooltip = '',
+  showTooltip = true,
   profile = null,
   profiles = [],
   showConditions = false,
@@ -61,7 +63,7 @@ export default function ScoutProfileChip({
 
   return (
     <Tooltip
-      title={tooltipTitle}
+      title={showTooltip ? tooltipTitle : ''}
       arrow
       variant='plain'
       color='neutral'
@@ -72,14 +74,14 @@ export default function ScoutProfileChip({
         type={interactive ? 'button' : undefined}
         onClick={onClick}
         aria-label={`${model.fullLabel}, עומק התאמה ${model.depthPct}%${model.extraCount ? `, ועוד ${model.extraCount} פרופילים` : ''}`}
-        sx={sx.root({
+        sx={[sx.root({
           interactive,
           compact,
           width,
           isFilter: model.isFilter,
           isCombination: model.isCombination,
           selected,
-        })}
+        }), muted && sx.muted]}
       >
         {model.isFilter ? null : <Box aria-hidden='true' sx={sx.fill({ depthPct: model.depthPct })} />}
         <Box sx={sx.content({ compact })}>

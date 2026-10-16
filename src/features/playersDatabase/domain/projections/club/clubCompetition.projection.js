@@ -1,4 +1,4 @@
-// League table + competition rules -> Club competition projection. Pure domain calculation.
+// src/features/playersDatabase/domain/projections/club/clubCompetition.projection.js
 
 import { SEASON_STATUS, normalizeSeasonStatus } from '../../../model/shared/season.model.js'
 import { cleanValue, toNumberOrZero } from '../../../model/shared/value.model.js'
@@ -46,8 +46,10 @@ export const normalizeCompetitionRules = rules => {
   }
 }
 
-const isPlaceInDirectZone = (rank, zone = {}) => (
-  Boolean(zone?.enabled) && normalizePlaces(zone?.directPlaces).includes(Number(rank))
+const isPlaceInZone = (rank, zone = {}) => (
+  Boolean(zone?.enabled) && normalizePlaces([
+    ...(zone?.directPlaces || []), ...(zone?.playoffPlaces || []),
+  ]).includes(Number(rank))
 )
 
 const resolveTeamKey = row => cleanValue(
@@ -132,6 +134,10 @@ const resolveMathematicalStatus = ({
     : []
   const lastPromotionRank = promotionPlaces.length ? Math.max(...promotionPlaces) : 0
   const firstRelegationRank = relegationPlaces.length ? Math.min(...relegationPlaces) : 0
+  const riskPlaces = competitionRules.relegation.enabled
+    ? normalizePlaces([...relegationPlaces, ...competitionRules.relegation.playoffPlaces])
+    : []
+  const firstRiskRank = riskPlaces.length ? Math.min(...riskPlaces) : 0
 
   if (lastPromotionRank && worstPossibleRank <= lastPromotionRank) {
     return CLUB_COMPETITION_STATUS.PROMOTED_CONFIRMED
@@ -141,7 +147,7 @@ const resolveMathematicalStatus = ({
     return CLUB_COMPETITION_STATUS.RELEGATED_CONFIRMED
   }
 
-  if (firstRelegationRank && worstPossibleRank < firstRelegationRank) {
+  if (firstRiskRank && worstPossibleRank < firstRiskRank) {
     return CLUB_COMPETITION_STATUS.SAFE_CONFIRMED
   }
 
@@ -170,6 +176,10 @@ export const buildCompetitionProjection = ({
       status: CLUB_COMPETITION_STATUS.UNKNOWN,
       projectedRank: null,
       seasonProgressPct: 0,
+      unavailableReasons: [
+        ...(!targetRow ? ['TEAM_NOT_IN_TABLE'] : []),
+        ...(!expectedGamesPerTeam ? ['SCHEDULE_MISSING'] : []),
+      ],
     }
   }
 
@@ -185,6 +195,10 @@ export const buildCompetitionProjection = ({
       status: CLUB_COMPETITION_STATUS.CURRENT_LEVEL,
       projectedRank: getLeagueTableRowRank(targetRow),
       seasonProgressPct,
+      unavailableReasons: [
+        ...(!normalizedRules.configured ? ['RULES_NOT_CONFIGURED'] : []),
+        ...(seasonProgressPct < 50 ? ['SEASON_BEFORE_HALFWAY'] : []),
+      ],
     }
   }
 
@@ -199,12 +213,14 @@ export const buildCompetitionProjection = ({
   const projectedRank = projectedTarget?.projectedRank || null
   let status = CLUB_COMPETITION_STATUS.STABLE
 
-  if (confirmedStatus) {
+  if (confirmedStatus && confirmedStatus !== CLUB_COMPETITION_STATUS.SAFE_CONFIRMED) {
     status = confirmedStatus
-  } else if (isPlaceInDirectZone(projectedRank, normalizedRules.promotion)) {
+  } else if (isPlaceInZone(projectedRank, normalizedRules.promotion)) {
     status = CLUB_COMPETITION_STATUS.PROMOTION_POSSIBLE
-  } else if (isPlaceInDirectZone(projectedRank, normalizedRules.relegation)) {
+  } else if (isPlaceInZone(projectedRank, normalizedRules.relegation)) {
     status = CLUB_COMPETITION_STATUS.RELEGATION_RISK
+  } else if (confirmedStatus) {
+    status = confirmedStatus
   }
 
   return {
@@ -212,6 +228,7 @@ export const buildCompetitionProjection = ({
     status,
     projectedRank,
     seasonProgressPct,
+    unavailableReasons: [],
   }
 }
 

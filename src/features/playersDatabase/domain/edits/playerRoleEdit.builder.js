@@ -41,6 +41,11 @@ export const buildPlayerRoleEditState = ({
   }
 
   const playerStats = object(currentStatsPlayer.playerStats)
+  const leagueContext = buildStatsLeagueContext({
+    league,
+    seasonId: clean(identity.seasonId),
+    teamId: clean(identity.teamId),
+  })
   const classification = buildPlayerLineClassificationState({
     player: {
       ...rosterPlayer,
@@ -50,6 +55,11 @@ export const buildPlayerRoleEditState = ({
       statsStatus: 'loaded',
       primaryPosition: primary,
       positionLayer: layer,
+    },
+    team: { teamGamePlayed: leagueContext.teamGamePlayed },
+    season: {
+      seasonStatus: leagueContext.seasonStatus,
+      leagueTotalRound: leagueContext.season.leagueTotalRound,
     },
   })
   const nextStatsPlayer = {
@@ -67,11 +77,6 @@ export const buildPlayerRoleEditState = ({
     ...object(object(teamSeason.scouting).playersById),
     [id]: nextScoutingPlayer,
   }
-  const leagueContext = buildStatsLeagueContext({
-    league,
-    seasonId: clean(identity.seasonId),
-    teamId: clean(identity.teamId),
-  })
   const teamBalance = buildTeamBalanceFromTeamSeason({
     teamSeason,
     statsPlayersById: nextStatsPlayers,

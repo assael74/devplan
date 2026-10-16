@@ -129,6 +129,7 @@ test('shows incoming and outgoing movement with the documented level direction',
           playerId: 'joined', fullName: 'מצטרף', primaryPosition: 'DCR',
           lineClassification: { line: 'DEFENSE' },
           scoutProfiles: [{ profileId: 'last_station', depthPct: 58 }],
+          playerStats: { games: 8, starts: 8, minutes: 637 },
         }],
         transfersOut: [{
           movementId: 'out', playerId: 'left', levelDirection: 'down',
@@ -141,7 +142,10 @@ test('shows incoming and outgoing movement with the documented level direction',
       },
       {
         seasonKey: '25/26',
-        teamPlayers: [{ playerId: 'left', fullName: 'עוזב' }],
+        teamPlayers: [{
+          playerId: 'left', fullName: 'עוזב',
+          playerStats: { games: 7, starts: 5, minutes: 400 },
+        }],
       },
     ],
     seasonOptions: [{ seasonKey: '26/27', target: 'current' }],
@@ -161,10 +165,12 @@ test('shows incoming and outgoing movement with the documented level direction',
     expect.objectContaining({
       movementId: 'out', name: 'עוזב', side: 'out', direction: 'down',
       otherTeamName: 'קבוצה אחרת', levelChange: 2,
+      games: 7, starts: 5, minutes: 400,
     }),
     expect.objectContaining({
       movementId: 'in', name: 'מצטרף', side: 'in', direction: 'up',
       otherTeamName: 'קבוצה אחרת', levelChange: 2,
+      games: 8, starts: 8, minutes: 637,
       classification: { line: 'DEFENSE' },
       player: expect.objectContaining({ primaryPosition: 'DCR', scoutProfiles: expect.any(Array) }),
     }),
@@ -202,4 +208,64 @@ test('shows a previously unknown move from a weaker club to a level-1 club secon
     expect.objectContaining({ movementId: 'up-to-second', direction: 'up', levelChange: 2 }),
     expect.objectContaining({ movementId: 'same-level-to-second', direction: 'unknown', levelChange: null }),
   ]))
+})
+
+test('counts level changes and pre-departure professional profiles as independent movement evidence', () => {
+  const overview = buildYearDevelopmentOverview({
+    teamSeasons: [
+      {
+        seasonKey: '26/27',
+        transfersOut: [
+          { movementId: 'one', playerId: 'one', levelDirection: 'up', fromClubId: 'club', toClubId: 'top' },
+          { movementId: 'two', playerId: 'two', levelDirection: 'up', fromClubId: 'club', toClubId: 'top' },
+          { movementId: 'three', playerId: 'three', levelDirection: 'up', fromClubId: 'club', toClubId: 'top' },
+          { movementId: 'four', playerId: 'four', levelDirection: 'down', fromClubId: 'club', toClubId: 'lower' },
+          { movementId: 'one-again', playerId: 'one', levelDirection: 'up', fromClubId: 'club', toClubId: 'top' },
+        ],
+      },
+      {
+        seasonKey: '25/26',
+        teamPlayers: [
+          { playerId: 'one', professionalScoutProfileIds: ['last_station', 'secondary_threat'] },
+          { playerId: 'two', professionalScoutProfileIds: ['underused_prospect'] },
+          { playerId: 'three', professionalScoutProfileIds: ['last_station'] },
+          { playerId: 'four', professionalScoutProfileIds: ['last_station'] },
+        ],
+      },
+    ],
+    clubsDirectory: { clubsById: {
+      club: { clubLevel: 2 },
+      top: { clubLevel: 1 },
+      lower: { clubLevel: 3 },
+    } },
+  })
+  const season = overview.movementSeasons[0]
+
+  expect(season).toMatchObject({
+    movementDataAvailable: true,
+    leftCount: 5,
+    outgoingPlayerCount: 4,
+    higherLevelDepartures: 3,
+    sameLevelDepartures: 0,
+    higherOrSameLevelDepartures: 3,
+    comparableDepartures: 4,
+    professionalProfileDepartures: 3,
+    profileKnownDepartures: 4,
+  })
+  expect(season.movements.find(row => row.playerId === 'four').departureProfilePlayer)
+    .toMatchObject({ professionalScoutProfileIds: ['last_station'] })
+})
+
+test('does not infer a departing player profile from a later season', () => {
+  const overview = buildYearDevelopmentOverview({
+    teamSeasons: [
+      { seasonKey: '27/28', teamPlayers: [{ playerId: 'left', professionalScoutProfileIds: ['last_station'] }] },
+      { seasonKey: '26/27', transfersOut: [{ movementId: 'out', playerId: 'left' }] },
+    ],
+  })
+  const season = overview.movementSeasons.find(row => row.seasonKey === '26/27')
+
+  expect(season.profileKnownDepartures).toBe(0)
+  expect(season.professionalProfileDepartures).toBe(0)
+  expect(season.movements[0].departureProfilePlayer).toBeNull()
 })

@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/components/tables/dataTable/sx/dataTableHeader.sx.js
+// src/features/playersDatabase/ui/components/tables/dataTable/sx/dataTableHeader.sx.js
 
 import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
@@ -9,6 +9,8 @@ export const dataTableHeaderSx = {
     p: 0,
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 0.4,
     color: 'inherit',
     bgcolor: 'transparent',
     border: 0,
@@ -33,7 +35,6 @@ export const dataTableHeaderSx = {
   },
 
   sortLabel: {
-    width: '100%',
     minWidth: 0,
     display: 'block',
     whiteSpace: 'normal',
@@ -41,12 +42,13 @@ export const dataTableHeaderSx = {
   },
 
   sortIndicatorActive: {
-    position: 'absolute',
-    insetInlineEnd: 2,
+    display: 'inline-flex',
+    alignItems: 'center',
+    flexShrink: 0,
     color: devPlanColors.tertiary,
-    fontSize: 7,
     lineHeight: 1,
     pointerEvents: 'none',
+    '& svg': { fontSize: 13 },
   },
 
   headerActionWrap: {

@@ -1,8 +1,37 @@
 // src/features/playersDatabase/ui/pages/teamPage/information/sx/teamAnalysisCard.sx.js
 
-import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
+import { COLORS, devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 export const teamAnalysisCardSx = {
+  comparison: iconId => ({
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 0.5,
+    mt: 0.5,
+    px: 0.65,
+    py: 0.5,
+    border: `1px solid ${devPlanColors.border}`,
+    borderRadius: 6,
+    bgcolor: devPlanColors.surface,
+    color: devPlanColors.primaryDark,
+    fontSize: 11,
+    fontWeight: 600,
+    lineHeight: 1.4,
+    '& .MuiTypography-endDecorator': {
+      marginInlineStart: 'auto',
+      flexShrink: 0,
+    },
+    '& svg': {
+      color: ({
+        sortUp: COLORS.status.success.solid,
+        sortDown: COLORS.status.danger.solid,
+        equal: COLORS.status.neutral.text,
+      })[iconId] || COLORS.status.info.solid,
+      fontSize: 15,
+      flexShrink: 0,
+    },
+  }),
+
   root: {
     minWidth: 0,
     height: '100%',

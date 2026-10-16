@@ -1,3 +1,4 @@
+// src/features/playersDatabase/domain/projections/club/clubCompetition.projection.test.js
 import { buildCompetitionProjection } from './clubCompetition.projection.js'
 
 const rows = [
@@ -23,6 +24,7 @@ describe('buildCompetitionProjection', () => {
       status: 'CURRENT_LEVEL',
       projectedRank: 1,
       seasonProgressPct: expect.any(Number),
+      unavailableReasons: ['SEASON_BEFORE_HALFWAY'],
     })
   })
 
@@ -51,6 +53,44 @@ describe('buildCompetitionProjection', () => {
       status: 'UNKNOWN',
       projectedRank: null,
       seasonProgressPct: 0,
+      unavailableReasons: ['TEAM_NOT_IN_TABLE'],
     })
   })
+})
+
+const lateSeasonRows = [20, 19, 5, 2].map((points, index) => ({
+  teamId: `team-${index}`, position: index + 1, points, teamGamePlayed: 8,
+}))
+const forecast = (index, competitionRules) => buildCompetitionProjection({
+  rows: lateSeasonRows,
+  targetTeam: { teamId: `team-${index}` },
+  leagueLevel: 2,
+  expectedGamesPerTeam: 10,
+  competitionRules,
+})
+
+test('being mathematically safe does not hide promotion potential', () => {
+  expect(forecast(0, {
+    promotion: { directPlaces: [1] }, relegation: { directPlaces: [4] },
+  })).toMatchObject({ status: 'PROMOTION_POSSIBLE', projectedNextLeagueLevel: 1 })
+})
+
+test('playoff places indicate a possibility or risk, not a confirmed outcome', () => {
+  expect(forecast(0, {
+    promotion: { playoffPlaces: [1] }, relegation: { directPlaces: [4] },
+  }).status).toBe('PROMOTION_POSSIBLE')
+  expect(forecast(3, {
+    promotion: { directPlaces: [1] }, relegation: { playoffPlaces: [4] },
+  }).status).toBe('RELEGATION_RISK')
+  expect(forecast(1, {
+    promotion: { directPlaces: [1] }, relegation: { directPlaces: [4] },
+  }).status).toBe('SAFE_CONFIRMED')
+})
+
+test.each([[0, 'PROMOTED_CONFIRMED'], [3, 'RELEGATED_CONFIRMED']])('direct outcomes remain confirmed at season end', (index, status) => {
+  expect(buildCompetitionProjection({
+    rows: lateSeasonRows.map(row => ({ ...row, teamGamePlayed: 10 })),
+    targetTeam: { teamId: `team-${index}` }, leagueLevel: 2, expectedGamesPerTeam: 10,
+    competitionRules: { promotion: { directPlaces: [1] }, relegation: { directPlaces: [4] } },
+  }).status).toBe(status)
 })

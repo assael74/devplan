@@ -7,6 +7,7 @@ import {
 
 import { TEAM_STRUCTURE_FILTER } from '../../structure/model/teamStructureFilter.model.js'
 import { clean, numberOrNull, withFallback } from '../../model/teamInformation.utils.js'
+import { buildTeamPlayerGoalProjection } from '../../model/teamPlayerGoals.model.js'
 
 const getPlayerStats = player => (
   player?.playerStats && typeof player.playerStats === 'object'
@@ -165,7 +166,17 @@ export const buildPositionClassificationRows = ({
       const teamGames = numberOrNull(stats.teamGames)
       const starts = numberOrNull(stats.starts)
       const substitutedOut = numberOrNull(stats.substitutedOut)
-      const evaluation = buildTeamPlayerLineClassificationEvaluation({ player })
+      const playerId = clean(player?.playerId || player?.playerDocumentId || player?.id)
+      const evidence = seasonDoc?.scouting?.playersById?.[playerId]?.evidence
+      const calculation = evidence?.calculationContext
+      const evaluation = buildTeamPlayerLineClassificationEvaluation({
+        player,
+        team: { teamGamePlayed: calculation?.teamGamePlayed },
+        season: {
+          seasonStatus: calculation?.seasonStatus || seasonDoc?.seasonStatus,
+          leagueTotalRound: calculation?.leagueTotalRound,
+        },
+      })
       const gameMinutes = numberOrNull(evaluation.gameMinutes)
       const possiblePlayerMinutes = numberOrNull(evaluation.possiblePlayerMinutes)
       // Presentation of personal usage must not depend on whether the player
@@ -188,7 +199,9 @@ export const buildPositionClassificationRows = ({
       )
       const primaryPosition = clean(player?.primaryPosition).toUpperCase()
       const positionLayer = clean(player?.positionLayer).toLowerCase()
-      const classification = player?.lineClassification || evaluation.classification || null
+      const classification = evaluation.eligible === false
+        ? null
+        : evaluation.classification || player?.lineClassification || null
       const isGoalkeeper = isTeamPlayerKnownGoalkeeper({ player })
 
       return {
@@ -201,6 +214,7 @@ export const buildPositionClassificationRows = ({
         rosterStatus: clean(player?.rosterStatus),
         games,
         goals: numberOrNull(stats.goals),
+        ...buildTeamPlayerGoalProjection({ player, goals: stats.goals, season: seasonDoc }),
         yellowCards: numberOrNull(stats.yellowCards),
         toto: numberOrNull(stats.toto),
         redCards: numberOrNull(stats.redCards),

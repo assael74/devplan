@@ -6,6 +6,8 @@ import {
 } from './clubIntelligence.contract.js'
 import { buildClubSignalCoverage } from './clubSignalCoverage.builder.js'
 import { buildClubSpotlights } from './clubSpotlights.builder.js'
+import { buildClubCompetitionPath } from './clubCompetitionPath.builder.js'
+import { buildTeamCompetitionState } from '../league/clubsCenterTeam.builder.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 const object = value => (value && typeof value === 'object' ? value : {})
@@ -126,7 +128,7 @@ const buildBirthYearTeam = ({ birthYear, teamsByView }) => ({
 })
 
 const buildCanonicalTeams = ({ clubId, centers }) => (
-  (Array.isArray(centers) ? centers : []).flatMap(({ season, document }) => {
+  (Array.isArray(centers) ? centers : []).flatMap(({ season, document, leagueDocumentsById }) => {
     const club = object(object(document && document.clubsById)[clubId])
     const leaguesById = object(document && document.leaguesById)
     const seasonContext = {
@@ -135,15 +137,35 @@ const buildCanonicalTeams = ({ clubId, centers }) => (
       target: season && season.target === 'current' ? 'current' : 'previous',
     }
 
-    return Object.entries(object(club.teamsById)).map(([teamId, team]) => ({
-      seasonView: seasonContext.target,
-      team: buildTeam({
-        teamId,
-        team,
-        league: leaguesById[clean(team && team.leagueId)] || {},
-        season: seasonContext,
-      }),
-    }))
+    return Object.entries(object(club.teamsById)).map(([teamId, originalTeam]) => {
+      let team = originalTeam
+      if (leagueDocumentsById) {
+        const league = leagueDocumentsById[team.leagueId]
+        const leagueSeason = league?.seasonsById?.[seasonContext.seasonId]
+        const teamRow = leagueSeason?.table?.teamsById?.[teamId]
+        const competitionState = leagueSeason && teamRow
+          ? buildTeamCompetitionState({ league, season: leagueSeason, teamId, teamRow })
+          : null
+        team = {
+          ...team,
+          competitionUnavailableReasons: competitionState
+            ? competitionState.unavailableReasons
+            : [!league ? 'LEAGUE_UNAVAILABLE' : !leagueSeason ? 'LEAGUE_SEASON_MISSING' : 'TEAM_NOT_IN_TABLE'],
+          competitionProjection: competitionState
+            ? competitionState.projection
+            : { effective: { status: 'UNKNOWN', projectedNextLeagueLevel: null, source: 'AUTOMATIC' } },
+        }
+      }
+      return {
+        seasonView: seasonContext.target,
+        team: buildTeam({
+          teamId,
+          team,
+          league: leaguesById[clean(team && team.leagueId)] || {},
+          season: seasonContext,
+        }),
+      }
+    })
   })
 )
 
@@ -157,6 +179,10 @@ export const buildClubIntelligenceFromCanonicalSources = ({
   const canonicalTeams = buildCanonicalTeams({
     clubId: normalizedClubId,
     centers,
+  })
+  const currentTeams = canonicalTeams.filter(item => item.seasonView === 'current').map(item => item.team)
+  currentTeams.forEach(team => {
+    team.futureCompetition = buildClubCompetitionPath(team, currentTeams)
   })
   const centerEntry = (Array.isArray(centers) ? centers : [])
     .map(item => object(object(item && item.document && item.document.clubsById)[normalizedClubId]))
@@ -175,7 +201,13 @@ export const buildClubIntelligenceFromCanonicalSources = ({
     return map
   }, new Map())
   const birthYearTeams = [...teamsByBirthYear.entries()]
-    .map(([birthYear, teamsByView]) => buildBirthYearTeam({ birthYear, teamsByView }))
+    .map(([birthYear, teamsByView]) => {
+      const group = buildBirthYearTeam({ birthYear, teamsByView })
+      const primaryTeams = teamsByView.current.filter(team => team.teamSlot === 1)
+      return primaryTeams.length === 1
+        ? { ...group, competition: primaryTeams[0].futureCompetition }
+        : group
+    })
     .sort((left, right) => right.birthYear - left.birthYear)
   const intelligence = {
     club,

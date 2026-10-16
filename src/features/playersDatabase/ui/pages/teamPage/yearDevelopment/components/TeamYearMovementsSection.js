@@ -1,21 +1,23 @@
 // src/features/playersDatabase/ui/pages/teamPage/yearDevelopment/components/TeamYearMovementsSection.js
-import * as React from 'react'
-import { Avatar, Box, Tooltip, Typography } from '@mui/joy'
+import { Box, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
-import { CollapseBox } from '../../../../../../../ui/patterns/collapseBox/index.js'
-import playerImage from '../../../../../../../ui/core/images/playerImage.jpg'
 import PlayerLineClassificationChip from '../../../../components/playerMeta/PlayerLineClassificationChip.js'
+import { resolvePlayerUrl } from '../../../../components/playerMeta/playerUrl.presentation.js'
 import ScoutProfileChip from '../../../../components/scout/profile/ScoutProfileChip.js'
-import { sortDataTableRows } from '../../../../components/tables/dataTable/dataTable.sort.js'
+import DataTable from '../../../../components/tables/dataTable/DataTable.js'
+import { teamPositionClassificationTableSx as tableSx } from '../../positionClassification/sx/teamPositionClassificationTable.sx.js'
 import { buildTableScoutProfileChip } from '../../positionClassification/model/teamPositionScoutProfile.presentation.js'
+import useTeamPositionClassificationColumns from '../../positionClassification/hooks/useTeamPositionClassificationColumns.js'
 import { directionPresentation } from '../model/teamYearDevelopment.presentation.js'
 import { SeasonSummaryChip, SummaryChip, SummaryFacts, TeamYearSection } from './TeamYearDevelopmentShared.js'
 import { teamYearDevelopmentSharedSx } from '../sx/teamYearDevelopmentShared.sx.js'
-import { teamYearMovementsSectionSx } from '../sx/teamYearMovementsSection.sx.js'
+import {
+  MOVEMENT_TABLE_COLUMN_WIDTHS,
+  teamYearMovementsSectionSx,
+} from '../sx/teamYearMovementsSection.sx.js'
 
 const sx = { ...teamYearDevelopmentSharedSx, ...teamYearMovementsSectionSx }
-const lineSortLabels = { DEFENSE: 'הגנה', MIDFIELD: 'קישור', ATTACK: 'התקפה' }
 const getLevelSortValue = movement => {
   if (movement.levelChange === null || movement.levelChange === undefined) return null
   if (movement.direction === 'up') return movement.levelChange
@@ -23,189 +25,265 @@ const getLevelSortValue = movement => {
   return movement.direction === 'lateral' ? 0 : null
 }
 
-const movementSortColumns = [
-  { key: 'name', label: 'שחקן', getSortValue: movement => movement.name },
-  {
-    key: 'position',
-    label: 'עמדה',
-    getSortValue: movement => {
-      if (movement.player?.primaryPosition === 'GK' || movement.player?.positionLayer === 'goalkeeper') return 'שוער'
-      const line = lineSortLabels[movement.classification?.line] || ''
-      return [line, movement.classification?.position].filter(Boolean).join(' ') || null
-    },
-  },
-  {
-    key: 'scoutProfile',
-    label: 'פרופיל סקאוט',
-    getSortValue: movement => buildTableScoutProfileChip(movement.player)?.label || null,
-  },
-  { key: 'otherTeamName', label: '', getSortValue: movement => movement.otherTeamName },
-  { key: 'levelChange', label: 'שינוי רמת מועדון', getSortValue: getLevelSortValue },
-]
+const renderProfile = movement => {
+  const profilePlayer = movement.side === 'out'
+    ? movement.departureProfilePlayer
+    : movement.player
+  const profileChip = buildTableScoutProfileChip(profilePlayer)
 
-function MovementGroup({ group, rows }) {
-  const [sortState, setSortState] = React.useState({ key: 'levelChange', direction: 'desc' })
-  const columns = React.useMemo(() => movementSortColumns.map(column => (
-    column.key === 'otherTeamName' ? { ...column, label: group.teamColumn } : column
-  )), [group.teamColumn])
-  const sortedRows = React.useMemo(() => sortDataTableRows({
-    rows,
-    column: columns.find(column => column.key === sortState.key),
-    direction: sortState.direction,
-  }), [rows, columns, sortState])
+  return profileChip
+    ? <ScoutProfileChip {...profileChip} size='compact' showTooltip={false} />
+    : <Typography sx={sx.movementDetail}>—</Typography>
+}
 
-  const handleSort = key => setSortState(current => ({
-    key,
-    direction: current.key === key
-      ? (current.direction === 'asc' ? 'desc' : 'asc')
-      : (key === 'levelChange' ? 'desc' : 'asc'),
-  }))
+const MOVEMENT_STATUS = Object.freeze({
+  out: { label: 'עזב', iconId: 'rosterLeft', color: 'neutral' },
+  in: { label: 'הצטרף', iconId: 'rosterJoined', color: 'primary' },
+})
+const MOVEMENT_SIGNAL_LABELS = Object.freeze({
+  multiple: '2 איתותים · לחקירה',
+  single: 'איתות אחד · למעקב',
+  none: 'ללא איתות מזוהה',
+})
 
-  const sortButton = column => (
-    <Box
-      component='button'
-      type='button'
-      key={column.key}
-      onClick={() => handleSort(column.key)}
-      aria-label={`מיון לפי ${column.label}`}
-      sx={[sx.movementSortButton, sortState.key === column.key && sx.movementSortButtonActive]}
-    >
-      {column.label}
-      {sortState.key === column.key && iconUi({
-        id: sortState.direction === 'asc' ? 'sortUp' : 'sortDown',
-        size: 'sm',
-        sx: sx.movementSortIcon,
-      })}
-    </Box>
-  )
+const renderMovementPlayerName = movement => {
+  const status = MOVEMENT_STATUS[movement.side]
 
   return (
-    <Box sx={sx.movementGroup}>
-      <Typography sx={sx.movementGroupTitle}>{group.title} · {rows.length}</Typography>
-      <Box sx={sx.movementTableHeader}>
-        {columns.map(column => (
-          <Box
-            key={column.key}
-            role='columnheader'
-            aria-sort={sortState.key === column.key
-              ? (sortState.direction === 'asc' ? 'ascending' : 'descending')
-              : 'none'}
-          >
-            {sortButton(column)}
-          </Box>
-        ))}
-      </Box>
-      <Box sx={sx.movementMobileSort} aria-label={`מיון תנועת שחקנים: ${group.title}`}>
-        {columns.map(sortButton)}
-      </Box>
-      <Box sx={sx.movementList}>
-        {sortedRows.map((movement, index) => {
-          const presentation = directionPresentation(movement.direction)
-          const profileChip = buildTableScoutProfileChip(movement.player)
-          const level = movement.levelChange === null
-            ? '—'
-            : `${movement.levelChange} ${movement.levelChange === 1 ? 'רמה' : 'רמות'}`
+    <Box sx={tableSx.playerNameContent}>
+      <Typography sx={tableSx.player}>{movement.name}</Typography>
+      {status ? (
+        <Box component='span' aria-label={status.label} sx={tableSx.playerStatusBadge(status.color)}>
+          {iconUi({ id: status.iconId, size: 'sm' })}
+        </Box>
+      ) : null}
+    </Box>
+  )
+}
 
-          return (
-            <Box key={movement.movementId || `${movement.name}-${index}`} sx={sx.movementItem}>
-              <Box sx={sx.movementPlayer}>
-                <Avatar src={playerImage} alt='' sx={sx.movementAvatar} />
-                <Typography sx={sx.movementName}>{movement.name}</Typography>
-              </Box>
-              <Box sx={sx.movementCell}>
-                <Typography sx={sx.movementMobileLabel}>עמדה</Typography>
-                <PlayerLineClassificationChip
-                  classification={movement.classification}
-                  primaryPosition={movement.player?.primaryPosition}
-                  positionLayer={movement.player?.positionLayer}
-                  compact
-                />
-              </Box>
-              <Box sx={sx.movementCell}>
-                <Typography sx={sx.movementMobileLabel}>פרופיל סקאוט</Typography>
-                {profileChip ? (
-                  <ScoutProfileChip {...profileChip} size='compact' showConditions showConditionsDepth />
-                ) : <Typography sx={sx.movementDetail}>—</Typography>}
-              </Box>
-              <Box sx={sx.movementCell}>
-                <Typography sx={sx.movementMobileLabel}>{group.teamColumn}</Typography>
-                <Typography sx={sx.movementTeam}>{movement.otherTeamName || '—'}</Typography>
-              </Box>
-              <Box sx={sx.movementCell}>
-                <Typography sx={sx.movementMobileLabel}>שינוי רמת מועדון</Typography>
-                <Tooltip title={movement.levelChange === null
-                  ? 'אין השוואת רמות מועדון זמינה למעבר זה'
-                  : 'לפי רמות המועדונים בספרייה הנוכחית'}>
-                  <Box sx={sx.movementTag(presentation.color)}>
-                    {iconUi({ id: presentation.iconId, size: 'sm' })}
-                    <Typography component='span' sx={sx.movementTagText}>{level}</Typography>
-                  </Box>
-                </Tooltip>
-              </Box>
-            </Box>
-          )
-        })}
+const renderTransition = movement => {
+  const presentation = directionPresentation(movement.direction)
+  const level = movement.levelChange === null
+    ? '—'
+    : String(movement.levelChange)
+
+  return (
+    <Box sx={sx.movementTransition}>
+      <Typography sx={sx.movementTeam}>{movement.otherTeamName || '—'}</Typography>
+      <Box
+        aria-label={`${presentation.label} · ${level}`}
+        sx={sx.movementTag(presentation.color)}
+      >
+        {iconUi({ id: presentation.iconId, size: 'sm' })}
+        <Typography component='span' sx={sx.movementTagText}>{level}</Typography>
       </Box>
     </Box>
   )
 }
 
-export default function TeamYearMovementsSection({ seasons = [], openSeasonKey = '', onToggle }) {
+function MovementGroup({
+  group,
+  rows,
+  showTitle = true,
+  seasonKey,
+  onPlayerOpen,
+  favoritePlayerKeys,
+  onFavoriteToggle,
+}) {
+  const rosterColumns = useTeamPositionClassificationColumns({
+    onPlayerOpen: onPlayerOpen ? player => onPlayerOpen(player, seasonKey) : null,
+    favoritePlayerKeys,
+    onFavoriteToggle,
+    showTooltips: false,
+  })
+  const transitionColumn = {
+    key: 'transition',
+    label: `${group.teamColumn} · שינוי רמה`,
+    headerAriaLabel: 'שינוי רמת מועדון',
+    headerContent: <Box component='span' sx={sx.movementHeaderLabel}>{group.teamColumn} · שינוי רמה</Box>,
+    sx: { width: `${MOVEMENT_TABLE_COLUMN_WIDTHS.transition}%` },
+    getSortValue: getLevelSortValue,
+    render: renderTransition,
+  }
+  const columns = rosterColumns.flatMap(column => {
+    const movementColumn = {
+      ...column,
+      sx: {
+        ...column.sx,
+        width: `${MOVEMENT_TABLE_COLUMN_WIDTHS[column.key]}%`,
+      },
+    }
+    if (column.key === 'name') {
+      return [{
+        ...movementColumn,
+        headerContent: <Box component='span' sx={sx.movementHeaderLabel}>{column.label}</Box>,
+        getHref: movement => resolvePlayerUrl(movement.playerUrl),
+        render: renderMovementPlayerName,
+      }]
+    }
+    if (column.key === 'favorite') {
+      return [{ ...movementColumn, label: '' }]
+    }
+    if (column.key === 'lineClassification') {
+      return [{
+        ...movementColumn,
+        render: movement => (
+          <PlayerLineClassificationChip
+            classification={movement.classification}
+            primaryPosition={movement.primaryPosition}
+            positionLayer={movement.positionLayer}
+            compact
+          />
+        ),
+      }]
+    }
+    if (column.key === 'scoutProfile') {
+      return [{
+        ...movementColumn,
+        getSortValue: movement => buildTableScoutProfileChip(
+          movement.side === 'out' ? movement.departureProfilePlayer : movement.player
+        )?.label || null,
+        render: renderProfile,
+      }]
+    }
+    return column.key === 'openPlayer'
+      ? [transitionColumn, movementColumn]
+      : [movementColumn]
+  })
+
   return (
-    <TeamYearSection iconId='swapVert' title='מעברי שחקנים לאורך העונות'>
-      <Box sx={sx.movementSeasons}>
-        {!seasons.length ? <Typography sx={sx.emptyInline}>אין עדיין נתוני העברות להצגה.</Typography> : null}
-        {seasons.map(season => {
-          const isOpen = openSeasonKey === season.seasonKey
-          const directionItems = ['up', 'down', 'lateral', 'unknown'].map(direction => ({
-            direction,
-            count: season.directionCounts && season.directionCounts[direction] ? season.directionCounts[direction] : 0,
-            ...directionPresentation(direction),
-          })).filter(item => item.direction !== 'unknown' || item.count > 0)
-          const headerLeft = (
-            <Box sx={sx.evolutionCollapseSummary}>
-              <SeasonSummaryChip season={season} />
-              {season.isUpcoming ? <Typography sx={sx.evolutionCollapseEmptySummary}>טרם החלה</Typography> : (
-                <SummaryFacts>
-                  <SummaryChip iconId='rosterLeft' label='עזבו' value={season.leftCount} />
-                  <SummaryChip iconId='rosterJoined' label='הצטרפו' value={season.joinedCount} />
-                  {directionItems.map(item => <SummaryChip key={item.direction} iconId={item.iconId} label={item.label} value={item.count} />)}
-                </SummaryFacts>
-              )}
-            </Box>
-          )
-
-          return (
-            <CollapseBox
-              key={season.seasonKey}
-              open={isOpen}
-              onToggle={() => onToggle(isOpen ? '' : season.seasonKey)}
-              headerLeft={headerLeft}
-              iconId='arrowDown'
-              rootSx={sx.movementCollapse}
-              headerSx={sx.movementCollapseHeader}
-            >
-              <Box sx={sx.movementCollapseBody}>
-                {season.isUpcoming ? (
-                  <Typography sx={sx.emptyInline}>טרם החלה העונה ולכן אין עדיין נתוני סגל או מעברים.</Typography>
-                ) : season.movements.length ? (
-                  <Box sx={sx.movementGroups}>
-                    {[
-                      { side: 'out', title: 'עזבו', teamColumn: 'קבוצה שאליה עבר' },
-                      { side: 'in', title: 'הצטרפו', teamColumn: 'קבוצה שממנה הגיע' },
-                    ].map(group => {
-                      const rows = season.movements.filter(movement => movement.side === group.side)
-                      if (!rows.length) return null
-
-                      return <MovementGroup key={`${season.seasonKey}-${group.side}`} group={group} rows={rows} />
-                    })}
-                  </Box>
-                ) : <Typography sx={sx.emptyInline}>לא נמצאו מעברים בעונה זו.</Typography>}
-              </Box>
-            </CollapseBox>
-          )
-        })}
+    <Box sx={sx.movementGroup}>
+      {showTitle ? <Typography sx={sx.movementGroupTitle}>{group.title} · {rows.length}</Typography> : null}
+      <Box sx={sx.movementTableScroll} className='dpScrollThin'>
+        <DataTable
+          className='dpScrollThin'
+          hoverRow={false}
+          columns={columns}
+          rows={rows}
+          getRowSx={movement => sx.movementRow(movement.side)}
+          getRowKey={(movement, index) => (
+            movement.movementId || `${seasonKey}-${group.side}-${movement.playerId || movement.name}-${index}`
+          )}
+          defaultSort={{ key: 'transition', direction: 'desc' }}
+          wrapSx={sx.movementTableWrap}
+          tableSx={{ ...tableSx.table, ...sx.movementTable }}
+          bodyScrollSx={sx.movementTableBody}
+          emptyText='לא נמצאו מעברים להצגה'
+        />
       </Box>
-    </TeamYearSection>
+    </Box>
+  )
+}
+
+function MovementSeasonInsights({ season, signal, clubLevel }) {
+  const unavailableText = season.isUpcoming
+    ? 'העונה טרם החלה; תובנות המעברים עדיין אינן זמינות.'
+    : !season.movementDataAvailable
+      ? 'נתוני המעברים לעונה עדיין אינם זמינים.'
+      : 'רמת המועדון חסרה לקביעת סף האיתות.'
+  const directionLabel = Number(clubLevel) === 1
+    ? 'עזבו לרמה זהה או גבוהה יותר'
+    : 'עזבו לרמה גבוהה יותר'
+
+  return (
+    <Box sx={sx.movementInsights}>
+      <Typography sx={sx.movementInsightsTitle}>תובנות</Typography>
+      {!signal || signal.status === 'limited' ? (
+        <Typography sx={sx.movementInsightsUnavailable}>{unavailableText}</Typography>
+      ) : (
+        <>
+          <Typography sx={sx.movementSignalStatus(signal.status)}>
+            {MOVEMENT_SIGNAL_LABELS[signal.status]}
+          </Typography>
+          <Typography sx={sx.movementInsightItem(signal.directionActive)}>
+            כיוון המעבר: {signal.directionDepartureCount} {directionLabel}
+            {signal.directionActive ? ' · איתות' : ''}
+          </Typography>
+          <Typography sx={sx.movementInsightItem(signal.professionalActive)}>
+            פרופילים מקצועיים: {signal.professionalDepartureCount} עזבו עם פרופיל מקצועי
+            {signal.professionalActive ? ' · איתות' : ''}
+          </Typography>
+        </>
+      )}
+    </Box>
+  )
+}
+
+export default function TeamYearMovementsSection({
+  seasons = [],
+  seasonSignals = [],
+  clubLevel = null,
+  onPlayerOpen,
+  favoritePlayerKeys,
+  onFavoriteToggle,
+}) {
+  if (!seasons.length) {
+    return (
+      <TeamYearSection iconId='swapVert' title='מעברי שחקנים'>
+        <Typography sx={sx.emptyInline}>אין עדיין נתוני העברות להצגה.</Typography>
+      </TeamYearSection>
+    )
+  }
+
+  return (
+    <Box sx={sx.movementSeasons}>
+      {seasons.map(season => {
+        const directionItems = ['up', 'down', 'lateral', 'unknown'].map(direction => ({
+          direction,
+          count: season.directionCounts && season.directionCounts[direction] ? season.directionCounts[direction] : 0,
+          ...directionPresentation(direction),
+        })).filter(item => item.direction !== 'unknown' || item.count > 0)
+        const signal = seasonSignals.find(item => item.seasonKey === season.seasonKey)
+        const groups = [
+          { side: 'out', title: 'עזבו', teamColumn: 'קבוצה שאליה עבר' },
+          { side: 'in', title: 'הצטרפו', teamColumn: 'קבוצה שממנה הגיע' },
+        ].map(group => ({
+          ...group,
+          rows: season.movements.filter(movement => movement.side === group.side),
+        })).filter(group => group.rows.length)
+        const summary = !season.isUpcoming && season.movementDataAvailable ? (
+          <SummaryFacts>
+            <SummaryChip iconId='rosterLeft' label='עזבו' value={season.leftCount} />
+            <SummaryChip iconId='rosterJoined' label='הצטרפו' value={season.joinedCount} />
+            {directionItems.map(item => (
+              <SummaryChip key={item.direction} iconId={item.iconId} label={item.label} value={item.count} />
+            ))}
+          </SummaryFacts>
+        ) : null
+
+        return (
+          <TeamYearSection
+            key={season.seasonKey}
+            iconId='swapVert'
+            title='מעברי שחקנים לעונת'
+            titleAfter={<SeasonSummaryChip season={season} />}
+            titleExtra={summary}
+            titleExtraSx={sx.movementHeaderSummary}
+          >
+            <Box sx={sx.movementSeasonContent}>
+              <MovementSeasonInsights season={season} signal={signal} clubLevel={clubLevel} />
+              {season.isUpcoming ? (
+                <Typography sx={sx.emptyInline}>טרם החלה העונה ולכן אין עדיין נתוני סגל או מעברים.</Typography>
+              ) : season.movements.length ? (
+                <Box sx={sx.movementGroups}>
+                  {groups.map((group, index) => (
+                    <MovementGroup
+                      key={`${season.seasonKey}-${group.side}`}
+                      group={group}
+                      rows={group.rows}
+                      showTitle={index > 0 || !summary}
+                      seasonKey={season.seasonKey}
+                      onPlayerOpen={onPlayerOpen}
+                      favoritePlayerKeys={favoritePlayerKeys}
+                      onFavoriteToggle={onFavoriteToggle}
+                    />
+                  ))}
+                </Box>
+              ) : <Typography sx={sx.emptyInline}>לא נמצאו מעברים בעונה זו.</Typography>}
+            </Box>
+          </TeamYearSection>
+        )
+      })}
+    </Box>
   )
 }

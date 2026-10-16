@@ -53,33 +53,43 @@ export const pageHeaderSx = {
       xs: '1fr',
       lg: 'minmax(0, 1fr) auto',
     },
-    gap: 2,
-    alignItems: 'end',
+    gridTemplateRows: {
+      xs: 'auto auto minmax(42px, 1fr)',
+      lg: 'auto minmax(52px, 1fr)',
+    },
+    columnGap: 2,
+    rowGap: { xs: 0.75, lg: 0 },
+    alignItems: 'start',
   },
 
-  copy: {
+  breadcrumbs: {
+    gridColumn: 1,
+    gridRow: 1,
     minWidth: 0,
-    width: '100%',
-    gap: 0.75,
-    alignItems: 'flex-start',
+    minHeight: 24,
+    display: 'flex',
+    alignItems: 'center',
+  },
 
-    '& > :first-child': {
-      minHeight: 24,
-    },
-
-    '& > :last-child': {
-      minHeight: { xs: 42, md: 52 },
-      display: 'flex',
-      alignItems: 'center',
-    },
+  title: {
+    gridColumn: '1 / -1',
+    gridRow: { xs: 3, lg: 2 },
+    minWidth: 0,
+    minHeight: { xs: 42, md: 52 },
+    display: 'flex',
+    alignItems: 'center',
+    alignSelf: 'end',
   },
 
   actions: {
+    gridColumn: { xs: 1, lg: 2 },
+    gridRow: { xs: 2, lg: 1 },
     minWidth: 0,
     display: 'flex',
     flexWrap: 'wrap',
     gap: 1,
-    alignItems: 'flex-end',
+    alignSelf: 'start',
+    alignItems: 'flex-start',
     justifyContent: 'flex-start',
   },
 }

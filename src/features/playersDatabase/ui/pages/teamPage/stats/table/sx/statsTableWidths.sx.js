@@ -15,7 +15,7 @@ export const TEAM_STATS_IMPORT_TABLE_WIDTHS = {
   },
 
   rosterStatus: {
-    width: '22%',
+    width: '20%',
   },
 
   scoutProfiles: {
@@ -23,7 +23,7 @@ export const TEAM_STATS_IMPORT_TABLE_WIDTHS = {
   },
 
   lineClassification: {
-    width: '8%',
+    width: '6%',
   },
 
   games: {
@@ -31,7 +31,7 @@ export const TEAM_STATS_IMPORT_TABLE_WIDTHS = {
   },
 
   goals: {
-    width: '5%',
+    width: '9%',
   },
 
   starts: {

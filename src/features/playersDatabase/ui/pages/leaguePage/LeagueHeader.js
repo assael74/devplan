@@ -45,33 +45,25 @@ export default function LeagueHeader({
   ].filter(Boolean).join(' · ')
 
   const actions = (
-    <Stack sx={sx.actionsPanel}>
-      <ActivityStatusChip
-        active={active}
-        activeLabel='ליגה פעילה'
-        inactiveLabel='ליגה לא פעילה'
-      />
+    <Stack direction='row' spacing={1} sx={sx.actions}>
+      <Button
+        size='sm'
+        sx={sx.primaryButton}
+        startDecorator={iconUi({id: 'playerDatabase', size: 'sm'})}
+        onClick={onSearch}
+      >
+        לעמוד חיפוש
+      </Button>
 
-      <Stack direction='row' spacing={1} sx={sx.actions}>
-        <Button
-          size='sm'
-          sx={sx.primaryButton}
-          startDecorator={iconUi({id: 'playerDatabase', size: 'sm'})}
-          onClick={onSearch}
-        >
-          לעמוד חיפוש
-        </Button>
-
-        <Button
-          size='sm'
-          variant='outlined'
-          sx={sx.secondaryButton}
-          endDecorator={iconUi({id: 'back', size: 'sm'})}
-          onClick={onBack}
-        >
-          חזרה למרכז ליגות
-        </Button>
-      </Stack>
+      <Button
+        size='sm'
+        variant='outlined'
+        sx={sx.secondaryButton}
+        endDecorator={iconUi({id: 'back', size: 'sm'})}
+        onClick={onBack}
+      >
+        חזרה למרכז ליגות
+      </Button>
     </Stack>
   )
 
@@ -106,6 +98,11 @@ export default function LeagueHeader({
           {seasonChipLabel ? (
             <TitleChip>{seasonChipLabel}</TitleChip>
           ) : null}
+          <ActivityStatusChip
+            active={active}
+            activeLabel='ליגה פעילה'
+            inactiveLabel='ליגה לא פעילה'
+          />
         </Box>
       </Box>
     </PageHeader>

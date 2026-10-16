@@ -146,6 +146,7 @@ function TeamPageContent() {
     clubId: team?.clubId,
     club: clubDoc,
     seasonOption: workspaceSeasonOption,
+    seasonOptions,
   })
   const statsImportRequest = React.useMemo(() => {
     const params = new URLSearchParams(location.search)
@@ -366,7 +367,15 @@ function TeamPageContent() {
       ? buildContext(overviewRosterSeasonOption)
       : workspaceContext
 
-    return { workspace: workspaceContext, roster: rosterContext }
+    const comparisonContext = seasonKey => {
+      const option = seasonOptions.find(item => item.seasonKey === seasonKey)
+      return option ? buildContext(option) : null
+    }
+    return {
+      workspace: workspaceContext,
+      roster: rosterContext,
+      comparison: { current: comparisonContext('26/27'), previous: comparisonContext('25/26') },
+    }
   }, [
     clubsDirectory,
     favorites.pendingKeysRevision,
@@ -374,6 +383,7 @@ function TeamPageContent() {
     leagueDoc,
     leagueDocuments,
     overviewRosterSeasonOption,
+    seasonOptions,
     players,
     profileFilterKey,
     selectedSeasonOption,
@@ -482,16 +492,33 @@ function TeamPageContent() {
     players: visiblePlayers,
     seasonKey: selectedSeasonKey,
   })
-  const handlePlayerOpen = React.useCallback(row => {
+  const handlePlayerOpen = React.useCallback((row, seasonKey = '') => {
     const source = row?.player || row || {}
     const playerId = source.playerId || source.id
     if (!playerId) return
-    const playerContext = overviewRosterSeasonContext
-    const playerSeasonOption = overviewRosterSeasonOption
+    const movementSeasonOption = seasonKey
+      ? seasonOptions.find(option => option.seasonKey === seasonKey)
+      : null
+    const playerContext = movementSeasonOption
+      ? buildTeamWorkspaceSeasonContext({
+        seasonOption: movementSeasonOption,
+        selectedSeasonOption,
+        team,
+        selectedTeamSeason,
+        players,
+        clubsDirectory,
+        leagueDoc,
+        leagueDocuments,
+        teamDoc,
+        teamSeasons,
+      })
+      : overviewRosterSeasonContext
+    const playerSeasonOption = movementSeasonOption || overviewRosterSeasonOption
 
     navigate(
       PLAYERS_DATABASE_UI_ROUTES.player({
         playerId,
+        seasonKey: seasonKey || undefined,
         teamId: playerContext.team.birthTeamId || team.id,
         leagueId: playerSeasonOption?.leagueId || leagueId,
         fromTeam: `${location.pathname}${location.search}`,
@@ -507,14 +534,22 @@ function TeamPageContent() {
       }
     )
   }, [
+    clubsDirectory,
     leagueId,
+    leagueDoc,
+    leagueDocuments,
     location.pathname,
     location.search,
     navigate,
     overviewRosterSeasonContext,
     overviewRosterSeasonOption,
+    players,
+    seasonOptions,
+    selectedSeasonOption,
+    selectedTeamSeason,
     team,
     teamDoc,
+    teamSeasons,
   ])
 
   if (loading) {
@@ -562,6 +597,7 @@ function TeamPageContent() {
             <TeamInformationOverview
               view={teamInformationView}
               overviewRosterView={overviewRosterView}
+              rosterComparison={seasonContexts.comparison}
               club={clubDoc}
               clubIntelligence={clubIntelligence}
               seasonSnapshots={seasonSnapshots}

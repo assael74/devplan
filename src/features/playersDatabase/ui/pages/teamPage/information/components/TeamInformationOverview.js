@@ -15,7 +15,7 @@ import { buildTeamSeasonTabs } from '../model/teamSeasonTabs.model.js'
 import TeamWorkspaceNavigation from './TeamWorkspaceNavigation.js'
 import TeamInsightContent from './TeamInsightContent.js'
 import TeamRosterWorkspace from './TeamRosterWorkspace.js'
-import { buildTeamInsightsPresentation } from '../model/teamInsights.presentation.js'
+import { buildRosterBalanceSeasonView, buildTeamInsightsPresentation } from '../model/teamInsights.presentation.js'
 import {
   TEAM_INSIGHTS,
   resolveTeamWorkspace,
@@ -40,6 +40,12 @@ const rosterBalanceTaskLabel = presentation => {
     : 'ללא משימות'
 }
 
+const movementSignalLabel = signal => {
+  if (signal.status === 'limited') return 'ניתוח טרם זמין'
+  if (signal.count === 2) return '2 איתותים · לחקירה'
+  return signal.count === 1 ? 'איתות אחד · למעקב' : 'ללא איתות מזוהה'
+}
+
 const insightSlideDirection = (previous, current) => {
   if (previous.mode !== 'insight' || current.mode !== 'insight' ||
     previous.seasonKey !== current.seasonKey) return 0
@@ -56,6 +62,7 @@ const insightSlideDirection = (previous, current) => {
 export default function TeamInformationOverview({
   view,
   overviewRosterView = null,
+  rosterComparison = null,
   club = null,
   clubIntelligence = null,
   seasonSnapshots = [],
@@ -69,6 +76,11 @@ export default function TeamInformationOverview({
   const location = useLocation()
   const navigate = useNavigate()
   const workspace = resolveTeamWorkspace(location.search)
+  const isRosterBalance = workspace.mode === 'insight' && workspace.insightId === 'roster-balance'
+  const rosterView = overviewRosterView || view
+  const insightView = isRosterBalance ? buildRosterBalanceSeasonView(view, rosterView) : view
+  const [selectedRosterPlayer, setSelectedRosterPlayer] = React.useState(null)
+  const pendingRevealSeasonRef = React.useRef('')
   const toOverview = buildTeamWorkspaceUrl({ location, mode: 'overview' })
   const toInsight = insightId => buildTeamWorkspaceUrl({
     location,
@@ -81,13 +93,14 @@ export default function TeamInformationOverview({
     sourceInsightId: workspace.insightId,
   })
   const handleRosterSeasonSelect = optionKey => {
+    if (isRosterBalance && selectedRosterPlayer) pendingRevealSeasonRef.current = optionKey
     navigate(buildTeamRosterSeasonUrl({ location, optionKey }), {
       state: location.state,
     })
   }
   const defaultStructureFilter = resolveDefaultTeamStructureFilter({
-    structure: view?.structure,
-    rows: view?.positionClassificationRows,
+    structure: insightView?.structure,
+    rows: insightView?.allPositionClassificationRows || insightView?.positionClassificationRows,
   })
   const [structureFilter, setStructureFilter] = React.useState(defaultStructureFilter)
   const [favoritePlayerKeys, setFavoritePlayerKeys] = React.useState(() => new Set())
@@ -95,6 +108,8 @@ export default function TeamInformationOverview({
   const teamId = view.team?.birthTeamId || view.team?.id || ''
   React.useLayoutEffect(() => {
     setFavoritePlayerKeys(new Set())
+    setSelectedRosterPlayer(null)
+    pendingRevealSeasonRef.current = ''
   }, [teamId])
   const handleFavoriteToggle = React.useCallback(row => {
     const key = row?.favoriteKey
@@ -106,7 +121,25 @@ export default function TeamInformationOverview({
       return next
     })
   }, [])
-  const rosterView = overviewRosterView || view
+  const handleRosterPlayerSelect = React.useCallback(row => {
+    const key = row.favoriteKey || row.id
+    setSelectedRosterPlayer(current => current?.key === key ? null : { key, name: row.name })
+  }, [])
+  React.useEffect(() => {
+    if (!pendingRevealSeasonRef.current ||
+      pendingRevealSeasonRef.current !== rosterView.selectedSeasonOption?.optionKey ||
+      !rosterView.selectedTeamSeason) return
+    const selectedRow = rosterView.allPositionClassificationRows?.find(row => (
+      (row.favoriteKey || row.id) === selectedRosterPlayer?.key
+    ))
+    if (selectedRow) {
+      if (!selectedRow.structureFilterKeys?.includes(structureFilter)) setStructureFilter(TEAM_STRUCTURE_FILTER.ALL_SQUAD)
+      if (!rosterView.positionClassificationRows.some(row => (row.favoriteKey || row.id) === selectedRosterPlayer.key)) {
+        onProfileFilterChange?.('all')
+      }
+    }
+    pendingRevealSeasonRef.current = ''
+  }, [rosterView, selectedRosterPlayer, structureFilter, onProfileFilterChange])
   const overviewRosterSeasons = React.useMemo(() => buildTeamSeasonTabs({
     seasonOptions,
     seasonSnapshots,
@@ -131,6 +164,9 @@ export default function TeamInformationOverview({
     structureFilter,
     favoritePlayerKeys,
     onFavoriteToggle: handleFavoriteToggle,
+    selectedPlayer: isRosterBalance ? selectedRosterPlayer : null,
+    onPlayerSelect: isRosterBalance ? handleRosterPlayerSelect : undefined,
+    onSelectionClear: () => setSelectedRosterPlayer(null),
   }
   const workspaceKey = `${view.selectedSeasonKey}:${workspace.mode}:${workspace.insightId}`
   const previousWorkspaceRef = React.useRef({
@@ -159,7 +195,7 @@ export default function TeamInformationOverview({
     setStructureFilter(defaultStructureFilter)
   }, [defaultStructureFilter, view.selectedSeasonKey])
 
-  const insightPresentation = buildTeamInsightsPresentation({ view, club, clubIntelligence })
+  const insightPresentation = buildTeamInsightsPresentation({ view: insightView, club, clubIntelligence })
   const performanceChangeStatus = view.performanceInsight?.changeStatus || 'limited'
 
   return (
@@ -181,7 +217,11 @@ export default function TeamInformationOverview({
             {TEAM_INSIGHTS.map((tile, index) => {
               const tileStatus = tile.id === 'performance'
                 ? performanceChangeStatus
-                : tile.id === 'roster-balance' ? insightPresentation.rosterBalanceStatus : null
+                : tile.id === 'roster-balance'
+                  ? insightPresentation.rosterBalanceStatus
+                  : tile.id === 'year-movements' ? insightPresentation.movementSignal.status
+                    : tile.id === 'future-competition' ? insightPresentation.futureCompetitionSignal.status
+                      : tile.id === 'club-gap' ? insightPresentation.clubComparison.status : null
               const note = tile.id === 'roster-balance'
                 ? insightPresentation.rosterBalanceTitles
                   .map(title => title.replace(/[.!?]+$/, ''))
@@ -224,6 +264,11 @@ export default function TeamInformationOverview({
                         ? PERFORMANCE_CHANGE_LABELS[performanceChangeStatus]
                         : tile.id === 'roster-balance'
                           ? rosterBalanceTaskLabel(insightPresentation)
+                          : tile.id === 'year-movements'
+                            ? movementSignalLabel(insightPresentation.movementSignal)
+                            : tile.id === 'future-competition'
+                              ? insightPresentation.futureCompetitionSignal.label
+                              : tile.id === 'club-gap' ? insightPresentation.clubComparison.label
                           : 'לחקירה'}
                     </Typography>
                   </Box>
@@ -261,7 +306,7 @@ export default function TeamInformationOverview({
         <TeamInsightContent
           insightId={workspace.insightId}
           slideDirection={slideDirection}
-          view={view}
+          view={insightView}
           presentation={insightPresentation}
           structureFilter={structureFilter}
           onStructureFilterChange={setStructureFilter}
@@ -269,6 +314,8 @@ export default function TeamInformationOverview({
           toInsight={toInsight}
           toRoster={toRoster}
           rosterProps={rosterProps}
+          rosterComparison={rosterComparison}
+          scrollRef={contentRef}
         />
       ) : null}
       {workspace.mode === 'roster' ? (

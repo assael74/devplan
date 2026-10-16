@@ -1,4 +1,4 @@
-// features/playersDatabase/model/scout/scoutProfilesSummary.model.js
+// src/features/playersDatabase/model/scout/scoutProfilesSummary.model.js
 
 import { isCurrentRosterPlayer } from '../team/rosterStatus.model.js'
 import { SCOUT_PROFILE_IDENTITY } from '../../../../shared/scouting/players/ids.js'
@@ -40,7 +40,7 @@ const resolveProfileIdentity = profile => clean(
     : ''
 )
 
-const resolveActiveProfessionalProfileIds = player => {
+export const resolveActiveProfessionalProfileIds = player => {
   // Team players own this compact projection. Its explicit empty state must
   // not revive stale rich Team fields from older documents.
   if (hasOwn(player, 'professionalScoutProfileIds')) {

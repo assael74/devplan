@@ -172,6 +172,7 @@ const buildSeasonContextView = (season, identity = {}, clubsDirectory) => {
     substitutedOut: Number(stats.substitutedOut) || 0,
     yellowCards: Number(stats.yellowCards) || 0,
     teamGames: Number(season?.stats?.context?.teamGames) || 0,
+    leagueTotalRound: Number(season?.stats?.context?.leagueTotalRound) || 0,
     teamMinutes: Number(season?.stats?.context?.teamMinutes) || 0,
     teamRank: Number(season?.stats?.context?.teamRank) || 0,
     teamGoalsFor: Number(season?.stats?.context?.teamGoalsFor) || 0,
