@@ -58,6 +58,14 @@ export const directionPresentation = direction => ({
   lateral: { label: 'עבר לרמה דומה', color: 'primary', iconId: 'swapVert' },
 }[direction] || { label: 'רמת מעבר לא ידועה', color: 'neutral', iconId: 'swapVert' })
 
+export const buildMovementDirectionItems = season => (
+  ['up', 'down', 'lateral', 'unknown'].map(direction => ({
+    direction,
+    count: season?.directionCounts?.[direction] || 0,
+    ...directionPresentation(direction),
+  })).filter(item => item.direction !== 'unknown' || item.count > 0)
+)
+
 export const linePresentation = line => ({
   GOALKEEPER: { label: 'שוער', iconId: 'goalkeeping' },
   DEFENSE: { label: 'הגנה', iconId: 'defensive' },

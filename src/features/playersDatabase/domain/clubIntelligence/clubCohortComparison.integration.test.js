@@ -8,11 +8,11 @@ const setup = () => {
   const centerTeams = {}
   const teamSeasonsById = {}
   const leagueTeams = {}
-  ;[2012, 2011, 2010, 2009].forEach(year => {
+  ;[2012, 2011, 2010, 2009].forEach((year, index) => {
     const teamId = `club_${year}_1`
     centerTeams[teamId] = { birthYear: year, teamSlot: 1, leagueId: 'league' }
     leagueTeams[teamId] = {
-      officialTable: { teamGamePlayed: 8, points: year === 2012 ? 24 : 12 },
+      officialTable: { teamGamePlayed: 8, points: year === 2012 ? 24 : 12, rank: index + 1, goalsFor: 16, goalsAgainst: 8 },
       performance: { offense: { priorityLevel: 'positive', scoutPriorityScore: 65 }, defense: { priorityLevel: 'neutral', scoutPriorityScore: 58 } },
     }
     const roster = {}
@@ -72,10 +72,22 @@ test('connects official league and unique current-roster profile counts to the o
   })
   expect(result.signalSummaries['club-gap']).toContain('אחוז הצלחה מעל')
   expect(result.signalSummaries['club-gap']).toContain('פרופילים מקצועיים מעל')
-  expect(result.signalReliability['club-gap']).toContain('6/6')
+  expect(result.signalReliability['club-gap']).toContain('9/9')
   expect(result.clubComparison.target.metrics.successRate).toMatchObject({ reference: 50, peerCount: 4, cohortCount: 4 })
   expect(result.clubComparison.historyText).toContain('25/26')
   expect(result.clubComparison.referenceRows).toHaveLength(4)
+})
+
+test('reports early ranking and goal-rate anomalies after three current-season games', () => {
+  const input = setup()
+  const current = input.leaguesById.league.seasonsById[seasonId].table.teamsById.club_2012_1.officialTable
+  Object.assign(current, { teamGamePlayed: 3, points: 2, rank: 4, goalsFor: 1, goalsAgainst: 9 })
+  const target = present(input).clubComparison.target
+  expect(target.metrics.rankPercentile).toMatchObject({ isAnomaly: true, isEarlySample: true, value: 100 })
+  expect(target.metrics.goalsForPerGame).toMatchObject({ isAnomaly: true, isEarlySample: true })
+  expect(target.metrics.goalsAgainstPerGame).toMatchObject({ isAnomaly: true, isEarlySample: true, value: 3 })
+  expect(target.metrics.professionalRate).toMatchObject({ reason: 'insufficient_games' })
+  expect(target).toMatchObject({ status: 'single', signalLevel: 1, families: ['performance'] })
 })
 
 test.each(['missing-scout', 'unloaded', 'wrong-season', 'wrong-team', 'wrong-club', 'read-failed'])('does not infer zero profiles from %s', condition => {

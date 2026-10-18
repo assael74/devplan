@@ -142,9 +142,12 @@ export const teamPositionClassificationTableSx = {
   },
 
   indexColumn: {
-    width: '5%',
+    width: '7%',
     whiteSpace: 'nowrap',
   },
+
+  shirtCell: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.25 },
+  shirtEdit: { minWidth: 25, minHeight: 23, p: 0.25, fontSize: 11, fontWeight: 700 },
 
   avatarColumn: {
     width: '3%',

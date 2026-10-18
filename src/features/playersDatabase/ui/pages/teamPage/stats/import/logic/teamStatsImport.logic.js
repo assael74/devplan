@@ -38,7 +38,6 @@ export const buildApprovedStatsImportPlayer = row => ({
   statsMovementTeam: row?.statsMovementTeam || null,
   isYoungerAgeGroup: Boolean(row?.isYoungerAgeGroup),
   isOlderAgeGroup: Boolean(row?.isOlderAgeGroup),
-  numShirt: row?.numShirt === undefined ? null : row.numShirt,
   games: toNumber(row?.games),
   goals: toNumber(row?.goals),
   yellowCards: toNumber(row?.yellowCards),

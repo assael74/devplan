@@ -1,6 +1,6 @@
 // src/shared/scouting/teams/clubComparison/clubComparison.benchmark.js
 
-import { CLUB_COMPARISON_MIN_GAMES, CLUB_COMPARISON_MIN_PEERS, clubComparisonSeasonOrder, comparisonNumber } from './clubComparison.model.js'
+import { CLUB_COMPARISON_MIN_PEERS, CLUB_COMPARISON_MIN_REFERENCE_GAMES, clubComparisonSeasonOrder, comparisonNumber } from './clubComparison.model.js'
 
 const median = values => {
   const sorted = [...values].sort((a, b) => a - b)
@@ -8,12 +8,12 @@ const median = values => {
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2
 }
 
-export const metricUnavailableReason = (row, metric) => {
+export const metricUnavailableReason = (row, metric, minGames = metric.minGames) => {
   if (row.ambiguous) return 'ambiguous_cohort'
   if (row.teamSlot !== 1) return 'not_primary'
-  if (metric.requiresGames && row.seasonStatus === 'not_started') return 'season_not_started'
-  if (metric.requiresGames && row.games === null) return 'missing_games'
-  if (metric.requiresGames && !(row.games >= CLUB_COMPARISON_MIN_GAMES)) {
+  if (metric.minGames && row.seasonStatus === 'not_started') return 'season_not_started'
+  if (metric.minGames && row.games === null) return 'missing_games'
+  if (metric.minGames && !(row.games >= minGames)) {
     return 'insufficient_games'
   }
   if (metric.key === 'leagueLevel' && !(row.leagueLevel > 0)) return 'missing_league_level'
@@ -27,7 +27,7 @@ export const evaluateClubComparisonMetric = (target, rows, metric) => {
   const peers = rows.filter(row => (
     row.clubId === target.clubId &&
     clubComparisonSeasonOrder(row.seasonId) < clubComparisonSeasonOrder(target.seasonId) &&
-    !metricUnavailableReason(row, metric) &&
+    !metricUnavailableReason(row, metric, metric.minGames ? CLUB_COMPARISON_MIN_REFERENCE_GAMES : 0) &&
     (!metric.sameLeagueLevel || row.leagueLevel === target.leagueLevel)
   ))
   const cohortCount = new Set(peers.map(row => row.birthYear)).size
@@ -45,6 +45,7 @@ export const evaluateClubComparisonMetric = (target, rows, metric) => {
     referenceKeys: peers.map(row => `${row.teamId}:${row.seasonId}`), playerGap,
     availability: available ? 'available' : 'unavailable',
     reason: available ? null : reason || 'insufficient_peers',
-    isAnomaly, direction: available ? delta > 0 ? 'above' : delta < 0 ? 'below' : 'equal' : null,
+    isAnomaly, isEarlySample: available && metric.family === 'performance' && target.games < CLUB_COMPARISON_MIN_REFERENCE_GAMES,
+    direction: available ? delta > 0 ? 'above' : delta < 0 ? 'below' : 'equal' : null,
   }
 }

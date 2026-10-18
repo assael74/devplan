@@ -3,6 +3,7 @@
 import { buildStatsAuditExpected } from './buildExpected.js'
 import { compareStatsAudit } from './compare.js'
 import { readStatsAuditActual } from './readActual.js'
+import { compareArrivalHistory, readArrivalHistorySources } from './arrivalHistory.audit.js'
 
 export const auditStats = async ({
   leagueId = '',
@@ -40,6 +41,12 @@ export const auditStats = async ({
     scopedPlayerIds,
   })
   const findings = compareStatsAudit({ actual, expectedState, approvedState, seasonId })
+  const historySources = await readArrivalHistorySources(actual.teamSeason, scopedPlayerIds)
+  findings.push(...compareArrivalHistory({
+    teamSeason: actual.teamSeason,
+    sourcesById: historySources,
+    scopedPlayerIds,
+  }))
   const complete = expectedState.complete === true
 
   return {
@@ -50,6 +57,7 @@ export const auditStats = async ({
       coveredTargets: [
         'teamRoot',
         'teamSeason',
+        'arrivalHistory',
         'counterpartTeamSeasons',
         'playerRoots',
         'playerSeasons',

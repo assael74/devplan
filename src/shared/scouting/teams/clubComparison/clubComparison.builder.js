@@ -38,8 +38,8 @@ export const buildClubCohortComparison = ({ teams = [], clubId, seasonId } = {})
       return {
         ...row, metrics: Object.fromEntries(metrics.map(metric => [metric.key, metric])), findings, families,
         availableCount, availability,
-        signalLevel: Math.min(2, families.length),
-        status: families.length >= 2 ? 'multiple' : families.length === 1 ? 'single'
+        signalLevel: families.includes('competition') ? 2 : Math.min(2, families.length),
+        status: families.includes('competition') || families.length >= 2 ? 'multiple' : families.length === 1 ? 'single'
           : availability === 'available' ? 'none' : 'limited',
       }
     }).sort((a, b) => b.birthYear - a.birthYear),

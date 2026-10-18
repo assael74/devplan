@@ -10,6 +10,7 @@ import {
 } from '../../../domain/identity/index.js'
 import { buildClubDirectoryProjection } from '../../../domain/projections/club/clubDirectory.projection.js'
 import { buildClubsCenterTeamProjection } from '../../../domain/league/clubsCenterTeam.builder.js'
+import { arrivalSourceDocumentId, buildArrivalHistory } from '../../../domain/movement/arrivalHistory.projection.js'
 import {
   buildClubProfileProjection,
   buildClubsCenterLeague,
@@ -149,6 +150,7 @@ const statsOwnedPlayerIds = teamSeason => new Set([
 const appendMovementFindings = ({
   documentId,
   teamSeason,
+  teamSeasonsById,
   teamId,
   seasonId,
   findings,
@@ -196,6 +198,36 @@ const appendMovementFindings = ({
         owner: 'roster',
       }))
     })
+  })
+
+  Object.entries(object(movement.arrivalHistoryById)).forEach(([movementId, history]) => {
+    const fact = object(movement.transfersInById)[movementId]
+    const sourceId = arrivalSourceDocumentId({ teamId: fact && fact.fromTeamId, seasonId })
+    const source = teamSeasonsById.get(sourceId)
+    if (!fact || !source) return
+    const expected = buildArrivalHistory({
+      movementId,
+      playerId: fact.playerId,
+      fromTeamId: fact.fromTeamId,
+      seasonId,
+      sourceTeamSeason: source.data,
+      updatedAt: history.updatedAt,
+    })
+    if (equal(expected, history)) return
+    findings.push(relationFinding({
+      type: 'projection_mismatch',
+      target: SYSTEM_AUDIT_TARGET.TEAM_SEASONS,
+      documentId,
+      relatedDocumentId: movementId,
+      playerId: fact.playerId,
+      teamId,
+      seasonId,
+      title: 'תקציר העבר של מצטרף אינו תואם למקור',
+      reason: 'יש לבנות את פרופיל הסקאוט והחוליה מעונת קבוצת המקור.',
+      expected,
+      actual: history,
+      owner: 'roster',
+    }))
   })
 }
 
@@ -263,6 +295,7 @@ const appendTeamRootFindings = ({
 
 const appendTeamSeasonFindings = ({
   teamSeasons,
+  teamSeasonsById,
   teamRootsById,
   playerRootsById,
   playerSeasonsById,
@@ -350,6 +383,7 @@ const appendTeamSeasonFindings = ({
     appendMovementFindings({
       documentId: id,
       teamSeason: data,
+      teamSeasonsById,
       teamId,
       seasonId,
       findings,
@@ -1277,6 +1311,7 @@ export const evaluateSystemIntegrity = ({
   appendTeamRootFindings({ teamRoots, teamSeasonsById, clubProfilesById, findings })
   appendTeamSeasonFindings({
     teamSeasons,
+    teamSeasonsById,
     teamRootsById,
     playerRootsById,
     playerSeasonsById,

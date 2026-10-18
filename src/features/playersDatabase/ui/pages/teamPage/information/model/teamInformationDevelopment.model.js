@@ -10,6 +10,7 @@ import {
 } from '../../../../../model/scout/scoutProfilesSummary.model.js'
 import { SCOUT_PROFILE_IDENTITY } from '../../../../../../../shared/scouting/players/ids.js'
 import { resolveScoutProfileIdentity } from '../../../../../../../shared/scouting/players/profiles.js'
+import { buildArrivalHistoryDisplay } from './arrivalHistoryDisplay.model.js'
 
 const seasonOrder = season => {
   const match = clean(season?.seasonKey || season?.seasonId).match(/^(\d{2})[/_-](\d{2})$/)
@@ -350,8 +351,22 @@ export const buildYearDevelopmentOverview = ({
       const player = resolveMovementPlayer(fact, season, previousSeason, side)
       const playerId = clean(fact?.playerId || player?.playerId)
       const tableRow = buildPositionClassificationRows({
-        seasonDoc: { teamPlayers: [{ ...player, playerId }] },
+        seasonDoc: { ...season, teamPlayers: [{ ...player, playerId }] },
       })[0]
+      const seasonPlayer = source => (Array.isArray(source?.teamPlayers) ? source.teamPlayers : [])
+        .find(item => clean(item?.playerId) === playerId)
+      const displayRow = (sourceSeason, sourcePlayer) => sourcePlayer
+        ? buildPositionClassificationRows({
+          seasonDoc: { ...sourceSeason, teamPlayers: [sourcePlayer] },
+        })[0]
+        : null
+      const currentDisplay = displayRow(season, seasonPlayer(season))
+      const previousDisplay = side === 'out'
+        ? displayRow(previousSeason, seasonPlayer(previousSeason))
+        : buildArrivalHistoryDisplay({
+          history: season?.movement?.arrivalHistoryById?.[fact?.movementId],
+          playerId,
+        })
       const direction = resolveFactDirection(fact)
       const otherClubId = clean(side === 'out' ? fact?.toClubId : fact?.fromClubId)
       const otherTeamId = clean(side === 'out' ? fact?.toTeamId : fact?.fromTeamId)
@@ -370,6 +385,8 @@ export const buildYearDevelopmentOverview = ({
         direction,
         player: tableRow.player,
         departureProfilePlayer: profilePlayer,
+        currentDisplay,
+        previousDisplay,
         otherTeamName: buildTeamDisplayName({
           clubNames: clubsById[otherClubId]?.names,
           clubId: otherClubId,

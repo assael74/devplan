@@ -40,6 +40,29 @@ const base = ({ expectedUpdatedAt, actualUpdatedAt }) => ({
 })
 
 describe('compareStatsAudit', () => {
+  test('reports shirt number drift in existing player projections', () => {
+    const args = base({ expectedUpdatedAt: null, actualUpdatedAt: null })
+    args.expectedState.expected.playerSeasonsById = {
+      'player-1': {
+        playerSeasonDocumentId: 'player-season-1',
+        teamId: 'club_2011_1',
+        team: { stats: {}, scouting: {}, roster: { numShirt: 9 } },
+      },
+    }
+    args.actual.playerSeasonsById = {
+      'player-1': { teamsById: { club_2011_1: { stats: {}, scouting: {}, roster: { numShirt: 8 } } } },
+    }
+    args.expectedState.expected.playerSearchIndexesById = {
+      'player-1': { documentId: 'index-1', player: { numShirt: '9' } },
+    }
+    args.actual.playerSearchIndexesById = { 'player-1': { player: { numShirt: '8' } } }
+
+    expect(compareStatsAudit(args)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ target: 'playerSeason', field: 'teamsById.club_2011_1.roster.numShirt' }),
+      expect.objectContaining({ target: 'playerSearchIndex', field: 'player.numShirt' }),
+    ]))
+  })
+
   test('does not report a missing Team Season before roster lifecycle starts', () => {
     expect(compareStatsAudit({
       actual: { teamSeason: null },

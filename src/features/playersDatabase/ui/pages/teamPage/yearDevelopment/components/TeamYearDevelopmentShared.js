@@ -12,21 +12,24 @@ export const TeamYearSection = ({
   titleAfter,
   titleExtra,
   titleExtraSx,
+  hideHeader = false,
   children,
 }) => (
   <Box sx={sx.section}>
-    <Box sx={sx.header}>
-      <Box sx={sx.titleContainer}>
-        <Box sx={sx.titleRow}>
-          <Box sx={sx.titleIdentity}>
-            <Box sx={sx.titleIcon}>{iconUi({ id: iconId, size: 'sm' })}</Box>
-            <Typography sx={sx.title}>{title}</Typography>
-            {titleAfter}
+    {!hideHeader ? (
+      <Box sx={sx.header}>
+        <Box sx={sx.titleContainer}>
+          <Box sx={sx.titleRow}>
+            <Box sx={sx.titleIdentity}>
+              <Box sx={sx.titleIcon}>{iconUi({ id: iconId, size: 'sm' })}</Box>
+              <Typography sx={sx.title}>{title}</Typography>
+              {titleAfter}
+            </Box>
+            {titleExtra ? <Box sx={[sx.titleExtra, titleExtraSx]}>{titleExtra}</Box> : null}
           </Box>
-          {titleExtra ? <Box sx={[sx.titleExtra, titleExtraSx]}>{titleExtra}</Box> : null}
         </Box>
       </Box>
-    </Box>
+    ) : null}
     {children}
   </Box>
 )

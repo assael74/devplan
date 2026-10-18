@@ -71,6 +71,7 @@ export default function TeamInformationOverview({
   overviewRosterProfileFilterOptions = [],
   onProfileFilterChange,
   onPlayerRoleEdit,
+  onShirtEdit,
   onPlayerOpen,
 }) {
   const location = useLocation()
@@ -160,6 +161,7 @@ export default function TeamInformationOverview({
     profileFilterOptions: overviewRosterProfileFilterOptions,
     onProfileFilterChange,
     onPlayerRoleEdit,
+    onShirtEdit,
     onPlayerOpen,
     structureFilter,
     favoritePlayerKeys,

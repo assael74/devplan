@@ -98,6 +98,8 @@ const renderScoutProfile = (row, showTooltips) => {
 export default function useTeamPositionClassificationColumns({
   onPlayerOpen,
   onPlayerRoleEdit,
+  onShirtEdit,
+  canEditShirt = false,
   favoritePlayerKeys,
   onFavoriteToggle,
   showTooltips = true,
@@ -122,7 +124,26 @@ export default function useTeamPositionClassificationColumns({
         >
           {index + 1}
         </IconButton>
-      ) : <Typography sx={sx.index}>{index + 1}</Typography>,
+      ) : (
+        <Box sx={sx.shirtCell}>
+          <Typography sx={sx.index}>{index + 1}</Typography>
+          {canEditShirt && row.player ? (
+            <IconButton
+              size='sm'
+              variant='soft'
+              color='neutral'
+              sx={sx.shirtEdit}
+              aria-label={`עריכת מספר חולצה עבור ${row.name}`}
+              onClick={event => {
+                event.stopPropagation()
+                onShirtEdit?.(row)
+              }}
+            >
+              {row.player.numShirt || '—'}
+            </IconButton>
+          ) : null}
+        </Box>
+      ),
     },
     {
       key: 'avatar',
@@ -270,5 +291,5 @@ export default function useTeamPositionClassificationColumns({
         </IconButton>
       ),
     },
-  ], [favoritePlayerKeys, onFavoriteToggle, onPlayerOpen, onPlayerRoleEdit, showTooltips, showProfileTooltips, onRowSelect, selectedRowKey])
+  ], [favoritePlayerKeys, onFavoriteToggle, onPlayerOpen, onPlayerRoleEdit, onShirtEdit, canEditShirt, showTooltips, showProfileTooltips, onRowSelect, selectedRowKey])
 }

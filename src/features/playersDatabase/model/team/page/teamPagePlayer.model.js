@@ -61,7 +61,7 @@ const buildCanonicalTeamPagePlayerRow = ({
     rosterStatus,
     statsStatus: clean(statsPlayer.statsStatus) || PLAYER_STATS_STATUS.MISSING,
     isYoungerAgeGroup: rosterStatus === 'youngerAgeGroup',
-    number: rosterPlayer.numShirt || `${index + 1}`,
+    number: rosterPlayer.numShirt || '',
     numShirt: rosterPlayer.numShirt || '',
     fullName: clean(rosterPlayer.fullName),
     normalizedName: clean(rosterPlayer.normalizedName),
@@ -194,7 +194,7 @@ export const normalizeTeamPagePlayerRow = ({
     isYoungerAgeGroup: (
       playerSeason.metadata?.rosterStatus === 'youngerAgeGroup'
     ),
-    number: playerSeason.position?.shirtNumber || `${index + 1}`,
+    number: playerSeason.position?.shirtNumber || '',
     numShirt: playerSeason.position?.shirtNumber || '',
     fullName: playerSeason.identity?.displayName || '',
     normalizedName: playerSeason.identity?.normalizedName || '',

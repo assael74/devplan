@@ -55,6 +55,10 @@ System Audit קורא את כל הקולקשיינים הפעילים של Playe
 Repair מחייב אישור משתמש, קריאה טרייה ו־canonical writer. Repair של Player
 Document יכול ליצור מסמך חסר ולרענן את Team Season וה־SearchIndexes הרלוונטיים.
 Retry של Movement counterpart לעולם אינו יוצר Team Root או Team Season חסרים.
+תקציר `movement.arrivalHistoryById` קיים נבדק מול Team Season של קבוצת המקור
+בעונה הקודמת. מקור חסר ומעבר ישן ללא תקציר אינם ממצא. פער בתקציר קיים הוא
+`projection_mismatch`; תיקון ממוקד בונה מחדש את התקציר ממקור קנוני זמין,
+בלי לשנות את עובדת המעבר או את הסקאוטינג של קבוצת היעד.
 
 ### תיקון עצמאי מתוך האודיט הממוקד
 
@@ -105,7 +109,7 @@ Retry של Movement counterpart לעולם אינו יוצר Team Root או Team
 | התאמת מצב הסטטיסטיקה וסיכום הסקאוט של הקבוצה בליגה | `leagueMetadata`:‏ `stats`,‏ `scouting` | כן | `writeStatsLeagueProjection` |
 | קיום הקבוצה והתאמת מצב התיעוד וסימוני המשימות במרכז הליגות | `leaguesCenter`:‏ `documentationState`,‏ `documentationStateUpdatedAt`,‏ `teamTaskSignals` | כן | `repairLeagueFinding` → `writeLeaguesCenter` |
 | קיום הקבוצה והתאמת מצב התיעוד, סימוני המשימות וההעברות במרכז המועדונים | `clubsCenter`: אותם שדות וגם `transfers` | כן | `repairLeagueFinding` → `writeClubsCenter` |
-| קיום עונת שחקן והתאמת נתוני השחקן בקבוצה | `playerSeason`: מסמך חסר או `teamsById[teamId].stats/scouting` | כן | `writeStatsPlayerSeasons`, לשחקן של הממצא |
+| קיום עונת שחקן והתאמת נתוני השחקן בקבוצה | `playerSeason`: מסמך חסר או `teamsById[teamId].stats/scouting/roster.numShirt` | כן | `writeStatsPlayerSeasons`, לשחקן של הממצא |
 | קיום אינדקס שחקן והתאמת שדות הסטטיסטיקה והסקאוט | `playerSearchIndex`: מסמך חסר או השדות המפורטים בטבלת השחקן | כן | `writeStatsPlayerSearchIndexes`, לשחקן של הממצא |
 
 #### בדיקה ממוקדת לשחקן
@@ -120,8 +124,9 @@ Retry של Movement counterpart לעולם אינו יוצר Team Root או Team
 | קיום מסמך עונת השחקן | `playerSeason` | כן | `writeStatsPlayerSeasons` |
 | התאמת הסטטיסטיקה לעונת הקבוצה | `teamsById[teamId].stats` | כן | `writeStatsPlayerSeasons` |
 | התאמת הסקאוט לעונת הקבוצה | `teamsById[teamId].scouting` | כן | `writeStatsPlayerSeasons` |
+| התאמת מספר חולצה לעונת הקבוצה | `teamsById[teamId].roster.numShirt` | כן | `writeStatsPlayerSeasons` |
 | קיום אינדקס החיפוש של השחקן בקבוצה ובעונה | `playerSearchIndex` | כן | `writeStatsPlayerSearchIndexes` |
-| התאמת נתוני הסטטיסטיקה, הסקאוט והראיות באינדקס | `stats`,‏ `scout`,‏ `scoutEvidence`,‏ `player.statsStatus` | כן | `writeStatsPlayerSearchIndexes` |
+| התאמת נתוני הסטטיסטיקה, הסקאוט והראיות באינדקס | `stats`,‏ `scout`,‏ `scoutEvidence`,‏ `player.statsStatus`,‏ `player.numShirt` | כן | `writeStatsPlayerSearchIndexes` |
 | התאמת שדות החיפוש המחושבים באינדקס | `expectedLevelDelta`,‏ `scoutEffectiveImmediacyStatus`,‏ `scoutProfileIds`,‏ `scoutCombinationIds`,‏ `scoutProfileSearchIds` | כן | `writeStatsPlayerSearchIndexes` |
 
 המסלול אינו מתקן `PlayerRoot`, אינו מחשב מחדש סקאוט או Balance במקור,

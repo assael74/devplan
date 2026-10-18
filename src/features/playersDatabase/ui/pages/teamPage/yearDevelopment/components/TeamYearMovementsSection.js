@@ -9,8 +9,9 @@ import DataTable from '../../../../components/tables/dataTable/DataTable.js'
 import { teamPositionClassificationTableSx as tableSx } from '../../positionClassification/sx/teamPositionClassificationTable.sx.js'
 import { buildTableScoutProfileChip } from '../../positionClassification/model/teamPositionScoutProfile.presentation.js'
 import useTeamPositionClassificationColumns from '../../positionClassification/hooks/useTeamPositionClassificationColumns.js'
-import { directionPresentation } from '../model/teamYearDevelopment.presentation.js'
+import { buildMovementDirectionItems, directionPresentation } from '../model/teamYearDevelopment.presentation.js'
 import { SeasonSummaryChip, SummaryChip, SummaryFacts, TeamYearSection } from './TeamYearDevelopmentShared.js'
+import MovementPeriodSwitch from './MovementPeriodSwitch.js'
 import { teamYearDevelopmentSharedSx } from '../sx/teamYearDevelopmentShared.sx.js'
 import {
   MOVEMENT_TABLE_COLUMN_WIDTHS,
@@ -25,15 +26,20 @@ const getLevelSortValue = movement => {
   return movement.direction === 'lateral' ? 0 : null
 }
 
-const renderProfile = movement => {
-  const profilePlayer = movement.side === 'out'
-    ? movement.departureProfilePlayer
-    : movement.player
-  const profileChip = buildTableScoutProfileChip(profilePlayer)
+const movementDisplay = (movement, period) => (
+  period === 'previous' ? movement.previousDisplay : movement.currentDisplay
+)
 
-  return profileChip
-    ? <ScoutProfileChip {...profileChip} size='compact' showTooltip={false} />
-    : <Typography sx={sx.movementDetail}>—</Typography>
+const renderProfile = (movement, period) => {
+  const profileChip = buildTableScoutProfileChip(movementDisplay(movement, period)?.player)
+  if (!profileChip) return <Typography sx={sx.movementDetail}>—</Typography>
+
+  const chip = (
+    <ScoutProfileChip {...profileChip} size='compact' muted={period === 'previous'} showTooltip={false} />
+  )
+  return period === 'previous'
+    ? <Box sx={[tableSx.scoutProfileCell, sx.movementPreviousProfile]}>{chip}</Box>
+    : chip
 }
 
 const MOVEMENT_STATUS = Object.freeze({
@@ -84,11 +90,12 @@ const renderTransition = movement => {
 function MovementGroup({
   group,
   rows,
-  showTitle = true,
   seasonKey,
   onPlayerOpen,
   favoritePlayerKeys,
   onFavoriteToggle,
+  profilePeriod,
+  onProfilePeriodChange,
 }) {
   const rosterColumns = useTeamPositionClassificationColumns({
     onPlayerOpen: onPlayerOpen ? player => onPlayerOpen(player, seasonKey) : null,
@@ -127,23 +134,36 @@ function MovementGroup({
     if (column.key === 'lineClassification') {
       return [{
         ...movementColumn,
-        render: movement => (
-          <PlayerLineClassificationChip
-            classification={movement.classification}
-            primaryPosition={movement.primaryPosition}
-            positionLayer={movement.positionLayer}
-            compact
-          />
-        ),
+        getSortValue: movement => {
+          const display = movementDisplay(movement, profilePeriod)
+          if (display?.isGoalkeeper) return 0
+          const order = ({ DEFENSE: 1, MIDFIELD: 2, ATTACK: 3 })[display?.classification?.line]
+          return order === undefined ? 4 : order
+        },
+        render: movement => {
+          const display = movementDisplay(movement, profilePeriod)
+          const chip = (
+            <PlayerLineClassificationChip
+              classification={display?.classification}
+              primaryPosition={display?.primaryPosition}
+              positionLayer={display?.positionLayer}
+              compact
+              muted={profilePeriod === 'previous'}
+            />
+          )
+          return profilePeriod === 'previous'
+            ? <Box sx={sx.movementPreviousLine}>{chip}</Box>
+            : chip
+        },
       }]
     }
     if (column.key === 'scoutProfile') {
       return [{
         ...movementColumn,
         getSortValue: movement => buildTableScoutProfileChip(
-          movement.side === 'out' ? movement.departureProfilePlayer : movement.player
+          movementDisplay(movement, profilePeriod)?.player
         )?.label || null,
-        render: renderProfile,
+        render: movement => renderProfile(movement, profilePeriod),
       }]
     }
     return column.key === 'openPlayer'
@@ -153,7 +173,10 @@ function MovementGroup({
 
   return (
     <Box sx={sx.movementGroup}>
-      {showTitle ? <Typography sx={sx.movementGroupTitle}>{group.title} · {rows.length}</Typography> : null}
+      <Box sx={sx.movementGroupHeader}>
+        <Typography sx={sx.movementGroupTitle}>{group.title} · {rows.length}</Typography>
+        <MovementPeriodSwitch period={profilePeriod} onChange={onProfilePeriodChange} label={group.title} />
+      </Box>
       <Box sx={sx.movementTableScroll} className='dpScrollThin'>
         <DataTable
           className='dpScrollThin'
@@ -186,7 +209,7 @@ function MovementSeasonInsights({ season, signal, clubLevel }) {
     : 'עזבו לרמה גבוהה יותר'
 
   return (
-    <Box sx={sx.movementInsights}>
+    <Box sx={sx.movementInsights} data-movement-toolbar-entry={`${season.seasonKey}:season`}>
       <Typography sx={sx.movementInsightsTitle}>תובנות</Typography>
       {!signal || signal.status === 'limited' ? (
         <Typography sx={sx.movementInsightsUnavailable}>{unavailableText}</Typography>
@@ -216,6 +239,9 @@ export default function TeamYearMovementsSection({
   onPlayerOpen,
   favoritePlayerKeys,
   onFavoriteToggle,
+  profilePeriod = 'current',
+  onProfilePeriodChange,
+  sectionRef,
 }) {
   if (!seasons.length) {
     return (
@@ -226,13 +252,9 @@ export default function TeamYearMovementsSection({
   }
 
   return (
-    <Box sx={sx.movementSeasons}>
+    <Box ref={sectionRef} sx={sx.movementSeasons}>
       {seasons.map(season => {
-        const directionItems = ['up', 'down', 'lateral', 'unknown'].map(direction => ({
-          direction,
-          count: season.directionCounts && season.directionCounts[direction] ? season.directionCounts[direction] : 0,
-          ...directionPresentation(direction),
-        })).filter(item => item.direction !== 'unknown' || item.count > 0)
+        const directionItems = buildMovementDirectionItems(season)
         const signal = seasonSignals.find(item => item.seasonKey === season.seasonKey)
         const groups = [
           { side: 'out', title: 'עזבו', teamColumn: 'קבוצה שאליה עבר' },
@@ -266,16 +288,17 @@ export default function TeamYearMovementsSection({
                 <Typography sx={sx.emptyInline}>טרם החלה העונה ולכן אין עדיין נתוני סגל או מעברים.</Typography>
               ) : season.movements.length ? (
                 <Box sx={sx.movementGroups}>
-                  {groups.map((group, index) => (
+                  {groups.map(group => (
                     <MovementGroup
                       key={`${season.seasonKey}-${group.side}`}
                       group={group}
                       rows={group.rows}
-                      showTitle={index > 0 || !summary}
                       seasonKey={season.seasonKey}
                       onPlayerOpen={onPlayerOpen}
                       favoritePlayerKeys={favoritePlayerKeys}
                       onFavoriteToggle={onFavoriteToggle}
+                      profilePeriod={profilePeriod}
+                      onProfilePeriodChange={onProfilePeriodChange}
                     />
                   ))}
                 </Box>

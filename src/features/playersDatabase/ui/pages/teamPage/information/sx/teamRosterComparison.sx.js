@@ -3,11 +3,11 @@
 import { COLORS, devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 export const ROSTER_COMPARISON_WIDTHS = {
-  index: 3, avatar: 3, name: 10, favorite: 3, gamesStarts: 5,
+  index: 3, avatar: 3, name: 10, favorite: 2, gamesStarts: 6,
   minutes: { current: 9, previous: 6 }, minutesChange: 5,
   goals: { current: 8, previous: 4 }, goalsChange: 4,
-  lineClassification: { current: 5, previous: 6 },
-  scoutProfile: { current: 14, previous: 10 }, openPlayer: 5,
+  lineClassification: { current: 6, previous: 7 },
+  scoutProfile: { current: 14, previous: 10 }, openPlayer: 3,
 }
 
 export const teamRosterComparisonSx = {
@@ -40,6 +40,19 @@ export const teamRosterComparisonSx = {
   table: {
     '& thead th': { position: 'static', py: 0.75, bgcolor: devPlanColors.primaryLight },
     '& th, & td': { px: 0.4 },
+    '& td[data-column="index"], & td[data-column="gamesStarts"]': {
+      whiteSpace: 'nowrap', overflowWrap: 'normal', fontVariantNumeric: 'tabular-nums',
+    },
+    '& td[data-column="index"] .MuiTypography-root': { fontSize: 10, whiteSpace: 'nowrap' },
+    '& td[data-column="favorite"], & td[data-column="openPlayer"]': { px: 0 },
+    '& td[data-column="favorite"] .MuiIconButton-root': {
+      width: 18, minWidth: 18, height: 24, minHeight: 24, p: 0,
+      '& svg': { fontSize: 15 },
+    },
+    '& td[data-column="openPlayer"] .MuiIconButton-root': {
+      width: 24, minWidth: 24, height: 24, minHeight: 24, p: 0, borderRadius: 6,
+      '& svg': { fontSize: 14 },
+    },
     '& th[data-column$="Change"], & th[data-column^="goals"], & th[data-column="gamesStarts"]': { px: 0 },
     '& [data-column$="Current"]': { bgcolor: COLORS.status.warning.softBg },
     '& th[scope="colgroup"], & [data-column$="Current"], & [data-column="openPlayer"]': {

@@ -9,6 +9,12 @@
 Roster Load כותב את Team Season snapshot, את הסגל, את מצב התנועה ואת
 מטא־דאטת הסגל. הוא משמר Team Performance קנוני ואינו יוצר Player Documents,
 Stats או Scout Profiles רק בגלל שחקן בסגל.
+מספר חולצה אינו נקלט ב־Roster Load, וגם טעינה חוזרת מאפסת אותו לשחקנים
+שנכללים בטעינה. טעינת סגל חוזרת נחסמת לאחר ש־Stats נטען, כדי לשמור על
+הנתונים שנקלטו לאחר מכן. מספר חולצה נערך פרטנית רק לאחר טעינת Stats בעונת הקבוצה.
+מקור האמת הוא `TeamSeason.roster.playersById[playerId].numShirt`; באותה עסקה
+מסונכרנים `PlayerSeason.teamsById[teamId].roster.numShirt` ו־
+`PlayerSearchIndex.player.numShirt` אם המסמכים קיימים. העריכה אינה יוצרת מסמכי שחקן.
 
 ## סדר הכתיבה והקבלה
 
@@ -45,13 +51,14 @@ canonical → counterparts → playerSeasons → playerSearchIndexes
 
 ## Movement
 
-- `transfersIn` ו־`transfersOut` הם עובדות קנוניות של Team Season.
+- `transfersInById` בקבוצת היעד הוא מקור האמת לעובדת מעבר.
+  `transfersOutById` בקבוצת המקור הוא עותק מקביל כאשר מסמך המקור קיים.
 - במעבר ממועדון שרמתו נמוכה מ־`1` (`clubLevel > 1`) אל קבוצה שנייה
   (`teamSlot = 2`) במועדון רמה `1`, קבוצה 2 מושווית כאילו הייתה קבוצה 1.
   במעברים פנימיים כיוון המעבר נקבע עדיין לפי מספר הקבוצה. מעבר חיצוני אל
   קבוצה נוספת אחרת נשאר `unknown` ללא השוואת רמות קבוצתית.
-- שני צדי המעבר עצמאיים: כל Team Season בעלים רק על צד המעבר
-  שנשמר בו.
+- מחזור החיים של שני הצדדים עצמאי: מחיקת Team Season אחד אינה מוחקת
+  אוטומטית את הצד האחר.
 - Roster Clear מוחק רק את ה־Team Season של הקבוצה שהפעילה את
   המחיקה. Movement אינו חסם למחיקת סגל, ואין למחוק או לעדכן את
   צד המעבר שנשמר ב־Team Season הנגדי.
@@ -68,6 +75,19 @@ canonical → counterparts → playerSeasons → playerSearchIndexes
   באותו שלב כדי לעדכן counterpart רק אם מסמך העונה שלו קיים.
 - `joined` בלבד יוצר `transfersIn`;‏ `priorAgeException` ו־`confirmedInRoster`
   אינם יוצרים תנועה.
+
+## הקשר עונה קודמת למצטרף
+
+בעת רישום מעבר חדש נבנה ב־`movement.arrivalHistoryById[movementId]` תקציר
+מה־Team Season של קבוצת המקור בעונה הקודמת: פרופיל הסקאוט הראשי, עומקו
+ו־`lineClassification.line`, אם קיימים. זהו תוצר הניתן לבנייה מחדש, ולא
+חלק מעובדת המעבר או מהסקאוטינג של קבוצת היעד. המקור נקרא בעת הכנת הכתיבה;
+עמוד הקבוצה אינו קורא אותו בזמן פתיחה.
+
+מסמך מקור חסר, פרופיל חסר וסיווג חסר הם מצבים שונים. היעדר תקציר במעבר
+שנרשם לפני הוספת המבנה אינו תקלה ואינו גורר מילוי אוטומטי. Audit משווה
+תקציר קיים למקור כאשר המקור זמין; Repair ממוקד בונה אותו מחדש מן המקור.
+נתוני התקציר אינם נכנסים לחישוב Team Balance או לסיווג העונה של קבוצת היעד.
 
 `teamPlayers` כולל גם משתתף שעזב אחרי שצבר Stats. `rosterStatus` הוא מצב
 חברות בלבד: `regular`,‏ `left` או `youngerAgeGroup`.

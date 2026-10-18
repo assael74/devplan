@@ -32,6 +32,7 @@ const normalize = value => {
 }
 
 const same = (left, right) => JSON.stringify(normalize(left)) === JSON.stringify(normalize(right))
+export const sameStatsAuditValue = same
 
 const finding = ({ target, documentId, field, expected, actual, type = 'projection_mismatch' }) => ({
   type,
@@ -124,6 +125,7 @@ export const compareStatsAudit = ({ actual = {}, expectedState = {}, approvedSta
     const actualTeam = object(object(row.teamsById)[teamId])
     compareField({ findings, target: 'playerSeason', documentId: projection.playerSeasonDocumentId, field: `teamsById.${teamId}.stats`, expected: projection.team.stats, actual: actualTeam.stats })
     compareField({ findings, target: 'playerSeason', documentId: projection.playerSeasonDocumentId, field: `teamsById.${teamId}.scouting`, expected: projection.team.scouting, actual: actualTeam.scouting })
+    compareField({ findings, target: 'playerSeason', documentId: projection.playerSeasonDocumentId, field: `teamsById.${teamId}.roster.numShirt`, expected: object(projection.team.roster).numShirt, actual: object(actualTeam.roster).numShirt })
   })
 
   Object.entries(expected.playerSearchIndexesById).forEach(([playerId, projection]) => {
@@ -136,6 +138,7 @@ export const compareStatsAudit = ({ actual = {}, expectedState = {}, approvedSta
       compareField({ findings, target: 'playerSearchIndex', documentId: projection.documentId, field, expected: projection[field], actual: row[field] })
     })
     compareField({ findings, target: 'playerSearchIndex', documentId: projection.documentId, field: 'player.statsStatus', expected: projection.player.statsStatus, actual: object(row.player).statsStatus })
+    compareField({ findings, target: 'playerSearchIndex', documentId: projection.documentId, field: 'player.numShirt', expected: projection.player.numShirt, actual: object(row.player).numShirt })
   })
 
   const identity = object(teamSeason && teamSeason.identity)

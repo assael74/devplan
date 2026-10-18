@@ -177,6 +177,94 @@ test('shows incoming and outgoing movement with the documented level direction',
   ]))
 })
 
+test('keeps movement-season and prior-season role and profile separate without player documents', () => {
+  const overview = buildYearDevelopmentOverview({
+    teamSeasons: [
+      {
+        seasonKey: '26/27',
+        teamPlayers: [
+          {
+            playerId: 'joined', primaryPosition: 'DCR',
+            lineClassification: { line: 'DEFENSE' },
+            scoutProfiles: [{ profileId: 'last_station', depthPct: 70 }],
+            playerStats: { games: 8, starts: 8, minutes: 637 },
+          },
+          {
+            playerId: 'left', primaryPosition: 'ST',
+            lineClassification: { line: 'ATTACK' },
+            scoutProfiles: [{ profileId: 'secondary_threat', depthPct: 75 }],
+            playerStats: { games: 8, starts: 8, minutes: 637 },
+          },
+        ],
+        movement: { arrivalHistoryById: {
+          arrival: {
+            scoutStatus: 'available', primaryProfileId: 'clear_scorer',
+            primaryProfileDepthPct: 81, professionalProfileIds: ['clear_scorer'],
+            lineStatus: 'available', line: 'MIDFIELD',
+          },
+        } },
+        transfersIn: [{ movementId: 'arrival', playerId: 'joined' }],
+        transfersOut: [{ movementId: 'departure', playerId: 'left' }],
+      },
+      {
+        seasonKey: '25/26',
+        teamPlayers: [{
+          playerId: 'left', primaryPosition: 'MCR',
+          lineClassification: { line: 'MIDFIELD' },
+          scoutProfiles: [{ profileId: 'last_station', depthPct: 65 }],
+          playerStats: { games: 8, starts: 8, minutes: 637 },
+        }],
+      },
+    ],
+  })
+  const [joined, left] = [
+    overview.movementSeasons[0].movements.find(row => row.side === 'in'),
+    overview.movementSeasons[0].movements.find(row => row.side === 'out'),
+  ]
+
+  expect(joined.currentDisplay).toMatchObject({
+    classification: { line: 'DEFENSE' }, primaryPosition: 'DCR',
+    player: { scoutProfiles: [{ profileId: 'last_station', depthPct: 70 }] },
+  })
+  expect(joined.previousDisplay).toMatchObject({
+    classification: { line: 'MIDFIELD' }, primaryPosition: '', positionLayer: '',
+    player: { scoutProfiles: [{ profileId: 'clear_scorer', depthPct: 81 }] },
+  })
+  expect(left.currentDisplay).toMatchObject({
+    classification: { line: 'ATTACK' }, primaryPosition: 'ST',
+  })
+  expect(left.previousDisplay).toMatchObject({
+    classification: { line: 'MIDFIELD' }, primaryPosition: 'MCR',
+  })
+})
+
+test('movement line uses the same seasonal goal projection shown in its row', () => {
+  const overview = buildYearDevelopmentOverview({
+    teamSeasons: [{
+      seasonKey: '26/27',
+      seasonStatus: 'active',
+      teamPlayers: [{
+        playerId: 'scorer',
+        playerStats: {
+          games: 8, goals: 4, starts: 8, substitutedOut: 0,
+          minutes: 600, teamMinutes: 720, teamGames: 8,
+        },
+      }],
+      scouting: { playersById: { scorer: { evidence: {
+        actual: { goals: 4 },
+        calculationContext: { seasonStatus: 'active', teamGamePlayed: 8, leagueTotalRound: 30 },
+      } } } },
+      transfersIn: [{ movementId: 'arrival', playerId: 'scorer' }],
+    }],
+  })
+  const movement = overview.movementSeasons[0].movements[0]
+
+  expect(movement.projectedGoals).toBe(15)
+  expect(movement.classification.line).toBe('ATTACK')
+  expect(movement.currentDisplay.projectedGoals).toBe(15)
+  expect(movement.currentDisplay.classification.line).toBe('ATTACK')
+})
+
 test('shows a previously unknown move from a weaker club to a level-1 club second team', () => {
   const overview = buildYearDevelopmentOverview({
     teamSeasons: [{
@@ -268,4 +356,6 @@ test('does not infer a departing player profile from a later season', () => {
   expect(season.profileKnownDepartures).toBe(0)
   expect(season.professionalProfileDepartures).toBe(0)
   expect(season.movements[0].departureProfilePlayer).toBeNull()
+  expect(season.movements[0].currentDisplay).toBeNull()
+  expect(season.movements[0].previousDisplay).toBeNull()
 })

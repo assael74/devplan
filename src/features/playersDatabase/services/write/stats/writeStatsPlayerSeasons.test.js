@@ -33,6 +33,7 @@ const projection = {
     clubId: 'club-a',
     leagueId: 'league-a',
     stats: { statsStatus: 'loaded' },
+    roster: { numShirt: 9 },
     scouting: {},
     manual: { playerUrl: 'https://www.football.org.il/players/player/?player_id=12345', goalDistribution: {} },
     updatedAt: 'updated',
@@ -69,7 +70,7 @@ describe('writeStatsPlayerSeasons', () => {
     )
   })
 
-  test('updates only Stats-owned fields when the team context already exists', async () => {
+  test('updates Stats fields and the canonical shirt number when the team context already exists', async () => {
     await writeStatsPlayerSeasons({
       approvedState: {
         updatedAt: 'updated',
@@ -89,6 +90,7 @@ describe('writeStatsPlayerSeasons', () => {
           [teamId]: {
             stats: projection.team.stats,
             scouting: projection.team.scouting,
+            roster: { numShirt: 9 },
             manual: { playerUrl: projection.team.manual.playerUrl },
             updatedAt: projection.team.updatedAt,
           },
@@ -98,6 +100,7 @@ describe('writeStatsPlayerSeasons', () => {
     )
     const mergePaths = setDoc.mock.calls[0][2].mergeFields.map(path => path.segments)
     expect(mergePaths).toContainEqual(['teamsById', teamId, 'manual', 'playerUrl'])
+    expect(mergePaths).toContainEqual(['teamsById', teamId, 'roster', 'numShirt'])
     expect(mergePaths).not.toContainEqual(['teamsById', teamId, 'manual'])
   })
 })

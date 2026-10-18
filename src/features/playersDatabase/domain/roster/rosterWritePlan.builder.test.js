@@ -93,6 +93,42 @@ const buildLoad = overrides => buildRosterLoadWritePlan({
   ...overrides,
 })
 
+test('roster load ignores an imported shirt number', () => {
+  const plan = buildLoad({ players: [{ ...player, numShirt: 9 }] })
+  expect(plan.canonical.teamSeason.roster.playersById[playerId].numShirt).toBeNull()
+})
+
+test('roster load is blocked after stats have been loaded', () => {
+  expect(() => buildLoad({
+    existingTeamSeason: { stats: { statsLoadState: { status: 'loaded' } } },
+  })).toThrow('יש לנקות סטטיסטיקה תחילה')
+})
+
+test('a joined player carries prior scout and line into the destination season', () => {
+  const sourceTeamId = 'club-b_2010_1'
+  const sourceDocumentId = `${sourceTeamId}__2024_2025`
+  const plan = buildLoad({
+    participantDecisions: [{
+      playerId,
+      decision: 'joined',
+      team: { teamId: sourceTeamId, clubId: 'club-b', teamSlot: 1, clubLevel: 3 },
+    }],
+    sourceHistoryTeamSeasonsById: {
+      [sourceDocumentId]: {
+        identity: { teamId: sourceTeamId, seasonId: '2024_2025', teamSeasonDocumentId: sourceDocumentId },
+        roster: { playersById: { [playerId]: { playerId } } },
+        stats: { playersById: { [playerId]: { lineClassification: { line: 'ATTACK' } } } },
+        scouting: { playersById: { [playerId]: { primary: { profileId: 'clear_scorer' } } } },
+      },
+    },
+  })
+  const movement = plan.canonical.teamSeason.movement
+  const [fact] = Object.values(movement.transfersInById)
+  expect(movement.arrivalHistoryById[fact.movementId]).toMatchObject({
+    sourceStatus: 'available', primaryProfileId: 'clear_scorer', line: 'ATTACK',
+  })
+})
+
 describe('previous roster identity decisions', () => {
   const previousSeasonId = '2024_2025'
   const previousDocumentId = `${teamId}__${previousSeasonId}`
@@ -334,6 +370,18 @@ describe('roster target write plan', () => {
       timing: 'UNKNOWN',
       effectiveAt: null,
     }
+    const outgoingFact = {
+      ...fact,
+      movementId: 'movement-repair-2',
+      playerId: 'player__2010__99999',
+      fromTeamId: teamId,
+      fromTeamSeasonDocumentId: teamSeasonDocumentId,
+      fromClubId: 'club-a',
+      toTeamId: counterpartTeamId,
+      toTeamSeasonDocumentId: counterpartTeamSeasonDocumentId,
+      toClubId: 'club-b',
+    }
+    const previousSourceId = `${teamId}__2024_2025`
     const repairPlan = buildRosterProjectionRepairPlan({
       teamId,
       seasonId,
@@ -342,8 +390,15 @@ describe('roster target write plan', () => {
         ...loadPlan.canonical.teamSeason,
         movement: {
           transfersInById: { [fact.movementId]: fact },
-          transfersOutById: {},
+          transfersOutById: { [outgoingFact.movementId]: outgoingFact },
           pendingById: {},
+        },
+      },
+      sourceHistoryTeamSeasonsById: {
+        [previousSourceId]: {
+          identity: { teamSeasonDocumentId: previousSourceId, teamId, seasonId: '2024_2025' },
+          roster: { playersById: { [outgoingFact.playerId]: { fullName: 'שחקן עוזב' } } },
+          scouting: { playersById: { [outgoingFact.playerId]: { primary: { profileId: 'striker' } } } },
         },
       },
       existingCounterpartTeamSeasonsById: {
@@ -383,6 +438,13 @@ describe('roster target write plan', () => {
       documentId: counterpartTeamSeasonDocumentId,
       movement: {
         transfersOutById: { [fact.movementId]: fact },
+        transfersInById: { [outgoingFact.movementId]: outgoingFact },
+        arrivalHistoryById: {
+          [outgoingFact.movementId]: {
+            sourceStatus: 'available',
+            primaryProfileId: 'striker',
+          },
+        },
       },
     })
   })

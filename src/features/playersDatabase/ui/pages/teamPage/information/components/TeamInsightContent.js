@@ -10,6 +10,7 @@ import TeamScoutingSummary from '../../scouting/components/TeamScoutingSummary.j
 import TeamStructureSection from '../../structure/components/TeamStructureSection.js'
 import TeamYearMetricsSection from '../../yearDevelopment/components/TeamYearMetricsSection.js'
 import TeamYearMovementsSection from '../../yearDevelopment/components/TeamYearMovementsSection.js'
+import TeamMovementsToolbar from '../../yearDevelopment/components/TeamMovementsToolbar.js'
 import TeamYearScoutProfilesSection from '../../yearDevelopment/components/TeamYearScoutProfilesSection.js'
 import TeamRosterWorkspace from './TeamRosterWorkspace.js'
 import TeamRosterComparisonSection from './TeamRosterComparisonSection.js'
@@ -17,6 +18,7 @@ import TeamPerformanceToolbar from './TeamPerformanceToolbar.js'
 import TeamFutureCompetitionSection from './TeamFutureCompetitionSection.js'
 import TeamClubComparisonSection from './TeamClubComparisonSection.js'
 import usePerformanceScrollStage from '../hooks/usePerformanceScrollStage.js'
+import useMovementScrollEntries from '../hooks/useMovementScrollEntries.js'
 import usePerformanceTableHeight from '../hooks/usePerformanceTableHeight.js'
 import { teamPerformanceToolbarSx as toolbarSx } from '../sx/teamPerformanceToolbar.sx.js'
 import { TEAM_INSIGHTS, getTeamInsight } from '../model/teamWorkspace.navigation.js'
@@ -36,11 +38,13 @@ export default function TeamInsightContent({
   scrollRef,
 }) {
   const [openProfileSeasonKey, setOpenProfileSeasonKey] = useState('')
+  const [movementPeriod, setMovementPeriod] = useState('current')
   const headerRef = useRef(null)
   const kpiRef = useRef(null)
   const metricsRef = useRef(null)
   const toolbarRef = useRef(null)
   const comparisonTableRef = useRef(null)
+  const movementRef = useRef(null)
   const toolbarStage = usePerformanceScrollStage({
     enabled: insightId === 'performance',
     resetKey: `${view.team?.id || view.team?.birthTeamId}:${view.selectedSeasonKey}`,
@@ -55,6 +59,14 @@ export default function TeamInsightContent({
     headerRef,
     toolbarRef,
     tableRef: comparisonTableRef,
+  })
+  const movementSeasons = view.yearDevelopment?.movementSeasons || []
+  const movementEntries = useMovementScrollEntries({
+    enabled: insightId === 'year-movements',
+    resetKey: `${view.team?.id || view.team?.birthTeamId}:${view.selectedSeasonKey}:${movementSeasons.map(season => season.seasonKey).join(',')}`,
+    scrollRef,
+    headerRef,
+    movementRef,
   })
   const insight = getTeamInsight(insightId)
   const insightIndex = TEAM_INSIGHTS.findIndex(item => item.id === insightId)
@@ -114,6 +126,12 @@ export default function TeamInsightContent({
           </Box>
         </Box>
         <TeamPerformanceToolbar stage={toolbarStage} view={view} toolbarRef={toolbarRef} />
+        <TeamMovementsToolbar
+          entries={movementEntries}
+          seasons={movementSeasons}
+          period={movementPeriod}
+          onPeriodChange={setMovementPeriod}
+        />
       </Box>
 
       <Box sx={[sx.insightBody, sx.insightSlide(slideDirection)]}>
@@ -180,12 +198,15 @@ export default function TeamInsightContent({
 
         {insightId === 'year-movements' ? (
           <TeamYearMovementsSection
-            seasons={view.yearDevelopment?.movementSeasons || []}
+            seasons={movementSeasons}
             seasonSignals={presentation.movementSeasonSignals}
             clubLevel={presentation.clubComparison.clubLevel}
             onPlayerOpen={rosterProps.onPlayerOpen}
             favoritePlayerKeys={rosterProps.favoritePlayerKeys}
             onFavoriteToggle={rosterProps.onFavoriteToggle}
+            profilePeriod={movementPeriod}
+            onProfilePeriodChange={setMovementPeriod}
+            sectionRef={movementRef}
           />
         ) : null}
 

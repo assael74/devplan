@@ -21,6 +21,7 @@ export default function TeamPositionClassificationTable({
   birthYear = '',
   ageGroupLabel = '',
   onPlayerRoleEdit,
+  onShirtEdit,
   onPlayerOpen,
   favoritePlayerKeys,
   onFavoriteToggle,
@@ -58,6 +59,8 @@ export default function TeamPositionClassificationTable({
   const columns = useTeamPositionClassificationColumns({
     onPlayerOpen,
     onPlayerRoleEdit,
+    onShirtEdit,
+    canEditShirt: seasonDoc?.stats?.statsLoadState?.status === 'loaded',
     favoritePlayerKeys,
     onFavoriteToggle,
     onRowSelect: onPlayerSelect,

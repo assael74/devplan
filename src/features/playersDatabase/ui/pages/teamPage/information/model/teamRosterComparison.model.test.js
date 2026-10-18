@@ -98,3 +98,19 @@ test('matches alternate stable identity and retains current season profile', () 
   expect(row.player.profile).toBe('current')
   expect(row.previous.player.profile).toBe('previous')
 })
+
+test('shows prior scout and line from arrival history without loading a player document', () => {
+  const current = context([player('arrived', { goals: 2, minutes: 400 })])
+  current.season.movement = {
+    transfersInById: { move: { movementId: 'move', playerId: 'arrived' } },
+    arrivalHistoryById: { move: {
+      sourceStatus: 'available', scoutStatus: 'available', primaryProfileId: 'clear_scorer',
+      primaryProfileDepthPct: 80, professionalProfileIds: ['clear_scorer'],
+      lineStatus: 'available', line: 'ATTACK',
+    } },
+  }
+  const [row] = buildTeamRosterComparisonRows({ current, previous: context([]) })
+  expect(row.previous.classification).toEqual({ line: 'ATTACK' })
+  expect(row.previous.player.scoutProfiles).toEqual([{ profileId: 'clear_scorer', depthPct: 80 }])
+  expect(row.changes.goals).toBeNull()
+})

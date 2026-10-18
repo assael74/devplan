@@ -13,6 +13,7 @@ import {
   buildClubsCenterTeamProjection,
 } from '../league/index.js'
 import { resolveMovementDirection } from '../movement/index.js'
+import { arrivalSourceDocumentId, buildArrivalHistory } from '../movement/arrivalHistory.projection.js'
 import { normalizePlayerNameValue } from '../../model/player/playerIdentity.model.js'
 import { previousRosterSeasonRef } from './rosterHistory.js'
 
@@ -49,7 +50,7 @@ const requireLeague = ({ league, leagueId, seasonId, teamId }) => {
   return { season, teamRow }
 }
 
-const resolvePlayer = ({ player, birthYear, updatedAt }) => {
+const resolvePlayer = ({ player, birthYear, updatedAt, ignoreNumShirt = false }) => {
   const source = object(player)
   const externalPlayerId = clean(source.externalPlayerId)
   const expectedPlayerId = buildPlayerId({ birthYear, externalPlayerId })
@@ -71,7 +72,7 @@ const resolvePlayer = ({ player, birthYear, updatedAt }) => {
     rosterStatus,
     isYoungerAgeGroup: Boolean(source.isYoungerAgeGroup || rosterStatus === 'youngerAgeGroup'),
     isOlderAgeGroup: Boolean(source.isOlderAgeGroup),
-    numShirt: source.numShirt === null || source.numShirt === undefined || source.numShirt === ''
+    numShirt: ignoreNumShirt || source.numShirt === null || source.numShirt === undefined || source.numShirt === ''
       ? null
       : Number.isFinite(Number(source.numShirt)) ? Number(source.numShirt) : null,
     updatedAt: source.updatedAt || updatedAt || null,
@@ -81,7 +82,7 @@ const resolvePlayer = ({ player, birthYear, updatedAt }) => {
 const resolvePlayers = ({ players, birthYear, existingPlayersById, mode, updatedAt }) => {
   const incoming = {}
   list(players).forEach(player => {
-    const resolved = resolvePlayer({ player, birthYear, updatedAt })
+    const resolved = resolvePlayer({ player, birthYear, updatedAt, ignoreNumShirt: true })
     if (incoming[resolved.playerId]) throw new Error(`Duplicate roster player ${resolved.playerId}`)
     incoming[resolved.playerId] = resolved
   })
@@ -194,6 +195,10 @@ const resolveMovement = ({
   const preservePending = mode === 'PATCH'
   const transfersInById = { ...map(current.transfersInById) }
   const transfersOutById = { ...map(current.transfersOutById) }
+  const arrivalHistoryById = {
+    ...map(current.arrivalHistoryById),
+    ...map(source.arrivalHistoryById),
+  }
 
   Object.entries(map(source.transfersInById)).forEach(([key, fact]) => {
     const resolved = requireMovementFact({ fact, direction: 'in', teamId, teamSeasonDocumentId, clubId, updatedAt })
@@ -222,6 +227,7 @@ const resolveMovement = ({
   return {
     transfersInById,
     transfersOutById,
+    arrivalHistoryById,
     pendingById,
     updatedAt: updatedAt || source.updatedAt || null,
   }
@@ -414,6 +420,7 @@ const buildTeamSeason = ({
     movement: {
       transfersInById: movement.transfersInById,
       transfersOutById: movement.transfersOutById,
+      arrivalHistoryById: movement.arrivalHistoryById,
       updatedAt: updatedAt || movement.updatedAt || null,
     },
     scouting: Object.keys(object(current.scouting)).length ? current.scouting : emptyScouting(),
@@ -876,15 +883,28 @@ const buildCounterpartWrites = ({
       })
     }
     writesByDocumentId.get(documentId).movement[side][movementId] = approvedFact
+    if (side === 'transfersInById' && source.history) {
+      writesByDocumentId.get(documentId).movement.arrivalHistoryById = {
+        ...map(writesByDocumentId.get(documentId).movement.arrivalHistoryById),
+        [movementId]: source.history,
+      }
+    }
   })
 
   return [...writesByDocumentId.values()]
 }
 
-const buildCanonicalCounterpartRequests = ({ teamSeason, movement }) => {
+const buildCanonicalCounterpartRequests = ({
+  teamSeason,
+  movement,
+  sourceHistoryTeamSeasonsById = {},
+  updatedAt,
+}) => {
   const currentDocumentId = clean(
     teamSeason && teamSeason.identity && teamSeason.identity.teamSeasonDocumentId
   )
+  const identity = object(teamSeason && teamSeason.identity)
+  const sourceDocumentId = arrivalSourceDocumentId({ teamId: identity.teamId, seasonId: identity.seasonId })
   const requests = []
 
   Object.values(map(movement && movement.transfersInById)).forEach(fact => {
@@ -903,6 +923,14 @@ const buildCanonicalCounterpartRequests = ({ teamSeason, movement }) => {
       teamSeasonDocumentId: documentId,
       side: 'transfersInById',
       fact,
+      history: buildArrivalHistory({
+        movementId: fact.movementId,
+        playerId: fact.playerId,
+        fromTeamId: fact.fromTeamId,
+        seasonId: identity.seasonId,
+        sourceTeamSeason: map(sourceHistoryTeamSeasonsById)[sourceDocumentId],
+        updatedAt,
+      }),
     })
   })
 
@@ -941,10 +969,12 @@ const buildParticipantMovementInput = ({
   teamSlot,
   clubLevel,
   seasonId,
+  sourceHistoryTeamSeasonsById,
   updatedAt,
 }) => {
   const transfersInById = {}
   const transfersOutById = {}
+  const arrivalHistoryById = {}
   const pendingById = {}
   const counterpartRequests = []
 
@@ -1007,16 +1037,26 @@ const buildParticipantMovementInput = ({
       effectiveAt: source.effectiveAt || null,
       updatedAt: updatedAt || null,
     }
+    const sourceDocumentId = arrivalSourceDocumentId({ teamId: fromTeam.teamId, seasonId })
+    const history = buildArrivalHistory({
+      movementId,
+      playerId,
+      fromTeamId: fromTeam.teamId,
+      seasonId,
+      sourceTeamSeason: map(sourceHistoryTeamSeasonsById)[sourceDocumentId],
+      updatedAt,
+    })
     if (decision === 'joined') {
       transfersInById[movementId] = fact
+      arrivalHistoryById[movementId] = history
       counterpartRequests.push({ teamSeasonDocumentId: fromTeam.teamSeasonDocumentId, side: 'transfersOutById', fact })
     } else {
       transfersOutById[movementId] = fact
-      counterpartRequests.push({ teamSeasonDocumentId: toTeam.teamSeasonDocumentId, side: 'transfersInById', fact })
+      counterpartRequests.push({ teamSeasonDocumentId: toTeam.teamSeasonDocumentId, side: 'transfersInById', fact, history })
     }
   })
 
-  return { movement: { transfersInById, transfersOutById, pendingById }, counterpartRequests }
+  return { movement: { transfersInById, transfersOutById, arrivalHistoryById, pendingById }, counterpartRequests }
 }
 
 export const buildRosterMovementPlan = ({
@@ -1036,6 +1076,7 @@ export const buildRosterMovementPlan = ({
   teamSlot = null,
   clubLevel = null,
   existingCounterpartTeamSeasonsById = {},
+  sourceHistoryTeamSeasonsById = {},
   updatedAt = null,
 } = {}) => {
   const identityPlayersById = {
@@ -1051,11 +1092,13 @@ export const buildRosterMovementPlan = ({
     teamSlot,
     clubLevel,
     seasonId,
+    sourceHistoryTeamSeasonsById,
     updatedAt,
   })
   const requestedMovement = {
     transfersInById: { ...map(movement.transfersInById), ...map(decisionInput.movement.transfersInById) },
     transfersOutById: { ...map(movement.transfersOutById), ...map(decisionInput.movement.transfersOutById) },
+    arrivalHistoryById: { ...map(movement.arrivalHistoryById), ...map(decisionInput.movement.arrivalHistoryById) },
     pendingById: { ...map(movement.pendingById), ...map(decisionInput.movement.pendingById) },
   }
   // Historical membership validates identity only; it never adds a current roster member.
@@ -1106,6 +1149,7 @@ export const buildRosterLoadWritePlan = ({
   playerRootsById = {},
   existingPlayerSeasonsById = {},
   existingCounterpartTeamSeasonsById = {},
+  sourceHistoryTeamSeasonsById = {},
   counterpartProjectionSourcesByDocumentId = {},
   previousLeaguesCenterTeamProjection = null,
   previousClubsCenterTeamProjection = null,
@@ -1113,6 +1157,9 @@ export const buildRosterLoadWritePlan = ({
   updatedAt = null,
 } = {}) => {
   const seasonId = requireSeasonId(season.seasonId)
+  if (clean(existingTeamSeason?.stats?.statsLoadState?.status) === 'loaded') {
+    throw new Error('אי אפשר לטעון סגל מחדש לאחר טעינת סטטיסטיקה; יש לנקות סטטיסטיקה תחילה')
+  }
   const clubId = clean(team.clubId)
   const birthYear = Number(team.birthYear || season.birthYear)
   const teamSlot = Number(team.teamSlot)
@@ -1179,6 +1226,7 @@ export const buildRosterLoadWritePlan = ({
     teamSlot,
     clubLevel: clubProfile.clubLevel,
     existingCounterpartTeamSeasonsById,
+    sourceHistoryTeamSeasonsById,
     updatedAt,
   })
   const manual = buildRosterManual({
@@ -1305,6 +1353,7 @@ export const buildRosterProjectionRepairPlan = ({
   existingPlayerSeasonsById = {},
   existingPlayerSearchIndexes = [],
   existingCounterpartTeamSeasonsById = {},
+  sourceHistoryTeamSeasonsById = {},
   counterpartProjectionSourcesByDocumentId = {},
   previousLeaguesCenterTeamProjection = null,
   previousClubsCenterTeamProjection = null,
@@ -1358,7 +1407,12 @@ export const buildRosterProjectionRepairPlan = ({
     .filter(documentId => documentId && !expectedIndexIds.has(documentId))
 
   const counterparts = buildCounterpartWrites({
-    counterpartRequests: buildCanonicalCounterpartRequests({ teamSeason, movement }),
+    counterpartRequests: buildCanonicalCounterpartRequests({
+      teamSeason,
+      movement,
+      sourceHistoryTeamSeasonsById,
+      updatedAt,
+    }),
     existingCounterpartTeamSeasonsById,
     movement,
     updatedAt,

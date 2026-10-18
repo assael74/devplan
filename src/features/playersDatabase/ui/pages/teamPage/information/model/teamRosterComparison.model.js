@@ -1,6 +1,7 @@
 // src/features/playersDatabase/ui/pages/teamPage/information/model/teamRosterComparison.model.js
 
 import { buildPositionClassificationRows } from '../../positionClassification/model/teamPositionClassificationRows.model.js'
+import { buildArrivalHistoryDisplay } from './arrivalHistoryDisplay.model.js'
 
 export const ROSTER_COMPARISON_SEASONS = { current: '26/27', previous: '25/26' }
 
@@ -14,6 +15,24 @@ const difference = (current, previous) => (
 )
 
 const lineKey = row => row?.isGoalkeeper ? 'GOALKEEPER' : row?.classification?.line || ''
+
+const arrivalPrior = ({ row, season }) => {
+  const playerId = String(row?.player?.playerId || row?.id || '').trim()
+  const movement = season?.movement || {}
+  const fact = Object.values(movement.transfersInById || {})
+    .find(item => item?.playerId === playerId)
+  const history = fact && (movement.arrivalHistoryById || {})[fact.movementId]
+  if (!history) return null
+  return {
+    id: playerId,
+    ...buildArrivalHistoryDisplay({ history, playerId }),
+    minutes: null,
+    minutesRate: null,
+    goals: null,
+    comparisonGoals: null,
+    arrivalHistory: history,
+  }
+}
 
 export const buildTeamRosterComparisonRows = ({ current, previous } = {}) => {
   const buildRows = context => buildPositionClassificationRows({
@@ -32,7 +51,7 @@ export const buildTeamRosterComparisonRows = ({ current, previous } = {}) => {
   return buildRows(current).map((row, index) => {
     // A name or a generated row index must never match two seasonal players.
     const matches = new Set(identityKeys(row.player).flatMap(key => [...(lookup.get(key) || [])]))
-    const prior = matches.size === 1 ? [...matches][0] : null
+    const prior = matches.size === 1 ? [...matches][0] : arrivalPrior({ row, season: current?.season })
     const currentLine = lineKey(row)
     const previousLine = lineKey(prior)
     const goalsChange = difference(row.comparisonGoals, prior?.comparisonGoals)

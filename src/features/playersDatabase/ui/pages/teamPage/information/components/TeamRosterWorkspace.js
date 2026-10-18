@@ -23,6 +23,7 @@ export default function TeamRosterWorkspace({
   profileFilterOptions,
   onProfileFilterChange,
   onPlayerRoleEdit,
+  onShirtEdit,
   onPlayerOpen,
   structureFilter,
   favoritePlayerKeys,
@@ -206,6 +207,7 @@ export default function TeamRosterWorkspace({
               birthYear={selectedSeason?.birthYear || selectedView.team?.birthYear}
               ageGroupLabel={selectedSeason?.ageGroupLabel}
               onPlayerRoleEdit={onPlayerRoleEdit}
+              onShirtEdit={row => onShirtEdit?.(row, selectedView.selectedTeamSeason)}
               onPlayerOpen={onPlayerOpen}
               favoritePlayerKeys={favoritePlayerKeys}
               onFavoriteToggle={onFavoriteToggle}

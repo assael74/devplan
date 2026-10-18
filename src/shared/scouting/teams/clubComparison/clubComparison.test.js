@@ -5,6 +5,7 @@ import { buildClubCohortComparison } from './index.js'
 const team = (birthYear, patch = {}) => ({
   teamId: `team-${birthYear}`, clubId: 'club', seasonId: '2025_2026', birthYear, teamSlot: 1,
   games: 8, leagueLevel: 2, successRate: 50, offense: 2, defense: 2,
+  rankPercentile: 50, goalsForPerGame: 2, goalsAgainstPerGame: 1,
   profilesAvailable: true, rosterCount: 20, professionalRate: 40, underuseRate: 20,
   ...patch,
 })
@@ -15,7 +16,10 @@ const compare = (patch = {}, peers = [team(2011), team(2010), team(2009)]) => (
 
 test.each([
   ['leagueLevel', 1, 1.01], ['leagueLevel', 3, 2.99],
+  ['rankPercentile', 75, 74.99], ['rankPercentile', 25, 25.01],
   ['successRate', 65, 64.99], ['successRate', 35, 35.01],
+  ['goalsForPerGame', 3, 2.99], ['goalsForPerGame', 1, 1.01],
+  ['goalsAgainstPerGame', 2, 1.99], ['goalsAgainstPerGame', 0, 0.01],
   ['offense', 4, 3], ['defense', 0, 1],
   ['professionalRate', 55, 54.99], ['professionalRate', 25, 25.01],
   ['underuseRate', 35, 34.99], ['underuseRate', 5, 5.01],
@@ -43,6 +47,12 @@ test('counts independent families rather than correlated metrics', () => {
   expect(compare()).toMatchObject({ signalLevel: 0, status: 'none', availability: 'available' })
 })
 
+test('a competition anomaly alone raises the main signal to level two', () => {
+  expect(compare({ leagueLevel: 1, games: 0 })).toMatchObject({
+    signalLevel: 2, status: 'multiple', families: ['competition'],
+  })
+})
+
 test('profile rate requires both 15 percentage points and an equivalent three-player gap', () => {
   expect(compare({ rosterCount: 10, professionalRate: 55 }).metrics.professionalRate.isAnomaly).toBe(false)
   expect(compare({ rosterCount: 10, professionalRate: 70 }).metrics.professionalRate.isAnomaly).toBe(true)
@@ -67,12 +77,27 @@ test('ignores other clubs, seasons, secondary teams and ambiguous cohorts', () =
 })
 
 test.each([
-  [{ games: 7 }, 'insufficient_games'], [{ games: null }, 'missing_games'],
+  [{ games: 2 }, 'insufficient_games'], [{ games: null }, 'missing_games'],
   [{ seasonStatus: 'not_started' }, 'season_not_started'],
 ])('missing or early sample does not block league comparison: %s', (patch, reason) => {
   const target = compare({ ...patch, leagueLevel: 1 })
   expect(target.metrics.offense.reason).toBe(reason)
-  expect(target).toMatchObject({ signalLevel: 1, status: 'single', availability: 'partial' })
+  expect(target).toMatchObject({ signalLevel: 2, status: 'multiple', availability: 'partial' })
+})
+
+test('performance starts after three games while squad waits for eight', () => {
+  const early = compare({ games: 3, successRate: 80, professionalRate: 60 })
+  expect(early.metrics.successRate).toMatchObject({ isAnomaly: true, availability: 'available' })
+  expect(early.metrics.professionalRate).toMatchObject({ isAnomaly: false, reason: 'insufficient_games' })
+  const ready = compare({ games: 8, professionalRate: 60 })
+  expect(ready.metrics.professionalRate.isAnomaly).toBe(true)
+})
+
+test('early historical performance is excluded from the established norm', () => {
+  const target = compare({ games: 3, successRate: 80 }, [
+    team(2011), team(2010), team(2009, { games: 3, successRate: 0 }),
+  ])
+  expect(target.metrics.successRate).toMatchObject({ reason: 'insufficient_peers', peerCount: 2 })
 })
 
 test('explicit zero profiles is valid, missing profiles cannot become zero', () => {

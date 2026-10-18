@@ -18,6 +18,10 @@ const LEAGUE_TARGETS = {
 }
 
 const STATS_TARGETS = {
+  arrivalHistory: {
+    label: 'תקן נתוני עבר של מצטרף',
+    description: 'תקציר הסקאוט והחוליה של המצטרף ייבנה מחדש מעונת קבוצת המקור.',
+  },
   playerSeason: {
     label: 'תקן עונת שחקן',
     description: 'נתוני הסטטיסטיקה והסקאוט של השחקן בקבוצה שנבדקה ישוחזרו מעונת הקבוצה. קשרי קבוצות אחרות יישמרו.',

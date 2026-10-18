@@ -13,6 +13,7 @@ import {
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
 import { previousRosterSeasonRef } from '../../../domain/roster/rosterHistory.js'
 import { normalizeDecisionTeam } from '../../../domain/roster/rosterWritePlan.builder.js'
+import { arrivalSourceDocumentId } from '../../../domain/movement/arrivalHistory.projection.js'
 import {
   buildPlayerId,
   buildPlayerSearchIndexDocumentId,
@@ -216,7 +217,18 @@ export const readRosterLoadSources = async ({ input = {} } = {}) => {
   const affectedPlayerIds = unique([...incomingPlayerIds, ...existingPlayerIds])
   const playerSeasonDocumentIds = affectedPlayerIds.map(playerId => buildPlayerSeasonDocumentId({ playerId, seasonId }))
 
-  const [playerRootsById, playerSeasonRowsById, existingCounterpartTeamSeasonsById, centers] = await Promise.all([
+  const sourceHistoryDocumentIds = list(source.participantDecisions)
+    .filter(row => ['joined', 'left'].includes(clean(row.decision || row.statsMovementDecision)))
+    .map(row => {
+      const decision = clean(row.decision || row.statsMovementDecision)
+      const otherTeam = normalizeDecisionTeam({ value: row.team || row.statsMovementTeam, seasonId })
+      return arrivalSourceDocumentId({
+        teamId: decision === 'joined' ? otherTeam && otherTeam.teamId : teamId,
+        seasonId,
+      })
+    })
+  const alreadyReadHistoryId = clean(object(previousTeamSeason && previousTeamSeason.identity).teamSeasonDocumentId)
+  const [playerRootsById, playerSeasonRowsById, existingCounterpartTeamSeasonsById, sourceHistoryTeamSeasonsById, centers] = await Promise.all([
     readDocumentsByIds({ collectionName: PLAYERS_DATABASE_COLLECTIONS.playerRoots, documentIds: affectedPlayerIds }),
     readDocumentsByIds({ collectionName: PLAYERS_DATABASE_COLLECTIONS.playerSeasons, documentIds: playerSeasonDocumentIds }),
     readCounterparts([
@@ -226,6 +238,10 @@ export const readRosterLoadSources = async ({ input = {} } = {}) => {
         .map(row => normalizeDecisionTeam({ value: row.team || row.statsMovementTeam, seasonId }))
         .filter(Boolean),
     ]),
+    readDocumentsByIds({
+      collectionName: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
+      documentIds: sourceHistoryDocumentIds.filter(documentId => documentId !== alreadyReadHistoryId),
+    }),
     readCenters({ leagueId, seasonId, teamId }),
   ])
   const counterpartProjectionSourcesByDocumentId = await readCounterpartProjectionSources({
@@ -250,6 +266,10 @@ export const readRosterLoadSources = async ({ input = {} } = {}) => {
     playerRootsById,
     existingPlayerSeasonsById,
     existingCounterpartTeamSeasonsById,
+    sourceHistoryTeamSeasonsById: {
+      ...sourceHistoryTeamSeasonsById,
+      ...(alreadyReadHistoryId ? { [alreadyReadHistoryId]: previousTeamSeason } : {}),
+    },
     counterpartProjectionSourcesByDocumentId,
     ...centers,
   }
@@ -328,6 +348,7 @@ export const readRosterClearSources = async ({
     playerRootsById,
     existingPlayerSearchIndexes,
     existingCounterpartTeamSeasonsById,
+    sourceHistoryTeamSeasonsById,
   ] = await Promise.all([
     readDocumentsByIds({
       collectionName: PLAYERS_DATABASE_COLLECTIONS.playerRoots,
@@ -338,6 +359,12 @@ export const readRosterClearSources = async ({
       collectionName: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
       documentIds: includeCounterparts
         ? collectCanonicalCounterpartDocumentIds(existingTeamSeason)
+        : [],
+    }),
+    readDocumentsByIds({
+      collectionName: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
+      documentIds: includeCounterparts && Object.keys(object(object(existingTeamSeason).movement).transfersOutById).length
+        ? [arrivalSourceDocumentId({ teamId, seasonId })]
         : [],
     }),
   ])
@@ -360,6 +387,7 @@ export const readRosterClearSources = async ({
     existingPlayerSeasonsById,
     existingPlayerSearchIndexes,
     existingCounterpartTeamSeasonsById,
+    sourceHistoryTeamSeasonsById,
     counterpartProjectionSourcesByDocumentId,
     league,
     clubProfile,

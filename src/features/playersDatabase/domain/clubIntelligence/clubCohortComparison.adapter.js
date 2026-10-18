@@ -41,6 +41,10 @@ const adaptSeasonTeams = ({
     const counts = profilesAvailable ? buildScoutProfileGroupCounts(players) : null
     const games = comparisonNumber(official?.teamGamePlayed)
     const points = comparisonNumber(official?.points)
+    const rank = comparisonNumber(official?.rank)
+    const leagueTeamCount = Object.keys(leagueSeason?.table?.teamsById || {}).length
+    const goalsFor = comparisonNumber(official?.goalsFor)
+    const goalsAgainst = comparisonNumber(official?.goalsAgainst)
     return {
       teamId, clubId, seasonId, birthYear: entry.birthYear, teamSlot: entry.teamSlot,
       ageGroup: league?.ageGroupLabel || center?.leaguesById?.[entry.leagueId]?.ageGroupLabel || '',
@@ -48,7 +52,13 @@ const adaptSeasonTeams = ({
       leagueLevel: officialRow ? comparisonNumber(league?.level) : null,
       seasonStatus: leagueSeason?.seasonStatus || '',
       games,
+      rank,
+      leagueTeamCount,
+      rankPercentile: Number.isInteger(rank) && rank >= 1 && rank <= leagueTeamCount && leagueTeamCount > 1
+        ? (rank - 1) / (leagueTeamCount - 1) * 100 : null,
       successRate: games > 0 && points !== null ? points / (games * 3) * 100 : null,
+      goalsForPerGame: games > 0 && goalsFor !== null ? goalsFor / games : null,
+      goalsAgainstPerGame: games > 0 && goalsAgainst !== null ? goalsAgainst / games : null,
       offense: official ? priority(officialRow?.performance?.offense?.priorityLevel) : null,
       defense: official ? priority(officialRow?.performance?.defense?.priorityLevel) : null,
       offenseScore: official ? comparisonNumber(officialRow?.performance?.offense?.scoutPriorityScore) : null,

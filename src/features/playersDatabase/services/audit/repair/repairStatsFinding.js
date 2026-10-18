@@ -6,6 +6,11 @@ import {
   buildTeamSeasonDocumentId,
   requireSeasonId,
 } from '../../../domain/identity/index.js'
+import { arrivalSourceDocumentId, buildArrivalHistory } from '../../../domain/movement/arrivalHistory.projection.js'
+import { FieldPath, doc, updateDoc } from 'firebase/firestore'
+import { db } from '../../../../../services/firebase/firebase.js'
+import { trackedGetDocFromServer } from '../../../../../services/firestore/usage/index.js'
+import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
 import { writeStatsLeagueProjection } from '../../write/stats/writeStatsLeagueProjection.js'
 import { writeStatsPlayerSearchIndexes } from '../../write/stats/writeStatsPlayerSearchIndexes.js'
 import { writeStatsPlayerSeasons } from '../../write/stats/writeStatsPlayerSeasons.js'
@@ -26,6 +31,7 @@ const SEARCH_FIELDS = new Set([
   'scout',
   'scoutEvidence',
   'player.statsStatus',
+  'player.numShirt',
 ])
 const CENTER_FIELDS = new Set([
   'documentationState',
@@ -50,8 +56,10 @@ const requireTarget = ({ scope, finding }) => {
   const missingTeam = findingType === 'missing_projection' && field === 'team'
   const mismatch = findingType === 'projection_mismatch'
   const supported = target === 'playerSeason'
-    ? missingDocument || (mismatch && [`teamsById.${teamId}.stats`, `teamsById.${teamId}.scouting`].includes(field))
-    : target === 'playerSearchIndex'
+    ? missingDocument || (mismatch && [`teamsById.${teamId}.stats`, `teamsById.${teamId}.scouting`, `teamsById.${teamId}.roster.numShirt`].includes(field))
+    : target === 'arrivalHistory'
+      ? mismatch && field.startsWith('movement.arrivalHistoryById.')
+      : target === 'playerSearchIndex'
       ? missingDocument || (mismatch && SEARCH_FIELDS.has(field))
       : target === 'leagueMetadata'
         ? mismatch && ['stats', 'scouting'].includes(field)
@@ -136,6 +144,41 @@ const requirePlayerSeasonIdentity = ({ current, playerId, target }) => {
 
 export const repairStatsFinding = async ({ scope = {}, finding = {} } = {}) => {
   const target = requireTarget({ scope, finding })
+  if (target.target === 'arrivalHistory') {
+    const movementId = clean(finding.field).slice('movement.arrivalHistoryById.'.length)
+    const teamSeasonDocumentId = buildTeamSeasonDocumentId(target)
+    if (!movementId || target.documentId !== teamSeasonDocumentId) throw new Error('יעד תיקון העבר אינו תואם לקבוצה')
+    const teamSnapshot = await trackedGetDocFromServer(
+      doc(db, PLAYERS_DATABASE_COLLECTIONS.teamSeasons, teamSeasonDocumentId),
+      { feature: 'playersDatabase', collection: PLAYERS_DATABASE_COLLECTIONS.teamSeasons, action: 'repair-arrival-history-read-team', operationSubtype: 'repair-getDoc' }
+    )
+    if (!teamSnapshot.exists()) throw new Error('עונת קבוצת היעד אינה קיימת')
+    const teamSeason = teamSnapshot.data()
+    const fact = object(object(teamSeason.movement).transfersInById)[movementId]
+    const current = object(object(teamSeason.movement).arrivalHistoryById)[movementId]
+    if (!fact || !current) throw new Error('מעבר או תקציר עבר אינם קיימים')
+    const sourceId = arrivalSourceDocumentId({ teamId: fact.fromTeamId, seasonId: target.seasonId })
+    if (!sourceId) throw new Error('חסר מזהה מקור לעונת העבר')
+    const sourceSnapshot = await trackedGetDocFromServer(
+      doc(db, PLAYERS_DATABASE_COLLECTIONS.teamSeasons, sourceId),
+      { feature: 'playersDatabase', collection: PLAYERS_DATABASE_COLLECTIONS.teamSeasons, action: 'repair-arrival-history-read-source', operationSubtype: 'repair-getDoc' }
+    )
+    if (!sourceSnapshot.exists()) throw new Error('עונת המקור אינה זמינה לתיקון')
+    const next = buildArrivalHistory({
+      movementId,
+      playerId: fact.playerId,
+      fromTeamId: fact.fromTeamId,
+      seasonId: target.seasonId,
+      sourceTeamSeason: sourceSnapshot.data(),
+      updatedAt: current.updatedAt,
+    })
+    await updateDoc(
+      doc(db, PLAYERS_DATABASE_COLLECTIONS.teamSeasons, teamSeasonDocumentId),
+      new FieldPath('movement', 'arrivalHistoryById', movementId),
+      next
+    )
+    return { target: target.target, documentId: teamSeasonDocumentId, result: { written: true } }
+  }
   const actual = await readStatsAuditActual({
     leagueId: target.leagueId,
     teamId: target.teamId,

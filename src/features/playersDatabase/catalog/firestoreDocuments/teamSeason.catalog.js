@@ -127,6 +127,26 @@ export const TEAM_SEASON_DOCUMENT = {
   // transfersOutById is a counterpart projection written only when the source Team Season exists.
   // Player Season and ClubsCenter movement views are rebuilt from the canonical incoming fact plus available counterpart projections.
   movement: {
+    // Rebuildable arrival context for new transfers. Older transfers may have no entry.
+    arrivalHistoryById: {
+      '<movementId>': {
+        movementId: '',
+        playerId: '',
+        sourceTeamSeasonDocumentId: '',
+        sourceSeasonId: '',
+        sourceUpdatedAt: null,
+        sourceStatus: '', // available | missing
+        scoutStatus: '', // available | none | unknown
+        primaryProfileId: '',
+        primaryProfileDepthPct: null,
+        professionalProfileIds: [],
+        preliminaryProfileIds: [],
+        profileDepthsById: {},
+        lineStatus: '', // available | none | unknown
+        line: '',
+        updatedAt: null,
+      },
+    },
     transfersInById: {
       '<movementId>': {
         movementId: '',
@@ -347,6 +367,8 @@ export const TEAM_SEASON_DOCUMENT = {
     'lineClassification is derived from Stats and persists line only.',
     'pendingById is unresolved roster state and is not a resolved movement.',
     'transfersInById is the canonical Movement fact on the destination Team Season.',
+    'arrivalHistoryById is a rebuildable view of the previous source Team Season, separate from the Movement fact and current-team scouting.',
+    'An absent source Team Season permits sourceStatus missing; older transfers without arrivalHistoryById are not lifecycle errors.',
     'transfersOutById is a mirrored counterpart projection and must match the canonical transfersInById payload when the source Team Season exists.',
     'A missing source Team Season makes a missing transfersOut counterpart legal; writers must not create a Team Root or Team Season only to complete the counterpart.',
     'If canonical transfersIn and an existing transfersOut counterpart disagree, Audit reports the mismatch and the incoming fact wins for rebuild/migration.',

@@ -3,7 +3,11 @@
 import * as React from 'react'
 import {
   Box,
+  Button,
   CircularProgress,
+  Input,
+  Modal,
+  ModalDialog,
   Typography,
 } from '@mui/joy'
 import {
@@ -43,6 +47,8 @@ import {
 } from '../../components/modals/index.js'
 import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
 import useTeamRoleEditor from './hooks/useTeamRoleEditor.js'
+import { updatePlayerShirtNumber } from '../../../services/write/roster/edits/updatePlayerShirtNumber.js'
+import { SNACK_STATUS } from '../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import useTeamPageUrlEditor from './hooks/useTeamPageUrlEditor.js'
 import useTeamRosterImport from './roster/import/hooks/useTeamRosterImport.js'
 import RosterImportModal from './roster/import/components/RosterImportModal.js'
@@ -100,6 +106,9 @@ function TeamPageContent() {
   const tasksModel = usePlayersDatabaseTasks()
   const taskActions = usePlayersDatabaseTaskActions()
   const [profileFilterKey, setProfileFilterKey] = React.useState('all')
+  const [shirtEdit, setShirtEdit] = React.useState(null)
+  const [shirtDraft, setShirtDraft] = React.useState('')
+  const [shirtBusy, setShirtBusy] = React.useState(false)
   const [sidePanelCollapsed, setSidePanelCollapsed] = usePageSidePanelCollapsed(
     'playersDatabase:teamSidePanelCollapsed'
   )
@@ -121,6 +130,7 @@ function TeamPageContent() {
     selectedSeasonOption,
     selectedLeagueSeason,
     selectedTeamSeason,
+    reload,
     loading,
     error,
     refreshError,
@@ -552,6 +562,37 @@ function TeamPageContent() {
     teamSeasons,
   ])
 
+  const openShirtEdit = React.useCallback((row, season) => {
+    const playerId = cleanKey(row?.player?.playerId || row?.id)
+    const rosterPlayer = season?.roster?.playersById?.[playerId]
+    if (!rosterPlayer || season?.stats?.statsLoadState?.status !== 'loaded') return
+    setShirtEdit({ playerId, playerName: row.name, identity: season.identity })
+    setShirtDraft(rosterPlayer.numShirt === null || rosterPlayer.numShirt === undefined ? '' : String(rosterPlayer.numShirt))
+  }, [])
+
+  const saveShirtEdit = React.useCallback(async () => {
+    if (!shirtEdit || shirtBusy) return
+    setShirtBusy(true)
+    try {
+      await updatePlayerShirtNumber({
+        ...shirtEdit.identity,
+        playerId: shirtEdit.playerId,
+        numShirt: shirtDraft.trim(),
+      })
+      setShirtEdit(null)
+      notify({ status: SNACK_STATUS.SUCCESS, title: 'מספר החולצה נשמר', message: shirtEdit.playerName })
+      try {
+        await reload()
+      } catch {
+        notify({ status: SNACK_STATUS.ERROR, title: 'המספר נשמר', message: 'רענון העמוד נכשל; הנתונים יופיעו בטעינה הבאה' })
+      }
+    } catch (error) {
+      notify({ status: SNACK_STATUS.ERROR, title: 'שמירת מספר החולצה נכשלה', message: error?.message || 'לא בוצעה שמירה' })
+    } finally {
+      setShirtBusy(false)
+    }
+  }, [notify, reload, shirtBusy, shirtDraft, shirtEdit])
+
   if (loading) {
     return (
       <Box sx={sx.loadingState}>
@@ -606,6 +647,7 @@ function TeamPageContent() {
               overviewRosterProfileFilterOptions={overviewRosterProfileFilterOptions}
               onProfileFilterChange={handleProfileFilterChange}
               onPlayerRoleEdit={roleEditor.open}
+              onShirtEdit={openShirtEdit}
               onPlayerOpen={handlePlayerOpen}
             />
           </Box>
@@ -687,6 +729,25 @@ function TeamPageContent() {
         onConfirm={roleEditor.confirm}
         onClose={roleEditor.close}
       />
+
+      <Modal open={Boolean(shirtEdit)} onClose={() => { if (!shirtBusy) setShirtEdit(null) }}>
+        <ModalDialog sx={{ minWidth: 300, maxWidth: 'calc(100vw - 32px)' }}>
+          <Typography level='title-md'>מספר חולצה · {shirtEdit?.playerName}</Typography>
+          <Typography level='body-sm'>לעונת הקבוצה שנבחרה. השאר ריק להסרת המספר.</Typography>
+          <Input
+            autoFocus
+            type='number'
+            value={shirtDraft}
+            onChange={event => setShirtDraft(event.target.value)}
+            slotProps={{ input: { min: 1, step: 1 } }}
+            aria-label='מספר חולצה'
+          />
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+            <Button variant='plain' color='neutral' disabled={shirtBusy} onClick={() => setShirtEdit(null)}>ביטול</Button>
+            <Button loading={shirtBusy} onClick={saveShirtEdit}>שמירה</Button>
+          </Box>
+        </ModalDialog>
+      </Modal>
 
       <RosterImportModal
         team={team}

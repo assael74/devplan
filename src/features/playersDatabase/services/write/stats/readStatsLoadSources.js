@@ -5,6 +5,7 @@ import { doc } from 'firebase/firestore'
 import { db } from '../../../../../services/firebase/firebase.js'
 import { trackedGetDocFromServer } from '../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
+import { arrivalSourceDocumentId } from '../../../domain/movement/arrivalHistory.projection.js'
 import {
   buildPlayerId,
   buildPlayerSeasonDocumentId,
@@ -122,13 +123,28 @@ export const readStatsLoadSources = async ({
       return clean(movementTeam.teamSeasonDocumentId) || (movementTeamId ? buildTeamSeasonDocumentId({ teamId: movementTeamId, seasonId: resolvedSeasonId }) : '')
     })
     .filter(Boolean)))
-  const [playerRootsById, playerSeasonsById, counterpartRows] = await Promise.all([
+  const historyDocumentIds = Array.from(new Set((Array.isArray(incomingPlayers) ? incomingPlayers : [])
+    .filter(row => ['joined', 'left'].includes(clean(row && (row.statsMovementDecision || row.rosterStatus))))
+    .map(row => {
+      const decision = clean(row.statsMovementDecision || row.rosterStatus)
+      const movementTeam = object(row.statsMovementTeam)
+      const sourceTeamId = decision === 'joined'
+        ? clean(movementTeam.teamId || movementTeam.birthTeamDocumentId || movementTeam.birthTeamId)
+        : resolvedTeamId
+      return arrivalSourceDocumentId({ teamId: sourceTeamId, seasonId: resolvedSeasonId })
+    }).filter(Boolean)))
+  const [playerRootsById, playerSeasonsById, counterpartRows, historyRows] = await Promise.all([
     readPlayers({ playerIds }),
     readPlayerSeasons({ playerIds, seasonId: resolvedSeasonId }),
     Promise.all(counterpartDocumentIds.map(documentId => readDocument({
       collectionName: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
       documentId,
       action: 'write-stats-prepare-read-counterpart-team-season',
+    }))),
+    Promise.all(historyDocumentIds.map(documentId => readDocument({
+      collectionName: PLAYERS_DATABASE_COLLECTIONS.teamSeasons,
+      documentId,
+      action: 'write-stats-prepare-read-arrival-history',
     }))),
   ])
 
@@ -155,5 +171,6 @@ export const readStatsLoadSources = async ({
     previousLeaguesCenterTeam: previousLeagueTeam,
     previousClubsCenterTeam,
     existingCounterpartTeamSeasonsById: Object.fromEntries(counterpartRows.filter(Boolean).map(row => [clean(row.id), row])),
+    sourceHistoryTeamSeasonsById: Object.fromEntries(historyRows.filter(Boolean).map(row => [clean(row.id), row])),
   }
 }

@@ -37,11 +37,6 @@ const HEADER_ALIASES = {
     'כתובת שחקן',
     'url',
   ],
-  numShirt: [
-    'מספר חולצה',
-    'מס חולצה',
-    'חולצה',
-  ],
   primaryPosition: [
     'עמדה',
     'עמדה ראשית',
@@ -140,7 +135,6 @@ const parseMappedRow = ({ cells, headerMap, rowIndex }) => {
     fullName: getMappedCell(cells, headerMap, 'fullName'),
     externalPlayerId,
     playerUrl,
-    numShirt: getMappedCell(cells, headerMap, 'numShirt'),
     primaryPosition: getMappedCell(cells, headerMap, 'primaryPosition'),
     transferCheck: getMappedCell(cells, headerMap, 'transferCheck'),
     sourceSnapshotKey: getMappedCell(cells, headerMap, 'sourceSnapshotKey'),
@@ -157,11 +151,6 @@ const parsePositionalRow = ({ cells, rowIndex }) => {
   const externalPlayerId = dataCells.find(cell => (
     cell !== playerUrl && isExternalPlayerId(cell)
   )) || urlExternalId
-  const numShirt = dataCells.find((cell, index) => (
-    index > 0 &&
-    cell !== externalPlayerId &&
-    isSmallIndex(cell)
-  )) || ''
 
   return {
     id: `${rowIndex + 1}_${externalPlayerId || fullName || 'player'}`,
@@ -169,7 +158,6 @@ const parsePositionalRow = ({ cells, rowIndex }) => {
     fullName,
     externalPlayerId,
     playerUrl,
-    numShirt,
     primaryPosition: '',
     transferCheck: '',
     sourceSnapshotKey: '',

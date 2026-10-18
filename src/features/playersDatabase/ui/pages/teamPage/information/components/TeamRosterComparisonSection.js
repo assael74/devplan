@@ -49,7 +49,9 @@ const renderPreviousProfile = row => {
     <Box sx={tableSx.scoutProfileCell}>
       <ScoutProfileChip {...profile} size='compact' muted showTooltip={false} />
     </Box>
-  ) : '—'
+  ) : row.arrivalHistory?.sourceStatus === 'missing'
+    ? 'נתוני מקור לא זמינים'
+    : row.arrivalHistory?.scoutStatus === 'none' ? 'לא היה פרופיל' : '—'
 }
 
 const renderMinutes = (row, percentageOnly = false) => (
@@ -145,7 +147,9 @@ export default function TeamRosterComparisonSection({
           render: row => {
             const selected = select(row)
             if (!selected) return '—'
-            if (!isProfile) return renderLine(selected, !isCurrent)
+            if (!isProfile) return selected.arrivalHistory && !selected.classification
+              ? selected.arrivalHistory.sourceStatus === 'missing' ? 'נתוני מקור לא זמינים' : 'לא היה סיווג'
+              : renderLine(selected, !isCurrent)
             return isCurrent ? column.render(selected) || '—' : renderPreviousProfile(selected)
           },
         }

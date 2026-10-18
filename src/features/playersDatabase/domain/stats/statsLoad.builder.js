@@ -502,7 +502,7 @@ export const buildStatsLoadApprovedState = ({
       rosterStatus: decision === 'joined' ? 'regular' : decision,
       isYoungerAgeGroup: decision === 'youngerAgeGroup',
       isOlderAgeGroup: Boolean(row.isOlderAgeGroup),
-      numShirt: row.numShirt === null || row.numShirt === undefined || row.numShirt === '' ? null : Number(row.numShirt),
+      numShirt: null,
       updatedAt: updatedAt || null,
     }
     participantDecisions.push({
@@ -527,6 +527,7 @@ export const buildStatsLoadApprovedState = ({
     existingMovement: existingTeamSeason.movement,
     participantDecisions,
     existingCounterpartTeamSeasonsById: object(sources.existingCounterpartTeamSeasonsById),
+    sourceHistoryTeamSeasonsById: object(sources.sourceHistoryTeamSeasonsById),
     updatedAt,
   })
 

@@ -72,6 +72,20 @@ export const teamYearMovementsSectionSx = {
     },
   },
 
+  movementToolbarTitle: {
+    color: devPlanColors.primaryDark,
+    fontSize: 11,
+    fontWeight: 800,
+    whiteSpace: 'nowrap',
+  },
+
+  movementToolbarFloating: {
+    top: '100%',
+    borderTop: 0,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+  },
+
   movementInsights: {
     display: 'flex',
     alignItems: 'center',
@@ -117,6 +131,28 @@ export const teamYearMovementsSectionSx = {
     color: active ? statusColors.warning.text : devPlanColors.secondary,
     fontSize: 11,
     fontWeight: active ? 800 : 600,
+  }),
+
+  movementPeriodControls: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 0.75,
+    minWidth: 0,
+    marginInlineStart: 'auto',
+  },
+
+  movementPeriodLabel: {
+    color: devPlanColors.secondary,
+    fontSize: 11,
+    fontWeight: 700,
+  },
+
+  movementPeriodOption: active => ({
+    color: active ? devPlanColors.primaryDark : devPlanColors.secondary,
+    fontSize: 11,
+    fontWeight: active ? 800 : 600,
+    whiteSpace: 'nowrap',
   }),
 
   movementTableScroll: {
@@ -165,6 +201,14 @@ export const teamYearMovementsSectionSx = {
     minWidth: 0,
   },
 
+  movementGroupHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 1,
+    minWidth: 0,
+  },
+
   movementGroupTitle: {
     color: devPlanColors.primaryDark,
     fontSize: 13,
@@ -180,6 +224,20 @@ export const teamYearMovementsSectionSx = {
   movementDetail: {
     color: devPlanColors.secondary,
     fontSize: 11,
+  },
+
+  movementPreviousLine: {
+    display: 'flex',
+    justifyContent: 'center',
+    '& .MuiChip-root': {
+      transform: 'scale(0.85)',
+      transformOrigin: 'center',
+    },
+  },
+
+  movementPreviousProfile: {
+    transform: 'scale(0.8)',
+    transformOrigin: 'center',
   },
 
   movementTeam: {
