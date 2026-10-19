@@ -9,9 +9,7 @@ const loadTagsManagementPage = () => import('../../features/tagsHub/TagsManageme
 const loadFinancePage = () => import('../../features/finance/FinancePage.js')
 const loadPlayersDatabasePage = () => import('../../features/playersDatabase/index.js')
 const loadPlayersDatabaseReadScope = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.PlayersDatabaseReadScope,
-  }))
+  import('../../features/playersDatabase/ui/providers/PlayersDatabaseReadScope.js')
 const loadHubPage = () => import('../../features/hub/ui/HubPage')
 const loadPrivatePage = () => import('../../features/hub/scopes/PrivatePage.js')
 const loadRolesPage = () => import('../../features/roles/RolesPage.js')

@@ -65,11 +65,6 @@ export const createEmptyTeamSeason = () => ({
   transfersIn: [],
   transfersOut: [],
   pendingPlayers: [],
-  teamTaskSignals: {
-    offense: false,
-    defense: false,
-    updatedAt: null,
-  },
   playersCount: 0,
   completeness: createEmptyCompleteness(),
   metadata: {

@@ -1,6 +1,7 @@
 // src/features/playersDatabase/services/write/roster/writeRosterClubsCenter.js
 
 import { writeClubsCenter } from '../league/writeClubsCenter.js'
+import { refreshTeamSignalSummaries } from '../signals/refreshTeamSignalSummaries.js'
 
 export const writeRosterClubsCenter = async ({ approvedState = {} } = {}) => {
   const projections = [
@@ -14,8 +15,10 @@ export const writeRosterClubsCenter = async ({ approvedState = {} } = {}) => {
   for (const clubsCenterProjection of projections) {
     results.push(await writeClubsCenter({
       approvedState: { clubsCenterProjection },
+      refreshSignals: false,
     }))
   }
+  await refreshTeamSignalSummaries({ source: approvedState })
 
   return {
     written: results.some(result => result && result.written),

@@ -2,6 +2,7 @@
 
 import { buildRosterAuditExpected } from './buildExpected.js'
 import { compareRosterAudit } from './compare.js'
+import { buildTeamSignalSummary } from '../../../domain/signals/teamSignalSummary.js'
 
 const approvedState = {
   teamId: 'team-1',
@@ -29,7 +30,7 @@ const cleanActual = () => ({
   league: {
     seasonsById: {
       '2025_2026': {
-        table: { teamsById: { 'team-1': { roster: { playersCount: 0, hasPlayers: false } } } },
+        table: { teamsById: { 'team-1': { teamSignalSummary: buildTeamSignalSummary(), roster: { playersCount: 0, hasPlayers: false } } } },
       },
     },
   },
@@ -37,19 +38,42 @@ const cleanActual = () => ({
     leaguesById: {
       'league-1': {
         seasonsById: {
-          '2025_2026': { teamsById: { 'team-1': { documentationState: 'NO_ROSTER' } } },
+          '2025_2026': { teamsById: { 'team-1': { teamSignalSummary: buildTeamSignalSummary(), documentationState: 'NO_ROSTER' } } },
         },
       },
     },
   },
   clubsCenter: {
     clubsById: {
-      'club-1': { teamsById: { 'team-1': { documentationState: 'NO_ROSTER' } } },
+      'club-1': { teamsById: { 'team-1': { teamSignalSummary: buildTeamSignalSummary(), documentationState: 'NO_ROSTER' } } },
     },
   },
 })
 
 describe('compareRosterAudit', () => {
+  test.each([
+    { seasonUrl: 'https://legacy-season.test' },
+    { teamUrl: 'https://legacy-team.test' },
+    { seasonUrl: 'https://legacy-season.test', teamUrl: 'https://legacy-team.test' },
+  ])('ignores legacy URLs %j without mutating the index or hiding active differences', legacyUrls => {
+    const document = { team: { teamId: 'team-1' } }
+    const loadState = {
+      ...approvedState,
+      playerSearchIndexes: { upserts: [{ documentId: 'index-1', document }], deletes: [] },
+    }
+    const expectedState = buildRosterAuditExpected({ approvedState: loadState })
+    const actual = cleanActual()
+    actual.playerSearchIndexes['index-1'] = {
+      ...document,
+      team: { ...document.team, ...legacyUrls },
+    }
+    expect(compareRosterAudit({ actual, expectedState, approvedState: loadState })).toEqual([])
+    expect(actual.playerSearchIndexes['index-1'].team).toEqual({ ...document.team, ...legacyUrls })
+    actual.playerSearchIndexes['index-1'].team.teamId = 'wrong-team'
+    expect(compareRosterAudit({ actual, expectedState, approvedState: loadState }))
+      .toEqual(expect.arrayContaining([expect.objectContaining({ target: 'playerSearchIndex' })]))
+  })
+
   test('accepts a clean Roster Clear state', () => {
     const expectedState = buildRosterAuditExpected({ approvedState })
     expect(compareRosterAudit({ actual: cleanActual(), expectedState, approvedState })).toEqual([])

@@ -1,5 +1,14 @@
 // src/features/playersDatabase/model/league/center/leagueCenterRows.model.js
 
+import {
+  countTeamSignalFamilies,
+  countTeamSignalStrengths,
+  groupTeamsByResearchWork,
+  groupTeamsByStrongSignalMinimum,
+  hasActiveTeamSignals,
+  mergeTeamSignalSummaries,
+} from '../../../domain/signals/teamSignalSummary.js'
+
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../catalog/leagues.catalog.js'
 import {
   getSeasonCatalogOptions,
@@ -182,22 +191,19 @@ const buildLeagueCenterRow = ({
   })
   const season = selected?.season || null
   const teamRows = getTeamRows(season)
+  const teamSignalSummary = mergeTeamSignalSummaries(teamRows.map(team => team.teamSignalSummary))
   const teamsCount = teamRows.length
   const documentationSummary = buildDocumentationSummary(teamRows)
   const statsCompleteCount = teamRows.filter(team => (
     ['STATS_LOADED', 'STATS_FINAL'].includes(clean(team.documentationState).toUpperCase())
   )).length
-  const offensePriorityCount = teamRows.filter(team => Boolean(team?.teamTaskSignals?.offense)).length
-  const defensePriorityCount = teamRows.filter(team => Boolean(team?.teamTaskSignals?.defense)).length
-  const combinedPriorityCount = teamRows.filter(team => (
-    Boolean(team?.teamTaskSignals?.offense) && Boolean(team?.teamTaskSignals?.defense)
-  )).length
-  const offenseOnlyPriorityCount = teamRows.filter(team => (
-    Boolean(team?.teamTaskSignals?.offense) && !Boolean(team?.teamTaskSignals?.defense)
-  )).length
-  const defenseOnlyPriorityCount = teamRows.filter(team => (
-    !Boolean(team?.teamTaskSignals?.offense) && Boolean(team?.teamTaskSignals?.defense)
-  )).length
+  const investigationCount = teamRows.filter(team => team?.showInvestigationIndicator === true).length
+  const signalFamiliesById = countTeamSignalFamilies(teamRows.map(team => team.teamSignalSummary))
+  const signalStrengthCounts = countTeamSignalStrengths(teamRows.map(team => team.teamSignalSummary))
+  const researchWorkCounts = Object.fromEntries(Object.entries(groupTeamsByResearchWork(teamRows))
+    .map(([key, teams]) => [key, teams.length]))
+  const strongSignalWorkCounts = Object.fromEntries(Object.entries(groupTeamsByStrongSignalMinimum(teamRows))
+    .map(([key, teams]) => [key, teams.length]))
   const tableStatus = tableStatusFromState(season?.tableState)
   const playersStatsStatus = coverageStatus({
     completeCount: statsCompleteCount,
@@ -232,21 +238,20 @@ const buildLeagueCenterRow = ({
     seasonUpdatedAt: season?.updatedAt || null,
     selectedTarget: selected?.target || 'missing',
     teamsCount,
+    teamSignalSummary,
     tableStatus,
     playersStatsStatus,
     playersStatsCompleteCount: statsCompleteCount,
     playersStatsTargetCount: teamsCount,
-    offensePriorityCount,
-    offensePriorityTargetCount: teamsCount,
-    defensePriorityCount,
-    defensePriorityTargetCount: teamsCount,
-    offenseOnlyPriorityCount,
-    defenseOnlyPriorityCount,
-    combinedPriorityCount,
+    investigationCount,
+    signalFamiliesById,
+    signalStrengthCounts,
+    researchWorkCounts,
+    strongSignalWorkCounts,
     documentationCounts: documentationSummary.counts,
     latestDocumentationUpdatedAt: documentationSummary.latestUpdatedAt,
     requiresReview: teamsCount > 0 && documentationSummary.counts.NO_ROSTER > 0,
-    hasProfessionalPriority: offensePriorityCount > 0 || defensePriorityCount > 0,
+    hasTeamSignals: hasActiveTeamSignals(teamSignalSummary),
     dataStatus: tableStatus === 'full' && playersStatsStatus === 'full'
       ? 'full'
       : tableStatus === 'missing'

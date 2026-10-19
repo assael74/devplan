@@ -1,11 +1,13 @@
 // src/features/playersDatabase/ui/pages/leaguePage/LeagueTeamsTable.js
 
 import * as React from 'react'
-import { Stack, Typography } from '@mui/joy'
+import { Chip, ChipDelete, Divider, Stack } from '@mui/joy'
+import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 
+import LeagueWorkMode from '../../components/leagueWork/LeagueWorkMode.js'
 import PageContentPanel from '../../components/page/PageContentPanel.js'
 import DataTable from '../../components/tables/dataTable/index.js'
-import { getFullDateTimeIl } from '../../../../../shared/format/dateUtils.js'
+import { getLoadTimeParts } from '../../../../../shared/format/dateUtils.js'
 import { buildLeagueTeamsColumns } from './logic/leagueTeams.columns.js'
 import { leagueTeamsTableSx as sx } from './sx/leagueTeamsTable.sx.js'
 
@@ -172,9 +174,15 @@ export const buildLeagueTableExportConfig = ({
 
 export default function LeagueTeamsTable({
   rows = [],
+  filtered = false,
+  filterLabel = '',
+  onClearFilter,
+  researchMode = false,
+  onResearchModeChange,
   loading = false,
   error = '',
   selectedSeasonOption = null,
+  leaguesCenterDocument = null,
   leagueName = '',
   region = '',
   ageGroup = '',
@@ -183,15 +191,26 @@ export default function LeagueTeamsTable({
   onTeamUrlEdit,
   onFavoriteToggle,
 }) {
+  const [now, setNow] = React.useState(() => Date.now())
+  React.useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60000)
+    return () => clearInterval(timer)
+  }, [])
   const columns = React.useMemo(() => (
     buildLeagueTeamsColumns({
       onTeamOpen,
       onTeamUrlEdit,
+      researchMode,
+      futureCompetitionContext: {
+        seasonId: selectedSeasonOption?.seasonId,
+        birthYear: selectedSeasonOption?.birthYear,
+        leaguesCenterDocument,
+      },
       onFavoriteToggle: row => {
         Promise.resolve(onFavoriteToggle?.(row)).catch(() => {})
       },
     })
-  ), [onFavoriteToggle, onTeamOpen, onTeamUrlEdit])
+  ), [onFavoriteToggle, onTeamOpen, onTeamUrlEdit, researchMode, selectedSeasonOption, leaguesCenterDocument])
   const exportConfig = React.useMemo(
     () => buildLeagueTableExportConfig({
       selectedSeasonOption,
@@ -210,20 +229,41 @@ export default function LeagueTeamsTable({
       selectedSeasonOption,
     ]
   )
-  const lastUpdated = selectedSeasonOption?.season?.updatedAt
+  const loadTime = getLoadTimeParts(selectedSeasonOption?.season?.tableImportedAt, now)
   const competitionRowSx = React.useMemo(() => (
     buildCompetitionRowSx(selectedSeasonOption?.season?.competitionRules)
   ), [selectedSeasonOption?.season?.competitionRules])
   const headerActions = (
-    <Stack sx={sx.headerInfo}>
-      <Typography level='body-xs' sx={sx.headerInfoText}>טבלת הליגה היא מקור האמת לביצועי הקבוצה</Typography>
-      <Typography level='body-xs' sx={sx.headerInfoText}>עדכון אחרון: {getFullDateTimeIl(lastUpdated)}</Typography>
+    <Stack direction='row' sx={sx.headerActions}>
+      {filterLabel ? (
+        <Chip
+          size='sm'
+          variant='soft'
+          color='primary'
+          sx={sx.activeFilterChip}
+          endDecorator={(
+            <ChipDelete variant='plain' aria-label='ביטול סינון הקבוצות' onDelete={onClearFilter} sx={sx.activeFilterDelete}>
+              {iconUi({ id: 'close', size: 'small' })}
+            </ChipDelete>
+          )}
+        >
+          {filterLabel}
+        </Chip>
+      ) : null}
+      <LeagueWorkMode researchMode={researchMode} onChange={onResearchModeChange} />
     </Stack>
   )
 
   return (
     <PageContentPanel
       title='טבלת ליגה'
+      subtitle={loadTime.dateLabel ? (
+        <Stack component='span' direction='row' sx={sx.loadTime}>
+          <span>טעינה אחרונה: {loadTime.dateLabel}</span>
+          <Divider component='span' orientation='vertical' sx={sx.loadTimeDivider} />
+          <span>{loadTime.ageLabel}</span>
+        </Stack>
+      ) : 'תאריך טעינה לא תועד'}
       headerActions={headerActions}
     >
       <DataTable
@@ -239,7 +279,7 @@ export default function LeagueTeamsTable({
         emptyText={
           loading
             ? 'טוען נתוני ליגה...'
-            : error || 'אין נתוני טבלה לעונה שנבחרה'
+            : error || (filtered ? 'אין קבוצות התואמות למדד שנבחר' : 'אין נתוני טבלה לעונה שנבחרה')
         }
         wrapSx={sx.tableWrap}
         getRowSx={competitionRowSx}

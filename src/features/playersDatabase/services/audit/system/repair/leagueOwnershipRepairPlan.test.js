@@ -52,6 +52,33 @@ test('requires a deliberate league choice and never defaults to the first owner'
   expect(plan.changes).toEqual([])
 })
 
+test('preserves existing signal fields and unrelated projection fields while rebuilding surviving rows', () => {
+  const actual = fixture()
+  const retained = {
+    teamTaskSignals: { offense: true }, teamTaskAvailability: 'partial',
+    teamSignalSummary: { computedAt: 'old', familiesById: {} }, custom: 'keep',
+  }
+  actual.leaguesCenter = [{ id: 'all', data: { leaguesById: { 'league-b': { seasonsById: {
+    [seasonId]: { customSeason: 'keep', teamsById: { [teamId]: retained } },
+  } } } } }]
+  actual.clubsCenter = [{ id: seasonId, data: { clubsById: { 'club-a': { teamsById: {
+    [teamId]: { ...retained, leagueId: 'league-a' },
+  } } } } }]
+  actual.leagues[1].data.seasonsById[seasonId].table.teamsById[teamId].scouting = {
+    teamTaskSignals: { defense: true }, customScouting: 'keep',
+  }
+  const plan = buildLeagueOwnershipRepairPlan({ actual, finding, input: { leagueId: 'league-b' } })
+  expect(plan.allowed).toBe(true)
+  const leaguesCenter = plan.changes.find(change => change.target === 'leaguesCenter').after
+  expect(leaguesCenter.leaguesById['league-b'].seasonsById[seasonId])
+    .toMatchObject({ customSeason: 'keep', teamsById: { [teamId]: retained } })
+  const clubsCenter = plan.changes.find(change => change.target === 'clubsCenter').after
+  expect(clubsCenter.clubsById['club-a'].teamsById[teamId]).toMatchObject(retained)
+  const winningLeague = plan.changes.find(change => change.target === 'leagues' && change.documentId === 'league-b').after
+  expect(winningLeague.seasonsById[seasonId].table.teamsById[teamId].scouting)
+    .toMatchObject({ teamTaskSignals: { defense: true }, customScouting: 'keep' })
+})
+
 test.each(['league-a', 'league-b'])('resolves duplicate ownership for %s and preserves source roster/statistics and other team links', leagueId => {
   const actual = fixture()
   const before = JSON.stringify(actual)

@@ -56,11 +56,6 @@ const buildTeam = () => ({
   teamSlot: 1,
   documentationState: 'NO_ROSTER',
   documentationStateUpdatedAt: null,
-  teamTaskSignals: {
-    offense: false,
-    defense: false,
-    updatedAt: null,
-  },
 })
 
 const findFieldPath = (mergeFields, segments) => mergeFields.find(field => (
@@ -108,17 +103,39 @@ describe('writeLeaguesCenter', () => {
     expect(setDoc).toHaveBeenCalledTimes(1)
 
     const [, data, options] = setDoc.mock.calls[0]
-    expect(data.leaguesById['league-1'].seasonsById['2025_2026']).toBe(season)
+    expect(data.leaguesById['league-1'].seasonsById['2025_2026']).toEqual(season)
     expect(findFieldPath(
       options.mergeFields,
       ['leaguesById', 'league-1', 'identity']
     )).toBeTruthy()
     expect(findFieldPath(
       options.mergeFields,
-      ['leaguesById', 'league-1', 'seasonsById', '2025_2026']
+      ['leaguesById', 'league-1', 'seasonsById', '2025_2026', 'teamsById', 'club-a_2010_1', 'documentationState']
     )).toBeTruthy()
     expect(options.mergeFields).toContain('updatedAt')
+    expect(options.mergeFields.some(field => field instanceof FieldPath &&
+      ['teamTaskSignals', 'teamTaskAvailability'].includes(field.segments.at(-1)))).toBe(false)
+    expect(findFieldPath(options.mergeFields, ['leaguesById', 'league-1', 'seasonsById', '2025_2026']))
+      .toBeFalsy()
     expect(result.written).toBe(true)
+  })
+
+  test('removes only explicit stale rows while updating surviving team fields', async () => {
+    await writeLeaguesCenter({ approvedState: { leaguesCenterProjection: {
+      operation: 'UPSERT_SEASON', leagueId: 'league-1', seasonId: '2025_2026',
+      identity: buildIdentity(),
+      season: buildSeason({ teamsById: { 'club-a_2010_1': buildTeam() } }),
+      deleteTeamIds: ['removed-team'], updatedAt: null,
+    } } })
+    const [, data, options] = setDoc.mock.calls[0]
+    expect(data.leaguesById['league-1'].seasonsById['2025_2026'].teamsById['removed-team'])
+      .toEqual({ __deleteField: true })
+    expect(findFieldPath(options.mergeFields, [
+      'leaguesById', 'league-1', 'seasonsById', '2025_2026', 'teamsById', 'removed-team',
+    ])).toBeTruthy()
+    expect(findFieldPath(options.mergeFields, [
+      'leaguesById', 'league-1', 'seasonsById', '2025_2026', 'teamsById', 'club-a_2010_1',
+    ])).toBeFalsy()
   })
 
   test('replaces an empty season teams map as one field instead of deep-merging stale teams', async () => {
@@ -141,7 +158,7 @@ describe('writeLeaguesCenter', () => {
     expect(data.leaguesById['league-1'].seasonsById['2025_2026'].teamsById).toEqual({})
     expect(findFieldPath(
       options.mergeFields,
-      ['leaguesById', 'league-1', 'seasonsById', '2025_2026']
+      ['leaguesById', 'league-1', 'seasonsById', '2025_2026', 'teamsById']
     )).toBeTruthy()
   })
 

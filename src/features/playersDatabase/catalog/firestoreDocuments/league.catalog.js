@@ -1,6 +1,8 @@
 // src/features/playersDatabase/catalog/firestoreDocuments/league.catalog.js
 // Canonical document contract.
 
+import { TEAM_SIGNAL_SUMMARY_SCHEMA } from '../teamSignalSummary.catalog.js'
+
 export const LEAGUE_DOCUMENT = {
   collection: 'dbLeagues',
   documentId: 'leagueId',
@@ -64,6 +66,8 @@ export const LEAGUE_DOCUMENT = {
           '<teamId>': {
             clubId: '',
             teamSlot: null,
+            showInvestigationIndicator: false,
+            teamSignalSummary: TEAM_SIGNAL_SUMMARY_SCHEMA,
 
             // Small stable snapshot so the League document remains self-contained.
             clubLevel: null,
@@ -138,17 +142,13 @@ export const LEAGUE_DOCUMENT = {
               hasStats: false,
               statsComplete: false,
               loadedAt: null,
+              teamGamePlayedAtLoad: null,
             },
 
             scouting: {
               // Number of players with at least one scout profile.
               playersWithScoutProfileCount: null,
 
-              teamTaskSignals: {
-                offense: false,
-                defense: false,
-                updatedAt: null,
-              },
             },
 
             updatedAt: null,
@@ -204,9 +204,10 @@ export const LEAGUE_DOCUMENT = {
     stats: [
       'table.teamsById.*.stats.hasStats',
       'table.teamsById.*.stats.loadedAt',
+      'table.teamsById.*.stats.teamGamePlayedAtLoad',
       'table.teamsById.*.stats.statsComplete',
       'table.teamsById.*.scouting.playersWithScoutProfileCount',
-      'table.teamsById.*.scouting.teamTaskSignals',
+      'table.teamsById.*.showInvestigationIndicator',
     ],
   },
 
@@ -229,12 +230,17 @@ export const LEAGUE_DOCUMENT = {
     'seasonId is the technical Firestore-safe id and is never built ad hoc from seasonKey.',
     'seasonKey is the business/display season value.',
     'birthYear, seasonUrl, leagueTotalRound, gameDurationMinutes and competitionRules are season-owned.',
+    'Editing seasonUrl updates only League and LeaguesCenter in one transaction; it does not read or write player SearchIndexes or refresh team signals.',
+    'Editing table.teamsById.*.teamUrl updates only this League and the matching existing Team Season competitionSnapshot in one transaction, without player SearchIndexes or team signal refresh.',
     'tableState distinguishes not loaded, loaded empty and loaded with teams.',
     'teamId is the teamsById map key and is not duplicated inside the team value.',
     'officialTable contains only official ranking/table facts and uses teamGamePlayed as the canonical games-played field name.',
     'performance contains calculated professional/scouting performance only.',
+    'stats.teamGamePlayedAtLoad is projected from TeamSeason.stats.statsLoadState.teamGamePlayedAtLoad; it is never inferred from current officialTable games, per-player games or timestamps.',
+    'Legacy missing or null Stats game snapshots mean unknown. Stats Clear resets the snapshot, and League Load preserves or restores it from an existing canonical Team Season.',
     'playersCount means current roster player count.',
     'playersWithScoutProfileCount means players with at least one scout profile.',
+    'showInvestigationIndicator is a boolean projection from Team Root.notes, without notebook content.',
     'scoutProfilesCount/profile assignment count is intentionally not persisted.',
     'clubLevel is intentionally snapshotted from ClubProfile so League remains self-contained; League is not its canonical owner.',
     'No current/history arrays are persisted.',

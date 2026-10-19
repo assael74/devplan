@@ -3,16 +3,49 @@
 import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const leagueCenterTableSx = {
+  workControls: {
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 1.5,
+  },
+
+  minimumButton: {
+    minWidth: 32,
+    px: 0.75,
+  },
+
   tablePanel: {
     width: '100%',
     height: '100%',
     borderColor: '#c8d7e2',
     boxShadow: '0 10px 24px rgba(16, 43, 64, 0.075)',
+
+    '& > :first-of-type': {
+      bgcolor: devPlanColors.petrolLight,
+      borderBottomColor: devPlanColors.petrol,
+      flexWrap: 'wrap',
+
+      '& > :last-child': {
+        maxWidth: '100%',
+      },
+
+      '& .MuiTypography-root': {
+        color: devPlanColors.primaryDark,
+      },
+    },
   },
 
   tableScroll: {
     border: 0,
     borderRadius: 0,
+
+    '& [data-column="statsLoaded"], & [data-column="matchingTeams"], & [data-column="tableImportedAt"]': {
+      borderInlineStart: `2px solid ${devPlanColors.border}`,
+    },
+
+    '& [data-column="matchingTeams"]': {
+      borderInlineStartColor: 'success.300',
+    },
 
     '& table': {
       fontSize: 12,
@@ -37,7 +70,7 @@ export const leagueCenterTableSx = {
       borderBottomColor: '#dce5eb',
     },
 
-    '& button': {
+    '& button:not(.MuiChip-root):not(.MuiChip-action)': {
       minWidth: 0,
       minHeight: 28,
       px: 1.25,

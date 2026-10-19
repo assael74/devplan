@@ -33,8 +33,6 @@ export const writeStatsCanonical = async ({ approvedState = {} } = {}) => {
       ...playerUrlPatch,
       stats: document.stats,
       scouting: document.scouting,
-      teamTaskSignals: document.teamTaskSignals,
-      teamTaskAvailability: document.teamTaskAvailability,
       'timestamps.updatedAt': approvedState.updatedAt || null,
     }
   )

@@ -12,14 +12,21 @@ export const leagueSeasonSettingsDrawerSx = {
 
   section: {
     ...entitySeasonUrlDrawerSx.fieldCard,
-    mb: 2,
+    p: 1.25,
+    mb: 1.5,
     display: 'grid',
-    gap: 1.5,
+    gap: 1,
   },
 
-  formControl: entitySeasonUrlDrawerSx.formControl,
+  formControl: {
+    ...entitySeasonUrlDrawerSx.formControl,
+    gap: 0.5,
+  },
 
-  input: entitySeasonUrlDrawerSx.input,
+  input: {
+    ...entitySeasonUrlDrawerSx.input,
+    minHeight: 32,
+  },
 
   hint: {
     color: 'text.secondary',
@@ -28,6 +35,6 @@ export const leagueSeasonSettingsDrawerSx = {
   rulesGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-    gap: 1.5,
+    gap: 1,
   },
 }

@@ -1,13 +1,6 @@
 // src/features/playersDatabase/ui/pages/teamPage/information/model/teamFutureCompetition.presentation.js
 
-const UNAVAILABLE_REASON_LABELS = {
-  RULES_NOT_CONFIGURED: 'לא הוגדרו חוקי עלייה וירידה לליגה',
-  SEASON_BEFORE_HALFWAY: 'טרם הושלמו 50% ממשחקי העונה',
-  TEAM_NOT_IN_TABLE: 'קבוצת המקור חסרה בטבלת הליגה',
-  SCHEDULE_MISSING: 'חסר מספר משחקי העונה הצפוי',
-  LEAGUE_UNAVAILABLE: 'נתוני ליגת המקור לא זמינים',
-  LEAGUE_SEASON_MISSING: 'חסרים נתוני העונה בליגת המקור',
-}
+import { describeUnavailableFutureCompetition } from '../../../../../model/shared/futureCompetition.presentation.js'
 
 export const buildFutureCompetitionInsight = (view, clubIntelligence) => {
   const group = clubIntelligence?.birthYearTeams?.find(item => Number(item.birthYear) === Number(view?.team?.birthYear))
@@ -21,16 +14,7 @@ export const buildFutureCompetitionInsight = (view, clubIntelligence) => {
     ? `שנתון ${competition.sourceBirthYear} · קבוצה ${competition.sourceTeamSlot}` : ''
 
   if (!available) {
-    const reasons = (competition?.unavailableReasons || []).map(reason => UNAVAILABLE_REASON_LABELS[reason]).filter(Boolean)
-    const summary = reasons.length
-      ? `שנתון ${competition.sourceBirthYear}: ${reasons.join(' · ')}`
-      : competition?.reason === 'SOURCE_CURRENT_LEVEL_ONLY'
-      ? `שנתון ${competition.sourceBirthYear}: צפי טרם זמין — סיבת החסימה לא זמינה`
-      : competition?.reason === 'SOURCE_AMBIGUOUS'
-        ? 'לא ניתן לזהות באופן חד־משמעי את הקבוצה המשפיעה'
-        : competition?.reason === 'SOURCE_MISSING'
-          ? 'חסרים נתוני השנתון המשפיע לעונה הבאה'
-          : 'צפי התחרות טרם זמין'
+    const summary = describeUnavailableFutureCompetition(competition)
     return { status: 'limited', label: 'צפי טרם זמין', summary, reliability: source ? `מקור: ${source} · אין תחזית זמינה` : 'זמינות נתונים: אין בסיס מספק לצפי' }
   }
 

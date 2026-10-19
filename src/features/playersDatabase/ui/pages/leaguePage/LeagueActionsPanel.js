@@ -64,6 +64,9 @@ export default function LeagueActionsPanel({
       collapsible={collapsible}
       collapsed={collapsed}
       onCollapsedChange={onCollapsedChange}
+      collapsedIndicator={!tasksLoading && tasks.length > 0
+        ? { label: 'יש משימות פתוחות', color: 'danger' }
+        : null}
       collapsedActions={[
         { label: 'טעינת נתוני הליגה', iconId: 'addTeams', onClick: onLoad, disabled: loadDisabled, disabledReason: loadDisabledReason },
         { label: 'הגדרות עונת ליגה', iconId: 'edit', onClick: onLeagueUrlEdit, disabled: !onLeagueUrlEdit },
@@ -163,20 +166,19 @@ export default function LeagueActionsPanel({
       </Box>
 
       <Box sx={sx.secondaryActionsRow}>
-        <Tooltip title='הורדת מסמך הליגה כ־JSON'>
+        <Tooltip title='הורדת מסמכי העמוד כ־ZIP'>
           <span>
             <IconButton
               variant='outlined'
-              aria-label='הורדת מסמך הליגה כ־JSON'
+              aria-label='הורדת מסמכי העמוד כ־ZIP'
               disabled={downloadDisabled}
               sx={sx.sideDownloadButton}
               onClick={onDownloadDocuments}
             >
-              {iconUi({id: 'download', size: 'md'})}
+              {iconUi({ id: 'download', size: 'md' })}
             </IconButton>
           </span>
         </Tooltip>
-
         <Tooltip title={onLeagueUrlEdit ? 'הגדרות עונת ליגה' : 'עריכת הגדרות עונת ליגה אינה זמינה כרגע'}>
           <span>
             <IconButton

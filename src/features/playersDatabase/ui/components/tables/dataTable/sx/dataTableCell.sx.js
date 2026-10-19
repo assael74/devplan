@@ -3,6 +3,22 @@
 import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 export const dataTableCellSx = {
+  cellValue: {
+    transition: 'background-color 180ms ease, box-shadow 180ms ease',
+    borderRadius: 4,
+
+    '&[data-scout-source="true"]': {
+      bgcolor: 'var(--scout-source-bg)',
+      color: 'var(--scout-source-color)',
+      fontWeight: 700,
+      boxShadow: '0 0 0 4px var(--scout-source-bg)',
+      outline: '1px solid var(--scout-source-border)',
+      outlineOffset: 3,
+    },
+
+    '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
+  },
+
   cellLink: {
     display: 'inline-flex',
     alignItems: 'center',

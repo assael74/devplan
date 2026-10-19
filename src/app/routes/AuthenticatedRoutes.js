@@ -49,9 +49,9 @@ import {
   VideoHubPage,
 } from './routeComponents'
 
-function renderAdminRoutes() {
+function renderAdminRoutes(sessionKey) {
   return (
-    <>
+    <Route element={lazyRoute(<PlayersDatabaseReadScope key={sessionKey} />)}>
       <Route path={PUBLIC_ROUTES.login} element={<Navigate to={ROUTE_REDIRECTS.adminHome} replace />} />
       <Route path={PUBLIC_ROUTES.register} element={<Navigate to={ROUTE_REDIRECTS.adminHome} replace />} />
       <Route path={PUBLIC_ROUTES.forgotPassword} element={<Navigate to={ROUTE_REDIRECTS.adminHome} replace />} />
@@ -70,7 +70,7 @@ function renderAdminRoutes() {
       <Route path={ADMIN_ROUTES.finance} element={lazyRoute(<FinancePage />)} />
       <Route path={ADMIN_ROUTES.paymentsLegacy} element={<Navigate to={ADMIN_ROUTES.finance} replace />} />
 
-      <Route element={lazyRoute(<PlayersDatabaseReadScope />)}>
+      <Route>
         <Route path={ADMIN_ROUTES.playersDatabase} element={lazyRoute(<PlayersDatabasePage />)} />
         <Route path={ADMIN_ROUTES.playersDatabaseLeagues} element={lazyRoute(<PlayersDatabaseLeaguesCenterPage />)} />
         <Route path={ADMIN_ROUTES.playersDatabaseSearch} element={lazyRoute(<PlayersDatabaseSearchPage />)} />
@@ -104,7 +104,7 @@ function renderAdminRoutes() {
       <Route path={ADMIN_ROUTES.playerTab} element={lazyRoute(<PlayerProfilePage />, <ProfileSkeleton />)} />
 
       <Route path='*' element={<Navigate to={ROUTE_REDIRECTS.adminFallback} replace />} />
-    </>
+    </Route>
   )
 }
 
@@ -122,7 +122,7 @@ function renderSquadRoutes() {
   )
 }
 
-export default function renderAuthenticatedRoutes({ isAdmin }) {
+export default function renderAuthenticatedRoutes({ isAdmin, sessionKey }) {
   return (
     <Route
       element={
@@ -138,7 +138,7 @@ export default function renderAuthenticatedRoutes({ isAdmin }) {
         />
       }
     >
-      {isAdmin ? renderAdminRoutes() : renderSquadRoutes()}
+      {isAdmin ? renderAdminRoutes(sessionKey) : renderSquadRoutes()}
     </Route>
   )
 }

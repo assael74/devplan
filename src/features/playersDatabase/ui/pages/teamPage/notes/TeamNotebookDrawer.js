@@ -1,129 +1,251 @@
 // src/features/playersDatabase/ui/pages/teamPage/notes/TeamNotebookDrawer.js
 
-import React from 'react'
-import { Box, Chip, Tab, TabList, TabPanel, Tabs, Typography } from '@mui/joy'
+import * as React from 'react'
+import { Box, Button, Chip, FormControl, FormLabel, Switch, Typography } from '@mui/joy'
+import { useTheme } from '@mui/joy/styles'
+import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import DrawerShell from '../../../../../../ui/patterns/drawer/DrawerShell.js'
-import DrawerHeaderShell from '../../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
-import TeamNotebookList from './TeamNotebookList.js'
-import TeamNotebookFinding from './TeamNotebookFinding.js'
-import TeamNotebookGeneralNote from './TeamNotebookGeneralNote.js'
+import MentionEditor from '../../../../../../ui/patterns/mentions/MentionEditor.js'
+import { TEAM_INSIGHTS } from '../information/model/teamWorkspace.navigation.js'
 import TeamNotebookDiscardDialog from './TeamNotebookDiscardDialog.js'
-import useTeamNotebookDraft from './useTeamNotebookDraft.js'
-import { EMPTY_NOTES, EMPTY_OPTIONS } from './model/teamNotebook.ui.js'
+import TeamNotebookSummaryCard from './TeamNotebookSummaryCard.js'
+import useTeamNotebookDraft, { NOTEBOOK_STEPS } from './useTeamNotebookDraft.js'
 import { teamNotebookSx as sx } from './sx/teamNotebook.sx.js'
 
-/**
- * UI only; no callbacks or adapter for saving are intentionally exposed.
- * notes: { generalText, findingsById: { [id]: { text, insightIds, relatedSeasonIds,
- *   relatedPlayerIds, focusSeasonId, status, createdAt, updatedAt } } }
- * Dates are ISO strings in this view contract, not Firestore Timestamp objects.
- * seasonOptions / playerOptions: [{ id: string, label: string, description?: string }]
- * Supply all relevant seasons/players. This component never reads or fetches them.
- * initialInsightId / initialSeasonId seed NEW drafts only, never existing findings.
- * Each opening takes a local copy. Closing/unmounting discards the whole UI session.
- */
 export default function TeamNotebookDrawer({
   open = false,
   onClose,
+  onSave,
   teamId = '',
   teamName = '',
   birthYear = '',
-  notes = EMPTY_NOTES,
-  seasonOptions = EMPTY_OPTIONS,
-  playerOptions = EMPTY_OPTIONS,
+  notes = null,
+  mentionOptions = [],
   initialInsightId = '',
-  initialSeasonId = '',
 }) {
-  if (!open) return null
   return (
     <NotebookSession
       key={teamId || 'team-notebook'}
+      open={open}
       onClose={onClose}
+      onSave={onSave}
+      teamId={teamId}
       teamName={teamName}
       birthYear={birthYear}
       notes={notes}
-      seasonOptions={seasonOptions}
-      playerOptions={playerOptions}
+      mentionOptions={mentionOptions}
       initialInsightId={initialInsightId}
-      initialSeasonId={initialSeasonId}
     />
   )
 }
 
 function NotebookSession({
-  onClose, teamName, birthYear, notes, seasonOptions, playerOptions,
-  initialInsightId, initialSeasonId,
+  open,
+  onClose,
+  onSave,
+  teamId,
+  teamName,
+  birthYear,
+  notes,
+  mentionOptions,
+  initialInsightId,
 }) {
-  const notebook = useTeamNotebookDraft({ notes, playerOptions, initialInsightId, initialSeasonId })
-  const close = () => {
-    if (typeof onClose === 'function') onClose()
-  }
-  const requestClose = () => {
-    if (notebook.hasChanges) notebook.setConfirmClose(true)
-    else close()
-  }
+  const theme = useTheme()
+  const notebook = useTeamNotebookDraft({ open, notes, mentionOptions, teamId, initialInsightId })
+  const [saving, setSaving] = React.useState(false)
+  const [saveError, setSaveError] = React.useState('')
+  const stepButtons = React.useRef([])
   const subline = [teamName, birthYear ? `שנתון ${birthYear}` : ''].filter(Boolean).join(' · ')
+  const activeStep = NOTEBOOK_STEPS[notebook.stepIndex]
+
+  React.useEffect(() => {
+    if (!open) setSaveError('')
+  }, [open])
+
+  React.useEffect(() => {
+    stepButtons.current[notebook.stepIndex]?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center',
+    })
+  }, [notebook.stepIndex])
+
+  const requestClose = () => {
+    if (saving) return
+    if (notebook.hasChanges) notebook.setConfirmClose(true)
+    else onClose?.()
+  }
+
+  const save = async () => {
+    if (!notebook.hasChanges || saving || !onSave) return
+    setSaving(true)
+    setSaveError('')
+    try {
+      await onSave({
+        teamId,
+        contentsById: notebook.contentsById,
+        dirtyIds: notebook.dirtyIds,
+        showInvestigationIndicator: notebook.showInvestigationIndicator,
+      })
+      onClose?.()
+    } catch (error) {
+      setSaveError(error?.message || 'שמירת המחברת נכשלה')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <>
       <DrawerShell
-        open
+        open={open}
         onClose={requestClose}
         entity='team'
-        anchor='right'
         isDirty={notebook.hasChanges}
-        canSave={false}
-        saving={false}
+        saving={saving}
+        canSave={notebook.hasChanges && Boolean(onSave)}
+        actions={{ onSave: save }}
         sxOverrides={sx.shell}
-        header={(
-          <DrawerHeaderShell
-            title='מחברת השנתון'
-            titleIconId='task'
-            entity='team'
-            subline={subline || 'תיעוד חקירה רב־עונתי'}
-            meta='כל המסלולים · כל העונות'
-            chipLabel='ממשק בלבד'
-            sxOverrides={sx.header}
-          />
-        )}
-        texts={{ save: 'שמירה', cancel: 'סגירה' }}
-        status={{
-          text: notebook.hasChanges ? 'טיוטות זמניות · אינן נשמרות' : 'השמירה אינה מחוברת בשלב זה',
-          color: notebook.hasChanges ? 'warning' : 'neutral',
+        headerProps={{
+          title: 'מחברת חקירה',
+          titleIconId: 'notes',
+          subline,
+          sxOverrides: sx.header,
         }}
-        saveButtonProps={{ disabled: true, title: 'אין חיבור לשמירה בשלב זה', sx: sx.saveButton }}
+        texts={{ cancel: 'סגירה' }}
+        status={saveError
+          ? { text: saveError, color: 'danger' }
+          : !onSave ? { text: 'תצוגה מקדימה בלבד', color: 'neutral' } : {}}
+        saveButtonProps={{ sx: sx.saveButton }}
         cancelButtonProps={{ sx: sx.cancelButton }}
       >
-        <Box dir='rtl' sx={sx.workspace}>
-          <Box sx={sx.previewNotice}>
-            <Typography level='body-xs'>אפשר לערוך ולדפדף. הטיוטות יימחקו בסגירה; אין שמירה או העלאת קבצים.</Typography>
+        <Box sx={sx.workspace}>
+          <Box className='dpScrollThin' sx={sx.stepper} role='tablist' aria-label='מסלולי מחברת החקירה'>
+            {NOTEBOOK_STEPS.map((step, index) => (
+              <Button
+                key={step.id}
+                ref={element => { stepButtons.current[index] = element }}
+                id={`notebook-tab-${step.id}`}
+                role='tab'
+                aria-selected={notebook.stepIndex === index}
+                aria-controls={`notebook-panel-${step.id}`}
+                size='sm'
+                variant={notebook.stepIndex === index ? 'solid' : 'soft'}
+                sx={sx.stepButton(notebook.stepIndex === index)}
+                onClick={() => notebook.selectStep(index)}
+              >
+                <Box component='span' sx={sx.stepNumber(notebook.stepIndex === index)}>{index + 1}</Box>
+                {step.label}
+              </Button>
+            ))}
           </Box>
-          <Tabs
-            value={notebook.tab}
-            onChange={(_event, value) => notebook.setTab(value)}
-            sx={sx.tabs}
-          >
-            <TabList sx={sx.tabList}>
-              <Tab value='findings'>ממצאים <Chip size='sm' variant='soft'>{notebook.findings.length}</Chip></Tab>
-              <Tab value='general'>הערה כללית</Tab>
-            </TabList>
-            <TabPanel value='findings' sx={sx.tabPanel}>
-              {notebook.selectedFinding ? (
-                <TeamNotebookFinding notebook={notebook} seasonOptions={seasonOptions} playerOptions={playerOptions} />
-              ) : (
-                <TeamNotebookList notebook={notebook} seasonOptions={seasonOptions} playerOptions={playerOptions} />
-              )}
-            </TabPanel>
-            <TabPanel value='general' sx={sx.tabPanel}>
-              <TeamNotebookGeneralNote value={notebook.generalText} onChange={notebook.setGeneralText} />
-            </TabPanel>
-          </Tabs>
+
+          <Box sx={sx.pageWindow}>
+            {NOTEBOOK_STEPS.map((step, index) => (
+              <Box
+                  key={step.id}
+                  id={`notebook-panel-${step.id}`}
+                  role='tabpanel'
+                  aria-labelledby={`notebook-tab-${step.id}`}
+                  aria-hidden={notebook.stepIndex !== index}
+                  className='dpScrollThin'
+                  sx={sx.page(index, notebook.stepIndex, theme.direction, step.id === 'summary')}
+                >
+                  {step.id === 'summary' ? (
+                    <Box sx={sx.summary}>
+                      <Box sx={sx.pageHeading}>
+                        <Typography level='title-lg' sx={sx.summaryHeadingTitle}>
+                          {teamName ? `סיכום הערות ל${teamName}` : 'סיכום הערות לקבוצה'}
+                        </Typography>
+                      </Box>
+                      {NOTEBOOK_STEPS.slice(0, -1).map(item => (
+                        <TeamNotebookSummaryCard
+                          key={item.id}
+                          step={item}
+                          content={notebook.contentsById[item.id]}
+                          text={notebook.textsById[item.id]}
+                          open={open}
+                        />
+                      ))}
+                    </Box>
+                  ) : (
+                    <Box sx={sx.editor}>
+                      <Box sx={sx.pageHeading}>
+                        <Box>
+                          <Typography level='title-lg'>{step.title}</Typography>
+                          <Typography level='body-sm'>
+                            {TEAM_INSIGHTS.find(route => route.id === step.id)?.subtitle || 'מקום למחשבות שאינן שייכות למסלול מסוים.'}
+                          </Typography>
+                        </Box>
+                        <Chip size='sm' variant='soft'>{`${index + 1} / ${NOTEBOOK_STEPS.length}`}</Chip>
+                      </Box>
+                      <FormControl sx={sx.formControl}>
+                        <FormLabel sx={sx.formLabel}>{step.id === 'general' ? 'הערות כלליות' : 'הערות למסלול'}</FormLabel>
+                        <MentionEditor
+                          value={notebook.contentsById[step.id]}
+                          onChange={value => notebook.changeContent(step.id, value)}
+                          options={mentionOptions}
+                          ariaLabel={step.id === 'general' ? 'הערות כלליות' : `הערות למסלול ${step.title}`}
+                          tabIndex={notebook.stepIndex === index ? 0 : -1}
+                          placeholder={step.id === 'general' ? 'מה עוד חשוב לזכור על הקבוצה?' : `מה חשוב לזכור לגבי ${step.title}?`}
+                        />
+                      </FormControl>
+                      <Box sx={sx.linkActions}>
+                        <Button size='sm' variant='soft' startDecorator={iconUi({ id: 'calendar', size: 'sm' })}>שיוך לעונה</Button>
+                        <Button size='sm' variant='soft' startDecorator={iconUi({ id: 'players', size: 'sm' })}>שיוך לשחקנים</Button>
+                        <Button size='sm' variant='outlined' startDecorator={iconUi({ id: 'report', size: 'sm' })}>הוספת דוח</Button>
+                      </Box>
+                      <Box component='label' sx={sx.indicatorRow}>
+                        <Switch
+                          size='sm'
+                          checked={notebook.showInvestigationIndicator}
+                          onChange={event => notebook.setShowInvestigationIndicator(event.target.checked)}
+                          slotProps={{ input: { 'aria-label': 'הצגת סימון חקירה בעמודים אחרים' } }}
+                        />
+                        <Box sx={sx.indicatorText}>
+                          <Typography level='body-sm' sx={sx.indicatorLabel}>הצגת סימון חקירה בעמודים אחרים</Typography>
+                          <Typography level='body-xs' sx={sx.indicatorHint}>חל על הקבוצה כולה</Typography>
+                        </Box>
+                      </Box>
+                      {notebook.dirtyIds.includes(step.id) && (
+                        <Typography level='body-xs' color='warning'>יש שינוי בטיוטה של שלב זה.</Typography>
+                      )}
+                    </Box>
+                  )}
+              </Box>
+            ))}
+          </Box>
+
+          <Box sx={sx.pager}>
+            <Button
+              size='sm'
+              variant='outlined'
+              disabled={notebook.stepIndex === 0}
+              onClick={() => notebook.selectStep(notebook.stepIndex - 1)}
+            >
+              הקודם
+            </Button>
+            <Typography level='body-xs' sx={sx.pagerLabel}>
+              {`${notebook.stepIndex + 1} מתוך ${NOTEBOOK_STEPS.length} · ${activeStep.label}`}
+            </Typography>
+            <Button
+              size='sm'
+              variant='solid'
+              disabled={notebook.stepIndex === NOTEBOOK_STEPS.length - 1}
+              onClick={() => notebook.selectStep(notebook.stepIndex + 1)}
+            >
+              הבא
+            </Button>
+          </Box>
         </Box>
       </DrawerShell>
       <TeamNotebookDiscardDialog
         open={notebook.confirmClose}
         onContinue={() => notebook.setConfirmClose(false)}
-        onDiscard={close}
+        onDiscard={() => {
+          notebook.setConfirmClose(false)
+          onClose?.()
+        }}
       />
     </>
   )

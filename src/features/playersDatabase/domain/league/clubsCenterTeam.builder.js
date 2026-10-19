@@ -83,14 +83,6 @@ const resolveDocumentation = ({ teamSeason, seasonStatus, previousTeamProjection
   }
 }
 
-const buildTaskSignals = teamSeason => ({
-  offense: Boolean(teamSeason && teamSeason.teamTaskSignals && teamSeason.teamTaskSignals.offense),
-  defense: Boolean(teamSeason && teamSeason.teamTaskSignals && teamSeason.teamTaskSignals.defense),
-  updatedAt: teamSeason && teamSeason.teamTaskSignals
-    ? teamSeason.teamTaskSignals.updatedAt || null
-    : null,
-})
-
 export const buildCenterTeamStateProjection = ({
   teamSeason = null,
   seasonStatus = '',
@@ -105,7 +97,6 @@ export const buildCenterTeamStateProjection = ({
   return {
     documentationState: documentation.state,
     documentationStateUpdatedAt: documentation.updatedAt,
-    teamTaskSignals: buildTaskSignals(teamSeason),
   }
 }
 
@@ -249,6 +240,9 @@ export const buildClubsCenterTeamProjection = ({
     ageGroupId: clean(league && league.ageGroupId),
     teamSlot: toNullableNumber(teamRow && teamRow.teamSlot),
     leagueId: resolvedLeagueId,
+    showInvestigationIndicator: typeof teamRow?.showInvestigationIndicator === 'boolean'
+      ? teamRow.showInvestigationIndicator
+      : previousTeamProjection?.showInvestigationIndicator === true,
     ...centerState,
     performance: {
       tableRank: toNullableNumber(teamRow && teamRow.officialTable && teamRow.officialTable.rank),

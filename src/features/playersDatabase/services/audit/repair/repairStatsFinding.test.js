@@ -50,7 +50,7 @@ const sources = () => ({
         [playerId]: { statsStatus: 'loaded', playerStats: { games: 10, goals: 4 } },
         [otherPlayerId]: { statsStatus: 'loaded', playerStats: { games: 10, goals: 9 } },
       },
-      statsLoadState: { status: 'loaded' },
+      statsLoadState: { status: 'loaded', updatedAt: sourceTime },
       updatedAt: sourceTime,
     },
     scouting: {
@@ -176,10 +176,9 @@ test('repairs only League stats metadata from Team Season', async () => {
         teamId,
         seasonId,
         patch: {
-          stats: { hasStats: true, statsComplete: true },
+          stats: { hasStats: true, statsComplete: true, loadedAt: sourceTime, teamGamePlayedAtLoad: null },
           scouting: {
             playersWithScoutProfileCount: 1,
-            teamTaskSignals: { offense: true, defense: false, updatedAt: sourceTime },
           },
           updatedAt: sourceTime,
         },

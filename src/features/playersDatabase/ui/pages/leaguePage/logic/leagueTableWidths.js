@@ -1,4 +1,4 @@
-// features/playersDatabase/ui/pages/leaguePage/logic/leagueTableWidths.js
+// src/features/playersDatabase/ui/pages/leaguePage/logic/leagueTableWidths.js
 
 export const LEAGUE_TEAMS_TABLE_WIDTHS = {
   tableRank: {
@@ -7,16 +7,16 @@ export const LEAGUE_TEAMS_TABLE_WIDTHS = {
     maxWidth: 68,
   },
   teamAvatar: {
-    width: '5%',
+    width: '4%',
     minWidth: 38,
     maxWidth: 44,
   },
   name: {
-    width: '17%',
-    minWidth: 126,
+    width: '12%',
+    minWidth: 110,
   },
   games: {
-    width: '7%',
+    width: '6%',
     minWidth: 58,
   },
   goalsFor: {
@@ -28,25 +28,42 @@ export const LEAGUE_TEAMS_TABLE_WIDTHS = {
     minWidth: 58,
   },
   points: {
-    width: '6%',
+    width: '5%',
     minWidth: 58,
   },
   attackPriority: {
-    width: '10%',
+    width: '11%',
     minWidth: 78,
   },
   defensePriority: {
-    width: '10%',
+    width: '11%',
     minWidth: 78,
   },
-  rosterProfiles: {
-    width: '10%',
-    minWidth: 84,
+  playersCount: {
+    width: '6%',
+    minWidth: 68,
   },
-  favorite: '5%',
+  statsLoaded: {
+    width: '6%',
+    minWidth: 58,
+  },
+  statsGamesGap: {
+    width: '6%',
+    minWidth: 68,
+  },
+  researchSignal: {
+    width: '6.8%',
+    minWidth: 78,
+  },
+  investigation: {
+    width: '6%',
+    minWidth: 58,
+  },
+  favorite: '4%',
   actions: {
-    width: '9%',
+    width: '8%',
     minWidth: 86,
     maxWidth: 90,
   },
 }
+

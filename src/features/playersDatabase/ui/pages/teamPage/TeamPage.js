@@ -3,11 +3,7 @@
 import * as React from 'react'
 import {
   Box,
-  Button,
   CircularProgress,
-  Input,
-  Modal,
-  ModalDialog,
   Typography,
 } from '@mui/joy'
 import {
@@ -29,9 +25,12 @@ import {
 } from '../../logic/routeBuilders.js'
 import { PLAYER_STATS_STATUS } from '../../../model/player/playerStats.model.js'
 import { findTeamPageSeasonDoc } from '../../../model/team/page/teamPageSeason.model.js'
+import { hasTeamNoteContent } from '../../../model/team/teamNotes.model.js'
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 import TeamHeader from './TeamHeader.js'
 import TeamActionsPanel from './TeamActionsPanel.js'
+import TeamNotebookDrawer from './notes/TeamNotebookDrawer.js'
+import { saveTeamNotes } from '../../../services/write/team/saveTeamNotes.js'
 import TeamInformationOverview from './information/components/TeamInformationOverview.js'
 import { buildTeamInformationView } from './information/model/teamInformation.model.js'
 import { buildTeamWorkspaceSeasonContext } from './information/model/teamWorkspaceSeason.model.js'
@@ -46,8 +45,10 @@ import {
   WorkTaskModal,
 } from '../../components/modals/index.js'
 import TeamUrlEditDrawer from '../../components/drawers/TeamUrlEditDrawer.js'
+import PlayerSeasonDetailsDrawer from '../../components/drawers/PlayerSeasonDetailsDrawer.js'
 import useTeamRoleEditor from './hooks/useTeamRoleEditor.js'
-import { updatePlayerShirtNumber } from '../../../services/write/roster/edits/updatePlayerShirtNumber.js'
+import { updatePlayerRole } from '../../../services/write/player/edits/updatePlayerRootManual.js'
+import { updatePlayerSeasonDetails } from '../../../services/write/roster/edits/updatePlayerShirtNumber.js'
 import { SNACK_STATUS } from '../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import useTeamPageUrlEditor from './hooks/useTeamPageUrlEditor.js'
 import useTeamRosterImport from './roster/import/hooks/useTeamRosterImport.js'
@@ -106,9 +107,9 @@ function TeamPageContent() {
   const tasksModel = usePlayersDatabaseTasks()
   const taskActions = usePlayersDatabaseTaskActions()
   const [profileFilterKey, setProfileFilterKey] = React.useState('all')
-  const [shirtEdit, setShirtEdit] = React.useState(null)
-  const [shirtDraft, setShirtDraft] = React.useState('')
-  const [shirtBusy, setShirtBusy] = React.useState(false)
+  const [notebookOpen, setNotebookOpen] = React.useState(false)
+  const [playerDetailsEdit, setPlayerDetailsEdit] = React.useState(null)
+  const [detailsSaving, setDetailsSaving] = React.useState(false)
   const [sidePanelCollapsed, setSidePanelCollapsed] = usePageSidePanelCollapsed(
     'playersDatabase:teamSidePanelCollapsed'
   )
@@ -123,6 +124,7 @@ function TeamPageContent() {
     clubDoc,
     clubsDirectory,
     players,
+    leaguesCenterDocument,
     hasTeamPlayers,
     seasonOptions,
     selectedSeasonKey,
@@ -136,23 +138,50 @@ function TeamPageContent() {
     refreshError,
     selectionError,
   } = useTeamPage()
+  const notebookMentionOptions = React.useMemo(() => {
+    const byId = new Map()
+    const addPlayer = (playerId, player) => {
+      const id = String(playerId || '').trim()
+      const label = String(player?.fullName || player?.name || '').trim()
+      if (!id || !label) return
+      byId.set(id, {
+        id,
+        label,
+        href: PLAYERS_DATABASE_UI_ROUTES.player({
+          playerId: id,
+          teamId: team?.birthTeamId || team?.id,
+          leagueId,
+        }),
+      })
+    }
+
+    teamSeasons.forEach(season => {
+      Object.entries(season?.roster?.playersById || {}).forEach(([id, player]) => addPlayer(id, player))
+    })
+    players.forEach(player => addPlayer(player.playerId || player.id, player))
+    return [...byId.values()].sort((a, b) => a.label.localeCompare(b.label, 'he'))
+  }, [leagueId, players, team?.birthTeamId, team?.id, teamSeasons])
   const workspace = React.useMemo(
     () => resolveTeamWorkspace(location.search),
     [location.search]
   )
   const workspaceSeasonOption = React.useMemo(() => (
-    workspace.mode === 'overview'
+    workspace.mode === 'overview' || new URLSearchParams(location.search).has('signalSeason')
       ? selectedSeasonOption
       : seasonOptions.find(option => option.target === 'current') ||
         seasonOptions.find(option => option.target !== 'future') ||
         seasonOptions[0]
-  ), [seasonOptions, selectedSeasonOption, workspace.mode])
+  ), [location.search, seasonOptions, selectedSeasonOption, workspace.mode])
   const overviewRosterSeasonOption = React.useMemo(() => {
     const params = new URLSearchParams(location.search)
     const optionKey = params.get('rosterSeason') || params.get('analysisSeason') || ''
     return seasonOptions.find(option => option.optionKey === optionKey) || workspaceSeasonOption
   }, [location.search, seasonOptions, workspaceSeasonOption])
-  const clubIntelligence = useTeamClubIntelligence({
+  const {
+    intelligence: clubIntelligence,
+    sources: clubSources,
+    loading: clubSourcesLoading,
+  } = useTeamClubIntelligence({
     clubId: team?.clubId,
     club: clubDoc,
     seasonOption: workspaceSeasonOption,
@@ -465,12 +494,29 @@ function TeamPageContent() {
   const handleDownloadJson = React.useCallback(() => {
     downloadTeamPageDocumentsJson({
       clubsDirectoryDocument: clubsDirectory,
+      leaguesCenterDocument,
       leagueDocument: selectedLeagueDocument,
       leagueDocuments,
       teamDocument: teamDoc,
       teamSeasons,
+      clubSources,
+      pageName: [team.name, team.birthYear].filter(Boolean).join(' '),
     })
-  }, [clubsDirectory, leagueDocuments, selectedLeagueDocument, teamDoc, teamSeasons])
+  }, [clubsDirectory, clubSources, leagueDocuments, leaguesCenterDocument, selectedLeagueDocument, teamDoc, teamSeasons, team.name, team.birthYear])
+
+  const handleNotebookSave = React.useCallback(async draft => {
+    await saveTeamNotes(draft)
+    try {
+      await reload()
+      notify({ status: SNACK_STATUS.SUCCESS, title: 'המחברת נשמרה' })
+    } catch {
+      notify({
+        status: SNACK_STATUS.SUCCESS,
+        title: 'המחברת נשמרה',
+        message: 'הרענון נכשל; הנתונים יופיעו בטעינה הבאה',
+      })
+    }
+  }, [notify, reload])
 
   const handleBackToLeague = () => {
     navigate(leagueBackPath, {
@@ -562,36 +608,73 @@ function TeamPageContent() {
     teamSeasons,
   ])
 
-  const openShirtEdit = React.useCallback((row, season) => {
+  const openPlayerDetails = React.useCallback((row, season) => {
     const playerId = cleanKey(row?.player?.playerId || row?.id)
     const rosterPlayer = season?.roster?.playersById?.[playerId]
     if (!rosterPlayer || season?.stats?.statsLoadState?.status !== 'loaded') return
-    setShirtEdit({ playerId, playerName: row.name, identity: season.identity })
-    setShirtDraft(rosterPlayer.numShirt === null || rosterPlayer.numShirt === undefined ? '' : String(rosterPlayer.numShirt))
+    setPlayerDetailsEdit({
+      playerId,
+      playerName: row.name,
+      identity: season.identity,
+      seasonLabel: season.identity?.seasonKey || '',
+      original: {
+        numShirt: rosterPlayer.numShirt === null || rosterPlayer.numShirt === undefined ? '' : String(rosterPlayer.numShirt),
+        playerUrl: season.manual?.playersById?.[playerId]?.playerUrl || '',
+        primaryPosition: row.primaryPosition || '',
+        positionLayer: row.positionLayer || '',
+      },
+    })
   }, [])
 
-  const saveShirtEdit = React.useCallback(async () => {
-    if (!shirtEdit || shirtBusy) return
-    setShirtBusy(true)
+  const findPlayerDetailsSeason = React.useCallback((row, preferredSeasonKey) => {
+    const playerId = cleanKey(row?.player?.playerId || row?.playerId || row?.id)
+    const key = cleanKey(preferredSeasonKey)
+    const seasonYear = value => {
+      const match = cleanKey(value).match(/^(?:20)?(\d{2})[/_-]/)
+      return match ? Number(match[1]) : -1
+    }
+    const eligible = teamSeasons.filter(season => (
+      season?.roster?.playersById?.[playerId] && season?.stats?.statsLoadState?.status === 'loaded'
+    ))
+    const selected = eligible.find(season => cleanKey(season.identity?.seasonKey) === key)
+    if (selected || row?.side !== 'out') return selected || null
+    return eligible
+      .find(season => seasonYear(season.identity?.seasonKey) === seasonYear(key) - 1) || null
+  }, [teamSeasons])
+
+  const savePlayerDetails = React.useCallback(async (draft, changed) => {
+    if (!playerDetailsEdit || detailsSaving || !Object.values(changed).some(Boolean)) return
+    setDetailsSaving(true)
     try {
-      await updatePlayerShirtNumber({
-        ...shirtEdit.identity,
-        playerId: shirtEdit.playerId,
-        numShirt: shirtDraft.trim(),
-      })
-      setShirtEdit(null)
-      notify({ status: SNACK_STATUS.SUCCESS, title: 'מספר החולצה נשמר', message: shirtEdit.playerName })
+      const seasonDetails = {
+        ...playerDetailsEdit.identity,
+        playerId: playerDetailsEdit.playerId,
+        ...(changed.numShirt ? { numShirt: String(draft.numShirt || '').trim() } : {}),
+        ...(changed.playerUrl ? { playerUrl: String(draft.playerUrl || '').trim() } : {}),
+      }
+      if (changed.primaryPosition || changed.positionLayer) {
+        await updatePlayerRole({
+          playerId: playerDetailsEdit.playerId,
+          primaryPosition: draft.primaryPosition,
+          positionLayer: draft.positionLayer,
+          seasonDetails: changed.numShirt || changed.playerUrl ? seasonDetails : null,
+        })
+      } else {
+        await updatePlayerSeasonDetails(seasonDetails)
+      }
+      setPlayerDetailsEdit(null)
+      notify({ status: SNACK_STATUS.SUCCESS, title: 'פרטי השחקן נשמרו', message: playerDetailsEdit.playerName })
       try {
         await reload()
       } catch {
-        notify({ status: SNACK_STATUS.ERROR, title: 'המספר נשמר', message: 'רענון העמוד נכשל; הנתונים יופיעו בטעינה הבאה' })
+        notify({ status: SNACK_STATUS.ERROR, title: 'השינויים נשמרו', message: 'רענון העמוד נכשל; הנתונים יופיעו בטעינה הבאה' })
       }
     } catch (error) {
-      notify({ status: SNACK_STATUS.ERROR, title: 'שמירת מספר החולצה נכשלה', message: error?.message || 'לא בוצעה שמירה' })
+      notify({ status: SNACK_STATUS.ERROR, title: 'שמירת פרטי השחקן נכשלה', message: error?.message || 'לא בוצעה שמירה' })
     } finally {
-      setShirtBusy(false)
+      setDetailsSaving(false)
     }
-  }, [notify, reload, shirtBusy, shirtDraft, shirtEdit])
+  }, [notify, reload, detailsSaving, playerDetailsEdit])
 
   if (loading) {
     return (
@@ -647,7 +730,8 @@ function TeamPageContent() {
               overviewRosterProfileFilterOptions={overviewRosterProfileFilterOptions}
               onProfileFilterChange={handleProfileFilterChange}
               onPlayerRoleEdit={roleEditor.open}
-              onShirtEdit={openShirtEdit}
+              onPlayerDetailsEdit={openPlayerDetails}
+              findPlayerDetailsSeason={findPlayerDetailsSeason}
               onPlayerOpen={handlePlayerOpen}
             />
           </Box>
@@ -669,11 +753,17 @@ function TeamPageContent() {
             deleteActionsError={playersDelete.deleteActionsError}
             onReport={teamReport.openPreview}
             onTeamLink={teamUrlEditor.openDrawer}
+            onNotebookOpen={() => setNotebookOpen(true)}
+            hasTeamRoot={Boolean(teamDoc)}
+            hasNotebookNote={hasTeamNoteContent(teamDoc?.notes)}
+            hasOpenTasks={!tasksModel.loading && teamPageTasks.tasks.length > 0}
             onDownloadJson={handleDownloadJson}
-            jsonDownloadDisabled={Boolean(
+            jsonDownloadDisabled={clubSourcesLoading || Boolean(
               !selectedLeagueDocument &&
               !leagueDocuments.length &&
               !(clubsDirectory && clubsDirectory.documentExists !== false) &&
+              !(leaguesCenterDocument && leaguesCenterDocument.documentExists !== false) &&
+              !clubSources &&
               !teamDoc &&
               !teamSeasons.length
             )}
@@ -719,6 +809,18 @@ function TeamPageContent() {
         onClose={teamUrlEditor.close}
       />
 
+      <TeamNotebookDrawer
+        open={notebookOpen}
+        onClose={() => setNotebookOpen(false)}
+        onSave={handleNotebookSave}
+        teamId={team.birthTeamId || team.id}
+        teamName={team.name}
+        birthYear={team.birthYear}
+        notes={teamDoc?.notes}
+        mentionOptions={notebookMentionOptions}
+        initialInsightId={workspace.insightId || workspace.sourceInsightId}
+      />
+
       <PlayerRoleEditModal
         open={Boolean(roleEditor.row)}
         playerName={roleEditor.row?.fullName || ''}
@@ -730,24 +832,15 @@ function TeamPageContent() {
         onClose={roleEditor.close}
       />
 
-      <Modal open={Boolean(shirtEdit)} onClose={() => { if (!shirtBusy) setShirtEdit(null) }}>
-        <ModalDialog sx={{ minWidth: 300, maxWidth: 'calc(100vw - 32px)' }}>
-          <Typography level='title-md'>מספר חולצה · {shirtEdit?.playerName}</Typography>
-          <Typography level='body-sm'>לעונת הקבוצה שנבחרה. השאר ריק להסרת המספר.</Typography>
-          <Input
-            autoFocus
-            type='number'
-            value={shirtDraft}
-            onChange={event => setShirtDraft(event.target.value)}
-            slotProps={{ input: { min: 1, step: 1 } }}
-            aria-label='מספר חולצה'
-          />
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-            <Button variant='plain' color='neutral' disabled={shirtBusy} onClick={() => setShirtEdit(null)}>ביטול</Button>
-            <Button loading={shirtBusy} onClick={saveShirtEdit}>שמירה</Button>
-          </Box>
-        </ModalDialog>
-      </Modal>
+      <PlayerSeasonDetailsDrawer
+        open={Boolean(playerDetailsEdit)}
+        playerName={playerDetailsEdit?.playerName || ''}
+        seasonLabel={playerDetailsEdit?.seasonLabel || ''}
+        value={playerDetailsEdit?.original}
+        saving={detailsSaving}
+        onSave={savePlayerDetails}
+        onClose={() => setPlayerDetailsEdit(null)}
+      />
 
       <RosterImportModal
         team={team}

@@ -63,12 +63,17 @@ const clampScore = value => {
   return roundWholeNumber(Math.max(0, Math.min(100, n)))
 }
 
-const safeRate = ({ numerator, denominator }) => {
+const safeRate = ({ numerator, denominator, allowZeroDenominator = false }) => {
   const top = toNumber(numerator)
   const bottom = toNumber(denominator)
 
-  if (!Number.isFinite(top) || !Number.isFinite(bottom) || bottom <= 0) {
+  if (!Number.isFinite(top) || !Number.isFinite(bottom) || bottom < 0) {
     return null
+  }
+
+  if (bottom === 0) {
+    // Zero conceded goals exceed a positive defensive target without division.
+    return allowZeroDenominator && top > 0 ? 200 : null
   }
 
   return clampRate((top / bottom) * 100)
@@ -129,7 +134,7 @@ const applyScoutPriorityCaps = ({ rate, qualityRate } = {}) => {
   return priority
 }
 
-const buildScoutPriorityScore = ({
+export const buildTeamScoutPriorityBreakdown = ({
   qualityRate,
   targetRate,
   rankingRate,
@@ -150,18 +155,39 @@ const buildScoutPriorityScore = ({
 
   if (!Number.isFinite(qualityNormalized)) return null
 
-  const normalizedRate = (
-    (qualityNormalized * SCOUT_PRIORITY_CALIBRATION.qualityWeight) +
-    (target * SCOUT_PRIORITY_CALIBRATION.targetWeight) +
-    (deviation * SCOUT_PRIORITY_CALIBRATION.rankingWeight)
-  )
-
-  const priorityScore = clampScore(normalizedRate)
-
-  return applyScoutPriorityCaps({
+  const components = [
+    { id: 'quality', normalized: qualityNormalized, weight: SCOUT_PRIORITY_CALIBRATION.qualityWeight },
+    {
+      id: 'target',
+      normalized: target,
+      weight: SCOUT_PRIORITY_CALIBRATION.targetWeight,
+      fullScoreRate: SCOUT_PRIORITY_CALIBRATION.targetFullScoreRate,
+    },
+    {
+      id: 'ranking',
+      normalized: deviation,
+      weight: SCOUT_PRIORITY_CALIBRATION.rankingWeight,
+      fullScoreRate: SCOUT_PRIORITY_CALIBRATION.rankingFullScoreRate,
+    },
+  ].map(component => ({
+    ...component,
+    points: roundPrecision(component.normalized * component.weight, 2),
+  }))
+  // Keep the engine's original arithmetic order and rounding for existing scores.
+  const weightedTotal = components.reduce((sum, component) => sum + component.normalized * component.weight, 0)
+  const total = roundPrecision(weightedTotal, 2)
+  const priorityScore = clampScore(weightedTotal)
+  const score = applyScoutPriorityCaps({
     rate: priorityScore,
     qualityRate: quality,
   })
+
+  return { components, total, roundedScore: priorityScore, score, capped: score !== priorityScore }
+}
+
+const buildScoutPriorityScore = values => {
+  const breakdown = buildTeamScoutPriorityBreakdown(values)
+  return breakdown ? breakdown.score : null
 }
 
 const resolveOpportunityType = ({
@@ -285,6 +311,7 @@ export const buildTeamScoutPerformance = ({
   const defensePerformanceRate = safeRate({
     numerator: benchmark.goalsAgainst,
     denominator: row.projectedGoalsAgainst,
+    allowZeroDenominator: true,
   })
   const offenseRankingRate = safeRate({
     numerator: row.position,

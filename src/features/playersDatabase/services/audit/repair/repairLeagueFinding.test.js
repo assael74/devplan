@@ -8,6 +8,7 @@ import { readLeagueMutationSources } from '../../write/league/readLeagueWriteSou
 import { writeClubsCenter } from '../../write/league/writeClubsCenter.js'
 import { writeLeaguesCenter } from '../../write/league/writeLeaguesCenter.js'
 import { writeTeamSeasonCompetitionSnapshots } from '../../write/league/writeTeamSeasonCompetitionSnapshots.js'
+import { refreshTeamSignalSummaries } from '../../write/signals/refreshTeamSignalSummaries.js'
 
 jest.mock('../league/readActual.js', () => ({ readClubProfiles: jest.fn() }))
 jest.mock('../../write/league/readLeagueWriteSources.js', () => ({
@@ -17,6 +18,9 @@ jest.mock('../../write/league/writeClubsCenter.js', () => ({ writeClubsCenter: j
 jest.mock('../../write/league/writeLeaguesCenter.js', () => ({ writeLeaguesCenter: jest.fn() }))
 jest.mock('../../write/league/writeTeamSeasonCompetitionSnapshots.js', () => ({
   writeTeamSeasonCompetitionSnapshots: jest.fn(),
+}))
+jest.mock('../../write/signals/refreshTeamSignalSummaries.js', () => ({
+  refreshTeamSignalSummaries: jest.fn(),
 }))
 
 const leagueId = 'league-1'
@@ -92,7 +96,7 @@ beforeEach(() => {
   readClubProfiles.mockResolvedValue(profiles)
 })
 
-test('rebuilds only LeaguesCenter from canonical state and retains the canonical timestamp', async () => {
+test('rebuilds LeaguesCenter before refreshing canonical club signals and retains the canonical timestamp', async () => {
   await repairLeagueFinding({ scope, finding: findingFor('leaguesCenter') })
 
   const { approvedState } = writeLeaguesCenter.mock.calls[0][0]
@@ -116,9 +120,51 @@ test('rebuilds only LeaguesCenter from canonical state and retains the canonical
 
   expect(findings.filter(item => item.target === 'leaguesCenter')).toEqual([])
   expect(projection.season.updatedAt).toBe(updatedAt)
+  expect(refreshTeamSignalSummaries).toHaveBeenCalledTimes(1)
+  expect(refreshTeamSignalSummaries).toHaveBeenCalledWith({ clubIds: ['club-a', 'club-b'] })
+  expect(writeLeaguesCenter.mock.invocationCallOrder[0])
+    .toBeLessThan(refreshTeamSignalSummaries.mock.invocationCallOrder[0])
   expect(readClubProfiles).not.toHaveBeenCalled()
   expect(writeClubsCenter).not.toHaveBeenCalled()
   expect(writeTeamSeasonCompetitionSnapshots).not.toHaveBeenCalled()
+})
+
+test('deduplicates current canonical clubs without including obsolete projection clubs or changing sources', async () => {
+  const sources = sourcesFixture()
+  sources.existingLeague.seasonsById[seasonId].table.teamsById[otherTeamId].clubId = 'club-a'
+  sources.previousLeaguesCenterTeamsById = { 'old-team': { clubId: 'club-old' } }
+  const originalSources = JSON.stringify(sources)
+  readLeagueMutationSources.mockResolvedValue(sources)
+  const result = { written: true }
+  writeLeaguesCenter.mockResolvedValueOnce(result)
+
+  await expect(repairLeagueFinding({ scope, finding: findingFor('leaguesCenter') }))
+    .resolves.toBe(result)
+  expect(refreshTeamSignalSummaries).toHaveBeenCalledWith({ clubIds: ['club-a'] })
+  expect(JSON.stringify(sources)).toBe(originalSources)
+})
+
+test('does not refresh signals after a failed Center write', async () => {
+  writeLeaguesCenter.mockRejectedValueOnce(new Error('center failed'))
+  await expect(repairLeagueFinding({ scope, finding: findingFor('leaguesCenter') }))
+    .rejects.toThrow('center failed')
+  expect(refreshTeamSignalSummaries).not.toHaveBeenCalled()
+})
+
+test('awaits signal refresh and propagates its failure instead of reporting a completed repair', async () => {
+  refreshTeamSignalSummaries.mockRejectedValueOnce(new Error('signals failed'))
+  await expect(repairLeagueFinding({ scope, finding: findingFor('leaguesCenter') }))
+    .rejects.toThrow('signals failed')
+  expect(writeLeaguesCenter).toHaveBeenCalledTimes(1)
+})
+
+test('does not refresh signals when the canonical season has no teams', async () => {
+  const sources = sourcesFixture()
+  sources.existingLeague.seasonsById[seasonId].table.teamsById = {}
+  readLeagueMutationSources.mockResolvedValue(sources)
+  await repairLeagueFinding({ scope, finding: findingFor('leaguesCenter') })
+  expect(writeLeaguesCenter).toHaveBeenCalledTimes(1)
+  expect(refreshTeamSignalSummaries).not.toHaveBeenCalled()
 })
 
 test('rebuilds missing ClubsCenter with canonical profiles and removes obsolete team locations', async () => {
@@ -195,6 +241,7 @@ test('removes only the stale season projection when the canonical league still e
 
   expect(writeLeaguesCenter.mock.calls[0][0].approvedState.leaguesCenterProjection)
     .toMatchObject({ operation: 'DELETE_SEASON', leagueId, seasonId, identity: { leagueName: 'ליגה' } })
+  expect(refreshTeamSignalSummaries).not.toHaveBeenCalled()
   expect(writeClubsCenter).not.toHaveBeenCalled()
   expect(writeTeamSeasonCompetitionSnapshots).not.toHaveBeenCalled()
 })
@@ -207,6 +254,7 @@ test('removes a stale league projection when the canonical league is missing', a
 
   expect(writeLeaguesCenter.mock.calls[0][0].approvedState.leaguesCenterProjection)
     .toMatchObject({ operation: 'DELETE_LEAGUE', identity: null })
+  expect(refreshTeamSignalSummaries).not.toHaveBeenCalled()
 })
 
 test('blocks missing canonical profiles without creating documents', async () => {

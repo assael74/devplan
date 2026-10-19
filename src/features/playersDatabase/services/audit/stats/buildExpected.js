@@ -1,5 +1,6 @@
 // src/features/playersDatabase/services/audit/stats/buildExpected.js
 
+import { buildLeagueStatsProjection } from '../../../domain/stats/statsLoadState.js'
 import {
   buildPlayerSearchIndexProjection,
   buildPlayerSeasonProjection,
@@ -114,9 +115,7 @@ export const buildStatsAuditExpected = ({
     })
   })
 
-  const stats = object(teamSeason.stats)
   const scouting = object(teamSeason.scouting)
-  const teamTaskSignals = object(teamSeason.teamTaskSignals)
   const playersWithScoutProfileCount = Object.values(object(scouting.playersById))
     .filter(player => Array.isArray(player && player.professionalProfileIds) && player.professionalProfileIds.length > 0)
     .length
@@ -141,20 +140,9 @@ export const buildStatsAuditExpected = ({
       playerSeasonsById,
       playerSearchIndexesById,
       leagueTeamPatch: {
-        stats: {
-          hasStats: Object.values(object(stats.playersById)).some(player => clean(player && player.statsStatus) === 'loaded'),
-          statsComplete: clean(object(stats.statsLoadState).status) === 'loaded',
-          loadedAt: clean(object(stats.statsLoadState).status) === 'loaded'
-            ? object(stats.statsLoadState).updatedAt || null
-            : null,
-        },
+        stats: buildLeagueStatsProjection(teamSeason),
         scouting: {
           playersWithScoutProfileCount,
-          teamTaskSignals: {
-            offense: Boolean(teamTaskSignals.offense),
-            defense: Boolean(teamTaskSignals.defense),
-            updatedAt: teamTaskSignals.updatedAt || null,
-          },
         },
         updatedAt,
       },

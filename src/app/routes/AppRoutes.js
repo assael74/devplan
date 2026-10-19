@@ -100,7 +100,7 @@ export default function AppRoutes() {
           />
         </>
       ) : (
-        renderAuthenticatedRoutes({ isAdmin: routeAccess.isAdmin })
+        renderAuthenticatedRoutes({ isAdmin: routeAccess.isAdmin, sessionKey: user.uid })
       )}
     </Routes>
   )

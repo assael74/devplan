@@ -5,9 +5,11 @@ import {
   getTeamScoutingSummaryTitle,
   getTeamScoutingSummaryTitles,
 } from '../../scouting/model/teamScoutingSummary.presentation.js'
+import { buildMovementSeasonSignal } from '../../../../../domain/signals/teamMovementSignal.js'
 import { numberOrNull } from '../../model/teamInformation.utils.js'
 import { buildFutureCompetitionInsight } from './teamFutureCompetition.presentation.js'
 import { buildClubComparisonInsight } from './teamClubComparison.presentation.js'
+import { buildTeamSignals } from '../../../../../model/team/signals/teamSignals.model.js'
 
 export const buildRosterBalanceSeasonView = (currentView, rosterView) => {
   if (!rosterView || rosterView.selectedSeasonKey === currentView.selectedSeasonKey) return rosterView || currentView
@@ -61,48 +63,19 @@ const buildRosterBalanceComparison = view => {
   return { minutes, positions }
 }
 
-const buildMovementSeasonSignal = (season, clubLevel, balancePoint) => {
-  const directionDepartureCount = clubLevel === 1
-    ? season?.higherOrSameLevelDepartures || 0
-    : season?.higherLevelDepartures || 0
-  const professionalDepartureCount = season?.professionalProfileDepartures || 0
-  const available = Boolean(season && season.movementDataAvailable &&
-    !season.isUpcoming && balancePoint !== null)
-  const directionActive = available && directionDepartureCount > balancePoint
-  const professionalActive = available && professionalDepartureCount > balancePoint
-  const count = Number(directionActive) + Number(professionalActive)
-
-  return {
-    seasonKey: season?.seasonKey || '',
-    balancePoint,
-    directionDepartureCount,
-    professionalDepartureCount,
-    directionActive,
-    professionalActive,
-    count,
-    status: !available ? 'limited' : count === 2 ? 'multiple' : count === 1 ? 'single' : 'none',
-  }
-}
-
 export const buildTeamInsightsPresentation = ({ view, club, clubIntelligence }) => {
+  const signals = buildTeamSignals({ view, club, clubIntelligence })
   const analysisAvailable = view?.structure && view.structure.availability !== 'unavailable'
-  const teamInterest = analysisAvailable ? view.structure.teamInterest : null
-  const rosterBalanceTaskCount = [
-    teamInterest?.lines?.defense?.isInteresting,
-    teamInterest?.lines?.offense?.isInteresting,
-    teamInterest?.squad?.isInteresting,
-  ].filter(Boolean).length
-  const rosterBalanceStatus = rosterBalanceTaskCount >= 2
-    ? 'multiple'
-    : rosterBalanceTaskCount === 1 ? 'single' : 'none'
+  const balanceFamily = signals.familiesById['roster-balance']
+  const rosterBalanceTaskCount = Object.values(balanceFamily.signalsById).filter(signal => signal.level > 0).length
+  const rosterBalanceStatus = balanceFamily.level === 2 ? 'multiple'
+    : balanceFamily.level === 1 ? 'single' : 'none'
 
-  const clubLevel = Number(club?.clubLevel)
+  const clubLevel = Number(club?.clubLevel || clubIntelligence?.club?.clubLevel)
   const clubComparison = buildClubComparisonInsight(view, clubIntelligence)
   const movementSeasons = view?.yearDevelopment?.movementSeasons || []
   const selectedMovements = movementSeasons.find(season => season.seasonKey === view?.selectedSeasonKey)
-  const movementBalancePoint = [1, 1.5].includes(clubLevel)
-    ? 3
-    : [2, 2.5].includes(clubLevel) ? 2 : clubLevel >= 3 ? 1 : null
+  const movementBalancePoint = buildMovementSeasonSignal(null, clubLevel).balancePoint
   const movementSeasonSignals = movementSeasons.map(season => (
     buildMovementSeasonSignal(season, clubLevel, movementBalancePoint)
   ))
@@ -142,6 +115,7 @@ export const buildTeamInsightsPresentation = ({ view, club, clubIntelligence }) 
 
   const futureCompetitionSignal = buildFutureCompetitionInsight(view, clubIntelligence)
   return {
+    signals,
     rosterBalanceTaskCount,
     futureCompetitionSignal,
     rosterBalanceComparison: buildRosterBalanceComparison(view),

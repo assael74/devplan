@@ -7,7 +7,7 @@ export const SCOUTING_MODEL_RELEASE = '2026.08.25'
 export const SCOUTING_VERSION_SCHEMA = 1
 
 export const PLAYER_SCOUT_LAYER_VERSION = 'players-v2'
-export const TEAM_SCOUT_PERFORMANCE_VERSION = 'team-performance-v1'
+export const TEAM_SCOUT_PERFORMANCE_VERSION = 'team-performance-v2'
 export const TEAM_BALANCE_VERSION = 'team-balance-v13'
 export const TEAM_LINE_CLASSIFICATION_VERSION = 'player-line-v8'
 export const TEAM_BALANCE_OUTPUT_CONTRACT_VERSION = 'team-balance-output-v21'

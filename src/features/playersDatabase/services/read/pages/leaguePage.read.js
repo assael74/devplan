@@ -31,6 +31,7 @@ export const subscribeLeaguePageData = ({ leagueId = '', onError } = {}) => {
     feature: 'playersDatabase',
     action: 'league-page-live',
     listenerId,
+    meta: { documentPath: `${PLAYERS_DATABASE_COLLECTIONS.leagues}/${documentId}` },
   }
 
   trackFirestoreListenerOpen(usage)

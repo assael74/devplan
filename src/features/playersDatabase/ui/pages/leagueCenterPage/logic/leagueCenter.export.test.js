@@ -1,4 +1,7 @@
+// src/features/playersDatabase/ui/pages/leagueCenterPage/logic/leagueCenter.export.test.js
+
 import { buildLeagueCenterExportConfig } from './leagueCenter.export.js'
+import { countTeamSignalFamilies, buildTeamSignalSummary } from '../../../../domain/signals/teamSignalSummary.js'
 
 test('exports all supplied league rows with their existing summary metrics', () => {
   const rows = [{
@@ -10,10 +13,9 @@ test('exports all supplied league rows with their existing summary metrics', () 
     teamsCount: 12,
     playersStatsCompleteCount: 10,
     playersStatsTargetCount: 12,
-    offensePriorityCount: 3,
-    offensePriorityTargetCount: 12,
-    defensePriorityCount: 2,
-    defensePriorityTargetCount: 12,
+    signalFamiliesById: countTeamSignalFamilies([buildTeamSignalSummary({ familiesById: {
+      'roster-balance': { level: 2, availability: 'available' },
+    } })]),
     playersCount: 245,
     playersWithProfiles: 18,
     scoutProfilesCount: 21,
@@ -30,4 +32,10 @@ test('exports all supplied league rows with their existing summary metrics', () 
   expect(valueOf('playersStatsCoverage')).toBe('10 / 12')
   expect(valueOf('playersCount')).toBe(245)
   expect(valueOf('tableStatus')).toBe('מלאה')
+  expect(valueOf('roster-balance-count')).toBe(1)
+  expect(valueOf('roster-balance-level')).toBe(2)
+  expect(valueOf('roster-balance-availability')).toBe('מלא')
+  expect(valueOf('performance-count')).toBe('לא ידוע')
+  expect(valueOf('performance-level')).toBe('לא ידוע')
+  expect(config.columns.some(column => ['offensePriorityCoverage', 'defensePriorityCoverage'].includes(column.key))).toBe(false)
 })

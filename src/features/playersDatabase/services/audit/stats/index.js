@@ -4,6 +4,8 @@ import { buildStatsAuditExpected } from './buildExpected.js'
 import { compareStatsAudit } from './compare.js'
 import { readStatsAuditActual } from './readActual.js'
 import { compareArrivalHistory, readArrivalHistorySources } from './arrivalHistory.audit.js'
+import { readExpectedTeamSignals } from '../signals/readExpectedTeamSignals.js'
+import { teamSignalAuditKey } from '../signals/buildExpectedTeamSignals.js'
 
 export const auditStats = async ({
   leagueId = '',
@@ -40,7 +42,12 @@ export const auditStats = async ({
     seasonId,
     scopedPlayerIds,
   })
-  const findings = compareStatsAudit({ actual, expectedState, approvedState, seasonId })
+  const identity = actual.teamSeason?.identity || {}
+  const expectedSignals = await readExpectedTeamSignals({ clubIds: [identity.clubId] })
+  const findings = compareStatsAudit({
+    actual, expectedState, approvedState, seasonId,
+    expectedSignalSummary: expectedSignals.get(teamSignalAuditKey(identity.teamId, seasonId)) || null,
+  })
   const historySources = await readArrivalHistorySources(actual.teamSeason, scopedPlayerIds)
   findings.push(...compareArrivalHistory({
     teamSeason: actual.teamSeason,

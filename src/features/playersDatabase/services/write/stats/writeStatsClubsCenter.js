@@ -4,6 +4,7 @@ import { FieldPath, doc, setDoc } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
+import { refreshTeamSignalSummaries } from '../signals/refreshTeamSignalSummaries.js'
 
 const writeProjection = async ({ target, includeDocumentation }) => {
   const team = target.team || {}
@@ -22,8 +23,7 @@ const writeProjection = async ({ target, includeDocumentation }) => {
   if (includeDocumentation) {
     mergeFields.unshift(
       teamPath('documentationState'),
-      teamPath('documentationStateUpdatedAt'),
-      teamPath('teamTaskSignals')
+      teamPath('documentationStateUpdatedAt')
     )
   }
 
@@ -55,6 +55,7 @@ export const writeStatsClubsCenter = async ({ approvedState = {} } = {}) => {
   for (const target of counterpartTargets) {
     await writeProjection({ target, includeDocumentation: false })
   }
+  await refreshTeamSignalSummaries({ source: approvedState })
 
   return {
     written: true,

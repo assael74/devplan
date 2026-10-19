@@ -19,7 +19,11 @@ import {
   buildLeaguePageView,
 } from '../../../../model/league/page/leaguePage.model.js'
 import { normalizeSeasonLookupKey } from '../../../../model/shared/season.model.js'
-import { subscribeLeaguePageData, CLUBS_DIRECTORY_STORE_KEY } from '../../../../services/read/index.js'
+import {
+  subscribeLeaguePageData,
+  CLUBS_DIRECTORY_STORE_KEY,
+  LEAGUES_CENTER_STORE_KEY,
+} from '../../../../services/read/index.js'
 import { buildLeagueDocumentCacheKey } from '../../../../services/cache/index.js'
 import usePlayersDatabaseReadStoreEntry from '../../../hooks/usePlayersDatabaseReadStoreEntry.js'
 import { PLAYERS_DATABASE_QUERY_KEYS as queryKeys } from '../../../logic/routeBuilders.js'
@@ -46,6 +50,7 @@ export function useLeaguePage() {
   )
   const leagueStoreEntry = usePlayersDatabaseReadStoreEntry(leagueCacheKey)
   const directoryEntry = usePlayersDatabaseReadStoreEntry(CLUBS_DIRECTORY_STORE_KEY)
+  const leaguesCenterEntry = usePlayersDatabaseReadStoreEntry(LEAGUES_CENTER_STORE_KEY)
   const canonicalLeagueDoc = leagueStoreEntry.data
   const leagueDoc = useMemo(() => (
     canonicalLeagueDoc || buildLeaguePageBootstrapLeague(leagueId)
@@ -131,9 +136,11 @@ export function useLeaguePage() {
   }, [location.state, searchParams, setSearchParams])
 
   const teams = useMemo(() => buildLeaguePageTeams({
+    leagueId,
+    leagueLevel: leagueDoc?.level,
     clubsDirectory: directoryEntry.data,
     season: selectedSeasonOption?.season,
-  }), [directoryEntry.data, selectedSeasonOption])
+  }), [directoryEntry.data, leagueId, leagueDoc?.level, selectedSeasonOption])
   const league = useMemo(() => buildLeaguePageView({
     league: leagueDoc,
     leagueId,
@@ -147,6 +154,8 @@ export function useLeaguePage() {
   return {
     league,
     leagueDoc: canonicalLeagueDoc,
+    clubsDirectoryDocument: directoryEntry.data,
+    leaguesCenterDocument: leaguesCenterEntry.data,
     displayLeagueDoc: leagueDoc,
     teams,
     summary,

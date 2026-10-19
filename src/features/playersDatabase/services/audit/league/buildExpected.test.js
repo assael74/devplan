@@ -99,11 +99,6 @@ test('builds the complete LeaguesCenter season payload shape accepted by the wri
         teamSlot: 1,
         documentationState: 'STATS_LOADED',
         documentationStateUpdatedAt: null,
-        teamTaskSignals: {
-          offense: true,
-          defense: false,
-          updatedAt: 'signals-updated',
-        },
       },
     },
     updatedAt: null,
@@ -133,11 +128,6 @@ test('builds ClubProfile and League owned ClubsCenter fields plus Team Season st
     leagueId: 'league-1',
     documentationState: 'STATS_LOADED',
     documentationStateUpdatedAt: null,
-    teamTaskSignals: {
-      offense: true,
-      defense: false,
-      updatedAt: 'signals-updated',
-    },
     performance: {
       tableRank: 1,
       points: 10,
@@ -207,7 +197,7 @@ test('clear keeps the season in Centers with NOT_LOADED and no team projections'
   expect(expected.clubsCenter).toMatchObject({
     seasonId: '2026_2027',
     seasonKey: '26/27',
-    seasonStatus: 'active',
+    league: expect.objectContaining({ seasonStatus: 'active' }),
     clubsById: {},
   })
 })

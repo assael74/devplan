@@ -5,7 +5,6 @@ import {
 } from '@devplan/players-scout-engine/teams/index.js'
 import {
   buildTeamLinePerformanceInterpretation,
-  buildTeamTaskSignals,
 } from '../../../../shared/scouting/teams/interpretation/teamLinePerformanceInterpretation.js'
 import {
   TEAM_BALANCE_OUTPUT_CONTRACT_VERSION,
@@ -76,15 +75,9 @@ export const buildTeamBalanceState = ({
     classificationCoverageBenchmark: balance.classificationCoverageBenchmark,
     lineClassificationCoverage: balance.lineClassificationCoverage,
   })
-  const teamTaskSignals = buildTeamTaskSignals({
-    offenseFinding: scoutInterpretation.offense?.finding,
-    defenseFinding: scoutInterpretation.defense?.finding,
-  })
-
   return {
     ...balance,
     scoutInterpretation,
-    teamTaskSignals,
     outputContractVersion: TEAM_BALANCE_OUTPUT_CONTRACT_VERSION,
     source: {
       collection: 'birthTeamSeasons',

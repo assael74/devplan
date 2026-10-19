@@ -56,7 +56,7 @@ export const firestoreUsagePrimaryLayoutSx = {
   display: 'grid',
   gridTemplateColumns: {
     xs: '1fr',
-    xl: 'minmax(0, 1.35fr) minmax(300px, 0.65fr)',
+    lg: 'minmax(0, 1.35fr) minmax(300px, 0.65fr)',
   },
   alignItems: 'start',
   gap: 2,

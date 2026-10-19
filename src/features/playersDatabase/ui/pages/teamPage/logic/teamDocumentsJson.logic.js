@@ -1,9 +1,9 @@
 // src/features/playersDatabase/ui/pages/teamPage/logic/teamDocumentsJson.logic.js
 
-const safeFilePart = (value, fallback = 'unknown') => String(value || fallback)
-  .trim()
-  .replace(/[\\/:*?"<>|]+/g, '-')
-  .replace(/\s+/g, '-')
+import {
+  downloadDocumentsZip,
+  safeDownloadFilePart as safeFilePart,
+} from '../../../logic/downloadDocumentsZip.js'
 
 const downloadJson = ({ data, fileName }) => {
   const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -22,54 +22,56 @@ const downloadJson = ({ data, fileName }) => {
 
 export const downloadTeamPageDocumentsJson = ({
   clubsDirectoryDocument = null,
+  leaguesCenterDocument = null,
   leagueDocument = null,
   leagueDocuments = [],
   teamDocument = null,
   teamSeasons = [],
+  clubSources = null,
+  pageName = '',
 } = {}) => {
-  const teamId = safeFilePart(
-    teamDocument?.id || teamDocument?.birthTeamDocumentId
-  )
+  const teamId = teamDocument?.id || teamDocument?.identity?.teamId ||
+    teamDocument?.teamId || teamDocument?.birthTeamDocumentId || ''
+  const documents = new Map()
+  const add = (data, fileName) => {
+    if (data && data.documentExists !== false) documents.set(fileName, { data, fileName })
+  }
+  const clubSeasons = [
+    clubSources?.current,
+    ...(Array.isArray(clubSources?.history) ? clubSources.history : []),
+  ].filter(Boolean)
 
-  const leaguesById = new Map()
   ;[
+    ...Object.values(clubSources?.leaguesById || {}),
     ...(Array.isArray(leagueDocuments) ? leagueDocuments : []),
     leagueDocument,
   ].filter(Boolean).forEach(document => {
-    const key = String(document?.id || document?.leagueId || '').trim()
-    if (key) leaguesById.set(key, document)
+    const id = document.id || document.leagueId
+    if (id) add(document, `league-${safeFilePart(id)}.json`)
   })
 
-  leaguesById.forEach(document => {
-    downloadJson({
-      data: document,
-      fileName: `league-${safeFilePart(document.id || document.leagueId)}.json`,
-    })
+  add(clubsDirectoryDocument, 'clubs-directory-all.json')
+  add(leaguesCenterDocument, 'leagues-center-all.json')
+  add(teamDocument, `team-root-${safeFilePart(teamId)}.json`)
+
+  clubSeasons.forEach(source => {
+    add(source.center, `clubs-center-${safeFilePart(source.center?.id || source.seasonId)}.json`)
+  })
+  ;[
+    ...clubSeasons.flatMap(source => Object.values(source.teamSeasonsById || {})),
+    ...(Array.isArray(teamSeasons) ? teamSeasons : []),
+  ].filter(Boolean).forEach(teamSeason => {
+    const identity = teamSeason.identity || {}
+    const id = teamSeason.id || identity.teamSeasonDocumentId || [
+      identity.teamId || teamId,
+      identity.seasonId || teamSeason.seasonId || identity.seasonKey || teamSeason.seasonKey,
+    ].filter(Boolean).join('__')
+    add(teamSeason, `team-season-${safeFilePart(id)}.json`)
   })
 
-  if (clubsDirectoryDocument && clubsDirectoryDocument.documentExists !== false) {
-    downloadJson({
-      data: clubsDirectoryDocument,
-      fileName: 'clubs-directory-all.json',
-    })
-  }
-
-  if (teamDocument) {
-    downloadJson({
-      data: teamDocument,
-      fileName: `team-root-${teamId}.json`,
-    })
-  }
-
-  ;(Array.isArray(teamSeasons) ? teamSeasons : []).forEach(teamSeason => {
-    const seasonFileKey = teamSeason?.identity?.seasonKey ||
-      teamSeason?.identity?.seasonId ||
-      teamSeason?.seasonKey ||
-      teamSeason?.seasonId
-    downloadJson({
-      data: teamSeason,
-      fileName: `team-season-${teamId}-${safeFilePart(seasonFileKey)}.json`,
-    })
+  return downloadDocumentsZip({
+    documents: [...documents.values()],
+    fileName: `קבוצה-${safeFilePart(pageName || teamId)}-מסמכים.zip`,
   })
 }
 

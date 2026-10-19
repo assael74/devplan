@@ -11,12 +11,13 @@ import { dataTableColumnsSx as columnSx } from '../../../components/tables/dataT
 import { dataTableActionsSx as actionSx } from '../../../components/tables/dataTable/sx/dataTableActions.sx.js'
 import { buildTableRankColumn } from '../../../components/tables/tableRankColumn.js'
 import FavoriteButton from '../../../components/actions/FavoriteButton.js'
-import ScoutBadge from '../../../components/scout/shared/ScoutBadge.js'
+import TeamPriorityBadge from '../../../components/scout/shared/TeamPriorityBadge.js'
 import TeamName from '../../../components/entities/TeamName.js'
-import TeamTaskIndicator from '../../../components/teamTaskIndicator/TeamTaskIndicator.js'
+import TeamSignalLevelBadge from '../../../components/teamSignals/TeamSignalLevelBadge.js'
+import LeagueFutureCompetitionBadge from '../components/LeagueFutureCompetitionBadge.js'
+import { readTeamSignalSummary } from '../../../../domain/signals/teamSignalSummary.js'
 import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import teamLogo from '../../../../../../ui/core/images/teamLogo.png'
-import { getFullDateTimeIl } from '../../../../../../shared/format/dateUtils.js'
 import { LEAGUE_TEAMS_TABLE_WIDTHS } from './leagueTableWidths.js'
 import { leagueTeamsColumnsSx as sx } from '../sx/leagueTeams.columns.sx.js'
 
@@ -82,46 +83,13 @@ const resolvePrioritySortValue = value => {
 }
 
 
-const OPPORTUNITY_LABELS = {
-  proven_quality: 'איכות מוכחת',
-  interesting_anomaly: 'אנומליה מעניינת',
-  quality_anomaly: 'איכות ואנומליה',
-  above_target: 'ביצוע מעל היעד',
-  neutral: 'ללא יתרון מובהק',
-  unavailable: 'לא זמין',
-}
-
-const formatRate = value => {
-  const number = toNumericValue(value)
-  return number === null ? 'לא זמין' : `${Math.round(number)}%`
-}
-
-const formatScore = value => {
-  const number = toNumericValue(value)
-  return number === null ? 'לא זמין' : `${Math.round(number)}`
-}
-
-const formatNormalizedScore = formatScore
-
-const buildPriorityTooltip = ({ sideLabel, view }) => {
-  const opportunity = OPPORTUNITY_LABELS[view?.opportunityType] || 'לא זמין'
-
-  return (
-    <Box>
-      <Box>{`עדיפות ${sideLabel}: ${formatScore(pickDefinedValue(view?.priority?.score, view?.priority?.rate))}`}</Box>
-      <Box>{`סוג הזדמנות: ${opportunity}`}</Box>
-      <Box>{`איכות מוחלטת: ${formatNormalizedScore(view?.quality?.rate)}`}</Box>
-      <Box>{`ביצוע מול יעד מנורמל: ${formatNormalizedScore(pickDefinedValue(view?.target?.normalized, view?.target?.rate))}`}</Box>
-      <Box>{`חריגה מהמיקום מנורמלת: ${formatNormalizedScore(pickDefinedValue(view?.ranking?.normalized, view?.ranking?.rate))}`}</Box>
-      <Box>{`ציון אנומליה: ${formatRate(view?.anomaly?.rate)}`}</Box>
-    </Box>
-  )
-}
-
-
-const columnWidth = key => buildTableColumnWidth(
-  LEAGUE_TEAMS_TABLE_WIDTHS[key]
-)
+const RESEARCH_COLUMNS = [
+  { key: 'performanceSignal', label: 'ביצועים', familyId: 'performance' },
+  { key: 'rosterBalanceSignal', label: 'איזון', familyId: 'roster-balance' },
+  { key: 'yearMovementsSignal', label: 'מעברים', familyId: 'year-movements' },
+  { key: 'futureCompetitionSignal', label: 'צפי תחרות', familyId: 'future-competition' },
+  { key: 'clubGapSignal', label: 'ביחס למועדון', familyId: 'club-gap' },
+]
 
 const resolveTeamNameStatus = row => {
   const playersCount = toCount(
@@ -149,7 +117,11 @@ export const buildLeagueTeamsColumns = ({
   onTeamOpen,
   onTeamUrlEdit,
   onFavoriteToggle,
+  researchMode = false,
+  futureCompetitionContext,
 }) => {
+  const columnWidth = key => buildTableColumnWidth(LEAGUE_TEAMS_TABLE_WIDTHS[key])
+
   return [
   buildTableRankColumn({
     sx: {
@@ -169,7 +141,6 @@ export const buildLeagueTeamsColumns = ({
     render: row => (
       <Box sx={sx.teamLogoWrap}>
         <Box component='img' src={teamLogo} alt='' sx={sx.teamLogo} />
-        <TeamTaskIndicator signals={row.teamTaskSignals} />
       </Box>
     ),
   },
@@ -180,24 +151,42 @@ export const buildLeagueTeamsColumns = ({
       ...columnSx.nameColumn,
       ...columnWidth('name'),
     },
-    headerSx: columnSx.nameHeader,
+    headerSx: {
+      ...columnSx.nameHeader,
+      ...sx.teamNameHeader,
+    },
     cellSx: row => ({
       ...columnSx.nameCell,
       ...resolveTeamNameSx(row),
     }),
     getHref: row => row.teamUrl,
-    getLinkAriaLabel: row => (
-      `פתיחת קישור הקבוצה ${row.name || ''}`
-    ),
+    getLinkAriaLabel: row => `פתיחת קישור הקבוצה ${row.name || ''}`,
+    linkSx: row => ({
+      ...resolveTeamNameSx(row),
+      px: 0.5,
+    }),
     getSortValue: row => row.name || '',
-    linkSx: row => resolveTeamNameSx(row),
     render: row => (
-      <TeamName
-        value={row.name}
-        slot={row.teamSlot}
-        fontSize={13}
-        nameSx={sx.teamNameInherit}
-      />
+      <Box sx={sx.teamSignalsCell}>
+        <Box
+          component='span'
+          sx={sx.teamIdentityLink}
+        >
+          <TeamName
+            value={row.name}
+            slot={row.teamSlot}
+            fontSize={13}
+            nameSx={sx.teamNameInherit}
+          />
+          {row.showInvestigationIndicator ? (
+            <Tooltip title='קיימת חקירה לקבוצה'>
+              <Box component='span' aria-label='קיימת חקירה לקבוצה' sx={sx.investigationIcon}>
+                {iconUi({ id: 'notes', size: 'sm' })}
+              </Box>
+            </Tooltip>
+          ) : null}
+        </Box>
+      </Box>
     ),
   },
   {
@@ -236,9 +225,64 @@ export const buildLeagueTeamsColumns = ({
     },
     getSortValue: row => toCount(row.points),
   },
+  ...(researchMode ? [
+  ...RESEARCH_COLUMNS.map(({ familyId, ...column }) => ({
+    ...column,
+    defaultSortDirection: 'desc',
+    headerSx: sx.workAreaHeader,
+    cellSx: sx.workAreaCell,
+    sx: {
+      ...columnSx.numericColumn,
+      ...columnWidth('researchSignal'),
+    },
+    getSortValue: row => readTeamSignalSummary(row.teamSignalSummary).familiesById[familyId].level,
+    render: row => (
+      familyId === 'future-competition'
+        ? <LeagueFutureCompetitionBadge row={row} context={futureCompetitionContext} />
+        : <TeamSignalLevelBadge summary={row.teamSignalSummary} familyId={familyId} />
+    ),
+  })),
+  {
+    key: 'investigation',
+    label: 'חקירה',
+    defaultSortDirection: 'desc',
+    headerSx: sx.workAreaHeader,
+    cellSx: sx.workAreaCell,
+    sx: {
+      ...columnSx.numericColumn,
+      ...columnWidth('investigation'),
+    },
+    getSortValue: row => row.showInvestigationIndicator === true ? 1 : 0,
+    render: row => {
+      const marked = row.showInvestigationIndicator === true
+      const label = marked ? 'חקירה סומנה ידנית' : 'חקירה לא סומנה'
+
+      return (
+        <Tooltip title={label}>
+          <Box
+            component='span'
+            role='img'
+            aria-label={label}
+            tabIndex={0}
+            sx={sx.investigationStatus(marked)}
+          >
+            {iconUi({
+              id: 'notes',
+              size: 'sm',
+              style: { color: 'inherit' },
+              sx: { fontSize: 16 },
+            })}
+          </Box>
+        </Tooltip>
+      )
+    },
+  },
+  ] : [
   {
     key: 'attackPriority',
     label: 'עדיפות התקפית',
+    headerSx: sx.workAreaHeader,
+    cellSx: sx.workAreaCell,
     sx: {
       ...columnSx.numericColumn,
       ...columnWidth('attackPriority'),
@@ -255,12 +299,11 @@ export const buildLeagueTeamsColumns = ({
       const view = row?.performanceView?.offense || {}
 
       return (
-        <ScoutBadge
-          value={view.priority?.level || 'unavailable'}
-          tooltip={buildPriorityTooltip({
-            sideLabel: 'התקפית',
-            view,
-          })}
+        <TeamPriorityBadge
+          side='offense'
+          view={view}
+          teamName={row.name}
+          team={row}
           short
           fontSize={11}
         />
@@ -270,6 +313,8 @@ export const buildLeagueTeamsColumns = ({
   {
     key: 'defensePriority',
     label: 'עדיפות הגנתית',
+    headerSx: sx.workAreaHeader,
+    cellSx: sx.workAreaCell,
     sx: {
       ...columnSx.numericColumn,
       ...columnWidth('defensePriority'),
@@ -286,12 +331,11 @@ export const buildLeagueTeamsColumns = ({
       const view = row?.performanceView?.defense || {}
 
       return (
-        <ScoutBadge
-          value={view.priority?.level || 'unavailable'}
-          tooltip={buildPriorityTooltip({
-            sideLabel: 'הגנתית',
-            view,
-          })}
+        <TeamPriorityBadge
+          side='defense'
+          view={view}
+          teamName={row.name}
+          team={row}
           short
           fontSize={11}
         />
@@ -299,43 +343,88 @@ export const buildLeagueTeamsColumns = ({
     },
   },
   {
-    key: 'rosterProfiles',
-    label: 'סגל / שחקנים / פרופילים',
+    key: 'playersCount',
+    label: 'שחקנים בסגל',
+    headerSx: sx.workAreaHeader,
+    cellSx: sx.workAreaCell,
     sx: {
-      ...sx.rosterProfilesColumn,
-      ...columnWidth('rosterProfiles'),
+      ...columnSx.numericColumn,
+      ...columnWidth('playersCount'),
     },
-    getSortValue: row => (
-      (toCount(row.playersCount) * 1000000) +
-      (toCount(row.profilesCount) * 1000) +
-      toCount(row.profileAssignmentsCount)
-    ),
+    getSortValue: row => toCount(row.playersCount),
     render: row => (
-      <Tooltip
-        placement='top'
-        title={(
-          <Box>
-            <Box>טעינת סגל: {row.rosterLoadedAt ? getFullDateTimeIl(row.rosterLoadedAt) : 'לא תועד'}</Box>
-            <Box>טעינת סטטס: {row.statsLoadedAt ? getFullDateTimeIl(row.statsLoadedAt) : 'לא תועד'}</Box>
-          </Box>
-        )}
-      >
-        <Box sx={sx.rosterProfilesCell} tabIndex={0}>
-          <Box component='span' sx={sx.rosterProfilesValue}>
-            {row.playersCount || 0}
-          </Box>
-          <Box component='span' sx={sx.rosterProfilesDivider}>/</Box>
-          <Box component='span' sx={sx.rosterProfilesValue}>
-            {row.profilesCount || 0}
-          </Box>
-          <Box component='span' sx={sx.rosterProfilesDivider}>/</Box>
-          <Box component='span' sx={sx.rosterProfilesValue}>
-            {row.profileAssignmentsCount || 0}
-          </Box>
-        </Box>
-      </Tooltip>
+      <Box component='span'>{toCount(row.playersCount)}</Box>
     ),
   },
+  {
+    key: 'statsLoaded',
+    label: 'סטטיסטיקה',
+    headerSx: sx.workAreaHeader,
+    cellSx: sx.workAreaCell,
+    sx: {
+      ...columnSx.numericColumn,
+      ...columnWidth('statsLoaded'),
+    },
+    getSortValue: row => row.hasStats === true ? 1 : 0,
+    render: row => {
+      const loaded = row.hasStats === true
+      const label = loaded ? 'נטענה סטטיסטיקה' : 'לא נטענה סטטיסטיקה'
+
+      return (
+        <Box
+          component='span'
+          role='img'
+          aria-label={label}
+          sx={sx.statsLoadedIndicator(loaded)}
+        >
+          {loaded ? iconUi({
+            id: 'positivePriority',
+            size: 'sm',
+            style: { color: 'inherit' },
+            sx: { fontSize: 18 },
+          }) : '−'}
+        </Box>
+      )
+    },
+  },
+  {
+    key: 'statsGamesGap',
+    label: 'פער משחקים',
+    headerSx: sx.workAreaHeader,
+    cellSx: sx.workAreaCell,
+    sx: {
+      ...columnSx.numericColumn,
+      ...columnWidth('statsGamesGap'),
+    },
+    getSortValue: row => typeof row.statsStatus?.gap === 'number' ? row.statsStatus.gap : null,
+    render: row => {
+      const gap = row.statsStatus?.gap
+      const known = typeof gap === 'number'
+      const loaded = row.hasStats === true
+      const description = row.statsStatus?.description || 'פער המשחקים אינו ידוע.'
+
+      const content = (
+        <Box
+          component='span'
+          tabIndex={!known && loaded ? 0 : undefined}
+          aria-label={description}
+          sx={sx.statsGamesGap(known ? gap : null)}
+        >
+          {known ? gap : loaded ? iconUi({
+            id: 'infoOutline',
+            size: 'sm',
+            style: { color: 'inherit' },
+            sx: { fontSize: 14 },
+          }) : '−'}
+        </Box>
+      )
+
+      return !known && loaded
+        ? <Tooltip title='חסר בסיס להשוואת משחקים'>{content}</Tooltip>
+        : content
+    },
+  },
+  ]),
   {
     key: 'favorite',
     label: '',

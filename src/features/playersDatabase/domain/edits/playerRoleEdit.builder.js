@@ -84,28 +84,11 @@ export const buildPlayerRoleEditState = ({
     leagueContext,
     updatedAt,
   })
-  const scoutInterpretation = object(teamBalance && teamBalance.scoutInterpretation)
-  const teamTaskSignals = {
-    offense: Boolean(teamBalance && teamBalance.teamTaskSignals && teamBalance.teamTaskSignals.offense),
-    defense: Boolean(teamBalance && teamBalance.teamTaskSignals && teamBalance.teamTaskSignals.defense),
-    updatedAt,
-  }
-  const teamTaskAvailability = {
-    availability: clean(scoutInterpretation.availability) || (
-      leagueContext.teamGamePlayed < 8 ? 'unavailable' : 'available'
-    ),
-    reason: clean(scoutInterpretation.availabilityReason) || (
-      leagueContext.teamGamePlayed < 8 ? 'season_sample_insufficient' : ''
-    ),
-  }
-
   return {
     statsChanged: true,
     statsPlayer: nextStatsPlayer,
     scoutingPlayer: nextScoutingPlayer,
     teamBalance,
-    teamTaskSignals,
-    teamTaskAvailability,
     leagueContext,
   }
 }

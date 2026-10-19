@@ -33,9 +33,9 @@ export default function LeagueCenterKpiOverview({ summary }) {
         sx={sx.summaryCard}
       />
       <KpiCard
-        title='עדיפות מקצועית'
-        value={summary.leaguesWithProfessionalPriority}
-        caption='כוללות משימות התקפה או הגנה'
+        title='ליגות עם איתותים'
+        value={summary.leaguesWithSignals}
+        caption='כוללות משפחת איתותים פעילה'
         iconId='scouting'
         tone='info'
         sx={sx.summaryCard}

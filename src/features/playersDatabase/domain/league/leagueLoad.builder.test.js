@@ -86,6 +86,20 @@ const resolveContext = ({
 })
 
 describe('buildLeagueLoadDocument', () => {
+  test('restores the investigation flag from Team Root on a fresh table load', () => {
+    const result = buildLeagueLoadDocument({
+      context: resolveContext({ rows: [row] }),
+      season: baseSeason,
+      clubProfilesById: { 'club-a': { clubLevel: 2 } },
+      performanceByTeamId,
+      investigationByTeamId: { 'club-a_2012_1': true },
+      performanceCalculation,
+      tableImportedAt: 'imported',
+    })
+
+    expect(result.season.table.teamsById['club-a_2012_1'].showInvestigationIndicator).toBe(true)
+  })
+
   test('builds a canonical season keyed only by technical seasonId', () => {
     const context = resolveContext({ rows: [row] })
     const result = buildLeagueLoadDocument({
@@ -175,6 +189,7 @@ describe('buildLeagueLoadDocument', () => {
                   hasStats: true,
                   statsComplete: false,
                   loadedAt: '2026-10-13T10:00:00.000Z',
+                  teamGamePlayedAtLoad: 3,
                 },
                 scouting: {
                   playersWithScoutProfileCount: 4,
@@ -214,6 +229,7 @@ describe('buildLeagueLoadDocument', () => {
       hasStats: true,
       statsComplete: false,
       loadedAt: '2026-10-13T10:00:00.000Z',
+      teamGamePlayedAtLoad: 3,
     })
     expect(team.scouting.playersWithScoutProfileCount).toBe(4)
     expect(result.season.gameDurationMinutes).toBe(70)

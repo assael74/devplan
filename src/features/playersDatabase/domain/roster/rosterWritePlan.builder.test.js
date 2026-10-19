@@ -210,6 +210,9 @@ describe('roster target write plan', () => {
       },
     })
     expect(plan).not.toHaveProperty('playerRoots')
+    expect(plan.playerSearchIndexes.upserts[0].document.team).not.toHaveProperty('teamUrl')
+    expect(plan.canonical.teamSeason.competitionSnapshot.teamUrl).toBe('https://example.test/team')
+    expect(plan.playerSearchIndexes.upserts[0].document.team).not.toHaveProperty('seasonUrl')
   })
 
   test('fills creation timestamps and derived roster identity values', () => {

@@ -19,6 +19,7 @@ import {
   trackFirestoreWrite,
   trackFirestoreDelete,
 } from './firestoreUsage.tracker.js'
+import { estimatePayloadKb } from './firestoreUsage.size.js'
 
 const now = () => (
   typeof performance !== 'undefined' && typeof performance.now === 'function'
@@ -53,14 +54,18 @@ export async function trackedGetDoc(ref, context = {}) {
     trackFirestoreRead({
       ...context,
       collection,
+      shortKey: context.shortKey || ref.id,
       operationSubtype: context.operationSubtype || 'getDoc',
       docs: data,
       docsCount: exists ? 1 : 0,
       readsCount: 1,
+      fromCache: Boolean(snapshot.metadata?.fromCache),
       durationMs: now() - startedAt,
       meta: buildReadMeta({
-        meta: context.meta,
-        billingEstimate: exists ? 'document-read' : 'missing-document-read',
+        meta: { ...(context.meta || {}), documentPath: ref.path },
+        billingEstimate: snapshot.metadata?.fromCache
+          ? 'cache-only'
+          : exists ? 'document-read' : 'missing-document-read',
       }),
     })
 
@@ -96,13 +101,15 @@ export async function trackedGetDocFromServer(ref, context = {}) {
     trackFirestoreRead({
       ...context,
       collection,
+      shortKey: context.shortKey || ref.id,
       operationSubtype: context.operationSubtype || 'getDocFromServer',
       docs: data,
       docsCount: exists ? 1 : 0,
       readsCount: 1,
+      fromCache: false,
       durationMs: now() - startedAt,
       meta: buildReadMeta({
-        meta: { ...(context.meta || {}), source: 'server' },
+        meta: { ...(context.meta || {}), source: 'server', documentPath: ref.path },
         billingEstimate: exists ? 'document-read' : 'missing-document-read',
       }),
     })
@@ -140,14 +147,19 @@ export async function trackedGetDocs(queryRef, context = {}) {
       collection,
       operationSubtype: context.operationSubtype || 'getDocs',
       docs,
+      documents: snapshot.docs.map((item, index) => ({
+        path: item.ref?.path,
+        estimatedKb: estimatePayloadKb(docs[index]),
+      })),
       docsCount,
       readsCount: Math.max(1, docsCount),
+      fromCache: Boolean(snapshot.metadata?.fromCache),
       durationMs: now() - startedAt,
       meta: buildReadMeta({
         meta: context.meta,
-        billingEstimate: docsCount
-          ? 'returned-documents'
-          : 'minimum-query-read',
+        billingEstimate: snapshot.metadata?.fromCache
+          ? 'cache-only'
+          : docsCount ? 'returned-documents' : 'minimum-query-read',
       }),
     })
 
@@ -185,8 +197,13 @@ export async function trackedGetDocsFromServer(queryRef, context = {}) {
       collection,
       operationSubtype: context.operationSubtype || 'getDocsFromServer',
       docs,
+      documents: snapshot.docs.map((item, index) => ({
+        path: item.ref?.path,
+        estimatedKb: estimatePayloadKb(docs[index]),
+      })),
       docsCount,
       readsCount: Math.max(1, docsCount),
+      fromCache: false,
       durationMs: now() - startedAt,
       meta: buildReadMeta({
         meta: {

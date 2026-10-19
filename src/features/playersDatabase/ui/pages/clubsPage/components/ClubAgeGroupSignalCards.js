@@ -1,7 +1,8 @@
 // src/features/playersDatabase/ui/pages/clubsPage/components/ClubAgeGroupSignalCards.js
 import { Box, Chip, Typography } from '@mui/joy'
 
-import ClubSignalDisplay from './ClubSignalDisplay.js'
+import TeamSignalSummary from '../../../components/teamSignals/TeamSignalSummary.js'
+import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { clubSignalsSx as sx } from './sx/clubSignals.sx.js'
 
 const metaValue = value => (
@@ -44,6 +45,11 @@ const AgeGroupSignalCard = ({ card, isFocus = false }) => {
           >
             {card.birthYear || '—'}
           </Chip>
+          {card.showInvestigationIndicator ? (
+            <Chip size='sm' variant='soft' color='primary' startDecorator={iconUi({ id: 'notes', size: 'sm' })}>
+              חקירה
+            </Chip>
+          ) : null}
         </Box>
         {meta ? (
           <Typography level='body-xs' sx={sx.ageGroupSignalMeta}>
@@ -56,13 +62,10 @@ const AgeGroupSignalCard = ({ card, isFocus = false }) => {
         <Typography level='body-xs' sx={sx.ageGroupSignalSectionLabel}>
           איתותים
         </Typography>
-        {card.signal ? (
-          <ClubSignalDisplay model={card.signal} variant='card' />
-        ) : (
-          <Typography level='body-sm' sx={sx.ageGroupSignalEmpty}>
-            אין איתותים
-          </Typography>
-        )}
+        <TeamSignalSummary
+          summary={card.teamSignalSummary}
+          getFamilyHref={card.teamHref ? id => `${card.teamHref}${card.teamHref.includes('?') ? '&' : '?'}insight=${id}` : undefined}
+        />
       </Box>
 
       {card.coverage ? (

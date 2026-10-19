@@ -1,5 +1,7 @@
 // src/features/firestoreUsage/sharedLogic/firestoreUsageThresholds.js
 
+import { FIRESTORE_USAGE_CONFIG } from '../../../services/firestore/usage/firestoreUsage.config.js'
+
 export const FIRESTORE_USAGE_THRESHOLDS = {
   reads: { warning: 500, danger: 1500 },
   writes: { warning: 100, danger: 500 },
@@ -10,7 +12,10 @@ export const FIRESTORE_USAGE_THRESHOLDS = {
   estimatedReadKb: { warning: 1000, danger: 5000 },
   estimatedWriteKb: { warning: 500, danger: 2000 },
   collectionReadKb: { warning: 500, danger: 1500 },
-  actionTotalKb: { warning: 250, danger: 1000 },
+  actionTotalKb: {
+    warning: FIRESTORE_USAGE_CONFIG.expensiveActionKbThreshold,
+    danger: 1000,
+  },
 }
 
 export const FIRESTORE_FREE_TIER_LIMITS = {

@@ -5,7 +5,6 @@ import { buildTeamSeasonDocumentId } from '../../../../domain/identity/index.js'
 import {
   executeManualEdit,
   manualEditRef,
-  readManualEditRefs,
   requireManualEditDocument,
 } from '../../shared/manualEdit.write.js'
 
@@ -27,13 +26,9 @@ export const updateTeamSeasonUrl = async ({
   const url = urlValue(teamUrl)
   const leagueRef = manualEditRef('leagues', league)
   const teamSeasonRef = manualEditRef('teamSeasons', teamSeasonId)
-  const indexRefs = await readManualEditRefs('playerSearchIndexes', {
-    seasonId: season,
-    'team.teamId': team,
-  })
 
   return executeManualEdit({
-    refs: [leagueRef, teamSeasonRef, ...indexRefs],
+    refs: [leagueRef, teamSeasonRef],
     build: ({ get, updatedAt }) => {
       const leagueDocument = requireManualEditDocument(get(leagueRef))
       requireValue(clean(leagueDocument.leagueId) === league, 'זהות הליגה סותרת')
@@ -76,20 +71,6 @@ export const updateTeamSeasonUrl = async ({
           })
         }
       }
-      indexRefs.forEach(indexRef => {
-        const index = requireManualEditDocument(get(indexRef))
-        if (clean(index.leagueId) !== league) return
-        requireValue(
-          clean(index.seasonId) === season && clean(index.team?.teamId) === team,
-          'זהות תוצר החיפוש סותרת',
-        )
-        if (clean(index.team?.teamUrl) !== url) {
-          changes.push({
-            ref: indexRef,
-            patch: { team: { ...(index.team || {}), teamUrl: url } },
-          })
-        }
-      })
       return changes
     },
   })

@@ -1,3 +1,5 @@
+// src/features/firestoreUsage/components/UsagePayloadSummary.js
+
 import React from 'react'
 import {
   Box,
@@ -51,7 +53,7 @@ export default function UsagePayloadSummary({ payload }) {
     >
       <Typography level="title-lg">נפח משוער</Typography>
       <Typography level="body-xs" textColor="text.tertiary" sx={{ mb: 1.25 }}>
-        JSON payload משוער — אינו נפח מחויב רשמי
+        אומדן JSON של פעולות שרת, ללא מטמון — אינו תעבורה או חיוב רשמיים
       </Typography>
 
       <Box
@@ -63,7 +65,7 @@ export default function UsagePayloadSummary({ payload }) {
         }}
       >
         <PayloadMetric
-          label="קריאה"
+          label="קריאת שרת"
           value={payload?.estimatedReadKb || 0}
         />
         <PayloadMetric
@@ -76,6 +78,10 @@ export default function UsagePayloadSummary({ payload }) {
           emphasized
         />
       </Box>
+      <Typography level="body-xs" textColor="text.tertiary" sx={{ mt: 1.25 }}>
+        בנפרד: {numberFormatter.format(payload?.cacheReads || 0)} מסמכים מאירועי מטמון,
+        {' '}{numberFormatter.format(payload?.estimatedCacheReadKb || 0)} KB. אינם נכללים בסה״כ.
+      </Typography>
     </Card>
   )
 }

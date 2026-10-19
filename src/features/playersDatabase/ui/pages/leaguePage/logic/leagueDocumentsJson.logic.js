@@ -1,27 +1,31 @@
 // src/features/playersDatabase/ui/pages/leaguePage/logic/leagueDocumentsJson.logic.js
 
-const safeFilePart = (value, fallback = 'unknown') => String(value || fallback)
-  .trim()
-  .replace(/[\\/:*?"<>|]+/g, '-')
-  .replace(/\s+/g, '-')
+import {
+  downloadDocumentsZip,
+  safeDownloadFilePart as safeFilePart,
+} from '../../../logic/downloadDocumentsZip.js'
 
-export const downloadLeaguePageDocumentsJson = ({ leagueDocument = null } = {}) => {
-  if (!leagueDocument) return 0
+export const downloadLeaguePageDocumentsJson = ({
+  leagueDocument = null,
+  clubsDirectoryDocument = null,
+  leaguesCenterDocument = null,
+  pageName = '',
+} = {}) => {
+  const documents = []
+  if (leagueDocument) {
+    documents.push({
+      data: leagueDocument,
+      fileName: `league-${safeFilePart(leagueDocument.id || leagueDocument.leagueId)}.json`,
+    })
+  }
+  if (clubsDirectoryDocument && clubsDirectoryDocument.documentExists !== false) {
+    documents.push({ data: clubsDirectoryDocument, fileName: 'clubs-directory-all.json' })
+  }
+  if (leaguesCenterDocument && leaguesCenterDocument.documentExists !== false) {
+    documents.push({ data: leaguesCenterDocument, fileName: 'leagues-center-all.json' })
+  }
 
-  const blob = new Blob([JSON.stringify(leagueDocument, null, 2)], {
-    type: 'application/json;charset=utf-8',
-  })
-  const url = URL.createObjectURL(blob)
-  const link = window.document.createElement('a')
-
-  link.href = url
-  link.download = `league-${safeFilePart(
-    leagueDocument.id || leagueDocument.leagueId
-  )}.json`
-  window.document.body.appendChild(link)
-  link.click()
-  link.remove()
-  URL.revokeObjectURL(url)
-
-  return 1
+  const name = pageName || leagueDocument?.names?.display || leagueDocument?.names?.official ||
+    leagueDocument?.id || leagueDocument?.leagueId
+  return downloadDocumentsZip({ documents, fileName: `ליגה-${safeFilePart(name)}-מסמכים.zip` })
 }

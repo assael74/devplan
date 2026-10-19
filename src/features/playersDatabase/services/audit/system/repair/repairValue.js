@@ -30,4 +30,5 @@ export const getSystemAuditFindingKey = finding => serializeRepairValue([
 export const getSystemRepairPreviewKey = plan => serializeRepairValue({
   changes: plan.changes,
   guards: plan.guards || [],
+  signalClubIds: plan.signalClubIds || [],
 })

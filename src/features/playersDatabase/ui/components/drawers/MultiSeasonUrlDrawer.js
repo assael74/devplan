@@ -1,6 +1,5 @@
 import { Box, FormControl, FormHelperText, FormLabel, Input, Stack, Typography } from '@mui/joy'
 import DrawerShell from '../../../../../ui/patterns/drawer/DrawerShell.js'
-import DrawerHeaderShell from '../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
 import { entitySeasonUrlDrawerSx as sx } from './sx/entitySeasonUrlDrawer.sx.js'
 const clean = value => String(value ?? '').trim()
 const validUrl = value => !clean(value) || /^https?:\/\/[^\s]+$/i.test(clean(value))
@@ -9,7 +8,7 @@ export default function MultiSeasonUrlDrawer({ open, onClose, onSave, onChange, 
   const valid = dirtyRows.every(row => validUrl(row.draftUrl))
   return <DrawerShell open={open} onClose={onClose} entity={entityType} saving={saving} isDirty={dirtyRows.length > 0} canSave={dirtyRows.length > 0 && valid && !saving}
     sxOverrides={sx.shell}
-    header={<DrawerHeaderShell title={title} titleIconId='link' entity={entityType} subline={entityName} meta={`${rows.length} עונות`} metaIconId='season' chipLabel='מאגר שחקנים' chipIconId='playersDatabase' sxOverrides={sx.header} />}
+    headerProps={{ title, titleIconId: 'link', subline: [entityName, `${rows.length} עונות`].filter(Boolean).join(' · '), sxOverrides: sx.header }}
     actions={{ onSave, onReset: () => rows.forEach(row => onChange(row.key, row.originalUrl)) }}
     texts={{ save: 'שמירת קישורים', saving: 'שומר...', statusSaving: 'מעדכן קישורים...', statusDirty: `${dirtyRows.length} שינויים ממתינים לשמירה`, statusClean: 'לא בוצעו שינויים' }}
     saveButtonProps={{ sx: sx.saveButton }} cancelButtonProps={{ sx: sx.cancelButton }} resetButtonProps={{ sx: sx.resetButton }}>

@@ -14,7 +14,15 @@ export const TEAM_ROOT_DOCUMENT = {
     teamSlot: null,
   },
 
-  notes: '',
+  notes: {
+    showInvestigationIndicator: false,
+    performance: { content: [], relatedPlayerIds: [], reportsIds: [] },
+    'roster-balance': { content: [], relatedPlayerIds: [], reportsIds: [] },
+    'year-movements': { content: [], relatedPlayerIds: [], reportsIds: [] },
+    'future-competition': { content: [], relatedPlayerIds: [], reportsIds: [] },
+    'club-gap': { content: [], relatedPlayerIds: [], reportsIds: [] },
+    general: { content: [], relatedPlayerIds: [], reportsIds: [] },
+  },
 
   // Keyed by technical seasonId, e.g. 2025_2026.
   seasonRefsById: {
@@ -37,7 +45,8 @@ export const TEAM_ROOT_DOCUMENT = {
     'Team Root identity is stable across seasons.',
     'clubId + birthYear + teamSlot define the logical team identity and are the only inputs to teamId.',
     'Season-specific URL, externalTeamId, league and age-group details belong to Team Season.',
-    'notes are multi-season notes for the birth-year team.',
+    'notes are multi-season notes for the birth-year team. Each section owns mention content, relatedPlayerIds and reportsIds.',
+    'showInvestigationIndicator is the only notes field projected outside Team Root.',
     'seasonRefsById keys are technical seasonId values in YYYY_YYYY form and are safe Firestore map keys.',
     'teamSeasonDocumentId equals {teamId}__{seasonId} and never uses seasonKey.',
   ],

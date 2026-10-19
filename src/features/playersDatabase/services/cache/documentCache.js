@@ -172,10 +172,12 @@ export const subscribeDocumentStoreKey = (key, callback) => {
   }
 }
 
-export const setDocumentCacheValue = ({ key, value }) => setCacheEntry({
-  key,
-  value,
-})
+export const setDocumentCacheValue = ({ key, value }) => {
+  const canonicalKey = resolveCacheKey(key)
+  // Live snapshots and explicit replacements supersede older in-flight reads.
+  pendingRequests.delete(canonicalKey)
+  return setCacheEntry({ key: canonicalKey, value })
+}
 
 export const updateDocumentCacheValue = ({ key, updater }) => {
   if (typeof updater !== 'function') return null

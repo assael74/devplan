@@ -1,210 +1,88 @@
-import {
-  getClubCollapseView,
-} from '../../domain/clubIntelligence/index.js'
-import {
-  buildClubCollapseSignalCardsModel,
-  buildClubPageModel,
-  buildClubSummaryModel,
-} from './clubPresentation.model.js'
+// src/features/playersDatabase/model/pages/clubPresentation.model.test.js
 
+import { getClubCollapseView } from '../../domain/clubIntelligence/index.js'
+import { buildTeamSignalSummary, hasActiveTeamSignals } from '../../domain/signals/teamSignalSummary.js'
+import { buildClubCollapseSignalCardsModel, buildClubPageModel, buildClubSummaryModel } from './clubPresentation.model.js'
+
+const summaryFor = (id, level = 1) => buildTeamSignalSummary({
+  computedAt: '2026-10-18T12:00:00.000Z',
+  familiesById: { [id]: { level, availability: 'available' } },
+})
 const currentTeam = {
-  teamId: 'club_2012_1',
-  teamSlot: 1,
-  birthYear: 2012,
-  ageGroupId: 'u15',
-  ageGroupLabel: 'נערים ג',
-  league: { leagueLevel: 2 },
-  performance: {},
-  teamTaskSignals: { offense: true, defense: false },
-  teamTaskAvailability: { availability: 'available', reason: null },
+  teamId: 'club_2012_1', teamSlot: 1, birthYear: 2012, ageGroupId: 'u15',
+  ageGroupLabel: 'נערים ג', seasonKey: '26/27', league: { leagueId: 'league', leagueLevel: 2 },
+  performance: {}, teamSignalSummary: summaryFor('future-competition'),
 }
-
 const intelligence = {
   club: { clubId: 'club', clubLevel: 1 },
-  birthYearTeams: [{
-    birthYear: 2012,
-    seasons: {
-      current: { teams: [currentTeam] },
-      previous: {
-        teams: [{
-        teamId: 'club_2012_1',
-        teamSlot: 1,
-        birthYear: 2012,
-          ageGroupId: 'u15',
-          ageGroupLabel: 'נערים ג',
-          league: { leagueLevel: 1 },
-          performance: {},
-        }],
-      },
-    },
-  }],
-  signalCoverage: {
-    futureLeaguePath: { status: 'full' },
-    leagueVsClubLevel: { status: 'full' },
-    squadTask: { status: 'full' },
-  },
-  spotlights: [{
-    id: 'FUTURE_LEAGUE_PATH_DROP:2012:team:club_2012_1',
-    type: 'FUTURE_LEAGUE_PATH_DROP',
-    birthYear: 2012,
-    teamId: 'club_2012_1',
-    context: { teamSlot: 1 },
-  }, {
-    id: 'LEAGUE_BELOW_CLUB_LEVEL:2012:team:club_2012_1',
-    type: 'LEAGUE_BELOW_CLUB_LEVEL',
-    birthYear: 2012,
-    teamId: 'club_2012_1',
-    context: { clubLevel: 1, leagueLevel: 2, gap: 1 },
-  }, {
-    id: 'OFFENSE_SQUAD_TASK:2012:team:club_2012_1',
-    type: 'OFFENSE_SQUAD_TASK',
-    birthYear: 2012,
-    teamId: 'club_2012_1',
-    context: {
-      availability: { availability: 'available', reason: null },
-    },
-  }],
+  birthYearTeams: [{ birthYear: 2012, seasons: {
+    current: { teams: [currentTeam] },
+    previous: { teams: [{ ...currentTeam, seasonKey: '25/26', teamSignalSummary: summaryFor('performance', 2) }] },
+  } }],
+  signalCoverage: { futureLeaguePath: { status: 'partial', reasons: [
+    { ageGroup: { ageGroupId: 'u14' }, reason: 'source_focus_team_missing' },
+  ] } },
 }
 
-describe('Club presentation model', () => {
-  test('uses partial or no coverage only when no signal exists', () => {
-    const summary = buildClubSummaryModel({
-      intelligence: {
-        club: {},
-        birthYearTeams: [],
-        spotlights: [],
-        signalCoverage: {
-          futureLeaguePath: { status: 'full' },
-          leagueVsClubLevel: { status: 'partial' },
-          squadTask: { status: 'full' },
-        },
-      },
-    })
-    const withoutCoverage = buildClubSummaryModel({
-      intelligence: {
-        club: {},
-        birthYearTeams: [],
-        spotlights: [],
-        signalCoverage: {
-          futureLeaguePath: { status: 'none' },
-          leagueVsClubLevel: { status: 'partial' },
-          squadTask: { status: 'full' },
-        },
-      },
-    })
+test('aggregates independent families from current summaries without old spotlight outputs', () => {
+  const next = { ...intelligence, birthYearTeams: [...intelligence.birthYearTeams, {
+    birthYear: 2013, seasons: { current: { teams: [{
+      ...currentTeam, teamId: 'club_2013_1', ageGroupId: 'u14', birthYear: 2013,
+      teamSignalSummary: summaryFor('roster-balance', 2),
+    }] }, previous: { teams: [] } },
+  }] }
+  const result = buildClubSummaryModel({ intelligence: next })
+  expect(result.teamSignalSummary.familiesById['future-competition'].level).toBe(1)
+  expect(result.teamSignalSummary.familiesById['roster-balance'].level).toBe(2)
+  expect(result.teamSignalSummary.familiesById.performance.level).toBeNull()
+  expect(hasActiveTeamSignals(result.teamSignalSummary)).toBe(true)
+  expect(result).not.toHaveProperty('primarySpotlight')
+  expect(result).not.toHaveProperty('spotlights')
+  expect(result).not.toHaveProperty('mismatch')
+})
 
-    expect(summary.primarySpotlight).toEqual({
-      state: 'partialCoverage',
-      message: 'כיסוי חלקי',
-    })
-    expect(withoutCoverage.primarySpotlight).toEqual({
-      state: 'empty',
-      message: 'אין איתותים',
-    })
+test('legacy task flags cannot create signals when the compact summary is missing', () => {
+  const oldTeam = { ...currentTeam, teamSignalSummary: undefined, teamTaskSignals: { offense: true, defense: true } }
+  const result = buildClubSummaryModel({ intelligence: {
+    ...intelligence, birthYearTeams: [{ seasons: { current: { teams: [oldTeam] }, previous: { teams: [] } } }],
+  } })
+  expect(hasActiveTeamSignals(result.teamSignalSummary)).toBe(false)
+  expect(result.teamSignalSummary.familiesById['roster-balance'].level).toBeNull()
+})
+
+test('stale calibration stays unknown rather than becoming an active club signal', () => {
+  const stale = { ...currentTeam, teamSignalSummary: { ...currentTeam.teamSignalSummary, calibrationVersion: 'old' } }
+  const result = buildClubSummaryModel({ intelligence: {
+    ...intelligence, birthYearTeams: [{ seasons: { current: { teams: [stale] }, previous: { teams: [] } } }],
+  } })
+  expect(hasActiveTeamSignals(result.teamSignalSummary)).toBe(false)
+})
+
+test('keeps u14 and u15 first, uses primary teams, and preserves focus coverage and investigation markers', () => {
+  const view = getClubCollapseView(intelligence)
+  const cards = buildClubCollapseSignalCardsModel({
+    teams: [{ ...currentTeam, teamSlot: 2, teamSignalSummary: summaryFor('performance', 2) },
+      { ...currentTeam, showInvestigationIndicator: true }],
+    signalCoverage: view.signalCoverage, seasonKey: '26/27',
   })
-
-  test('uses no coverage only when every signal family has no focus coverage', () => {
-    const summary = buildClubSummaryModel({
-      intelligence: {
-        club: {},
-        birthYearTeams: [],
-        spotlights: [],
-        signalCoverage: {
-          futureLeaguePath: { status: 'none' },
-          leagueVsClubLevel: { status: 'none' },
-          squadTask: { status: 'none' },
-        },
-      },
-    })
-
-    expect(summary.primarySpotlight).toEqual({
-      state: 'noCoverage',
-      message: 'אין כיסוי',
-      title: 'חסר כיסוי לאיתות מסלול ליגה',
-      action: 'טען ליגה:',
-      ageGroups: [{
-        ageGroupLabel: 'ילדים א׳',
-        birthYear: 2013,
-      }, {
-        ageGroupLabel: 'נערים ג׳',
-        birthYear: 2012,
-      }, {
-        ageGroupLabel: 'נערים ב׳',
-        birthYear: 2011,
-      }],
-    })
+  expect(cards.map(card => card.id)).toEqual(['u14', 'u15', 'u16', 'u17', 'u19'])
+  expect(cards[0]).toMatchObject({ birthYear: 2013, teamSignalSummary: null, coverage: { title: 'חסר כיסוי' } })
+  expect(cards[1]).toMatchObject({
+    teamSignalSummary: currentTeam.teamSignalSummary, showInvestigationIndicator: true,
+    context: { leagueLevel: 2 },
   })
+  expect(cards[1]).not.toHaveProperty('signal')
+  expect(view.currentPrimaryTeams).toEqual([currentTeam])
+})
 
-  test('shapes summary from Club Intelligence without recalculating spotlights', () => {
-    const summary = buildClubSummaryModel({ intelligence })
-
-    expect(summary.mismatch?.count).toBe(1)
-    expect(summary.spotlights.map(item => item.type)).toEqual([
-      'FUTURE_LEAGUE_PATH_DROP',
-      'LEAGUE_BELOW_CLUB_LEVEL',
-      'OFFENSE_SQUAD_TASK',
-    ])
-    expect(summary.primarySpotlight).toEqual({
-      state: 'signal',
-      id: 'FUTURE_LEAGUE_PATH_DROP:2012:team:club_2012_1',
-      type: 'FUTURE_LEAGUE_PATH_DROP',
-      title: 'ירידה צפויה ברמת הליגה',
-      teams: [{
-        teamId: 'club_2012_1',
-        ageGroupId: 'u15',
-        ageGroupLabel: 'נערים ג',
-        birthYear: 2012,
-        teamSlot: 1,
-      }],
-      additionalTeamsCount: 0,
-    })
-  })
-
-  test('uses the canonical primary spotlight rather than a UI ranking', () => {
-    const summary = buildClubSummaryModel({ intelligence })
-
-    expect(summary.primarySpotlight.id).toBe(
-      'FUTURE_LEAGUE_PATH_DROP:2012:team:club_2012_1'
-    )
-  })
-
-  test('creates age-group cards with each team canonical primary spotlight', () => {
-    const collapseView = getClubCollapseView(intelligence)
-    const cards = buildClubCollapseSignalCardsModel({
-      teams: collapseView.currentTeams,
-      spotlights: collapseView.spotlights,
-      seasonKey: '26/27',
-    })
-
-    expect(cards.map(card => card.id)).toEqual(['u14', 'u15', 'u16', 'u17', 'u19'])
-    expect(cards.find(card => card.id === 'u15')).toEqual(expect.objectContaining({
-      ageGroupLabel: 'נערים ג׳',
-      birthYear: 2012,
-      signal: expect.objectContaining({
-        type: 'FUTURE_LEAGUE_PATH_DROP',
-        title: 'ירידה צפויה ברמת הליגה',
-      }),
-      context: expect.objectContaining({
-        leagueLevel: 2,
-      }),
-    }))
-    expect(cards.find(card => card.id === 'u14')).toEqual(expect.objectContaining({
-      signal: null,
-      birthYear: 2013,
-    }))
-  })
-
-  test('uses the same Club Intelligence for the club page view', () => {
-    const page = buildClubPageModel({ intelligence })
-
-    expect(page.overview.spotlights).toHaveLength(3)
-    expect(page.opportunities.map(item => item.type)).toEqual([
-      'FUTURE_LEAGUE_PATH_DROP',
-      'LEAGUE_BELOW_CLUB_LEVEL',
-      'OFFENSE_SQUAD_TASK',
-    ])
-    expect(page.development).toEqual([
-      expect.objectContaining({ birthYear: 2012 }),
-    ])
-  })
+test('uses current and previous summaries in their own club page sections', () => {
+  const page = buildClubPageModel({ intelligence })
+  expect(page.overview.teamSignalSummary.familiesById['future-competition'].level).toBe(1)
+  expect(page.opportunities[0].teamSignalSummary).toBe(currentTeam.teamSignalSummary)
+  expect(page.seasons.find(season => season.seasonKey === '25/26').teamSignalSummary.familiesById.performance.level).toBe(2)
+  expect(page.development[0].birthYear).toBe(2012)
+  expect(page.development[0].teams).toEqual([
+    expect.objectContaining({ teamId: currentTeam.teamId, seasonKey: '25/26', leagueLevel: 2 }),
+    expect.objectContaining({ teamId: currentTeam.teamId, seasonKey: '26/27', leagueLevel: 2 }),
+  ])
 })

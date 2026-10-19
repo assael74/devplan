@@ -103,11 +103,11 @@ describe('buildStatsClearApprovedState', () => {
     expect(approved.canonicalTeamSeason.stats).toEqual({
       playersById: {},
       teamBalance: {},
-      statsLoadState: { status: 'missing', updatedAt: '2026-10-03T00:00:00.000Z' },
+      statsLoadState: { status: 'missing', updatedAt: '2026-10-03T00:00:00.000Z', teamGamePlayedAtLoad: null },
       updatedAt: '2026-10-03T00:00:00.000Z',
     })
     expect(approved.canonicalTeamSeason.scouting.playersById).toEqual({})
-    expect(approved.leagueProjection.patch.stats).toEqual({ hasStats: false, statsComplete: false, loadedAt: null })
+    expect(approved.leagueProjection.patch.stats).toEqual({ hasStats: false, statsComplete: false, loadedAt: null, teamGamePlayedAtLoad: null })
   })
 
   test('preserves a Player Root created during the Stats lifecycle', () => {

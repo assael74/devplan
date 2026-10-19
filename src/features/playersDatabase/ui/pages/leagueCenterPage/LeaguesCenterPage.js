@@ -18,6 +18,8 @@ import OpenLeagueModal from './OpenLeagueModal.js'
 import LeagueCenterContext from './LeagueCenterContext.js'
 import LeagueCenterTable from './LeagueCenterTable.js'
 import LeagueCenterSidePanel from './LeagueCenterSidePanel.js'
+import { downloadLeagueCenterDocumentsJson } from './logic/leagueCenterJson.logic.js'
+import { LEAGUE_RESEARCH_FILTER_LABELS } from '../../logic/leagueWorkNavigation.js'
 import {
   TaskEditModal,
   WorkTaskModal,
@@ -52,6 +54,9 @@ export default function LeaguesCenterPage() {
   } : null, [repairLeagueId, repairReload, repairSeasonId])
   const { notify } = useSnackbar()
   const model = useLeagueCenter()
+  const downloadDocumentsDisabled = !(
+    model.leaguesCenterDoc?.documentExists || model.clubsDirectoryDocument?.documentExists
+  ) || model.loading || model.directoryLoading
   const tasksModel = usePlayersDatabaseTasks()
   const taskActions = usePlayersDatabaseTaskActions()
   const [taskModalOpen, setTaskModalOpen] = React.useState(false)
@@ -59,6 +64,7 @@ export default function LeaguesCenterPage() {
   const [openLeagueAction, setOpenLeagueAction] = React.useState(EMPTY_OPEN_LEAGUE_ACTION)
   const openingInFlight = React.useRef(false)
   const [editTask, setEditTask] = React.useState(null)
+  const [strongSignalMinimum, setStrongSignalMinimum] = React.useState(1)
   const [sidePanelCollapsed, setSidePanelCollapsed] = usePageSidePanelCollapsed(
     'playersDatabase:leagueCenterSidePanelCollapsed'
   )
@@ -80,9 +86,10 @@ export default function LeaguesCenterPage() {
   })
 
   const columns = React.useMemo(() => buildLeagueCenterColumns({
+    strongSignalMinimum,
     onDeleteLeagueSeason: deleteLeagueSeasonFlow.open,
     getDeleteAvailability: deleteLeagueSeasonFlow.availability,
-    onOpenLeague: row => {
+    onOpenLeague: (row, workFilter) => {
       const rowSeasonKey = row.seasonKey && row.seasonKey !== 'all'
         ? row.seasonKey
         : ''
@@ -95,6 +102,8 @@ export default function LeaguesCenterPage() {
           seasonKey: leagueSeasonKey,
           birthYear: row.birthYear || model.birthYear,
           level: row.level || model.leagueLevel,
+          workMode: LEAGUE_RESEARCH_FILTER_LABELS[workFilter] ? 'research' : undefined,
+          workFilter,
           centerSeasonKey: model.seasonKeys.join(','),
           centerBirthYear: model.birthYears.join(','),
           centerAgeGroup: model.ageGroupId,
@@ -106,6 +115,7 @@ export default function LeaguesCenterPage() {
       navigate(leaguePath)
     },
   }), [
+    strongSignalMinimum,
     deleteLeagueSeasonFlow.availability,
     deleteLeagueSeasonFlow.open,
     model.ageGroupId,
@@ -286,11 +296,19 @@ export default function LeaguesCenterPage() {
             <LeagueCenterTable
               columns={columns}
               model={model}
-              onOpenLeague={handleOpenLeagueModal}
+              strongSignalMinimum={strongSignalMinimum}
+              onStrongSignalMinimumChange={setStrongSignalMinimum}
             />
           </Box>
 
           <LeagueCenterSidePanel
+            onDownloadDocuments={() => downloadLeagueCenterDocumentsJson({
+              leaguesCenterDocument: model.leaguesCenterDoc,
+              clubsDirectoryDocument: model.clubsDirectoryDocument,
+            })}
+            downloadDisabled={downloadDocumentsDisabled}
+            onOpenLeague={handleOpenLeagueModal}
+            openLeagueDisabled={!model.openLeagueOptions.length || openLeagueAction.busy || openLeagueModal}
             collapsible
             collapsed={sidePanelCollapsed}
             onCollapsedChange={setSidePanelCollapsed}

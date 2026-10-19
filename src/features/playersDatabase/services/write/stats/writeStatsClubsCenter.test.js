@@ -66,3 +66,7 @@ describe('writeStatsClubsCenter', () => {
     expect(result).toEqual({ written: true, counterpartCount: 1 })
   })
 })
+
+jest.mock('../signals/refreshTeamSignalSummaries.js', () => ({
+  refreshTeamSignalSummaries: jest.fn(async () => ({ teams: 1, documents: 3 })),
+}))

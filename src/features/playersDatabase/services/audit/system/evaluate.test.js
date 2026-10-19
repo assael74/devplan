@@ -1,6 +1,7 @@
 // src/features/playersDatabase/services/audit/system/evaluate.test.js
 
 import { evaluateSystemIntegrity } from './evaluate.js'
+import { buildTeamSignalSummary } from '../../../domain/signals/teamSignalSummary.js'
 
 const seasonId = '2026_2027'
 const clubId = 'club-a'
@@ -122,6 +123,67 @@ const cleanActual = () => ({
 })
 
 describe('evaluateSystemIntegrity', () => {
+  test('recomputes from canonical club and league data even when all four saved summaries agree', () => {
+    const actual = cleanActual()
+    const summary = buildTeamSignalSummary({ computedAt: 'saved time' })
+    actual.clubProfiles[0].data.clubLevel = 1
+    actual.leagues[0].data.level = 3
+    actual.leagues[0].data.ageGroupId = 'u15'
+    actual.leagues[0].data.seasonsById[seasonId].birthYear = 2011
+    actual.leagues[0].data.seasonsById[seasonId].table = { teamsById: {
+      [teamId]: { clubId, teamSlot: 1, teamSignalSummary: summary },
+    } }
+    actual.teamSeasons[0].data.teamSignalSummary = summary
+    actual.leaguesCenter[0].data.leaguesById['league-a'].seasonsById[seasonId].teamsById[teamId] = {
+      teamSignalSummary: summary,
+    }
+    actual.clubsCenter[0].data.clubsById[clubId] = { teamsById: {
+      [teamId]: { teamSignalSummary: summary },
+    } }
+    const original = JSON.stringify(actual)
+    const findings = evaluateSystemIntegrity(actual).filter(item => item.owner === 'teamSignals')
+    expect(findings).toEqual([expect.objectContaining({
+      target: 'teamSeasons',
+      expected: expect.objectContaining({ familiesById: expect.objectContaining({
+        'club-gap': expect.objectContaining({ level: 1 }),
+      }) }),
+    })])
+    expect(JSON.stringify(actual)).toBe(original)
+  })
+
+  test('checks summary parity and calibration while ignoring retained legacy task flags', () => {
+    const actual = cleanActual()
+    const summary = buildTeamSignalSummary()
+    actual.leagues[0].data.seasonsById[seasonId].table = {
+      teamsById: { [teamId]: { clubId, teamSlot: 1, teamSignalSummary: summary } },
+    }
+    actual.teamSeasons[0].data.teamSignalSummary = summary
+    actual.teamSeasons[0].data.teamTaskSignals = { offense: true }
+    actual.leaguesCenter[0].data.leaguesById['league-a'].seasonsById[seasonId].teamsById[teamId] = {
+      teamSignalSummary: summary, teamTaskSignals: { offense: false },
+    }
+    actual.clubsCenter[0].data.clubsById[clubId] = { teamsById: {
+      [teamId]: { teamSignalSummary: summary },
+    } }
+    const signalFindings = () => evaluateSystemIntegrity(actual).filter(finding => finding.owner === 'teamSignals')
+    expect(signalFindings()).toEqual([])
+    actual.clubsCenter[0].data.clubsById[clubId].teamsById[teamId].teamSignalSummary = null
+    expect(signalFindings()).toEqual([expect.objectContaining({ target: 'clubsCenter' })])
+    actual.teamSeasons[0].data.teamSignalSummary = { ...summary, calibrationVersion: 'old' }
+    expect(signalFindings()).toEqual(expect.arrayContaining([
+      expect.objectContaining({ target: 'teamSeasons', owner: 'teamSignals' }),
+    ]))
+  })
+
+  test('reports a missing current summary even when legacy flags still exist', () => {
+    const actual = cleanActual()
+    actual.leagues[0].data.seasonsById[seasonId].table = { teamsById: {
+      [teamId]: { clubId, teamTaskSignals: { offense: true } },
+    } }
+    expect(evaluateSystemIntegrity(actual)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ owner: 'teamSignals', title: 'סיכום האיתותים חסר או אינו מסונכרן' }),
+    ]))
+  })
   test('accepts a roster-only player without requiring Player Root', () => {
     expect(evaluateSystemIntegrity(cleanActual())).toEqual([])
   })

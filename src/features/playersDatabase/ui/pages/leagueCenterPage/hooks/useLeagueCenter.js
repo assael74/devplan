@@ -33,6 +33,7 @@ import {
   readLeagueCenterData,
 } from '../../../../services/read/pages/leagueCenter.read.js'
 import usePlayersDatabaseReadStoreEntry from '../../../hooks/usePlayersDatabaseReadStoreEntry.js'
+import { CLUBS_DIRECTORY_STORE_KEY } from '../../../../services/read/pages/clubs.read.js'
 import { filterByText } from '../../../logic/filters.logic.js'
 import { PLAYERS_DATABASE_QUERY_KEYS as queryKeys } from '../../../logic/routeBuilders.js'
 
@@ -81,6 +82,7 @@ const DEFAULT_LEAGUE_STATUSES = ['active', 'no_teams']
 
 export function useLeagueCenter() {
   const location = useLocation()
+  const directoryEntry = usePlayersDatabaseReadStoreEntry(CLUBS_DIRECTORY_STORE_KEY)
   const [searchParams, setSearchParams] = useSearchParams()
 
   useEffect(() => {
@@ -225,7 +227,7 @@ export function useLeagueCenter() {
       return contextRows.filter(row => row.requiresReview)
     }
     if (quickView === 'priority') {
-      return contextRows.filter(row => row.hasProfessionalPriority)
+      return contextRows.filter(row => row.hasTeamSignals)
     }
     return contextRows
   }, [contextRows, quickView])
@@ -401,6 +403,8 @@ export function useLeagueCenter() {
     error,
     refreshError,
     leaguesCenterDoc,
+    clubsDirectoryDocument: directoryEntry.data,
+    directoryLoading: directoryEntry.status === 'idle' || directoryEntry.status === 'loading',
     leagueDocs,
     reload,
     resetPrimaryFilters,

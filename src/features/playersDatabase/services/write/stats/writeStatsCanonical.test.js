@@ -11,10 +11,13 @@ test('writes only approved URL fields and preserves unrelated manual data', asyn
   await writeStatsCanonical({ approvedState: {
     teamId: 'club_2012_1', seasonId: '2026_2027', teamSeasonDocumentId: 'club_2012_1__2026_2027',
     updatedAt: 'now', playerUrlsById: { [playerId]: playerUrl },
-    canonicalTeamSeason: { roster: { playersById: { [playerId]: {} } }, stats: {}, scouting: {}, teamTaskSignals: {}, teamTaskAvailability: {} },
+    canonicalTeamSeason: { roster: { playersById: { [playerId]: {} } }, stats: { statsLoadState: { status: 'loaded', teamGamePlayedAtLoad: 8 } }, scouting: {}, teamTaskSignals: {}, teamTaskAvailability: {} },
   } })
   const patch = updateDoc.mock.calls[0][1]
+  expect(patch.stats.statsLoadState.teamGamePlayedAtLoad).toBe(8)
   expect(patch[`manual.playersById.${playerId}.playerUrl`]).toBe(playerUrl)
   expect(patch).not.toHaveProperty('manual')
   expect(patch).not.toHaveProperty('roster')
+  expect(patch).not.toHaveProperty('teamTaskSignals')
+  expect(patch).not.toHaveProperty('teamTaskAvailability')
 })

@@ -166,11 +166,6 @@ const compareLeaguesCenter = ({ expected, actual, findings }) => {
         teamSlot: team && team.teamSlot === undefined ? null : team.teamSlot,
         documentationState: clean(team && team.documentationState),
         documentationStateUpdatedAt: team && team.documentationStateUpdatedAt || null,
-        teamTaskSignals: {
-          offense: Boolean(team && team.teamTaskSignals && team.teamTaskSignals.offense),
-          defense: Boolean(team && team.teamTaskSignals && team.teamTaskSignals.defense),
-          updatedAt: team && team.teamTaskSignals && team.teamTaskSignals.updatedAt || null,
-        },
       }])
     ),
     updatedAt: actualSeason.updatedAt || null,
@@ -186,26 +181,6 @@ const compareLeaguesCenter = ({ expected, actual, findings }) => {
     reason: 'LeaguesCenter League-owned season fields do not match canonical League.',
   })
 
-  Object.entries(expectedSeason.teamsById || {}).forEach(([teamId, teamExpected]) => {
-    const actualTeam = actualSeason.teamsById && actualSeason.teamsById[teamId]
-      ? actualSeason.teamsById[teamId]
-      : null
-    if (!actualTeam) return
-
-    compareExactValue({
-      findings,
-      target: LEAGUE_AUDIT_TARGET.LEAGUES_CENTER,
-      documentId,
-      field: `leaguesById.${leagueId}.seasonsById.${seasonId}.teamsById.${teamId}.teamTaskSignals.updatedAt`,
-      expected: teamExpected && teamExpected.teamTaskSignals
-        ? teamExpected.teamTaskSignals.updatedAt || null
-        : null,
-      actual: actualTeam && actualTeam.teamTaskSignals
-        ? actualTeam.teamTaskSignals.updatedAt || null
-        : null,
-      reason: 'LeaguesCenter teamTaskSignals.updatedAt does not match canonical Team Season.',
-    })
-  })
 }
 
 const flattenClubsCenterTeams = document => {
@@ -226,11 +201,6 @@ const compactClubsCenterTeam = team => ({
   leagueId: clean(team && team.leagueId),
   documentationState: clean(team && team.documentationState),
   documentationStateUpdatedAt: team && team.documentationStateUpdatedAt || null,
-  teamTaskSignals: {
-    offense: Boolean(team && team.teamTaskSignals && team.teamTaskSignals.offense),
-    defense: Boolean(team && team.teamTaskSignals && team.teamTaskSignals.defense),
-    updatedAt: team && team.teamTaskSignals && team.teamTaskSignals.updatedAt || null,
-  },
   performance: {
     tableRank: team && team.performance && team.performance.tableRank !== undefined
       ? team.performance.tableRank
@@ -391,7 +361,7 @@ const compareClubsCenter = ({ expected, actual, findings }) => {
         target: LEAGUE_AUDIT_TARGET.CLUBS_CENTER,
         documentId,
         field: `clubsById.${clubId}.teamsById.${teamId}`,
-        expected: expectedBaseTeam,
+        expected: compactClubsCenterTeam(expectedBaseTeam),
         actual: compactClubsCenterTeam(actualTeam),
         reason: 'ClubsCenter League-owned team fields do not match canonical League.',
       })

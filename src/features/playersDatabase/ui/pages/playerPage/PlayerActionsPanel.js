@@ -41,6 +41,9 @@ export default function PlayerActionsPanel({
       collapsible={collapsible}
       collapsed={collapsed}
       onCollapsedChange={onCollapsedChange}
+      collapsedIndicator={!tasksLoading && tasks.length > 0
+        ? { label: 'יש משימות פתוחות', color: 'danger' }
+        : null}
       collapsedActions={[
         { label: 'פיזור שערים', iconId: 'goals', onClick: () => onAction('additional') },
         { label: 'קישור לאתר ההתאחדות', iconId: 'addLink', onClick: () => onAction('link') },

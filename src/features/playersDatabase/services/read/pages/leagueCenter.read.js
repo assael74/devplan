@@ -72,6 +72,7 @@ export const subscribeLeagueCenterData = ({ onError } = {}) => {
     feature: 'playersDatabase',
     action: 'league-center-live',
     listenerId,
+    meta: { documentPath: reference.path },
   }
 
   trackFirestoreListenerOpen(usage)

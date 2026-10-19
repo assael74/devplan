@@ -1,12 +1,14 @@
 // src/features/playersDatabase/services/audit/stats/compare.test.js
 
-import { compareStatsAudit } from './compare.js'
+import { compareStatsAudit, sameStatsAuditValue } from './compare.js'
+import { buildTeamSignalSummary } from '../../../domain/signals/teamSignalSummary.js'
 
 const timestamp = (seconds, nanoseconds = 0) => ({ seconds, nanoseconds })
 
 const base = ({ expectedUpdatedAt, actualUpdatedAt }) => ({
   actual: {
     teamSeason: {
+      teamSignalSummary: buildTeamSignalSummary(),
       identity: { teamId: 'club_2011_1', leagueId: 'league-1', clubId: 'club', seasonId: '2026_2027' },
     },
     playerRootsById: {},
@@ -16,11 +18,11 @@ const base = ({ expectedUpdatedAt, actualUpdatedAt }) => ({
     league: {
       id: 'league-1',
       seasonsById: {
-        '2026_2027': { table: { teamsById: { club_2011_1: { stats: { b: 2, a: 1, updatedAt: actualUpdatedAt }, scouting: {} } } } },
+        '2026_2027': { table: { teamsById: { club_2011_1: { teamSignalSummary: buildTeamSignalSummary(), stats: { b: 2, a: 1, updatedAt: actualUpdatedAt }, scouting: {} } } } },
       },
     },
-    leaguesCenter: { leaguesById: { 'league-1': { seasonsById: { '2026_2027': { teamsById: { club_2011_1: {} } } } } } },
-    clubsCenter: { clubsById: { club: { teamsById: { club_2011_1: {} } } } },
+    leaguesCenter: { leaguesById: { 'league-1': { seasonsById: { '2026_2027': { teamsById: { club_2011_1: { teamSignalSummary: buildTeamSignalSummary() } } } } } } },
+    clubsCenter: { clubsById: { club: { teamsById: { club_2011_1: { teamSignalSummary: buildTeamSignalSummary() } } } } },
   },
   expectedState: {
     complete: true,
@@ -40,6 +42,12 @@ const base = ({ expectedUpdatedAt, actualUpdatedAt }) => ({
 })
 
 describe('compareStatsAudit', () => {
+  test('accepts absent legacy game snapshots but detects missing or different known snapshots', () => {
+    expect(sameStatsAuditValue({}, { teamGamePlayedAtLoad: null })).toBe(true)
+    expect(sameStatsAuditValue({}, { teamGamePlayedAtLoad: 0 })).toBe(false)
+    expect(sameStatsAuditValue({ teamGamePlayedAtLoad: 8 }, { teamGamePlayedAtLoad: 10 })).toBe(false)
+  })
+
   test('reports shirt number drift in existing player projections', () => {
     const args = base({ expectedUpdatedAt: null, actualUpdatedAt: null })
     args.expectedState.expected.playerSeasonsById = {

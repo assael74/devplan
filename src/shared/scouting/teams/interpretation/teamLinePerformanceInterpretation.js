@@ -105,7 +105,9 @@ const LINE_ACTIONS_BY_FINDING = Object.freeze({
 const INTEREST_FINDINGS = new Set([
   TEAM_INTERPRETATION_FINDING.ATTACK_CONCENTRATION,
   TEAM_INTERPRETATION_FINDING.ATTACK_HIGH_COMPETITION,
+  TEAM_INTERPRETATION_FINDING.ATTACK_DEPTH_REVIEW,
   TEAM_INTERPRETATION_FINDING.ATTACK_POSSIBLE_GAP,
+  TEAM_INTERPRETATION_FINDING.ATTACK_QUALITY_REVIEW,
   TEAM_INTERPRETATION_FINDING.ATTACK_CLASSIFICATION_MISSING,
   TEAM_INTERPRETATION_FINDING.DEFENSE_CONCENTRATION,
   TEAM_INTERPRETATION_FINDING.DEFENSE_DEPTH_REVIEW,
@@ -152,23 +154,6 @@ export const getTeamLineActions = finding => {
     marketOpportunity: source.marketOpportunity
       ? { id: source.marketOpportunity, targetSides: [targetSide] }
       : null,
-  }
-}
-
-// Compact, presentation-agnostic task projection for league-level consumers.
-// A side is actionable when either the team itself or the market has a task.
-export const buildTeamTaskSignals = ({
-  offenseFinding,
-  defenseFinding,
-} = {}) => {
-  const hasTask = finding => {
-    const actions = getTeamLineActions(finding)
-    return Boolean(actions.teamNeed || actions.marketOpportunity)
-  }
-
-  return {
-    offense: hasTask(offenseFinding),
-    defense: hasTask(defenseFinding),
   }
 }
 

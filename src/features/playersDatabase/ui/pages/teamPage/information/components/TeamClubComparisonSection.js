@@ -102,12 +102,12 @@ function MetricEvidence({ metric }) {
   )
 }
 
-function FamilySection({ family, metrics, signalLevel }) {
+function FamilySection({ family, metrics }) {
   const [openOverride, setOpenOverride] = useState(null)
   const activeCount = metrics.filter(metric => metric.isAnomaly).length
   const availableCount = metrics.filter(metric => metric.availability === 'available').length
   const status = activeCount === 0 ? 'none'
-    : family.key === 'competition' || family.key === 'performance' || signalLevel === 2 ? 'multiple' : 'single'
+    : family.key === 'competition' ? 'multiple' : 'single'
   const open = openOverride === null ? activeCount > 0 : openOverride
   const familyLabel = activeCount ? `${activeCount} תתי־איתותים`
     : availableCount === 0 ? 'אין מספיק נתונים'

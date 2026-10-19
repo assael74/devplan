@@ -12,18 +12,18 @@ const TARGET_LABELS = {
   leagueMetadata: 'נתוני הקבוצה בליגה',
   leaguesCenter: 'מרכז הליגות',
   clubsCenter: 'מרכז המועדונים',
+  teamSignals: 'משפחות איתותים',
   clubProfile: 'פרופיל המועדון',
   statsAudit: 'מקורות בדיקת הקבוצה',
 }
 
 const FIELD_LABELS = {
+  teamSignalSummary: 'סיכום משפחות האיתותים',
   stats: 'סטטיסטיקה',
   scouting: 'סקאוטינג',
   scout: 'נתוני סקאוטינג',
   scoutEvidence: 'בסיס נתוני הסקאוטינג',
   statsStatus: 'מצב הנתונים הסטטיסטיים',
-  teamTaskSignals: 'מדדי התקפה והגנה',
-  teamTaskAvailability: 'זמינות מדדי הקבוצה',
   movement: 'מעברי שחקנים',
   transfers: 'סיכום מעברי שחקנים',
   competitionSnapshot: 'נתוני התחרות',

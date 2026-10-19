@@ -3,7 +3,6 @@
 import * as React from 'react'
 import {
   Box,
-  Button,
   FormControl,
   FormHelperText,
   FormLabel,
@@ -12,13 +11,12 @@ import {
 } from '@mui/joy'
 
 import DrawerShell from '../../../../../ui/patterns/drawer/DrawerShell.js'
-import DrawerHeaderShell from '../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
 import { rulesFields } from './logic/leagueSettingsEditor.model.js'
 import { leagueSeasonSettingsDrawerSx as sx } from './sx/leagueSeasonSettingsDrawer.sx.js'
 
 export default function LeagueSeasonSettingsDrawer({ editor }) {
   const context = editor.context || {}
-  const hasRulesChange = editor.rulesDirty && editor.rulesValid && !editor.saving
+  const isDirty = editor.urlDirty || editor.rulesDirty
 
   return (
     <DrawerShell
@@ -26,38 +24,32 @@ export default function LeagueSeasonSettingsDrawer({ editor }) {
       onClose={editor.close}
       entity='league'
       saving={editor.saving}
-      isDirty={editor.urlDirty || editor.rulesDirty}
-      canSave={editor.urlDirty && editor.urlValid && !editor.saving}
-      actions={{ onSave: () => editor.saveUrl() }}
+      isDirty={isDirty}
+      canSave={isDirty && editor.urlValid && editor.rulesValid && !editor.saving}
+      actions={{ onSave: editor.save }}
       texts={{
-        save: 'שמירת קישור',
+        save: 'שמירת שינויים',
         saving: 'שומר...',
         statusSaving: 'מעדכן את עונת הליגה...',
         statusDirty: 'יש שינויים שטרם נשמרו',
         statusClean: 'לא בוצעו שינויים',
       }}
       sxOverrides={sx.shell}
-      header={(
-        <DrawerHeaderShell
-          title='הגדרות עונת ליגה'
-          titleIconId='edit'
-          entity='league'
-          subline={context.leagueName || ''}
-          meta={context.seasonKey ? `עונה ${context.seasonKey}` : ''}
-          metaIconId='season'
-          chipLabel='מאגר שחקנים'
-          chipIconId='playersDatabase'
-          sxOverrides={sx.header}
-        />
-      )}
+      headerProps={{
+        title: 'הגדרות עונת ליגה',
+        titleIconId: 'edit',
+        subline: [context.leagueName, context.seasonKey ? `עונה ${context.seasonKey}` : ''].filter(Boolean).join(' · '),
+        sxOverrides: sx.header,
+      }}
     >
       <Box sx={sx.section}>
         <Typography level='title-md'>קישור העונה</Typography>
-        <FormControl error={!editor.urlValid || Boolean(editor.urlError)} sx={sx.formControl}>
+        <FormControl size='sm' error={!editor.urlValid || Boolean(editor.urlError)} sx={sx.formControl}>
           <FormLabel>קישור עונת הליגה</FormLabel>
           <Input
             autoComplete='off'
             value={editor.draftUrl}
+            disabled={editor.saving}
             placeholder='https://'
             onChange={event => editor.changeUrl(event.target.value)}
             slotProps={{ input: { dir: 'ltr' } }}
@@ -66,7 +58,7 @@ export default function LeagueSeasonSettingsDrawer({ editor }) {
           <FormHelperText>
             {!editor.urlValid
               ? 'יש להזין כתובת מלאה שמתחילה ב־http:// או https://'
-              : editor.urlError || 'הקישור נשמר בנפרד מחוקי התחרות.'}
+              : editor.urlError || 'השינויים יישמרו באמצעות הכפתור בתחתית המגירה.'}
           </FormHelperText>
         </FormControl>
       </Box>
@@ -74,13 +66,13 @@ export default function LeagueSeasonSettingsDrawer({ editor }) {
       <Box sx={sx.section}>
         <Typography level='title-md'>חוקי התחרות</Typography>
         <Typography level='body-sm' sx={sx.hint}>
-          {`מספר קבוצות בטבלה: ${context.teamCount || 0}. חוקי התחרות נשמרים בנפרד מהקישור.`}
+          {`מספר קבוצות בטבלה: ${context.teamCount || 0}.`}
         </Typography>
         <Box sx={sx.rulesGrid}>
           {rulesFields.map(([key, label]) => {
             const topLeaguePromotion = context.isTopLeague && key.startsWith('promotion')
             return (
-              <FormControl key={key} sx={sx.formControl}>
+              <FormControl key={key} size='sm' sx={sx.formControl}>
                 <FormLabel>{label}</FormLabel>
                 <Input
                   type='number'
@@ -103,14 +95,6 @@ export default function LeagueSeasonSettingsDrawer({ editor }) {
         {editor.rulesError && (
           <Typography level='body-xs' color='danger'>{editor.rulesError}</Typography>
         )}
-        <Button
-          variant='soft'
-          loading={editor.rulesSaving}
-          disabled={!hasRulesChange}
-          onClick={editor.saveRules}
-        >
-          שמירת חוקי התחרות
-        </Button>
       </Box>
     </DrawerShell>
   )

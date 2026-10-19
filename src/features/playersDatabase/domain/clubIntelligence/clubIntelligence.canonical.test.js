@@ -67,6 +67,11 @@ describe('Canonical club intelligence', () => {
   test('uses ClubProfile for identity and ClubsCenter for seasonal teams', () => {
     const intelligence = buildClubIntelligenceFromCanonicalSources(sources)
     const team = intelligence.birthYearTeams[0].seasons.current.teams[0]
+    expect(intelligence).not.toHaveProperty('spotlights')
+    expect(intelligence.signalCoverage.squadTask.status).toBe('none')
+    expect(team).not.toHaveProperty('teamTaskAvailability')
+    expect(intelligence.signalCoverage.futureLeaguePath.missingFocusAgeGroups.map(group => group.ageGroupId))
+      .toEqual(['u14', 'u15'])
 
     expect(intelligence.club).toMatchObject({
       clubId: 'club-a',

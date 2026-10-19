@@ -4,10 +4,25 @@ import { buildStatsAuditExpected } from './buildExpected.js'
 import { compareStatsAudit } from './compare.js'
 import { auditStats } from './index.js'
 import { readStatsAuditActual } from './readActual.js'
+import { readExpectedTeamSignals } from '../signals/readExpectedTeamSignals.js'
 
 jest.mock('./buildExpected.js', () => ({ buildStatsAuditExpected: jest.fn() }))
 jest.mock('./compare.js', () => ({ compareStatsAudit: jest.fn() }))
 jest.mock('./readActual.js', () => ({ readStatsAuditActual: jest.fn() }))
+jest.mock('../signals/readExpectedTeamSignals.js', () => ({ readExpectedTeamSignals: jest.fn() }))
+
+beforeEach(() => readExpectedTeamSignals.mockResolvedValue(new Map()))
+
+test('passes a canonically recomputed summary into the focused comparison', async () => {
+  const summary = { familiesById: { 'club-gap': { level: 1, availability: 'partial' } } }
+  readStatsAuditActual.mockResolvedValue({ teamSeason: { identity: { clubId: 'club', teamId: 'team' } } })
+  buildStatsAuditExpected.mockReturnValue({ complete: true, expected: {} })
+  compareStatsAudit.mockReturnValue([])
+  readExpectedTeamSignals.mockResolvedValue(new Map([['team__2026_2027', summary]]))
+  await auditStats({ leagueId: 'league', teamId: 'team', seasonId: '2026_2027' })
+  expect(readExpectedTeamSignals).toHaveBeenCalledWith({ clubIds: ['club'] })
+  expect(compareStatsAudit).toHaveBeenCalledWith(expect.objectContaining({ expectedSignalSummary: summary }))
+})
 
 test('audits approved non-roster player projections as well as roster players', async () => {
   readStatsAuditActual.mockResolvedValue({})

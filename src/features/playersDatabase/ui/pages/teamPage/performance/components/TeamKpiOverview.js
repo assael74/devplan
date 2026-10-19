@@ -2,7 +2,7 @@
 import { Box, Tooltip, Typography } from '@mui/joy'
 
 import KpiRow from '../../../../components/kpi/KpiRow.js'
-import ScoutPriority from '../../../../../../../ui/patterns/scout/ScoutPriority.js'
+import TeamPriorityBadge from '../../../../components/scout/shared/TeamPriorityBadge.js'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import TeamKpiCard from './TeamKpiCard.js'
 import {
@@ -74,7 +74,12 @@ const TablePositionTimeline = ({ seasons = [] }) => (
   </Box>
 )
 
-const PriorityTimeline = ({ seasons = [] }) => (
+const PriorityTimeline = ({
+  seasons = [],
+  side,
+  view,
+  team,
+}) => (
   <Box>
     <Box sx={sx.priorityTimeline}>
       {seasons.map((season, index) => (
@@ -94,8 +99,8 @@ const PriorityTimeline = ({ seasons = [] }) => (
                     {formatScore(season.score)}
                   </Typography>
                 </Tooltip>
-                {index === 0 && season.level && season.level !== 'unavailable' ? (
-                  <ScoutPriority value={season.level} fontSize={12} />
+                {index === 0 ? (
+                  <TeamPriorityBadge side={side} view={view} team={team} teamName={team.name} fontSize={12} />
                 ) : null}
               </>
             )}
@@ -158,7 +163,7 @@ export default function TeamKpiOverview({
         <TeamKpiCard
           performance
           title='ביצוע התקפי'
-          valueContent={<PriorityTimeline seasons={offensePriorityTimeline} />}
+          valueContent={<PriorityTimeline seasons={offensePriorityTimeline} side='offense' view={offense} team={team} />}
           iconId='stats'
           insightNotes={[insightDetails.offense].filter(detail => detail?.text)}
           iconPriority={offensePriorityTimeline[0]?.level}
@@ -179,7 +184,7 @@ export default function TeamKpiOverview({
         <TeamKpiCard
           performance
           title='ביצוע הגנתי'
-          valueContent={<PriorityTimeline seasons={defensePriorityTimeline} />}
+          valueContent={<PriorityTimeline seasons={defensePriorityTimeline} side='defense' view={defense} team={team} />}
           iconId='defensive'
           insightNotes={[insightDetails.defense].filter(detail => detail?.text)}
           iconPriority={defensePriorityTimeline[0]?.level}

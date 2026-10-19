@@ -24,6 +24,7 @@ import {
 import { PLAYERS_DATABASE_CURRENT_SEASON_KEY } from '../../../../catalog/seasons.catalog.js'
 import {
   CLUBS_DIRECTORY_STORE_KEY,
+  LEAGUES_CENTER_STORE_KEY,
   readTeamPageData,
   subscribeTeamPageData,
 } from '../../../../services/read/index.js'
@@ -58,12 +59,13 @@ export function useTeamPage() {
   const navigate = useNavigate()
   const { leagueId = '', teamId = '' } = useParams()
   const [searchParams] = useSearchParams()
-  const auditSeasonKey = cleanValue(searchParams.get('auditSeason'))
+  const auditSeasonKey = cleanValue(searchParams.get('auditSeason') || searchParams.get('signalSeason'))
   const pageStoreKey = buildTeamPageDataCacheKey({ leagueId, teamId })
   const pageEntry = usePlayersDatabaseReadStoreEntry(pageStoreKey)
   const clubsDirectoryEntry = usePlayersDatabaseReadStoreEntry(
     CLUBS_DIRECTORY_STORE_KEY
   )
+  const leaguesCenterEntry = usePlayersDatabaseReadStoreEntry(LEAGUES_CENTER_STORE_KEY)
   const pageResult = pageEntry.data
   const leagueDoc = pageResult?.leagueDoc || null
   const leagueDocuments = useMemo(
@@ -130,13 +132,8 @@ export function useTeamPage() {
 
   useEffect(() => {
     setSelectedOptionKey('')
-  }, [leagueId, teamId])
+  }, [auditSeasonKey, leagueId, teamId])
 
-  const clubDoc = useMemo(() => {
-    const clubId = cleanValue(teamDoc?.identity?.clubId)
-    const club = clubsDirectoryEntry.data?.clubsById?.[clubId]
-    return club ? { id: clubId, ...club } : null
-  }, [clubsDirectoryEntry.data, teamDoc?.identity?.clubId])
   const clubsDirectory = clubsDirectoryEntry.data || null
 
   const seasonOptions = useMemo(
@@ -234,6 +231,11 @@ export function useTeamPage() {
     selectedLeagueSeason,
     selectedTeamSeason,
   ])
+  const clubDoc = useMemo(() => {
+    const clubId = cleanValue(team.clubId || teamDoc?.identity?.clubId)
+    const club = clubsDirectoryEntry.data?.clubsById?.[clubId]
+    return club ? { id: clubId, ...club } : null
+  }, [clubsDirectoryEntry.data, team.clubId, teamDoc?.identity?.clubId])
   const players = useMemo(() => buildTeamPagePlayerRows({
     teamSeason: selectedTeamSeason,
     selectedSeasonOption,
@@ -255,6 +257,7 @@ export function useTeamPage() {
     clubDoc,
     clubsDirectory,
     players,
+    leaguesCenterDocument: leaguesCenterEntry.data,
     hasTeamPlayers: players.length > 0,
     seasonOptions,
     selectedSeasonKey,

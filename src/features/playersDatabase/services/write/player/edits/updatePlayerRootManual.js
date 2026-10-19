@@ -1,9 +1,9 @@
 // src/features/playersDatabase/services/write/player/edits/updatePlayerRootManual.js
 
-import { clean, equal, requireValue } from '../../../../domain/edits/editIdentity.js'
+import { clean, equal, requireValue, urlValue } from '../../../../domain/edits/editIdentity.js'
 import { buildPlayerRoleEditState } from '../../../../domain/edits/playerRoleEdit.builder.js'
 import { buildPlayerRootDocument } from '../../../../domain/playerRoot.builder.js'
-import { buildPlayerId, buildPlayerSeasonDocumentId } from '../../../../domain/identity/index.js'
+import { buildPlayerId, buildPlayerSearchIndexDocumentId, buildPlayerSeasonDocumentId } from '../../../../domain/identity/index.js'
 import { buildPlayerSeasonProjection } from '../../../../domain/stats/statsProjection.builder.js'
 import {
   executeManualEdit,
@@ -31,7 +31,7 @@ const readTeamSeasonRefs = async indexRefs => {
   })).values()]
 }
 
-const readRoleEditTargets = async ({ indexRefs, playerId }) => {
+const readRoleEditTargets = async ({ indexRefs }) => {
   const indexSnapshots = await Promise.all(indexRefs.map(readManualEditDocument))
   const indexes = indexSnapshots.map(requireManualEditDocument)
   const teamSeasonRefs = [...new Map(indexes.map(index => {
@@ -51,13 +51,8 @@ const readRoleEditTargets = async ({ indexRefs, playerId }) => {
     })).values()]
   const teamSeasonSnapshots = await Promise.all(teamSeasonRefs.map(readManualEditDocument))
   const leagueRefsById = new Map()
-  const clubsCenterRefsBySeasonId = new Map()
   teamSeasonSnapshots.forEach(snapshot => {
     const teamSeason = requireManualEditDocument(snapshot)
-    if (clean(teamSeason.stats?.playersById?.[playerId]?.statsStatus) === 'loaded') {
-      const seasonId = requireValue(clean(teamSeason.identity?.seasonId), 'זהות העונה חסרה')
-      clubsCenterRefsBySeasonId.set(seasonId, manualEditRef('clubsCenter', seasonId))
-    }
     const leagueId = clean(teamSeason.identity?.leagueId)
     if (!leagueId) return
     const leagueRef = manualEditRef('leagues', leagueId)
@@ -69,43 +64,7 @@ const readRoleEditTargets = async ({ indexRefs, playerId }) => {
     playerSeasonRefs,
     leagueRefs: [...leagueRefsById.values()],
     leagueRefsById,
-    leaguesCenterRef: clubsCenterRefsBySeasonId.size ? manualEditRef('leaguesCenter', 'all') : null,
-    clubsCenterRefsBySeasonId,
   }
-}
-
-const appendRoleCenterPatches = ({
-  get,
-  identity,
-  teamTaskSignals,
-  leaguesCenterRef,
-  clubsCenterRefsBySeasonId,
-  patchesByPath,
-}) => {
-  const leagueId = requireValue(clean(identity.leagueId), 'זהות הליגה חסרה')
-  const seasonId = requireValue(clean(identity.seasonId), 'זהות העונה חסרה')
-  const teamId = requireValue(clean(identity.teamId), 'זהות הקבוצה חסרה')
-  const clubId = requireValue(clean(identity.clubId), 'זהות המועדון חסרה')
-  const clubsCenterRef = clubsCenterRefsBySeasonId.get(seasonId)
-  requireValue(leaguesCenterRef && clubsCenterRef, 'יעדי המרכזים השתנו; יש לנסות לשמור מחדש')
-  const leaguesCenter = requireManualEditDocument(get(leaguesCenterRef))
-  const clubsCenter = requireManualEditDocument(get(clubsCenterRef))
-  requireValue(
-    leaguesCenter.leaguesById?.[leagueId]?.seasonsById?.[seasonId]?.teamsById?.[teamId],
-    'הקבוצה חסרה במרכז הליגות; יש לתקן אותה באודיט לפני שמירת התפקיד',
-  )
-  requireValue(
-    clubsCenter.clubsById?.[clubId]?.teamsById?.[teamId],
-    'הקבוצה חסרה במרכז המועדונים; יש לתקן אותה באודיט לפני שמירת התפקיד',
-  )
-  ;[
-    [leaguesCenterRef, `leaguesById.${leagueId}.seasonsById.${seasonId}.teamsById.${teamId}.teamTaskSignals`],
-    [clubsCenterRef, `clubsById.${clubId}.teamsById.${teamId}.teamTaskSignals`],
-  ].forEach(([ref, field]) => {
-    const change = patchesByPath.get(ref.path) || { ref, patch: {} }
-    change.patch[field] = teamTaskSignals
-    patchesByPath.set(ref.path, change)
-  })
 }
 
 const buildMissingPlayerRoot = ({
@@ -211,10 +170,19 @@ export const updatePlayerAgent = ({ playerId, agent = {} }) => {
   })
 }
 
-export const updatePlayerRole = async ({ playerId, primaryPosition, positionLayer }) => {
+export const updatePlayerRole = async ({ playerId, primaryPosition, positionLayer, seasonDetails = null }) => {
   const id = requireValue(clean(playerId), 'מזהה שחקן חסר')
   const primary = clean(primaryPosition)
   const layer = clean(positionLayer)
+  const hasShirt = seasonDetails && Object.prototype.hasOwnProperty.call(seasonDetails, 'numShirt')
+  const hasUrl = seasonDetails && Object.prototype.hasOwnProperty.call(seasonDetails, 'playerUrl')
+  const numShirt = hasShirt && seasonDetails.numShirt !== '' && seasonDetails.numShirt !== null
+    ? Number(seasonDetails.numShirt)
+    : null
+  if (hasShirt && numShirt !== null && (!Number.isSafeInteger(numShirt) || numShirt < 1)) {
+    throw new Error('מספר חולצה חייב להיות מספר שלם וחיובי')
+  }
+  const playerUrl = hasUrl ? urlValue(seasonDetails.playerUrl) : ''
   const ref = playerRootRef(id)
   const indexRefs = await readManualEditRefs('playerSearchIndexes', { playerId: id })
   const {
@@ -222,19 +190,16 @@ export const updatePlayerRole = async ({ playerId, primaryPosition, positionLaye
     playerSeasonRefs,
     leagueRefs,
     leagueRefsById,
-    leaguesCenterRef,
-    clubsCenterRefsBySeasonId,
-  } = await readRoleEditTargets({ indexRefs, playerId: id })
+  } = await readRoleEditTargets({ indexRefs })
 
   return executeManualEdit({
+    refreshSignals: true,
     refs: [
       ref,
       ...indexRefs,
       ...teamSeasonRefs,
       ...playerSeasonRefs,
       ...leagueRefs,
-      ...(leaguesCenterRef ? [leaguesCenterRef] : []),
-      ...clubsCenterRefsBySeasonId.values(),
     ],
     build: ({ get, updatedAt }) => {
       const playerSnapshot = get(ref)
@@ -278,8 +243,6 @@ export const updatePlayerRole = async ({ playerId, primaryPosition, positionLaye
         }
       })
       const roleStatesByTeamSeasonId = new Map()
-      const leaguePatchesByPath = new Map()
-      const centerPatchesByPath = new Map()
       teamSeasonRefs.forEach(teamSeasonRef => {
         const teamSeason = requireManualEditDocument(get(teamSeasonRef))
         const identity = teamSeason.identity || {}
@@ -317,24 +280,6 @@ export const updatePlayerRole = async ({ playerId, primaryPosition, positionLaye
           teamSeasonPatch[`stats.playersById.${id}`] = roleState.statsPlayer
           teamSeasonPatch['stats.teamBalance'] = roleState.teamBalance
           teamSeasonPatch['stats.updatedAt'] = updatedAt
-          teamSeasonPatch.teamTaskSignals = roleState.teamTaskSignals
-          teamSeasonPatch.teamTaskAvailability = roleState.teamTaskAvailability
-          const leaguePatch = leaguePatchesByPath.get(leagueRef.path) || {
-            ref: leagueRef,
-            patch: {},
-          }
-          leaguePatch.patch[
-            `seasonsById.${clean(identity.seasonId)}.table.teamsById.${clean(identity.teamId)}.scouting.teamTaskSignals`
-          ] = roleState.teamTaskSignals
-          leaguePatchesByPath.set(leagueRef.path, leaguePatch)
-          appendRoleCenterPatches({
-            get,
-            identity,
-            teamTaskSignals: roleState.teamTaskSignals,
-            leaguesCenterRef,
-            clubsCenterRefsBySeasonId,
-            patchesByPath: centerPatchesByPath,
-          })
         }
         if (Object.keys(teamSeasonPatch).length) {
           const projectedTeamSeason = {
@@ -386,8 +331,93 @@ export const updatePlayerRole = async ({ playerId, primaryPosition, positionLaye
           changes.push({ ref: playerSeasonRef, patch: projectionPatch })
         }
       })
-      leaguePatchesByPath.forEach(change => changes.push(change))
-      centerPatchesByPath.forEach(change => changes.push(change))
+      if (hasShirt || hasUrl) {
+        const teamId = requireValue(clean(seasonDetails.teamId), 'זהות הקבוצה חסרה')
+        const seasonId = requireValue(clean(seasonDetails.seasonId), 'זהות העונה חסרה')
+        const documentId = requireValue(clean(seasonDetails.teamSeasonDocumentId), 'זהות עונת הקבוצה חסרה')
+        const teamRef = teamSeasonRefs.find(item => item.path === manualEditRef('teamSeasons', documentId).path)
+        const seasonRef = playerSeasonRefs.find(item => item.path === manualEditRef(
+          'playerSeasons', buildPlayerSeasonDocumentId({ playerId: id, seasonId }),
+        ).path)
+        const indexRef = indexRefs.find(item => item.path === manualEditRef(
+          'playerSearchIndexes',
+          buildPlayerSearchIndexDocumentId({ playerId: id, teamSeasonDocumentId: documentId }),
+        ).path)
+        requireValue(teamRef && seasonRef && indexRef, 'מסמכי עונת השחקן חסרים; לא בוצעה שמירה')
+        const team = requireManualEditDocument(get(teamRef))
+        const playerSeason = requireManualEditDocument(get(seasonRef))
+        const index = requireManualEditDocument(get(indexRef))
+        const seasonTeam = playerSeason.teamsById?.[teamId]
+        requireValue(
+          clean(team.identity?.teamSeasonDocumentId) === documentId &&
+          clean(team.identity?.teamId) === teamId &&
+          clean(team.identity?.seasonId) === seasonId &&
+          clean(playerSeason.identity?.playerId) === id &&
+          clean(playerSeason.identity?.seasonId) === seasonId &&
+          clean(index.playerId) === id &&
+          clean(index.seasonId) === seasonId &&
+          clean(index.references?.teamSeasonDocumentId) === documentId &&
+          seasonTeam && team.roster?.playersById?.[id],
+          'זהות עונת השחקן סותרת',
+        )
+        if (hasShirt) {
+          requireValue(clean(team.stats?.statsLoadState?.status) === 'loaded', 'אפשר לערוך מספר חולצה רק לאחר טעינת סטטיסטיקה')
+        }
+        const shirtValue = numShirt === null ? '' : String(numShirt)
+        const teamShirtChanged = hasShirt && (team.roster.playersById[id].numShirt === undefined
+          ? null
+          : team.roster.playersById[id].numShirt) !== numShirt
+        const teamUrlChanged = hasUrl && clean(team.manual?.playersById?.[id]?.playerUrl) !== playerUrl
+        const seasonShirtChanged = hasShirt && (seasonTeam.roster?.numShirt === undefined
+          ? null
+          : seasonTeam.roster.numShirt) !== numShirt
+        const seasonUrlChanged = hasUrl && clean(seasonTeam.manual?.playerUrl) !== playerUrl
+        const indexShirtChanged = hasShirt && clean(index.player?.numShirt) !== shirtValue
+        const indexUrlChanged = hasUrl && clean(index.player?.playerUrl) !== playerUrl
+        const ensureChange = ref => {
+          let change = changes.find(item => item.ref.path === ref.path)
+          if (!change) {
+            change = { ref, patch: {} }
+            changes.push(change)
+          }
+          return change
+        }
+        if (teamShirtChanged || teamUrlChanged) {
+          const patch = ensureChange(teamRef).patch
+          if (teamShirtChanged) {
+            patch[`roster.playersById.${id}.numShirt`] = numShirt
+            patch[`roster.playersById.${id}.updatedAt`] = updatedAt
+            patch['roster.updatedAt'] = updatedAt
+          }
+          if (teamUrlChanged) {
+            patch[`manual.playersById.${id}.playerUrl`] = playerUrl
+            patch[`manual.playersById.${id}.updatedAt`] = updatedAt
+            patch['manual.updatedAt'] = updatedAt
+          }
+        }
+        if (seasonShirtChanged || seasonUrlChanged) {
+          const patch = ensureChange(seasonRef).patch
+          const key = `teamsById.${teamId}`
+          if (patch[key]) {
+            patch[key] = {
+              ...patch[key],
+              ...(seasonShirtChanged ? { roster: { ...(patch[key].roster || {}), numShirt } } : {}),
+              ...(seasonUrlChanged ? { manual: { ...(patch[key].manual || {}), playerUrl } } : {}),
+            }
+          } else {
+            if (seasonShirtChanged) patch[`${key}.roster.numShirt`] = numShirt
+            if (seasonUrlChanged) patch[`${key}.manual.playerUrl`] = playerUrl
+          }
+        }
+        if (indexShirtChanged || indexUrlChanged) {
+          const patch = ensureChange(indexRef).patch
+          patch.player = {
+            ...(patch.player || index.player || {}),
+            ...(indexShirtChanged ? { numShirt: shirtValue } : {}),
+            ...(indexUrlChanged ? { playerUrl } : {}),
+          }
+        }
+      }
       return changes
     },
   })

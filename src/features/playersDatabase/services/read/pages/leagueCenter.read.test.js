@@ -35,6 +35,7 @@ jest.mock('../../cache/index.js', () => ({
 }))
 
 test('League Center listener publishes the updated document to the shared store', () => {
+  doc.mockReturnValue({ path: 'dbLeaguesCenter/all' })
   let publishSnapshot
   const unsubscribe = jest.fn()
   onSnapshot.mockImplementation((reference, onNext) => {
@@ -61,6 +62,9 @@ test('League Center listener publishes the updated document to the shared store'
   expect(doc).toHaveBeenCalled()
   expect(trackFirestoreListenerOpen).toHaveBeenCalled()
   expect(trackFirestoreListenerUpdate).toHaveBeenCalled()
+  expect(trackFirestoreListenerUpdate).toHaveBeenCalledWith(expect.objectContaining({
+    meta: { documentPath: 'dbLeaguesCenter/all' },
+  }))
   expect(setDocumentCacheValue).toHaveBeenCalledWith({
     key: LEAGUES_CENTER_STORE_KEY,
     value: expect.objectContaining({

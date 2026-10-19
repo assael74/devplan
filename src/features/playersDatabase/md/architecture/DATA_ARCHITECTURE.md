@@ -19,14 +19,41 @@
 | ClubsDirectory | ספריית מועדונים כללית | Projection מ־ClubProfile |
 | LeaguesCenter / ClubsCenter | ניווט ותצוגה עונתיים | Projection מליגה ומקבוצות עונה |
 
+`PlayersDatabaseReadScope` שייך למעטפת הניהול של ההתחברות. האזנת
+`LeaguesCenter` מתחילה בכניסה הראשונה ל־Players Database ונשארת יחידה עד
+סיום ההתחברות, גם במעבר למסכים אחרים ובחזרה. העמודים משתמשים ב־Read Store
+הקיים; שינויים במסמך ממשיכים לעדכן אותו בזמן אמת. רענון שרת מפורש נשאר זמין.
+האזנת `ClubsDirectory` פעילה רק בזמן שהמשתמש נמצא במסכי המאגר. בסיום
+המעטפת נסגרות ההאזנות ומנוקה מטמון המאגר. אין שינוי במבני Firestore.
+
+עדכון חי או החלפה מפורשת של ערך ב־Read Store גוברים על קריאה שהתחילה
+לפניהם ועדיין לא הסתיימה. תשובה מאוחרת או כישלון של אותה קריאה אינם
+דורסים את הערך העדכני ואת מצב התצוגה שלו.
+
 `Team Season` הוא מקור האמת לעונת קבוצה אחת. `Team Root` אינו מחזיק payload
 עונתי נוסף; `seasons[]` שלו הוא אינדקס ניווט בלבד.
+
+מחברת החקירה הרב־עונתית נשמרת רק ב־`Team Root.notes`: חמישה מסלולים והערות
+כלליות, כל אחד עם תוכן אזכורים, מזהי שחקנים קשורים ו־`reportsIds`. הסיכום
+מחושב בממשק. `showInvestigationIndicator` הוא החלטת משתמש נפרדת, ברירת המחדל
+שלה `false`. עמוד הליגה, `LeaguesCenter` ו־`ClubsCenter` מקבלים ממנה דגל
+בוליאני בלבד ברשומת הקבוצה; הם אינם מחזיקים טקסט או מזהי קישורים מהמחברת.
+שמירת טקסט מוסיפה את מזהי השחקנים שהוזכרו למערך הקשרים הקיים; הסרת אזכור
+מהטקסט אינה מסירה קשר שכבר נוצר. הסרת קשר תדרוש פעולה מפורשת בעת חיבור
+ממשק השיוכים.
 
 ב־`ClubsCenter` זהות המסמך משותפת לעונה הטכנית, אך `seasonStatus` שייך לכל
 ליגה ונשמר תחת `leaguesById[leagueId]`; אין סטטוס lifecycle יחיד לכל הליגות
 שבמסמך העונתי.
 
 ## ביצועי קבוצה
+
+`teamSignalSummary` הוא סיכום נגזר של חמש משפחות איתותים, עם עוצמה,
+זמינות וגרסאות מבנה וכיול. הוא נשמר ב־Team Season קיים ומוקרן לשורת
+הקבוצה ב־League,‏ LeaguesCenter ו־ClubsCenter. העובדות נשארות בבעלות
+League,‏ Team Season ו־ClubProfile; אין שימוש במרכזים כמקור לחישוב מחדש.
+מחברת החקירה אינה משתנה ואינה מקור לעוצמות. החוזה הפעיל הוא
+`../contracts/TEAM_SIGNALS_CONTRACT.md`.
 
 נתוני League הם המקור היחיד ל־`teamGamePlayed`,‏ `goalsFor`,‏
 `goalsAgainst`,‏ `tableRank`,‏ `tableAttackRank`,‏ `tableDefenseRank` ולערכי
@@ -51,10 +78,17 @@
 
 - Roster Load כותב סגל, מצב תנועה ומטא־דאטה של הסגל; הוא אינו יוצר Player
   Document רק מפני ששחקן הופיע בסגל.
+- Roster Load יוצר `Team Root` מלא רק בהיעדר מסמך. בטעינה חוזרת הוא מעדכן
+  את הפניית העונה בלבד ואינו כותב מחדש את `notes`. שמירת מחברת מעדכנת רק
+  מסלולים ששונו ואת דגל הסימון, בעסקה אחת עם ההקרנות הקיימות.
 - עריכת עמדה או הערה ידנית ומפורשת רשאית ליצור Player Root חסר לשחקן מזוהה מתוך
   רשומת הסגל הקנונית ב־Team Season, באותה עסקה עם עדכון ההיטלים. היא אינה
   יוצרת תמונת סקאוט עונתית חסרה.
 - Stats Load כותב `playerStats`,‏ Team Balance, scouting ו־Player projections.
+- Stats Load מתעד ב־`TeamSeason.stats.statsLoadState.teamGamePlayedAtLoad`
+  את מספר משחקי הקבוצה בטבלת League בזמן הטעינה. זהו בסיס היסטורי בבעלות
+  Stats שמוקרן ל־`League.table.teamsById.*.stats.teamGamePlayedAtLoad` בתוך
+  העונה. עדכון הטבלה או שחזור הקרנות אינם מקדמים אותו; חוסר תיעוד הוא לא ידוע.
 - SearchIndex לעולם אינו מקור לתיקון, Migration או חישוב Expected.
 - Audit בודק lifecycle, relations ו־projection mismatch; הוא אינו validator
   של סכמת Firestore.
@@ -91,10 +125,16 @@ Architecture → Firestore Catalog → Domain builder → Writer → Projection 
 
 - playerUrl של שחקן בקבוצה ובעונה בבעלות רשומת Team Season; Player ואינדקס
   השחקן מכילים עותקים מסונכרנים. במסלול עריכה מעמוד Player שלושתם מחויבים.
-- seasonUrl בבעלות עונת League. הקישור ב־LeaguesCenter וב־Player SearchIndex
-  הוא Projection בלבד.
+- seasonUrl בבעלות עונת League ומוקרן ל־LeaguesCenter בלבד. עריכת הקישור
+  מעדכנת שני מסמכים אלה באותה עסקה, ללא קריאת אינדקסי שחקנים או רענון איתותים.
+  team.seasonUrl אינו שדה פעיל ב־Player SearchIndex ואינו נכתב בבוני האינדקסים.
+  עותקים קיימים יכולים להישאר כמידע ישן שאינו בשימוש; אין צורך בניקוי גורף.
 - teamUrl בבעלות שורת הקבוצה בעונת League, גם לפני יצירת Team Season.
-  Team Season ואינדקסי הקבוצה והשחקנים הם עותקים; אין החזרת ערך מהם למקור.
+  competitionSnapshot.teamUrl ב־Team Season הוא עותק. עריכת הקישור מעדכנת
+  רק את League ואת Team Season אם הוא קיים, באותה עסקה וללא יצירת מסמך חסר.
+  אין קריאה או כתיבה של אינדקסי שחקנים ואין רענון איתותים. team.teamUrl אינו
+  שדה פעיל ב־Player SearchIndex; ערכים ישנים יכולים להישאר ללא סנכרון או ניקוי.
+  אין החזרת ערך מעותק למקור.
 - ClubProfile.clubUrl הוא שדה קנוני ידני בתוך מסמך שיתר תחומיו נשארים בבעלותם.
   שדה קיים נשמר גם כשהוא ריק. אקסל/קטלוג רשאים לאתחל רק שדה חסר.
   ClubsDirectory ו־ClubsCenter מקרינים אותו מ־ClubProfile. עריכת הקישור אינה
@@ -102,6 +142,8 @@ Architecture → Firestore Catalog → Domain builder → Writer → Projection 
 
 כללי פעולות העריכה: `../contracts/STANDALONE_EDITS_CONTRACT.md`.
 
-עריכת קישור עונת League מופרדת מעריכת competitionRules. הראשונה מסנכרנת
-רק קישורים; השנייה מחשבת תחזיות באמצעות בוני התחום הקיימים ומשמרת manual.
+מגירת עונת League שומרת רק שדות שהשתנו דרך `updateLeagueSeasonSettings`.
+שינוי קישור בלבד מסנכרן רק קישורים; שינוי `competitionRules` מחשב תחזיות
+באמצעות בוני התחום הקיימים ומשמר manual. כששני התחומים השתנו הם נשמרים
+בעסקה אחת, בנתיבי שדות ממוקדים בלי לכתוב מחדש את העונה או הטבלה.
 חותמת זמן אחידה נכתבת בכל מסמך ורשומה מקוננת ששונו בפעולת עריכה.

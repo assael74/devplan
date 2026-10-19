@@ -10,6 +10,7 @@ import {
 import { db } from '../../../../../services/firebase/firebase.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
 import { requireLeagueId } from '../../../domain/league/leagueIdentity.js'
+import { refreshTeamSignalSummaries } from '../signals/refreshTeamSignalSummaries.js'
 import {
   buildTeamId,
   buildTeamSeasonDocumentId,
@@ -39,22 +40,16 @@ const LEAGUE_FIELDS = Object.freeze([
 
 const TEAM_FIELDS = Object.freeze([
   'teamSeasonDocumentId',
+  'showInvestigationIndicator',
   'birthYear',
   'ageGroupId',
   'teamSlot',
   'leagueId',
   'documentationState',
   'documentationStateUpdatedAt',
-  'teamTaskSignals',
   'performance',
   'competitionProjection',
   'transfers',
-  'updatedAt',
-])
-
-const TASK_SIGNAL_FIELDS = Object.freeze([
-  'offense',
-  'defense',
   'updatedAt',
 ])
 
@@ -128,20 +123,6 @@ const requireLeagueProjection = value => requireExactFields(
   LEAGUE_FIELDS,
   'Invalid ClubsCenter league projection'
 )
-
-const requireTaskSignals = value => {
-  const signals = requireExactFields(
-    value,
-    TASK_SIGNAL_FIELDS,
-    'Invalid ClubsCenter team task signals projection'
-  )
-
-  if (typeof signals.offense !== 'boolean' || typeof signals.defense !== 'boolean') {
-    throw new Error('Invalid ClubsCenter team task signals projection')
-  }
-
-  return signals
-}
 
 const requirePerformance = value => requireExactFields(
   value,
@@ -243,6 +224,9 @@ const requireTeamProjection = ({
   if (!Number.isInteger(team.birthYear) || team.birthYear <= 0) {
     throw new Error('Invalid ClubsCenter team projection')
   }
+  if (typeof team.showInvestigationIndicator !== 'boolean') {
+    throw new Error('Invalid ClubsCenter investigation indicator')
+  }
   if (!clean(team.ageGroupId)) throw new Error('Invalid ClubsCenter team projection')
   if (!Number.isInteger(team.teamSlot) || team.teamSlot <= 0) {
     throw new Error('Invalid ClubsCenter team projection')
@@ -271,7 +255,6 @@ const requireTeamProjection = ({
     throw new Error('Invalid ClubsCenter team documentation state')
   }
 
-  requireTaskSignals(team.teamTaskSignals)
   requirePerformance(team.performance)
   requireCompetitionProjection(team.competitionProjection)
   requireTransfers(team.transfers)
@@ -477,12 +460,9 @@ const buildWrite = target => {
         path: ['clubsById', clubWrite.clubId, 'teamsById', teamId],
         value: team,
       })
-      mergeFields.push(new FieldPath(
-        'clubsById',
-        clubWrite.clubId,
-        'teamsById',
-        teamId
-      ))
+      Object.keys(team).forEach(field => mergeFields.push(new FieldPath(
+        'clubsById', clubWrite.clubId, 'teamsById', teamId, field
+      )))
     })
 
     clubWrite.deleteTeamIds.forEach(teamId => {
@@ -503,7 +483,7 @@ const buildWrite = target => {
   return { data, mergeFields }
 }
 
-export const writeClubsCenter = async ({ approvedState = {} } = {}) => {
+export const writeClubsCenter = async ({ approvedState = {}, refreshSignals = true } = {}) => {
   const target = requireWriteTarget({ approvedState })
 
   if (!target.writeRequired) {
@@ -525,6 +505,7 @@ export const writeClubsCenter = async ({ approvedState = {} } = {}) => {
   )
 
   await setDoc(reference, data, { mergeFields })
+  if (refreshSignals) await refreshTeamSignalSummaries({ source: approvedState })
 
   const upsertedTeams = target.clubWrites.reduce(
     (total, item) => total + Object.keys(item.upsertTeamsById).length,

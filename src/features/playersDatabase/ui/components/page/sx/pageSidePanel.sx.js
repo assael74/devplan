@@ -1,9 +1,10 @@
 // src/features/playersDatabase/ui/components/page/sx/pageSidePanel.sx.js
 
-import { devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
+import { COLORS, devPlanColors } from '../../../../../../ui/core/theme/Colors.js'
 
 export const pageSidePanelSx = {
   floatingActionButton: {
+    position: 'relative',
     width: 28,
     minWidth: 28,
     height: 32,
@@ -76,6 +77,19 @@ export const pageSidePanelSx = {
       bgcolor: '#5b7f98',
     },
   },
+
+  indicatorDot: color => ({
+    position: 'absolute',
+    top: 3,
+    insetInlineEnd: 2,
+    width: 8,
+    height: 8,
+    borderRadius: '50%',
+    bgcolor: COLORS.status[color].solid,
+    border: `1px solid ${devPlanColors.surface}`,
+    boxShadow: '0 0 0 1px rgba(23, 59, 87, 0.18)',
+    pointerEvents: 'none',
+  }),
 
   content: {
     height: '100%',

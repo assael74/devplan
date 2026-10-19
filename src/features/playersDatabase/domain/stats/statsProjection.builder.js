@@ -117,8 +117,6 @@ export const buildPlayerSearchIndexProjection = ({
   updatedAt,
 } = {}) => {
   const identity = object(teamSeason.identity)
-  const season = object(object(league.seasonsById)[seasonId])
-  const teamRow = object(object(object(season.table).teamsById)[identity.teamId])
   const rosterPlayer = object(object(object(teamSeason.roster).playersById)[playerId])
   const statsPlayer = object(object(object(teamSeason.stats).playersById)[playerId])
   const scoutPlayer = object(object(object(teamSeason.scouting).playersById)[playerId])
@@ -178,8 +176,6 @@ export const buildPlayerSearchIndexProjection = ({
       ageGroupId: clean(identity.ageGroupId),
       ageGroupLabel: clean(league.ageGroupLabel),
       region: clean(league.region),
-      teamUrl: clean(teamRow.teamUrl),
-      seasonUrl: clean(season.seasonUrl),
     },
     player: {
       playerUrl: clean(manualPlayer.playerUrl),

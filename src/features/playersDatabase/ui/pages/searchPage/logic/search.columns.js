@@ -13,7 +13,8 @@ import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 
 import FavoriteButton from '../../../components/actions/FavoriteButton.js'
 import LeagueName from '../../../components/entities/LeagueName.js'
-import ScoutPriority from '../../../../../../ui/patterns/scout/ScoutPriority.js'
+import TeamPriorityBadge from '../../../components/scout/shared/TeamPriorityBadge.js'
+import { buildTeamPerformanceSideViewModel } from '../../../../model/team/teamPerformance.viewModel.js'
 import ScoutProfileChip, {
   resolveScoutProfileDepthPct,
 } from '../../../components/scout/profile/ScoutProfileChip.js'
@@ -246,26 +247,6 @@ export function buildPlayerSearchColumns({ onEntityOpen, onFavoriteToggle } = {}
 }
 
 
-const OPPORTUNITY_LABELS = {
-  proven_quality: 'איכות מוכחת',
-  interesting_anomaly: 'אנומליה מעניינת',
-  quality_anomaly: 'איכות ואנומליה',
-  above_target: 'ביצוע מעל היעד',
-  neutral: 'ללא יתרון מובהק',
-  unavailable: 'לא זמין',
-}
-
-const buildTeamPriorityTooltip = ({ sideLabel, performance = {} }) => {
-  const score = Number(performance.scoutPriorityScore)
-  const scoreLabel = Number.isFinite(score) ? `${Math.round(score)}` : '—'
-  const opportunityKey = String(performance.opportunityType || '').trim()
-  const opportunityLabel = OPPORTUNITY_LABELS[opportunityKey] || ''
-
-  return opportunityLabel && opportunityKey !== 'unavailable'
-    ? `${sideLabel}: ${scoreLabel} · ${opportunityLabel}`
-    : `${sideLabel}: ${scoreLabel}`
-}
-
 export function buildTeamSearchColumns({ onEntityOpen, onFavoriteToggle } = {}) {
   return [
     {
@@ -357,12 +338,11 @@ export function buildTeamSearchColumns({ onEntityOpen, onFavoriteToggle } = {}) 
         ...teamColumnWidth('attackPriority'),
       },
       render: row => (
-        <ScoutPriority
-          value={row.offense?.priorityLevel}
-          tooltip={buildTeamPriorityTooltip({
-            sideLabel: 'עדיפות התקפית',
-            performance: row.offense,
-          })}
+        <TeamPriorityBadge
+          side='offense'
+          view={buildTeamPerformanceSideViewModel(row.offense || {})}
+          teamName={row.teamName}
+          team={row}
           short
           fontSize={11}
         />
@@ -377,12 +357,11 @@ export function buildTeamSearchColumns({ onEntityOpen, onFavoriteToggle } = {}) 
         ...teamColumnWidth('defensePriority'),
       },
       render: row => (
-        <ScoutPriority
-          value={row.defense?.priorityLevel}
-          tooltip={buildTeamPriorityTooltip({
-            sideLabel: 'עדיפות הגנתית',
-            performance: row.defense,
-          })}
+        <TeamPriorityBadge
+          side='defense'
+          view={buildTeamPerformanceSideViewModel(row.defense || {})}
+          teamName={row.teamName}
+          team={row}
           short
           fontSize={11}
         />

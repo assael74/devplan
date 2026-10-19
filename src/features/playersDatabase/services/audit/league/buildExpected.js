@@ -101,7 +101,6 @@ const buildLeaguesCenterSeason = ({
       teamSlot: toNullableNumber(row && row.teamSlot),
       documentationState: centerState.documentationState,
       documentationStateUpdatedAt: centerState.documentationStateUpdatedAt,
-      teamTaskSignals: centerState.teamTaskSignals,
     }
   })
 

@@ -6,6 +6,7 @@ import { auditStats } from '../stats/index.js'
 import { getFocusedAuditFindingKey, inspectFocusedAuditRepair } from './eligibility.js'
 import { repairLeagueFinding } from './repairLeagueFinding.js'
 import { repairStatsFinding } from './repairStatsFinding.js'
+import { refreshTeamSignalSummaries } from '../../write/signals/refreshTeamSignalSummaries.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 const findingsOf = audit => Array.isArray(audit && audit.findings) ? audit.findings : []
@@ -50,8 +51,13 @@ export const repairFocusedAuditFinding = async ({
   if (!currentEligibility.allowed) throw new Error(currentEligibility.reason)
 
   try {
-    const repair = resolvedScope.type === 'league' ? repairLeagueFinding : repairStatsFinding
-    await repair({ scope: resolvedScope, finding: currentFinding })
+    if (currentFinding.target === 'teamSignals') {
+      if (!clean(currentFinding.clubId)) throw new Error('שיוך המועדון חסר; יש להריץ בדיקה מחדש')
+      await refreshTeamSignalSummaries({ clubIds: [currentFinding.clubId] })
+    } else {
+      const repair = resolvedScope.type === 'league' ? repairLeagueFinding : repairStatsFinding
+      await repair({ scope: resolvedScope, finding: currentFinding })
+    }
   } catch (error) {
     const failure = error instanceof Error ? error : new Error('התיקון לא הושלם.')
     failure.auditResult = await runAudit(resolvedScope).catch(() => null)

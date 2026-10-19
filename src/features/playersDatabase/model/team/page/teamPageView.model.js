@@ -13,6 +13,7 @@ import {
 } from '../teamIdentity.model.js'
 import { cleanValue } from '../../shared/value.model.js'
 import { buildTeamPerformanceViewModel } from '../teamPerformance.viewModel.js'
+import { buildTeamPriorityContext } from '../teamPriorityContext.model.js'
 import { formatPerGameRate } from '../../shared/rate.model.js'
 import {
   buildTeamPageTableRows,
@@ -46,14 +47,17 @@ const buildScoutResultMap = ({ tableRank = [], leagueDoc = {}, season = {} } = {
 
   return new Map((result.rows || []).map(row => [
     resolveTeamLookupKey(row) || cleanValue(row.clubId || row.rank),
-    adaptTeamScoutEngineRow({
-      row,
-      source: {
-        normalization: result.normalization,
-        leagueLevel: leagueDoc?.level,
-        leagueGames: season?.leagueTotalRound || 30,
-      },
-    }),
+    {
+      ...adaptTeamScoutEngineRow({
+        row,
+        source: {
+          normalization: result.normalization,
+          leagueLevel: leagueDoc?.level,
+          leagueGames: season?.leagueTotalRound || 30,
+        },
+      }),
+      priorityContext: buildTeamPriorityContext(row, result),
+    },
   ]))
 }
 
@@ -299,6 +303,7 @@ export const buildTeamPageView = ({
     offense: canonicalTeamSeason.performance?.offense || {},
     defense: canonicalTeamSeason.performance?.defense || {},
     performanceView,
+    priorityContext: performance?.priorityContext || null,
     playersStatus: playersCount ? `${playersCount}` : 'אין סגל',
     statsStatus: playersCount
       ? `${teamPlayers.filter(player => (

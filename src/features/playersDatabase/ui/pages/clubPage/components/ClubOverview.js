@@ -1,3 +1,5 @@
+// src/features/playersDatabase/ui/pages/clubPage/components/ClubOverview.js
+
 import { Box, Card, Typography } from '@mui/joy'
 
 import {
@@ -5,6 +7,7 @@ import {
   PerformanceDistribution,
 } from '../../../components/club/ClubInsightPrimitives.js'
 import { clubPageSx as sx } from '../sx/clubPage.sx.js'
+import TeamSignalSummary from '../../../components/teamSignals/TeamSignalSummary.js'
 
 const OverviewMetric = ({ label, children }) => (
   <Card variant='outlined' sx={sx.metricCard}>
@@ -22,12 +25,8 @@ export default function ClubOverview({ model }) {
         <LeaguePath model={model.leaguePath} />
       </OverviewMetric>
 
-      <OverviewMetric label='חריגת רמת ליגה'>
-        <Typography level='body-sm'>
-          {model.mismatch
-            ? model.mismatch.ageGroups.join(' · ')
-            : 'ללא חריגה'}
-        </Typography>
+      <OverviewMetric label='משפחות איתותים'>
+        <TeamSignalSummary summary={model.teamSignalSummary} />
       </OverviewMetric>
 
       <OverviewMetric label='ביצוע קבוצתי'>

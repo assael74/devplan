@@ -11,7 +11,9 @@
 - `clubComparison.builder.js`: תוצאה לכל שנתון, זמינות ומשפחות איתות.
 - `domain/clubIntelligence/clubCohortComparison.adapter.js`: התאמה ממסמכים קנוניים.
 - `services/read/pages/clubCohortComparison.read.js`: קריאת מקורות העונה הנבדקת וההיסטוריה דרך שירותי הקריאה והמטמון הקיימים.
-- `useTeamClubIntelligence`: חיבור מקורות הקריאה לתוצאה המוצגת.
+- `buildClubSeasonIntelligence` ב־`clubIntelligence.canonical.js`: הרכבה משותפת של מודל המועדון העונתי וההשוואה ההיסטורית לתצוגה ולשמירה.
+- `useTeamClubIntelligence`: העברת מקורות הקריאה לבונה המשותף וחיבור התוצאה לתצוגה;
+  המקורות שנקראו נשמרים בנפרד מהתוצאה לצורך הורדת מסמכי העמוד, ללא קריאה חוזרת.
 - `teamClubComparison.presentation.js`: ניסוח התובנה והסבר חוסר המידע.
 
 התוצאה מחושבת בזמן הקריאה ואינה נשמרת ב־Firestore. אין תלות של המנוע ב־React או ב־Firestore ואין שינוי בסכמת Team Balance.

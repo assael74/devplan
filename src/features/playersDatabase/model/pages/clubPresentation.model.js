@@ -1,29 +1,18 @@
+// src/features/playersDatabase/model/pages/clubPresentation.model.js
 import { cleanValue, pickDefinedValue } from '../shared/value.model.js'
 import {
-  CLUB_SIGNAL_COVERAGE_STATUS,
-  CLUB_SPOTLIGHT_TYPE,
   getClubPageView,
   getClubSummaryView,
-  getOrderedClubSpotlights,
 } from '../../domain/clubIntelligence/index.js'
 import {
   PLAYERS_DATABASE_CURRENT_SEASON_KEY,
 } from '../../catalog/seasons.catalog.js'
-import { getClubSignalTitle } from '../shared/clubSignal.presentation.js'
+import { mergeTeamSignalSummaries } from '../../domain/signals/teamSignalSummary.js'
+import { PLAYERS_DATABASE_UI_ROUTES } from '../../ui/logic/routeBuilders.js'
 
 const clean = cleanValue
 const MISSING_LABEL = 'אין מידע'
 const AGE_GROUP_ORDER = ['u13', 'u14', 'u15', 'u16', 'u17', 'u19']
-const SUMMARY_SPOTLIGHT_PRIORITY_AGE_GROUP_IDS = ['u14', 'u15']
-const NO_COVERAGE_FUTURE_PATH_DETAILS = Object.freeze({
-  title: 'חסר כיסוי לאיתות מסלול ליגה',
-  action: 'טען ליגה:',
-})
-const NO_COVERAGE_FUTURE_PATH_AGE_GROUPS = Object.freeze([
-  { ageGroupId: 'u14', ageGroupLabel: 'ילדים א׳', ageOffset: 13 },
-  { ageGroupId: 'u15', ageGroupLabel: 'נערים ג׳', ageOffset: 14 },
-  { ageGroupId: 'u16', ageGroupLabel: 'נערים ב׳', ageOffset: 15 },
-])
 const CLUB_LEAGUE_PATH_STAGES = [
   { ageGroupId: 'u15', ageGroupLabel: 'נערים ג', ageOffset: 14 },
   { ageGroupId: 'u16', ageGroupLabel: 'נערים ב', ageOffset: 15 },
@@ -215,18 +204,8 @@ const buildLeaguePath = (teams, fallbackSeasonKey = '') => {
   })
 }
 
-const buildPathModel = ({ teams = [], seasonKey = '', levelSpotlights = [] } = {}) => {
+const buildPathModel = ({ teams = [], seasonKey = '' } = {}) => {
   const primaryTeams = teams.filter(team => resolveTeamSlot(team) === 1)
-  const levelDirectionByTeamId = new Map(
-    (Array.isArray(levelSpotlights) ? levelSpotlights : []).map(spotlight => [
-      clean(spotlight?.teamId),
-      spotlight?.type === CLUB_SPOTLIGHT_TYPE.LEAGUE_ABOVE_CLUB_LEVEL
-        ? 'above'
-        : spotlight?.type === CLUB_SPOTLIGHT_TYPE.LEAGUE_BELOW_CLUB_LEVEL
-          ? 'below'
-          : null,
-    ])
-  )
   const secondaryBySlot = teams.reduce((bySlot, team) => {
     const slot = resolveTeamSlot(team)
     if (slot > 1) (bySlot.get(slot) || bySlot.set(slot, []).get(slot)).push(team)
@@ -234,20 +213,10 @@ const buildPathModel = ({ teams = [], seasonKey = '', levelSpotlights = [] } = {
   }, new Map())
 
   return {
-    primary: buildLeaguePath(primaryTeams, seasonKey).map(node => ({
-      ...node,
-      clubLevelDirection: levelDirectionByTeamId.get(clean(
-        primaryTeams.find(team => Number(team?.birthYear) === Number(node.birthYear))?.teamId
-      )) || null,
-    })),
+    primary: buildLeaguePath(primaryTeams, seasonKey),
     secondary: [...secondaryBySlot.entries()].map(([slot, slotTeams]) => ({
       slot,
-      path: buildLeaguePath(slotTeams, seasonKey).map(node => ({
-        ...node,
-        clubLevelDirection: levelDirectionByTeamId.get(clean(
-          slotTeams.find(team => Number(team?.birthYear) === Number(node.birthYear))?.teamId
-        )) || null,
-      })),
+      path: buildLeaguePath(slotTeams, seasonKey),
     })),
   }
 }
@@ -287,117 +256,6 @@ const ageGroupLabelOf = team => (
   clean(team?.ageGroupId) ||
   '?'
 )
-
-const buildSpotlightPresentation = ({ spotlights = [], teams = [] } = {}) => {
-  const teamsById = new Map(teams.map(team => [clean(team?.teamId), team]))
-
-  return (Array.isArray(spotlights) ? spotlights : []).map(spotlight => ({
-    ...spotlight,
-    ageGroupLabel: ageGroupLabelOf(teamsById.get(clean(spotlight?.teamId))),
-  }))
-}
-
-const prioritizeSummarySpotlightTeams = teams => {
-  const priorityIndex = new Map(
-    SUMMARY_SPOTLIGHT_PRIORITY_AGE_GROUP_IDS.map((ageGroupId, index) => [ageGroupId, index])
-  )
-  const orderedTeams = teams.map((team, index) => ({ team, index }))
-    .sort((left, right) => (
-      (priorityIndex.get(clean(left.team?.ageGroupId)) ?? Number.MAX_SAFE_INTEGER) -
-      (priorityIndex.get(clean(right.team?.ageGroupId)) ?? Number.MAX_SAFE_INTEGER)
-    ) || left.index - right.index)
-    .map(item => item.team)
-  const priorityTeams = orderedTeams.filter(team => (
-    priorityIndex.has(clean(team?.ageGroupId))
-  ))
-  const visibleTeams = priorityTeams.length ? priorityTeams : orderedTeams.slice(0, 1)
-
-  return {
-    visibleTeams,
-    additionalTeamsCount: Math.max(orderedTeams.length - visibleTeams.length, 0),
-  }
-}
-
-const buildNoCoverageDetails = ({ summary = {} } = {}) => {
-  const currentTeams = Array.isArray(summary?.currentTeams) ? summary.currentTeams : []
-  const seasonKey = clean(currentTeams.find(team => clean(team?.seasonKey))?.seasonKey) ||
-    PLAYERS_DATABASE_CURRENT_SEASON_KEY
-
-  return {
-    ...NO_COVERAGE_FUTURE_PATH_DETAILS,
-    ageGroups: NO_COVERAGE_FUTURE_PATH_AGE_GROUPS.map(ageGroup => {
-      const team = currentTeams.find(item => (
-        clean(item?.ageGroupId) === ageGroup.ageGroupId
-      )) || null
-
-      return {
-        ageGroupLabel: ageGroup.ageGroupLabel,
-        birthYear: Number(team?.birthYear) || expectedBirthYear({
-          seasonKey,
-          ageOffset: ageGroup.ageOffset,
-        }) || null,
-      }
-    }),
-  }
-}
-
-const buildClubSummarySpotlightModel = ({ summary = {} } = {}) => {
-  const spotlight = summary.primarySpotlight
-  if (!spotlight) {
-    const coverage = Object.values(summary.signalCoverage || {})
-    const hasNoCoverage = coverage.length > 0 && coverage.every(item => (
-      item?.status === CLUB_SIGNAL_COVERAGE_STATUS.NONE
-    ))
-    const hasMissingCoverage = coverage.some(item => (
-      item?.status === CLUB_SIGNAL_COVERAGE_STATUS.NONE
-    ))
-    const hasPartialCoverage = coverage.some(item => (
-      item?.status === CLUB_SIGNAL_COVERAGE_STATUS.PARTIAL
-    ))
-
-    return {
-      state: hasNoCoverage
-        ? 'noCoverage'
-        : hasPartialCoverage && !hasMissingCoverage
-          ? 'partialCoverage'
-          : 'empty',
-      message: hasNoCoverage
-        ? 'אין כיסוי'
-        : hasPartialCoverage && !hasMissingCoverage
-          ? 'כיסוי חלקי'
-          : 'אין איתותים',
-      ...(hasNoCoverage ? buildNoCoverageDetails({ summary }) : {}),
-    }
-  }
-
-  const teams = [...summary.currentTeams, ...summary.previousTeams]
-  const matchingSpotlights = (Array.isArray(summary.spotlights) ? summary.spotlights : [])
-    .filter(item => clean(item?.type) === clean(spotlight?.type))
-  const identityTeams = matchingSpotlights.map(item => {
-    const team = teams.find(teamItem => clean(teamItem?.teamId) === clean(item?.teamId)) || null
-    const teamSlot = numberOrNull(
-      team?.teamSlot || team?.birthTeamSlot || item?.context?.teamSlot
-    )
-
-    return {
-      teamId: clean(item?.teamId),
-      ageGroupId: clean(team?.ageGroupId),
-      ageGroupLabel: ageGroupLabelOf(team),
-      birthYear: Number(team?.birthYear) || Number(item?.birthYear) || null,
-      teamSlot,
-    }
-  })
-  const { visibleTeams, additionalTeamsCount } = prioritizeSummarySpotlightTeams(identityTeams)
-
-  return {
-    state: 'signal',
-    id: clean(spotlight?.id),
-    type: clean(spotlight?.type),
-    title: getClubSignalTitle(spotlight?.type),
-    teams: visibleTeams,
-    additionalTeamsCount,
-  }
-}
 
 const buildTeamRowModel = ({ club = {}, team = {} } = {}) => ({
   ...team,
@@ -482,21 +340,16 @@ const buildFuturePathCoverageModel = ({ ageGroupId, signalCoverage = {} } = {}) 
 
 export const buildClubCollapseSignalCardsModel = ({
   teams = [],
-  spotlights = [],
   signalCoverage = {},
   seasonKey = '',
 } = {}) => {
   const resolvedSeasonKey = clean(seasonKey) ||
     clean(teams.find(team => clean(team?.seasonKey))?.seasonKey) ||
     PLAYERS_DATABASE_CURRENT_SEASON_KEY
-  const orderedSpotlights = Array.isArray(spotlights) ? spotlights : []
 
   return CLUB_COLLAPSE_SIGNAL_CARD_AGE_GROUPS.map(ageGroup => {
     const team = explicitPrimaryTeam({ teams, ageGroupId: ageGroup.ageGroupId })
     const teamRow = team ? buildTeamRowModel({ team }) : null
-    const spotlight = team
-      ? orderedSpotlights.find(item => clean(item?.teamId) === clean(team?.teamId)) || null
-      : null
 
     return {
       id: ageGroup.ageGroupId,
@@ -505,19 +358,22 @@ export const buildClubCollapseSignalCardsModel = ({
         seasonKey: resolvedSeasonKey,
         ageOffset: ageGroup.ageOffset,
       }) || null,
-      signal: spotlight ? {
-        id: clean(spotlight?.id),
-        type: clean(spotlight?.type),
-        title: getClubSignalTitle(spotlight?.type),
-      } : null,
+      showInvestigationIndicator: team?.showInvestigationIndicator === true,
+      teamSignalSummary: team?.teamSignalSummary || null,
+      teamHref: team ? PLAYERS_DATABASE_UI_ROUTES.team({
+        leagueId: team.league?.leagueId || team.leagueId,
+        teamId: team.teamId,
+        seasonKey: resolvedSeasonKey,
+        fromClubs: true,
+      }) : '',
       context: {
         leagueName: teamRow?.leagueName || MISSING_LABEL,
         leagueLevel: teamRow?.leagueLevel || null,
-        tableRank: teamRow?.tableRank ?? null,
-        gamesPlayed: teamRow?.gamesPlayed ?? null,
-        points: teamRow?.points ?? null,
-        goalsFor: teamRow?.goalsFor ?? null,
-        goalsAgainst: teamRow?.goalsAgainst ?? null,
+        tableRank: pickDefinedValue(teamRow?.tableRank, null),
+        gamesPlayed: pickDefinedValue(teamRow?.gamesPlayed, null),
+        points: pickDefinedValue(teamRow?.points, null),
+        goalsFor: pickDefinedValue(teamRow?.goalsFor, null),
+        goalsAgainst: pickDefinedValue(teamRow?.goalsAgainst, null),
         offensePriorityValue: teamRow?.offensePriorityValue || 'neutral',
         offensePriorityLabel: team ? teamRow?.offensePriorityLabel : MISSING_LABEL,
         defensePriorityValue: teamRow?.defensePriorityValue || 'neutral',
@@ -535,39 +391,16 @@ export const buildClubSummaryModel = ({ intelligence = null } = {}) => {
   const summary = getClubSummaryView(intelligence)
   const teams = summary.currentTeams
   const previousTeams = summary.previousTeams
-  const levelSpotlights = summary.spotlightGroups.leagueVsClubLevel
-  const mismatchTeams = buildSpotlightPresentation({
-    spotlights: levelSpotlights,
-    teams,
-  })
 
   return {
-  primarySpotlight: buildClubSummarySpotlightModel({ summary }),
-  leaguePath: buildPathModel({
-    teams,
-    levelSpotlights,
-  }),
-  mismatch: mismatchTeams.length ? {
-    key: 'mismatch',
-    count: mismatchTeams.length,
-    ageGroups: [...new Set(mismatchTeams.map(item => item.ageGroupLabel).filter(Boolean))],
-    teams: mismatchTeams,
-  } : null,
-  performance: buildDistribution(teams, 'team'),
-  attack: buildDistribution(teams, 'attack'),
-  offense: buildPerformancePrioritySummary({
-    teams,
-    previousTeams,
-    kind: 'offense',
-  }),
-  defense: buildPerformancePrioritySummary({
-    teams,
-    previousTeams,
-    kind: 'defense',
-  }),
-  transfers: buildTransferSummary(teams),
-  spotlights: summary.spotlights,
-  hasTeams: teams.length > 0,
+    teamSignalSummary: summary.teamSignalSummary,
+    leaguePath: buildPathModel({ teams }),
+    performance: buildDistribution(teams, 'team'),
+    attack: buildDistribution(teams, 'attack'),
+    offense: buildPerformancePrioritySummary({ teams, previousTeams, kind: 'offense' }),
+    defense: buildPerformancePrioritySummary({ teams, previousTeams, kind: 'defense' }),
+    transfers: buildTransferSummary(teams),
+    hasTeams: teams.length > 0,
   }
 }
 
@@ -575,7 +408,6 @@ export const buildClubExpandedModel = ({
   club = {},
   teams = [],
   seasonKey = '',
-  levelSpotlights = [],
 } = {}) => {
   const bySeason = teams.reduce((groups, team) => {
     const seasonKey = clean(team?.seasonKey) || MISSING_LABEL
@@ -595,16 +427,13 @@ export const buildClubExpandedModel = ({
           .map(team => buildTeamRowModel({ club, team })),
         seasonKey,
         defaultOpen: index === 0,
-        path: buildPathModel({ teams: seasonTeams, seasonKey, levelSpotlights }),
+        path: buildPathModel({ teams: seasonTeams, seasonKey }),
         performance: buildDistribution(seasonTeams, 'team'),
         attack: buildDistribution(seasonTeams, 'attack'),
         teams: [...seasonTeams]
           .sort(teamSort)
           .map(team => buildTeamRowModel({ club, team })),
-        spotlights: buildSpotlightPresentation({
-          spotlights: levelSpotlights,
-          teams: seasonTeams,
-        }),
+        teamSignalSummary: mergeTeamSignalSummaries(seasonTeams.map(team => team.teamSignalSummary)),
       })),
   }
 }
@@ -616,23 +445,26 @@ export const buildClubPageModel = ({ intelligence = null } = {}) => {
   const expanded = buildClubExpandedModel({
     club,
     teams,
-    levelSpotlights: page.spotlightGroups.leagueVsClubLevel,
   })
 
   return {
     header: { club },
     overview: buildClubSummaryModel({ intelligence }),
-    opportunities: buildSpotlightPresentation({
-      spotlights: getOrderedClubSpotlights(intelligence),
-      teams,
-    }),
+    opportunities: page.currentTeams.map(team => ({
+      id: team.teamId,
+      birthYear: team.birthYear,
+      teamSignalSummary: team.teamSignalSummary,
+      teamHref: PLAYERS_DATABASE_UI_ROUTES.team({
+        leagueId: team.league?.leagueId, teamId: team.teamId, seasonKey: team.seasonKey, fromClubs: true,
+      }),
+    })),
     transfers: buildTransferSummary(teams),
     seasons: expanded.seasons,
     development: page.birthYearTeams.map(item => ({
       birthYear: item.birthYear,
       teams: [...item.seasons.current.teams, ...item.seasons.previous.teams]
         .sort((left, right) => seasonOrder(left?.seasonKey) - seasonOrder(right?.seasonKey))
-        .map(buildTeamRowModel),
+        .map(team => buildTeamRowModel({ club, team })),
     })),
   }
 }

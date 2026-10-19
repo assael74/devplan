@@ -2,7 +2,7 @@
 import { Box, Typography } from '@mui/joy'
 
 import ClubIdentity from '../../../components/club/ClubIdentity.js'
-import ClubSummarySpotlight from './ClubSummarySpotlight.js'
+import TeamSignalSummary from '../../../components/teamSignals/TeamSignalSummary.js'
 import { clubSummaryRowSx as sx } from './sx/clubSummaryRow.sx.js'
 
 const buildSummaryAreas = ({ club, model }) => ([
@@ -14,14 +14,12 @@ const buildSummaryAreas = ({ club, model }) => ([
     content: <ClubIdentity club={club} sx={sx.summaryClubIdentityContent} />,
   },
   {
-    id: 'spotlight',
-    label: 'איתות מרכזי',
+    id: 'signals',
+    label: 'משפחות איתותים',
     connected: true,
-    contentSx: sx.summarySpotlightAreaContentBox,
+    contentSx: sx.summarySignalsAreaContentBox,
     content: (
-      <ClubSummarySpotlight
-        model={model.primarySpotlight}
-      />
+      <TeamSignalSummary summary={model.teamSignalSummary} />
     ),
   },
 ])

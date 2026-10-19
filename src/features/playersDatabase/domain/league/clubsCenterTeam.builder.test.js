@@ -110,7 +110,7 @@ describe('buildClubsCenterTeamProjection', () => {
     expect(result.documentationStateUpdatedAt).toBeNull()
     expect(result.transfers.coverageStatus).toBe('NOT_LOADED')
     expect(result.transfers.pending.total).toBe(0)
-    expect(result.teamTaskSignals).toEqual({ offense: false, defense: false, updatedAt: null })
+    expect(result).not.toHaveProperty('teamTaskSignals')
   })
 
   test('marks transfers NOT_LOADED when roster has not been officially imported', () => {

@@ -5,6 +5,7 @@ import { Alert, Box } from '@mui/joy'
 import {
   useLocation,
   useNavigate,
+  useSearchParams,
 } from 'react-router-dom'
 
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
@@ -42,8 +43,15 @@ import { TASK_STATUS } from '../../../../../shared/tasks/tasks.constants.js'
 import useLeagueReport from './report/useLeagueReport.js'
 import { pageCoreLayoutSx as sx } from '../../components/page/sx/pageCoreLayout.sx.js'
 import usePageSidePanelCollapsed from '../../components/page/usePageSidePanelCollapsed.js'
-import { downloadLeaguePageDocumentsJson } from './logic/leagueDocumentsJson.logic.js'
 import { buildLeagueImportColumns, LEAGUE_IMPORT_PLACEHOLDER } from './logic/leagueImport.columns.js'
+import { downloadLeaguePageDocumentsJson } from './logic/leagueDocumentsJson.logic.js'
+import { buildLeagueWorkKpis } from '../../../model/league/page/leagueWorkKpis.model.js'
+import {
+  buildLeagueWorkSearchParams,
+  LEAGUE_RESEARCH_FILTER_LABELS,
+  LEAGUE_LOADING_FILTER_LABELS,
+  readLeagueWorkNavigation,
+} from '../../logic/leagueWorkNavigation.js'
 
 
 function LeaguePageContent() {
@@ -58,13 +66,19 @@ function LeaguePageContent() {
   )
   const [taskModalOpen, setTaskModalOpen] = React.useState(false)
   const [editTask, setEditTask] = React.useState(null)
-  const pageSearchParams = React.useMemo(
-    () => new URLSearchParams(location.search),
-    [location.search]
-  )
+  const [pageSearchParams, setPageSearchParams] = useSearchParams()
+  const { researchMode, filter: kpiFilter } = readLeagueWorkNavigation(pageSearchParams)
+  const updateWorkNavigation = (nextResearchMode, filter) => {
+    setPageSearchParams(current => buildLeagueWorkSearchParams({
+      searchParams: current, researchMode: nextResearchMode, filter,
+    }), { replace: true, state: location.state })
+  }
+  const setKpiFilter = filter => updateWorkNavigation(researchMode, filter)
   const {
     league,
     leagueDoc,
+    clubsDirectoryDocument,
+    leaguesCenterDocument,
     displayLeagueDoc,
     teams,
     summary,
@@ -118,6 +132,14 @@ function LeaguePageContent() {
       ),
     }))
   ), [favorites, teams])
+  const workKpis = React.useMemo(() => (
+    buildLeagueWorkKpis({ teams: teamsWithFavorites, leagueLevel: league.level })
+  ), [teamsWithFavorites, league.level])
+  const filteredTeams = workKpis.teamsByFilter[kpiFilter] || teamsWithFavorites
+  const handleResearchModeChange = nextMode => {
+    if (nextMode === researchMode) return
+    updateWorkNavigation(nextMode, 'all')
+  }
 
   const leagueTasks = React.useMemo(() => (
     tasksModel.tasks.filter(task => {
@@ -221,19 +243,22 @@ function LeaguePageContent() {
     })
   }
 
+  const hasDownloadDocuments = Boolean(
+    leagueDoc ||
+    (clubsDirectoryDocument && clubsDirectoryDocument.documentExists !== false) ||
+    (leaguesCenterDocument && leaguesCenterDocument.documentExists !== false)
+  )
   const handleDownloadDocuments = React.useCallback(() => {
     const downloadedCount = downloadLeaguePageDocumentsJson({
       leagueDocument: leagueDoc,
+      clubsDirectoryDocument,
+      leaguesCenterDocument,
+      pageName: titleParts.name,
     })
-
     if (!downloadedCount) {
-      notify({
-        status: 'warning',
-        title: 'לא נמצא מסמך להורדה',
-        message: 'מסמך הליגה אינו זמין כרגע',
-      })
+      notify({ status: 'warning', title: 'לא נמצאו מסמכים להורדה', message: 'מסמכי העמוד אינם זמינים כרגע' })
     }
-  }, [leagueDoc, notify])
+  }, [clubsDirectoryDocument, leagueDoc, leaguesCenterDocument, notify, titleParts.name])
 
   const handleTaskEditSave = async patch => {
     if (!editTask?.id || taskActions.pending) return
@@ -279,12 +304,22 @@ function LeaguePageContent() {
         <Box sx={[sx.contentGrid, sidePanelCollapsed && sx.contentGridCollapsed]}>
           <Box sx={sx.mainColumn}>
             <LeagueKpiOverview
-              summary={summary}
-              roundsCount={league.leagueTotalRound}
+              kpis={workKpis}
+              selectedFilter={kpiFilter}
+              onFilterChange={setKpiFilter}
+              researchMode={researchMode}
+              loading={loading}
+              error={error || selectionError}
             />
 
             <LeagueTeamsTable
-              rows={teamsWithFavorites}
+              leaguesCenterDocument={leaguesCenterDocument}
+              rows={filteredTeams}
+              filterLabel={LEAGUE_RESEARCH_FILTER_LABELS[kpiFilter] || LEAGUE_LOADING_FILTER_LABELS[kpiFilter] || ''}
+              onClearFilter={() => setKpiFilter('all')}
+              filtered={kpiFilter !== 'all'}
+              researchMode={researchMode}
+              onResearchModeChange={handleResearchModeChange}
               loading={loading}
               error={error || selectionError}
               selectedSeasonOption={selectedSeasonOption}
@@ -310,10 +345,10 @@ function LeaguePageContent() {
             seasonDisabled={repairReload || leagueImport.open}
             onLoad={leagueImport.handleOpen}
             onDownloadDocuments={handleDownloadDocuments}
+            downloadDisabled={loading || !hasDownloadDocuments}
             onLeagueUrlEdit={leagueDoc && selectedSeasonOption?.seasonId
               ? leagueUrlEditor.show
               : null}
-            downloadDisabled={!leagueDoc || loading}
             loadDisabled={clearLeagueTeamsFlow.open || leagueImport.busy || !leagueImport.repairContextValid || !selectedSeasonOption?.seasonId}
             loadDisabledReason={!selectedSeasonOption?.seasonId
               ? 'חסר seasonId טכני לעונה שנבחרה'

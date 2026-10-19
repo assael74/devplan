@@ -10,6 +10,7 @@ import {
   buildPlayerSeasonProjection,
   buildStatsCenterProjections,
 } from './statsProjection.builder.js'
+import { buildLeagueStatsProjection } from './statsLoadState.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 const object = value => (value && typeof value === 'object' && !Array.isArray(value) ? value : {})
@@ -100,7 +101,7 @@ export const buildStatsClearApprovedState = ({
     stats: {
       playersById: {},
       teamBalance: {},
-      statsLoadState: { status: 'missing', updatedAt: updatedAt || null },
+      statsLoadState: { status: 'missing', updatedAt: updatedAt || null, teamGamePlayedAtLoad: null },
       updatedAt: updatedAt || null,
     },
     scouting: {
@@ -108,8 +109,6 @@ export const buildStatsClearApprovedState = ({
       scoutProfilesSummary: {},
       updatedAt: updatedAt || null,
     },
-    teamTaskSignals: { offense: false, defense: false, updatedAt: updatedAt || null },
-    teamTaskAvailability: { availability: '', reason: '' },
     timestamps: {
       ...object(existingTeamSeason.timestamps),
       updatedAt: updatedAt || null,
@@ -158,10 +157,9 @@ export const buildStatsClearApprovedState = ({
     updatedAt,
   })
   const leagueTeamPatch = {
-    stats: { hasStats: false, statsComplete: false, loadedAt: null },
+    stats: buildLeagueStatsProjection(canonicalTeamSeason),
     scouting: {
       playersWithScoutProfileCount: 0,
-      teamTaskSignals: canonicalTeamSeason.teamTaskSignals,
     },
     updatedAt: updatedAt || null,
   }

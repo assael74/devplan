@@ -120,5 +120,7 @@ describe('target Stats projections', () => {
     ]))
     expect(projection.team.clubLevel).toBe(2)
     expect(projection.team.clubStrengthLevel).toBe(3)
+    expect(projection.team).not.toHaveProperty('teamUrl')
+    expect(projection.team).not.toHaveProperty('seasonUrl')
   })
 })

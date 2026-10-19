@@ -74,6 +74,8 @@ export default function TeamRosterComparisonSection({
   favoritePlayerKeys,
   onFavoriteToggle,
   onPlayerOpen,
+  onPlayerDetailsEdit,
+  findPlayerDetailsSeason,
   tableRef,
   maxHeight = 580,
 }) {
@@ -81,6 +83,12 @@ export default function TeamRosterComparisonSection({
   const openPlayer = React.useCallback(player => onPlayerOpen?.(player, seasons.current), [onPlayerOpen])
   const rosterColumns = useTeamPositionClassificationColumns({
     onPlayerOpen: onPlayerOpen ? openPlayer : null,
+    onPlayerDetailsEdit: row => onPlayerDetailsEdit?.(
+      row, findPlayerDetailsSeason?.(row, seasons.current)
+    ),
+    canEditPlayerDetails: row => Boolean(
+      onPlayerDetailsEdit && findPlayerDetailsSeason?.(row, seasons.current)
+    ),
     favoritePlayerKeys,
     onFavoriteToggle,
     showProfileTooltips: false,

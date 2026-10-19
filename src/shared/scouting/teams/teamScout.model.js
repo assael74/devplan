@@ -41,8 +41,15 @@ export const TEAM_SCOUT_NORMALIZATION_CONFIG = {
   autoThresholdPct: 5,
 }
 
+const toNullableNumber = value => {
+  if (value === null || value === undefined || value === '') return null
+
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
 export const resolveTeamScoutPriorityLevel = (rate) => {
-  const value = Number(rate)
+  const value = toNullableNumber(rate)
 
   if (!Number.isFinite(value)) return TEAM_SCOUT_PRIORITY_LEVEL.UNAVAILABLE
   if (value >= 140) return TEAM_SCOUT_PRIORITY_LEVEL.ELITE
@@ -54,7 +61,7 @@ export const resolveTeamScoutPriorityLevel = (rate) => {
 }
 
 export const resolveTeamScoutPriorityScoreLevel = (score) => {
-  const value = Number(score)
+  const value = toNullableNumber(score)
 
   if (!Number.isFinite(value)) return TEAM_SCOUT_PRIORITY_LEVEL.UNAVAILABLE
   if (value >= 80) return TEAM_SCOUT_PRIORITY_LEVEL.ELITE
@@ -66,7 +73,7 @@ export const resolveTeamScoutPriorityScoreLevel = (score) => {
 }
 
 export const resolveTeamScoutAnomalyLevel = (rate) => {
-  const value = Number(rate)
+  const value = toNullableNumber(rate)
 
   if (!Number.isFinite(value)) return TEAM_SCOUT_ANOMALY_LEVEL.UNAVAILABLE
   if (value < TEAM_SCOUT_ANOMALY_THRESHOLDS.below) {

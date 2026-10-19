@@ -5,6 +5,12 @@ import {
 } from './teamRosterImport.logic.js'
 
 describe('Roster Excel import metadata', () => {
+  test('ignores a shirt-number column in the pasted roster', () => {
+    const [row] = parsePlayerRosterRows('שם השחקן\tמזהה התאחדות\tמספר חולצה\nשחקן א\t12345\t9')
+    expect(row.fullName).toBe('שחקן א')
+    expect(row).not.toHaveProperty('numShirt')
+  })
+
   test('reads one source snapshot key and effective time from roster headers', () => {
     const rows = parsePlayerRosterRows([
       'שם השחקן\tמזהה התאחדות\tמזהה תמונת מצב\tתאריך תחולה',

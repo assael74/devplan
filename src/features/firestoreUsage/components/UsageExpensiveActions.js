@@ -10,6 +10,7 @@ import {
 } from '@mui/joy'
 
 import { expensSx as sx } from './sx/expens.sx.js'
+import { getUsageStatusColor } from '../sharedLogic/firestoreUsageThresholds.js'
 
 const numberFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2,
@@ -40,30 +41,10 @@ const resolveOperationColor = operation => {
   return 'neutral'
 }
 
-const resolveRisk = totalKb => {
-  const size = Number(totalKb || 0)
-
-  if (size >= 1000) {
-    return {
-      label: 'גבוה',
-      color: 'danger',
-    }
-  }
-
-  if (size >= 250) {
-    return {
-      label: 'בינוני',
-      color: 'warning',
-    }
-  }
-
-  return {
-    label: 'תקין',
-    color: 'success',
-  }
-}
-
 export default function UsageExpensiveActions({ rows = [] }) {
+  const status = rows.some(row => row.risk === 'danger')
+    ? 'danger'
+    : rows.some(row => row.risk === 'warning') ? 'warning' : 'normal'
   return (
     <Card variant="outlined" sx={sx.card}>
       <Box sx={sx.boxWrap}>
@@ -77,7 +58,7 @@ export default function UsageExpensiveActions({ rows = [] }) {
           </Typography>
         </Box>
 
-        <Chip size="sm" variant="soft" color={rows.length ? 'danger' : 'success'}>
+        <Chip size="sm" variant="soft" color={getUsageStatusColor(status)}>
           {rows.length}
         </Chip>
       </Box>
@@ -112,7 +93,10 @@ export default function UsageExpensiveActions({ rows = [] }) {
 
             <tbody>
               {rows.map(row => {
-                const risk = resolveRisk(row.totalEstimatedKb)
+                const risk = {
+                  color: getUsageStatusColor(row.risk),
+                  label: row.risk === 'danger' ? 'גבוה' : row.risk === 'warning' ? 'בינוני' : 'תקין',
+                }
 
                 return (
                   <tr key={row.id}>
@@ -122,7 +106,7 @@ export default function UsageExpensiveActions({ rows = [] }) {
 
                     <td>
                       <Chip size="sm" variant="soft" color={resolveOperationColor(row.operation)}>
-                        {row.operation}
+                        {row.displayOperation}
                       </Chip>
                     </td>
 

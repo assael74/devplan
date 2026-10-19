@@ -1,7 +1,6 @@
 // src/features/playersDatabase/ui/pages/teamPage/TeamActionsPanel.js
 
 import * as React from 'react'
-import { useTheme } from '@mui/joy/styles'
 import {
   Box,
   Button,
@@ -44,6 +43,10 @@ export default function TeamActionsPanel({
   deleteActionsError = '',
   onReport,
   onTeamLink,
+  onNotebookOpen,
+  hasTeamRoot = false,
+  hasNotebookNote = false,
+  hasOpenTasks = false,
   onDownloadJson,
   jsonDownloadDisabled = false,
   tasks = [],
@@ -51,8 +54,6 @@ export default function TeamActionsPanel({
   onTaskCreate,
   onTaskEdit,
 }) {
-  const theme = useTheme()
-  const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false)
   const hasSeason = Boolean(selectedSeasonOptionKey && seasonOptions.length)
   const selectedSeason = seasonOptions.find(option => (
     option.optionKey === selectedSeasonOptionKey
@@ -69,6 +70,7 @@ export default function TeamActionsPanel({
       collapsible={collapsible}
       collapsed={collapsed}
       onCollapsedChange={onCollapsedChange}
+      collapsedIndicator={hasOpenTasks ? { label: 'יש משימות פתוחות', color: 'danger' } : null}
       collapsedActions={[
         {
           label: hasTeamPlayers ? (hasTeamStats ? 'טעינת סטטיסטיקה מחדש' : 'טעינת סטטיסטיקה') : rosterAction.label,
@@ -78,6 +80,14 @@ export default function TeamActionsPanel({
           disabledReason: rosterAction.disabledReason,
         },
         { label: 'עריכת קישור קבוצה', iconId: 'addLink', onClick: onTeamLink },
+        {
+          label: 'מחברת השנתון',
+          iconId: 'notes',
+          onClick: onNotebookOpen,
+          disabled: !hasTeamRoot,
+          disabledReason: 'המחברת זמינה לאחר טעינת סגל ראשונה',
+          indicator: hasNotebookNote ? { label: 'יש הערה שמורה', color: 'success' } : null,
+        },
       ]}
     >
       <Box sx={sx.actionsSection}>
@@ -174,32 +184,35 @@ export default function TeamActionsPanel({
           </IconButton>
         </Tooltip>
 
-        <Dropdown onOpenChange={(_event, open) => setDownloadMenuOpen(open)}>
-          <Tooltip
-            title={downloadMenuOpen ? '' : 'הורדת נתוני הקבוצה כ־JSON'}
-            placement={theme.direction === 'rtl' ? 'right' : 'left'}
-          >
-            <span>
-              <MenuButton
-                variant='outlined'
-                aria-label='הורדת נתוני הקבוצה כ־JSON'
-                disabled={jsonDownloadDisabled}
-                sx={sx.secondaryIconButton}
-                size='sm'
-              >
-                {iconUi({id: 'download', size: 'sm'})}
-              </MenuButton>
-            </span>
-          </Tooltip>
-          <Menu placement={theme.direction === 'rtl' ? 'left-start' : 'right-start'}>
-            <MenuItem
+        <Tooltip title='הורדת מסמכי העמוד כ־ZIP'>
+          <span>
+            <IconButton
+              variant='outlined'
+              aria-label='הורדת מסמכי העמוד כ־ZIP'
               disabled={jsonDownloadDisabled}
+              sx={sx.secondaryIconButton}
+              size='sm'
               onClick={onDownloadJson}
             >
-              הורדת כל מסמכי העמוד
-            </MenuItem>
-          </Menu>
-        </Dropdown>
+              {iconUi({id: 'download', size: 'sm'})}
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Tooltip title={hasTeamRoot ? 'מחברת השנתון' : 'המחברת זמינה לאחר טעינת סגל ראשונה'}>
+          <span>
+            <IconButton
+              variant='outlined'
+              aria-label='מחברת השנתון'
+              disabled={!hasTeamRoot}
+              sx={sx.secondaryIconButton}
+              onClick={onNotebookOpen}
+              size='sm'
+            >
+              {iconUi({ id: 'notes', size: 'sm' })}
+            </IconButton>
+          </span>
+        </Tooltip>
         </Box>
         </Box>
       </Box>

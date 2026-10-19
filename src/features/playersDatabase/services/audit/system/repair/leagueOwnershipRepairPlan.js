@@ -14,9 +14,19 @@ const clean = value => String(value === null || value === undefined ? '' : value
 const seasonOf = (league, seasonId) => object(object(league.seasonsById)[seasonId])
 const teamsOf = (league, seasonId) => object(seasonOf(league, seasonId).table && seasonOf(league, seasonId).table.teamsById)
 
-const applyCenterPlan = ({ plan, leaguesCenter, clubsCenter, ambiguousTeamIds }) => {
+const applyCenterPlan = ({
+  plan,
+  leaguesCenter,
+  clubsCenter,
+  originalClubsCenter,
+  ambiguousTeamIds,
+}) => {
   const leagueTarget = plan.leaguesCenterProjection
   const previousLeague = object(object(leaguesCenter.leaguesById)[plan.leagueId])
+  const previousSeason = object(object(previousLeague.seasonsById)[plan.seasonId])
+  const teamsById = Object.fromEntries(Object.entries(leagueTarget.season.teamsById).map(([teamId, team]) => [
+    teamId, { ...object(object(previousSeason.teamsById)[teamId]), ...team },
+  ]))
   const nextLeaguesCenter = {
     ...leaguesCenter,
     updatedAt: leagueTarget.updatedAt,
@@ -25,7 +35,10 @@ const applyCenterPlan = ({ plan, leaguesCenter, clubsCenter, ambiguousTeamIds })
       [plan.leagueId]: {
         ...previousLeague,
         identity: leagueTarget.identity,
-        seasonsById: { ...object(previousLeague.seasonsById), [plan.seasonId]: leagueTarget.season },
+        seasonsById: {
+          ...object(previousLeague.seasonsById),
+          [plan.seasonId]: { ...previousSeason, ...leagueTarget.season, teamsById },
+        },
       },
     },
   }
@@ -35,7 +48,12 @@ const applyCenterPlan = ({ plan, leaguesCenter, clubsCenter, ambiguousTeamIds })
     const previous = object(clubsById[write.clubId])
     const teamsById = { ...object(previous.teamsById) }
     Object.entries(object(write.upsertTeamsById)).forEach(([teamId, team]) => {
-      if (!ambiguousTeamIds.has(teamId)) teamsById[teamId] = team
+      if (!ambiguousTeamIds.has(teamId)) {
+        const originalClub = object(object(originalClubsCenter.clubsById)[write.clubId])
+        teamsById[teamId] = {
+          ...object(object(originalClub.teamsById)[teamId]), ...object(teamsById[teamId]), ...team,
+        }
+      }
     })
     write.deleteTeamIds.forEach(teamId => {
       if (!ambiguousTeamIds.has(teamId)) delete teamsById[teamId]
@@ -203,7 +221,7 @@ export const buildLeagueOwnershipRepairPlan = ({ actual = {}, finding = {}, inpu
         teamsById[teamId] = {
           ...teamsById[teamId],
           stats: expected.leagueTeamPatch.stats,
-          scouting: expected.leagueTeamPatch.scouting,
+          scouting: { ...object(teamsById[teamId].scouting), ...expected.leagueTeamPatch.scouting },
         }
         put('leagues', row.id, {
           ...row.data,
@@ -225,6 +243,7 @@ export const buildLeagueOwnershipRepairPlan = ({ actual = {}, finding = {}, inpu
     const nextTeamSeasons = rows(actual.teamSeasons).map(row => ({ ...current('teamSeasons', row.id), id: row.id }))
     let leaguesCenter = object(current('leaguesCenter', 'all'))
     let clubsCenter = object(current('clubsCenter', seasonId))
+    const originalClubsCenter = clubsCenter
     owners.forEach(owner => {
       const league = current('leagues', owner.id)
       const season = seasonOf(league, seasonId)
@@ -254,7 +273,7 @@ export const buildLeagueOwnershipRepairPlan = ({ actual = {}, finding = {}, inpu
         otherLeagueIdsByTeamId,
         updatedAt: season.updatedAt || null,
       })
-      const centers = applyCenterPlan({ plan, leaguesCenter, clubsCenter, ambiguousTeamIds })
+      const centers = applyCenterPlan({ plan, leaguesCenter, clubsCenter, originalClubsCenter, ambiguousTeamIds })
       leaguesCenter = centers.leaguesCenter
       clubsCenter = centers.clubsCenter
       plan.teamSeasonCompetitionSnapshots.forEach(snapshot => {

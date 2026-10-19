@@ -1,6 +1,8 @@
 // src/features/playersDatabase/services/audit/league/index.test.js
 
 import { auditLeague } from './index.js'
+import { readExpectedTeamSignals } from '../signals/readExpectedTeamSignals.js'
+import { buildTeamSignalSummary } from '../../../domain/signals/teamSignalSummary.js'
 import {
   readActualLeagueAudit,
   readClubProfiles,
@@ -12,6 +14,7 @@ jest.mock('./readActual.js', () => ({
   readClubProfiles: jest.fn(),
   readLeagueCanonical: jest.fn(),
 }))
+jest.mock('../signals/readExpectedTeamSignals.js', () => ({ readExpectedTeamSignals: jest.fn() }))
 
 const emptyActual = {
   leaguesCenter: { leaguesById: {} },
@@ -22,6 +25,7 @@ const emptyActual = {
 beforeEach(() => {
   jest.clearAllMocks()
   readClubProfiles.mockResolvedValue({})
+  readExpectedTeamSignals.mockResolvedValue(new Map())
 })
 
 test('returns CLEAN when League canonical and all matching projections are absent', async () => {
@@ -99,5 +103,29 @@ test('missing ClubProfile is a canonical dependency finding and incomplete cover
       target: 'clubProfile',
       documentId: 'missing-club',
     }),
+  ]))
+})
+
+test('detects a stale canonical summary in a focused league audit even when all saved copies match', async () => {
+  const seasonId = '2026_2027'
+  const teamId = 'club_2012_1'
+  const summary = buildTeamSignalSummary({ computedAt: 'saved time' })
+  const team = { clubId: 'club', teamSlot: 1, teamSignalSummary: summary }
+  readLeagueCanonical.mockResolvedValue({ leagueId: 'league', seasonsById: {
+    [seasonId]: { seasonKey: '26/27', seasonStatus: 'active', birthYear: 2012, table: { teamsById: { [teamId]: team } } },
+  } })
+  readClubProfiles.mockResolvedValue({ club: { clubId: 'club' } })
+  readActualLeagueAudit.mockResolvedValue({
+    teamSeasons: [{ identity: { teamId }, teamSignalSummary: summary }],
+    leaguesCenter: { leaguesById: { league: { seasonsById: { [seasonId]: { teamsById: { [teamId]: team } } } } } },
+    clubsCenter: { clubsById: { club: { teamsById: { [teamId]: team } } } },
+  })
+  readExpectedTeamSignals.mockResolvedValue(new Map([[`${teamId}__${seasonId}`, buildTeamSignalSummary({ familiesById: {
+    'club-gap': { level: 1, availability: 'partial' },
+  } })]]))
+  const audit = await auditLeague({ leagueId: 'league', seasonId })
+  expect(readExpectedTeamSignals).toHaveBeenCalledWith({ clubIds: ['club'] })
+  expect(audit.findings).toEqual(expect.arrayContaining([
+    expect.objectContaining({ target: 'teamSignals', field: 'teamSignalSummary.canonical' }),
   ]))
 })

@@ -1,4 +1,7 @@
-import { getFirestoreUsageCoverage } from '../../../services/firestore/usage/index.js'
+// src/features/firestoreUsage/sharedLogic/firestoreUsageViewModel.js
+
+import { getFirestoreUsageCoverage } from '../../../services/firestore/usage/firestoreUsage.coverage.js'
+import { buildFirestoreUsageAlerts } from './firestoreUsageAlerts.js'
 import {
   FIRESTORE_FREE_TIER_LIMITS,
   FIRESTORE_USAGE_THRESHOLDS,
@@ -10,6 +13,7 @@ const EMPTY_BUCKET = {
   failures: 0,
   durationMs: 0,
   reads: 0,
+  cacheReads: 0,
   writes: 0,
   documentDeletes: 0,
   logicalDeletes: 0,
@@ -19,6 +23,7 @@ const EMPTY_BUCKET = {
   listenerInitials: 0,
   listenerUpdates: 0,
   estimatedReadKb: 0,
+  estimatedCacheReadKb: 0,
   estimatedWriteKb: 0,
 }
 
@@ -32,6 +37,7 @@ const normalizeBucket = bucket => ({
   failures: toNumber(bucket?.failures),
   durationMs: toNumber(bucket?.durationMs),
   reads: toNumber(bucket?.reads),
+  cacheReads: toNumber(bucket?.cacheReads),
   writes: toNumber(bucket?.writes),
   documentDeletes: toNumber(bucket?.documentDeletes),
   logicalDeletes: toNumber(bucket?.logicalDeletes),
@@ -41,14 +47,14 @@ const normalizeBucket = bucket => ({
   listenerInitials: toNumber(bucket?.listenerInitials),
   listenerUpdates: toNumber(bucket?.listenerUpdates),
   estimatedReadKb: roundKb(bucket?.estimatedReadKb),
+  estimatedCacheReadKb: roundKb(bucket?.estimatedCacheReadKb),
   estimatedWriteKb: roundKb(bucket?.estimatedWriteKb),
 })
 
 const bucketTotalOperations = bucket =>
   toNumber(bucket.reads) +
   toNumber(bucket.writes) +
-  toNumber(bucket.documentDeletes) +
-  toNumber(bucket.listenerUpdates)
+  toNumber(bucket.documentDeletes)
 
 const bucketTotalKb = bucket =>
   roundKb(
@@ -113,7 +119,7 @@ const sortRows = (rows, field = 'totalEstimatedKb') =>
 const buildKpis = totals => [
   {
     id: 'reads',
-    label: 'Tracked Reads בסשן',
+    label: 'קריאות שרת שנמדדו',
     value: totals.reads,
     format: 'number',
     status: resolveUsageStatus(
@@ -153,6 +159,24 @@ const buildKpis = totals => [
   },
 ]
 
+const entryReads = entry => entry?.fromCache
+  ? 0
+  : toNumber(entry?.readsCount != null ? entry.readsCount : entry?.docsCount)
+
+const entryReadKb = entry => (
+  entry?.fromCache || !['read', 'listener-update', 'transaction'].includes(entry?.operation)
+    ? 0
+    : roundKb(entry?.operation === 'transaction' ? entry?.estimatedReadKb : entry?.estimatedKb)
+)
+
+const entryWriteKb = entry => (
+  entry?.operation === 'transaction'
+    ? roundKb(entry?.estimatedWriteKb)
+    : ['write', 'logical-delete'].includes(entry?.operation)
+      ? roundKb(entry?.estimatedKb)
+      : 0
+)
+
 const buildExpensiveActions = actions =>
   (Array.isArray(actions) ? actions : []).map((action, index) => ({
     id: action?.id || action?.createdAt || `${action?.action || 'action'}-${index}`,
@@ -161,13 +185,15 @@ const buildExpensiveActions = actions =>
     feature: action?.feature || 'unknown',
     action: action?.action || 'unknown',
     operation: action?.operation || 'unknown',
-    reads: toNumber(action?.readsCount) || toNumber(action?.docsCount),
+    displayOperation: action?.listenerPhase === 'initial' ? 'listener-initial' : action?.operation || 'unknown',
+    reads: entryReads(action),
     writes: toNumber(action?.writesCount),
     logicalDeletes: toNumber(action?.logicalDeletesCount),
     documentDeletes: toNumber(action?.documentDeletesCount),
-    estimatedReadKb: roundKb(action?.estimatedReadKb),
-    estimatedWriteKb: roundKb(action?.estimatedWriteKb),
+    estimatedReadKb: entryReadKb(action),
+    estimatedWriteKb: entryWriteKb(action),
     totalEstimatedKb: roundKb(action?.totalEstimatedKb),
+    risk: resolveUsageStatus(action?.totalEstimatedKb, FIRESTORE_USAGE_THRESHOLDS.actionTotalKb),
     createdAt: action?.createdAt || null,
     meta: action?.meta || null,
   }))
@@ -176,6 +202,7 @@ const buildRecentEntries = entries =>
   (Array.isArray(entries) ? entries : []).map((entry, index) => ({
     id: entry?.id || entry?.createdAt || `${entry?.action || 'entry'}-${index}`,
     createdAt: entry?.createdAt || null,
+    route: entry?.route || null,
     collection: entry?.collection || 'unknown',
     shortKey: entry?.shortKey || null,
     feature: entry?.feature || 'unknown',
@@ -190,17 +217,15 @@ const buildRecentEntries = entries =>
     listenerPhase: entry?.listenerPhase || null,
     fromCache: Boolean(entry?.fromCache),
     status: entry?.status || 'success',
-    reads: toNumber(entry?.readsCount) || toNumber(entry?.docsCount),
+    reads: entryReads(entry),
+    cacheReads: toNumber(entry?.cacheReadsCount),
     writes: toNumber(entry?.writesCount),
     logicalDeletes: toNumber(entry?.logicalDeletesCount),
     documentDeletes: toNumber(entry?.documentDeletesCount),
-    estimatedReadKb: roundKb(entry?.estimatedReadKb || entry?.estimatedKb),
-    estimatedWriteKb: roundKb(entry?.estimatedWriteKb),
-    totalEstimatedKb: roundKb(
-      toNumber(entry?.estimatedKb) +
-        toNumber(entry?.estimatedReadKb) +
-        toNumber(entry?.estimatedWriteKb)
-    ),
+    estimatedReadKb: entryReadKb(entry),
+    estimatedCacheReadKb: roundKb(entry?.estimatedCacheReadKb),
+    estimatedWriteKb: entryWriteKb(entry),
+    totalEstimatedKb: roundKb(entryReadKb(entry) + entryWriteKb(entry)),
     meta: entry?.meta || null,
   }))
 
@@ -255,7 +280,7 @@ const buildBillingLimits = totals => {
     title: 'השוואת הסשן למכסת ייחוס',
     subtitle: 'App instrumentation — לא נתוני Billing רשמיים',
     note:
-      'המספרים מייצגים רק פעולות שנמדדו בטאב הנוכחי. לבדיקת חיוב בפועל יש להשתמש ב-Firebase Usage וב-Google Cloud Billing.',
+      'המספרים מייצגים פעולות שנמדדו בטאבים המחוברים לניטור. אירועי מטמון מוצגים בנפרד. לבדיקת חיוב בפועל יש להשתמש ב-Firebase Usage וב-Google Cloud Billing.',
   }
 }
 
@@ -264,6 +289,7 @@ const resolveSource = (snapshot, selectedFeature) => {
     return {
       totals: snapshot?.totals,
       byCollection: snapshot?.byCollection,
+      byDocument: snapshot?.byDocument,
       byShortKey: snapshot?.byShortKey,
       byFeature: snapshot?.byFeature,
       byAction: snapshot?.byAction,
@@ -276,6 +302,7 @@ const resolveSource = (snapshot, selectedFeature) => {
   return {
     totals: details?.totals || snapshot?.byFeature?.[selectedFeature],
     byCollection: details?.byCollection || {},
+    byDocument: details?.byDocument || {},
     byShortKey: details?.byShortKey || {},
     byFeature: {
       [selectedFeature]: details?.totals || snapshot?.byFeature?.[selectedFeature],
@@ -298,6 +325,13 @@ export function buildFirestoreUsageViewModel(snapshot, options = {}) {
   const source = resolveSource(snapshot, selectedFeature)
   const totals = normalizeBucket(source.totals)
   const collections = sortRows(mapBucketRecord(source.byCollection))
+  const documents = Object.values(source.byDocument || {}).map(row => ({
+    ...row,
+    lastReadKb: roundKb(row.lastReadKb),
+    maxReadKb: roundKb(row.maxReadKb),
+    estimatedReadKb: roundKb(row.estimatedReadKb),
+    estimatedCacheReadKb: roundKb(row.estimatedCacheReadKb),
+  })).sort((a, b) => b.lastReadKb - a.lastReadKb || a.path.localeCompare(b.path))
   const shortKeys = sortRows(mapBucketRecord(source.byShortKey))
   const features = sortRows(mapBucketRecord(source.byFeature))
   const actions = sortRows(mapBucketRecord(source.byAction))
@@ -317,7 +351,7 @@ export function buildFirestoreUsageViewModel(snapshot, options = {}) {
   )
   const recentEntries = buildRecentEntries(filteredEntries)
 
-  return {
+  const viewModel = {
     coverage: getFirestoreUsageCoverage(),
     startedAt: snapshot?.startedAt || null,
     updatedAt: snapshot?.updatedAt || null,
@@ -327,11 +361,14 @@ export function buildFirestoreUsageViewModel(snapshot, options = {}) {
     billingLimits: buildBillingLimits(totals),
     payloadSummary: {
       estimatedReadKb: totals.estimatedReadKb,
+      estimatedCacheReadKb: totals.estimatedCacheReadKb,
+      cacheReads: totals.cacheReads,
       estimatedWriteKb: totals.estimatedWriteKb,
       totalEstimatedKb: bucketTotalKb(totals),
     },
     filterOptions: buildFilterOptions(snapshot),
     collections,
+    documents,
     shortKeys,
     features,
     actions,
@@ -361,7 +398,7 @@ export function buildFirestoreUsageViewModel(snapshot, options = {}) {
       ],
     },
     hasActivity:
-      bucketTotalOperations(totals) > 0 || bucketTotalKb(totals) > 0,
+      totals.calls > 0,
     summary: {
       collectionsCount: collections.length,
       featuresCount: features.length,
@@ -381,4 +418,6 @@ export function buildFirestoreUsageViewModel(snapshot, options = {}) {
       recentEntriesAreSample: allEntries.length >= 200,
     },
   }
+
+  return { ...viewModel, alerts: buildFirestoreUsageAlerts(viewModel) }
 }

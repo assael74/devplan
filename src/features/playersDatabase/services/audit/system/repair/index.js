@@ -6,6 +6,7 @@ import { evaluateSystemIntegrity } from '../evaluate.js'
 import { SYSTEM_AUDIT_TARGETS } from '../contract.js'
 import { SYSTEM_AUDIT_CHECKS } from '../checks.js'
 import { writeSystemAuditRepair } from '../../../write/audit/writeSystemAuditRepair.js'
+import { collectSignalClubIds, refreshTeamSignalSummaries } from '../../../write/signals/refreshTeamSignalSummaries.js'
 import { buildSystemRepairPlan } from './systemRepairPlan.js'
 import { buildSourceRepairPlan } from './sourceRepairPlan.js'
 import { buildLeagueOwnershipRepairPlan } from './leagueOwnershipRepairPlan.js'
@@ -15,6 +16,22 @@ const findingTypes = new Set([
   'missing_canonical', 'broken_relation', 'invalid_identity',
   'missing_projection', 'projection_mismatch', 'orphan_projection', 'unexpected_projection',
 ])
+
+const signalClubIdsOf = (plan, actual = {}) => {
+  if (Array.isArray(plan.signalClubIds)) return plan.signalClubIds
+  const sources = plan.changes.filter(change => (
+    ['leagues', 'teamSeasons', 'clubProfiles'].includes(change.target)
+  ))
+  const profileIds = sources.filter(change => change.target === 'clubProfiles').map(change => change.documentId)
+  const movementClubs = (actual.teamSeasons || []).filter(({ data }) => (
+    collectSignalClubIds(data?.movement).some(clubId => profileIds.includes(clubId))
+  )).map(({ data }) => data.identity?.clubId).filter(Boolean)
+  return [...new Set([
+    ...collectSignalClubIds(sources),
+    ...profileIds,
+    ...movementClubs,
+  ])]
+}
 
 export const inspectSystemAuditRepair = ({ finding } = {}) => {
   const valid = Boolean(finding && SYSTEM_AUDIT_TARGETS.includes(finding.target) && findingTypes.has(finding.type))
@@ -51,7 +68,10 @@ const readPlan = async ({ finding, input }) => {
           reason: 'התיקון דורש יותר מ־400 כתיבות ולכן אינו מבוצע בפעולה אחת. יש לצמצם את ההיקף לפני אישור.',
         }
       }
-      return { changes: [], guards: [], fields: [], ...plan, finding: current }
+      return {
+        changes: [], guards: [], fields: [], ...plan, finding: current,
+        signalClubIds: signalClubIdsOf(plan, actual),
+      }
     }
   }
   return {
@@ -65,7 +85,12 @@ const readPlan = async ({ finding, input }) => {
 const previewOf = plan => ({
   allowed: plan.allowed === true && plan.changes.length > 0,
   label: plan.label || 'תיקון הממצא',
-  description: plan.description || '',
+  description: [
+    plan.description || '',
+    signalClubIdsOf(plan).length
+      ? 'בסיום ירועננו סיכומי האיתותים של המועדונים המושפעים, בכל עונותיהם ובמסמכי היעד הקיימים, לפני הבדיקה החוזרת.'
+      : '',
+  ].filter(Boolean).join(' '),
   reason: plan.reason || '',
   fields: plan.fields,
   reload: plan.reload || null,
@@ -102,6 +127,8 @@ export const repairSystemAuditFinding = async ({
   }
   try {
     await writeSystemAuditRepair({ changes: plan.changes, guards: plan.guards })
+    const clubIds = signalClubIdsOf(plan)
+    if (clubIds.length) await refreshTeamSignalSummaries({ clubIds })
   } catch (error) {
     const failure = error instanceof Error ? error : new Error('התיקון נכשל.')
     failure.auditResult = await runAudit(checks).catch(() => null)

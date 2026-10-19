@@ -1,9 +1,13 @@
 // src/features/playersDatabase/services/write/roster/writeRosterCanonical.js
 
-import { deleteDoc, doc, setDoc } from 'firebase/firestore'
+import { deleteDoc, deleteField, doc, setDoc } from 'firebase/firestore'
 
 import { db } from '../../../../../services/firebase/firebase.js'
+import { trackedRunTransaction } from '../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
+import { hasTeamNoteData } from '../../../model/team/teamNotes.model.js'
+
+const usage = { feature: 'playersDatabase', action: 'roster-team-root-write' }
 
 export const writeRosterCanonical = async ({ approvedState = {} } = {}) => {
   const canonical = approvedState.canonical || {}
@@ -16,16 +20,44 @@ export const writeRosterCanonical = async ({ approvedState = {} } = {}) => {
   let teamSeasonWritten = false
   let teamSeasonDeleted = false
 
-  if (canonical.teamRootOperation === 'SET') {
+  if (canonical.teamRootOperation === 'SET' || canonical.teamRootOperation === 'DELETE') {
     const identity = canonical.teamRoot && canonical.teamRoot.identity
-    if (!identity || identity.teamId !== teamId) {
+    if (canonical.teamRootOperation === 'SET' && (!identity || identity.teamId !== teamId)) {
       throw new Error('Approved Team Root identity mismatch')
     }
-    await setDoc(doc(db, PLAYERS_DATABASE_COLLECTIONS.teamRoots, teamId), canonical.teamRoot)
-    teamRootWritten = true
-  } else if (canonical.teamRootOperation === 'DELETE') {
-    await deleteDoc(doc(db, PLAYERS_DATABASE_COLLECTIONS.teamRoots, teamId))
-    teamRootDeleted = true
+    const reference = doc(db, PLAYERS_DATABASE_COLLECTIONS.teamRoots, teamId)
+    const outcome = await trackedRunTransaction(db, async transaction => {
+      const snapshot = await transaction.get(reference)
+      const current = snapshot.exists() ? snapshot.data() : null
+      if (current && current.identity?.teamId !== teamId) {
+        throw new Error('Existing Team Root identity mismatch')
+      }
+      if (canonical.teamSeasonOperation === 'SET') {
+        if (!current) {
+          transaction.set(reference, canonical.teamRoot)
+        } else {
+          transaction.update(reference, {
+            [`seasonRefsById.${approvedState.seasonId}`]: canonical.teamRoot.seasonRefsById[approvedState.seasonId],
+            'timestamps.updatedAt': canonical.teamRoot.timestamps.updatedAt,
+          })
+        }
+        return 'written'
+      }
+      if (!current) return 'none'
+      const refs = current.seasonRefsById || {}
+      const remainingRefs = Object.keys(refs).filter(id => id !== approvedState.seasonId)
+      if (!remainingRefs.length && !hasTeamNoteData(current.notes)) {
+        transaction.delete(reference)
+        return 'deleted'
+      }
+      transaction.update(reference, {
+        [`seasonRefsById.${approvedState.seasonId}`]: deleteField(),
+        'timestamps.updatedAt': approvedState.updatedAt || canonical.teamRoot?.timestamps?.updatedAt || new Date().toISOString(),
+      })
+      return 'written'
+    }, usage)
+    teamRootWritten = outcome === 'written'
+    teamRootDeleted = outcome === 'deleted'
   } else if (canonical.teamRootOperation !== 'NONE') {
     throw new Error('Invalid Team Root write operation')
   }
@@ -40,7 +72,9 @@ export const writeRosterCanonical = async ({ approvedState = {} } = {}) => {
     ) {
       throw new Error('Approved Team Season identity mismatch')
     }
-    await setDoc(doc(db, PLAYERS_DATABASE_COLLECTIONS.teamSeasons, teamSeasonDocumentId), canonical.teamSeason)
+    await setDoc(doc(db, PLAYERS_DATABASE_COLLECTIONS.teamSeasons, teamSeasonDocumentId), canonical.teamSeason, {
+      mergeFields: Object.keys(canonical.teamSeason),
+    })
     teamSeasonWritten = true
   } else if (canonical.teamSeasonOperation === 'DELETE') {
     await deleteDoc(doc(db, PLAYERS_DATABASE_COLLECTIONS.teamSeasons, teamSeasonDocumentId))

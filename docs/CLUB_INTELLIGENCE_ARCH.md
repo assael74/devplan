@@ -1,77 +1,94 @@
-# Club Intelligence V1
+# Club Intelligence
 
-## Purpose
+## מיפוי תהליכים וכפילויות
 
-`ClubIntelligence` is a domain read model for a single club. It supplies the
-Clubs Page summary and collapse views from `dbClubsMaster/all`, then enriches
-the same conceptual object in the Club Page from `dbClubs/{clubId}`.
+| קובץ ב־`domain/clubIntelligence` | אחריות | מצב |
+|---|---|---|
+| `clubIntelligence.canonical.js` | זהות, קבוצות עונתיות ושנתונים; הרכבת המודל | `buildClubSeasonIntelligence` מחבר את המודל העונתי וההשוואה ההיסטורית לתצוגה ולשמירה |
+| `clubCompetitionPath.builder.js` | התאמת הקלט למנוע צפי התחרות המשותף | אינו מנוע חישוב נוסף |
+| `clubCohortComparison.adapter.js` | הרכבת נתוני השוואה לנורמה ההיסטורית | משתמש במנוע המשותף `shared/scouting/teams/clubComparison` |
+| `clubSignalCoverage.builder.js` | כיסוי במיקוד `u14` ו־`u15` | משתמש בזמינות הסיכום לאיזון, בתחזית הקנונית ובבונה הפער המשותף |
+| `clubIntelligence.selectors.js` | סיכום משפחות, כיווני סינון וחלוקת קבוצות לתצוגות | משתמש ב־`teamSignalSummary`; אינו בוחר איתות יחיד |
+| `clubIntelligence.contract.js`, `index.js` | קבועים וייצוא הממשק | ללא תהליך כתיבה נוסף |
 
-It is not a Firestore document and it is not a second source of truth.
+מודל המועדון אינו מחשב Spotlights. רשימת המועדונים, הסינון למועדונים
+עם איתותים, כרטיסי הגיל ועמוד המועדון משתמשים ב־`teamSignalSummary`.
+בונה ה־Spotlights, הדירוג, בחירת איתות מרכזי והתרגום לתצוגה הוסרו.
+דגלי הסגל הישנים אינם משמשים תחליף לסיכום חסר או לגרסת כיול ישנה.
 
-## Sources of truth
+מסנני כיוון דורשים משפחה פעילה בסיכום עדכני, ומקבלים כיוון מעובדות
+התחזית הקיימות או מ־`domain/signals/teamSignalFacts.js`. חישוב פער רמת
+המועדון משותף למודל האיתותים ולסינון, ללא כלל נוסף בעמוד המועדונים.
 
-- Club identity and club level originate in the club catalog and are projected
-  into Club and Clubs Master documents.
-- League performance and league level originate in `dbLeagues`.
-- Future league path originates in the existing Club competition projection:
-  League table plus competition rules, with an active manual override when one
-  exists.
-- Team task signals originate in `dbBirthTeamSeasons.teamBalance.teamTaskSignals`.
-- Roster, player statistics, minutes, detailed profiles and transfers remain
-  owned by Team Season / Player documents.
+הרכבת מודל התחרות וההשוואה ההיסטורית משותפת ב־`buildClubSeasonIntelligence`
+בתוך `clubIntelligence.canonical.js`. הבונה מקבל זהות מועדון ומקורות
+`current`,‏ `history`,‏ `leaguesById` ו־`unavailableSeasonIds`, ומחזיר מודל
+עונתי אחד עם `cohortComparison`. ההיסטוריה משמשת להשוואה בלבד;
+מסלול צפי התחרות והכיסוי נבנים מנתוני העונה הנבדקת בלבד.
 
-## Flow
+`useTeamClubIntelligence` מעביר לבונה את תוצאת שירות הקריאה הקיים.
+`teamSignalSources.model.js` מעביר אליו את המקורות שהורכבו מ־League
+ו־Team Season, עם ClubProfile לזהות המועדון. ההבדל באיסוף המקורות נשמר:
+Center משמש ניווט בקריאה ואינו הופך למקור אמת לחישוב הסיכומים בשמירה.
+הבונה המשותף אינו קורא מסמכים ואינו כותב מסמכים. הבונה הבסיסי
+`buildClubIntelligenceFromCanonicalSources` נשאר זמין למסכי המרכז שאינם
+טוענים השוואה היסטורית.
 
-```text
-dbClubsMaster/all
-  -> buildClubIntelligenceFromMaster(club)
-  -> Summary / Collapse selectors
+בדיקות הכיסוי במיקוד `u14`/`u15` נשמרות בנפרד מעוצמת האיתות. שני
+כרטיסי הגיל הללו מוצגים ראשונים ומודגשים; שאר הגילים מוצגים אחריהם.
+כללי צבירת הזמינות משותפים ב־`domain/signals/teamSignalAvailability.js`.
+כיסוי איזון דורש סיכום עדכני; קיום מסמך ודגלי הסגל הישנים אינם מספיקים.
+כיסוי חלקי נשמר גם כשאין גיל עם כיסוי מלא. כיסוי הצפי נשען על זמינות
+`futureCompetition`, בתוספת בדיקת מקור בגיל `u15` עבור `u14` ובגיל `u16`
+עבור `u15`. קבוצה ראשית חסרה או לא יחידה אינה נחשבת מכוסה.
+מפתחות הכיסוי הישנים נשמרים לתאימות בלבד. איחוד הרכבת המודל אינו מוסיף
+כתיבה או מבנה שמור חדש ואינו משנה את ספי האיתותים.
 
-dbClubsMaster/all + dbClubs/{clubId}
-  -> buildClubIntelligenceFromMaster(club)
-  -> enrichClubIntelligenceFromClubDocument(...)
-  -> Club Page selector
-```
+Club Intelligence הוא מודל קריאה למועדון. דפי המועדונים קוראים זהות מ־
+ClubsDirectory ומ־ClubProfile, וניווט ונתוני תצוגה עונתיים מ־ClubsCenter.
+ClubsCenter הוא הקרנה ואינו מקור אמת לתיקון או לחישוב מחדש של עובדות.
 
-The flow does not read Team Seasons, Players or League documents per club.
+## משפחות איתותים
 
-## V1 spotlights
+סיכום האיתותים המוקדם משותף לקבוצה, לליגה ולמועדונים. הוא מכיל חמש
+משפחות: ביצועים, איזון הסגל, תנועת השנתון, צפי תחרות והשנתון במועדון.
+בכל רשומת קבוצה עונתית נשמר teamSignalSummary עם עוצמה, זמינות וגרסאות
+מבנה וכיול. התצוגה המקדימה מציגה משפחות פעילות ועוצמות, בלי פירוט הממצאים.
 
-Only these families exist:
+מסלול הליגה העתידי שייך למשפחת צפי התחרות. דגלי התקפה והגנה שייכים
+לאיזון הסגל. הפער מול רמת המועדון שייך למשפחת השנתון במועדון, לצד
+ההשוואה הנפרדת לנורמה ההיסטורית. אין ספירה כפולה של ממצא שמופיע בכמה מסכים.
 
-1. `FUTURE_LEAGUE_PATH_RISE`, `FUTURE_LEAGUE_PATH_DROP`
-2. `LEAGUE_ABOVE_CLUB_LEVEL`, `LEAGUE_BELOW_CLUB_LEVEL`
-3. `OFFENSE_SQUAD_TASK`, `DEFENSE_SQUAD_TASK`
+## מקורות וחישוב
 
-The first family uses the persisted `competitionPaths` values. It does not
-recalculate a competition forecast. When the projection is unavailable, it
-preserves status and reason but emits no spotlight.
+- League הוא המקור לטבלה הרשמית, לביצועים ולחוקי התחרות.
+- Team Season הוא המקור לסגל, סטטיסטיקה, סקאוט ותנועה.
+- ClubProfile הוא המקור לרמת המועדון; פער רמת ליגה נמדד מול clubLevel.
+- פירוט האיתותים ותתי־האיתותים מחושב במודל משותף ומשמש את עמוד הקבוצה.
+- רענון השמירה מרכיב את מקורות המועדון וההיסטוריה מהמסמכים הקנוניים,
+  ומקרין סיכום זהה לקבוצה ולעונה למסמכים הקיימים.
 
-For a Future League Path, `sourceTeamId` and `sourceTeamSlot` travel from the
-Competition Path source season through Clubs Master. The resulting Spotlight
-uses that canonical `teamId`; it is not attached to a team by cohort, order,
-name, league level, or an inferred ID suffix. A missing source identity emits
-no Future League Path Spotlight.
+אפס מציין היעדר איתות על בסיס מספיק; מידע חסר אינו אפס. שינוי כיול
+מחייב גרסה חדשה ורענון הסיכומים הקיימים. כיוון חיובי או שלילי ומהימנות
+המקור נשמרים בנפרד מעוצמת המשפחה.
 
-The league-versus-club family uses the single canonical threshold
-`CLUB_LEAGUE_LEVEL_GAP_THRESHOLD = 1` and preserves the numeric gap in
-spotlight context.
+## מעבר וגבולות
 
-The squad-task family only maps the persisted boolean task signals. An
-explicitly unavailable Team Balance source creates no task spotlight.
+התלות ב־`teamTaskSignals` וב־`teamTaskAvailability` הוסרה מהחישוב,
+השמירה, ההקרנות, הייצוא והאודיט. שדות קיימים נשארים במסמכים ללא עדכון
+או מחיקה יזומה. מודל המועדון אינו בונה עוד את העותק הישן ב־`squad`.
+פתיחת מסך אינה מפעילה כתיבה אוטומטית.
+הסנכרון השוטף מחובר לטעינות ולשמירות. מנגנון העדכון הגורף וכפתורי
+הרענון הזמניים הוסרו לאחר עדכון הנתונים הקיימים ובדיקת הסנכרון.
+עמוד הליגה ומרכז הליגות אינם מציגים איתותים; מסמכיהם נשארים יעדי הקרנה.
 
-## Not signals in V1
+תיקוני מערכת שמשנים מקורות ממתינים לרענון האיתותים לפני האודיט החוזר.
+האודיט הכללי והממוקד מחשבים סיכום צפוי דרך הבונה המשותף ומשווים אליו
+את התוכן, לצד השוואת העותקים והגרסאות. כך מזוהה גם סיכום מיושן שזהה
+בכל המסמכים; זמן החישוב החדש אינו יוצר ממצא שווא.
 
-Profiles, transfers and performance are context only. There is no opportunity
-engine, score, priority tier, pattern engine, profile signal, transfer signal,
-performance signal, minutes signal or historical baseline in this version.
+NOTES וסימון החקירה הידני אינם משתנים ואינם קובעים עוצמה אוטומטית.
+אין תהליך טיפול באיתותים, תור או משימת רקע.
 
-## Ordering and duplication rule
-
-Selectors order future path first, league-vs-club second and squad task last.
-Selectors only order, group and shape data; they do not recalculate business
-logic.
-
-Existing domain builders remain the only place for competition, team balance,
-scouting performance, profile summaries and transfer summaries. Club
-Intelligence consumes their persisted facts and derived source data only.
+החוזה המחייב של הפיצ׳ר נמצא ב־
+[חוזה משפחות האיתותים](../src/features/playersDatabase/md/contracts/TEAM_SIGNALS_CONTRACT.md).

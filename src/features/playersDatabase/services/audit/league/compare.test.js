@@ -148,20 +148,15 @@ test('still detects changed season and competition data when operational timesta
   ])
 })
 
-test('still detects a canonical task signal timestamp mismatch', () => {
+test('ignores retained legacy task timestamps when auditing current projection fields', () => {
   const actual = cleanActual()
   actual.leaguesCenter.leaguesById['league-1'].seasonsById['2026_2027']
-    .teamsById.club_2012_1.teamTaskSignals.updatedAt = 'stale-signal'
+    .teamsById.club_2012_1.teamTaskSignals = { offense: true, updatedAt: 'stale-signal' }
 
-  expect(compareLeagueAudit({ expected, actual })).toEqual([
-    expect.objectContaining({
-      target: 'leaguesCenter',
-      field: 'leaguesById.league-1.seasonsById.2026_2027.teamsById.club_2012_1.teamTaskSignals.updatedAt',
-    }),
-  ])
+  expect(compareLeagueAudit({ expected, actual })).toEqual([])
 })
 
-test('detects Team Season-owned documentation state and task signal mismatches in both Centers', () => {
+test('detects Team Season-owned documentation state mismatches in both Centers', () => {
   const actual = cleanActual()
   actual.leaguesCenter.leaguesById['league-1'].seasonsById['2026_2027'].teamsById.club_2012_1 = {
     ...actual.leaguesCenter.leaguesById['league-1'].seasonsById['2026_2027'].teamsById.club_2012_1,
@@ -169,6 +164,7 @@ test('detects Team Season-owned documentation state and task signal mismatches i
   }
   actual.clubsCenter.clubsById.club.teamsById.club_2012_1 = {
     ...actual.clubsCenter.clubsById.club.teamsById.club_2012_1,
+    documentationState: 'NO_ROSTER',
     teamTaskSignals: { offense: false, defense: false, updatedAt: 'different' },
   }
 

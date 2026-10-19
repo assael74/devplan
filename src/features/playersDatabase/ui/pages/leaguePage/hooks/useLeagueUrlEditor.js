@@ -1,8 +1,7 @@
 // src/features/playersDatabase/ui/pages/leaguePage/hooks/useLeagueUrlEditor.js
 
 import * as React from 'react'
-import { updateLeagueSeasonUrl } from '../../../../services/write/league/edits/updateLeagueSeasonUrl.js'
-import { updateLeagueCompetitionRules } from '../../../../services/write/league/edits/updateLeagueCompetitionRules.js'
+import { updateLeagueSeasonSettings } from '../../../../services/write/league/edits/updateLeagueSeasonSettings.js'
 import { SNACK_STATUS } from '../../../../../../ui/core/feedback/snackbar/snackbar.model.js'
 import {
   buildCompetitionRules,
@@ -57,85 +56,66 @@ export default function useLeagueUrlEditor({
       teamCount: Object.keys(season.table?.teamsById || {}).length,
     })
     setUrl({ original: seasonUrl, draft: seasonUrl, saving: false, error: '' })
-    setRules({ original: originalRules, draft, saving: false, error: '' })
+    // Hidden promotion fields in the top league are not an explicit rule edit.
+    setRules({ original: draft, draft, saving: false, error: '' })
     setOpen(true)
   }
 
-  // Only the selected section is updated. Recovery reload runs only after a failed write.
-  const saveSection = async ({ write, setSection, submitted, label }) => {
-    setSection(current => ({ ...current, saving: true, error: '' }))
+  const save = async () => {
+    if (!open || !context || saving || (!urlDirty && !rulesDirty) || !urlValid || !rulesValid) return
+    const submittedUrl = url.draft.trim()
+    const submittedRules = rules.draft
+    setUrl(current => ({ ...current, saving: true, error: '' }))
+    setRules(current => ({ ...current, saving: true, error: '' }))
     let saved = false
     try {
-      await write()
+      await updateLeagueSeasonSettings({
+        leagueId: context.leagueId,
+        seasonId: context.seasonId,
+        ...(urlDirty ? { seasonUrl: submittedUrl } : {}),
+        ...(rulesDirty ? {
+          competitionRules: buildCompetitionRules({
+            draft: submittedRules,
+            teamCount: context.teamCount,
+            isTopLeague: context.isTopLeague,
+          }),
+        } : {}),
+      })
       saved = true
-      setSection(current => ({ ...current, original: submitted }))
-      notify({ status: SNACK_STATUS.SUCCESS, title: `${label} נשמרו` })
+      if (urlDirty) setUrl(current => ({ ...current, original: submittedUrl, draft: submittedUrl }))
+      if (rulesDirty) setRules(current => ({ ...current, original: submittedRules }))
+      notify({ status: SNACK_STATUS.SUCCESS, title: 'הגדרות עונת הליגה נשמרו' })
     } catch (error) {
       const message = error.message || 'לא התקבל אישור לשמירה'
-      setSection(current => ({ ...current, error: message }))
-      notify({ status: SNACK_STATUS.ERROR, title: `שמירת ${label} נכשלה`, message })
+      if (urlDirty) setUrl(current => ({ ...current, error: message }))
+      if (rulesDirty) setRules(current => ({ ...current, error: message }))
+      notify({ status: SNACK_STATUS.ERROR, title: 'שמירת הגדרות עונת הליגה נכשלה', message })
     }
     try {
       if (!saved && reload) await reload()
     } catch (error) {
       const message = 'רענון התצוגה נכשל'
-      setSection(current => ({
+      const appendError = current => ({
         ...current,
         error: [current.error, message].filter(Boolean).join('. '),
-      }))
+      })
+      if (urlDirty) setUrl(appendError)
+      if (rulesDirty) setRules(appendError)
       notify({
         status: SNACK_STATUS.ERROR,
-        title: `${label}: ${message}`,
+        title: message,
         message: error.message,
       })
     } finally {
-      setSection(current => ({ ...current, saving: false }))
+      setUrl(current => ({ ...current, saving: false }))
+      setRules(current => ({ ...current, saving: false }))
     }
-  }
-
-  const saveUrl = async (value = url.draft) => {
-    const submitted = String(value || '').trim()
-    if (!open || !context || saving || submitted === url.original || !isValidSeasonUrl(submitted)) return
-    setUrl(current => ({ ...current, draft: submitted }))
-    await saveSection({
-      write: () =>
-        updateLeagueSeasonUrl({
-          leagueId: context.leagueId,
-          seasonId: context.seasonId,
-          seasonUrl: submitted,
-        }),
-      setSection: setUrl,
-      submitted,
-      label: 'פרטי הקישור',
-    })
-  }
-
-  const saveRules = async () => {
-    if (!open || !context || saving || !rulesDirty || !rulesValid) return
-    const submitted = rules.draft
-    await saveSection({
-      write: () =>
-        updateLeagueCompetitionRules({
-          leagueId: context.leagueId,
-          seasonId: context.seasonId,
-          competitionRules: buildCompetitionRules({
-            draft: submitted,
-            teamCount: context.teamCount,
-            isTopLeague: context.isTopLeague,
-          }),
-        }),
-      setSection: setRules,
-      submitted,
-      label: 'חוקי התחרות',
-    })
   }
 
   return {
     open,
     context,
     saving,
-    urlSaving: url.saving,
-    rulesSaving: rules.saving,
     urlError: url.error,
     rulesError: rules.error,
     draftUrl: url.draft,
@@ -145,8 +125,7 @@ export default function useLeagueUrlEditor({
     urlValid,
     rulesValid,
     show,
-    saveUrl,
-    saveRules,
+    save,
     changeUrl: value => {
       if (!saving) setUrl(current => ({ ...current, draft: value, error: '' }))
     },

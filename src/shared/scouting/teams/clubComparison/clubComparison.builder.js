@@ -1,6 +1,7 @@
 // src/shared/scouting/teams/clubComparison/clubComparison.builder.js
 
 import { CLUB_COMPARISON_METRICS, CLUB_COMPARISON_VERSION, clubComparisonSeasonOrder, comparisonNumber } from './clubComparison.model.js'
+import { TEAM_SIGNAL_CALIBRATION } from '../signals/teamSignalCalibration.js'
 import { evaluateClubComparisonMetric } from './clubComparison.benchmark.js'
 
 export const buildClubCohortComparison = ({ teams = [], clubId, seasonId } = {}) => {
@@ -38,8 +39,8 @@ export const buildClubCohortComparison = ({ teams = [], clubId, seasonId } = {})
       return {
         ...row, metrics: Object.fromEntries(metrics.map(metric => [metric.key, metric])), findings, families,
         availableCount, availability,
-        signalLevel: families.includes('competition') ? 2 : Math.min(2, families.length),
-        status: families.includes('competition') || families.length >= 2 ? 'multiple' : families.length === 1 ? 'single'
+        signalLevel: families.includes('competition') ? 2 : (families.length >= TEAM_SIGNAL_CALIBRATION.clubComparison.strongFamilyCount ? 2 : families.length ? 1 : 0),
+        status: families.includes('competition') || families.length >= TEAM_SIGNAL_CALIBRATION.clubComparison.strongFamilyCount ? 'multiple' : families.length === 1 ? 'single'
           : availability === 'available' ? 'none' : 'limited',
       }
     }).sort((a, b) => b.birthYear - a.birthYear),

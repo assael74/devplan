@@ -3,9 +3,7 @@
 import { cleanValue, pickDefinedValue, toNumberOrZero } from '../shared/value.model.js'
 import { buildTeamPerformanceViewModel } from '../team/teamPerformance.viewModel.js'
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../catalog/clubs.catalog.js'
-import {
-  CLUB_SPOTLIGHT_TYPE,
-} from '../../domain/clubIntelligence/index.js'
+import { getClubTeamSignalDirections } from '../../domain/clubIntelligence/index.js'
 
 const clean = cleanValue
 const CATALOG_ORDER_BY_CLUB_ID = new Map(
@@ -60,6 +58,8 @@ const getSeasonEntries = (intelligence, seasonView) => (
       goalsAgainst: toNumberOrZero(team?.performance?.goalsAgainst),
       scoutProfilesCount: toNumberOrZero(team?.scoutProfilesSummary?.total),
       performance: team?.performance || {},
+      teamSignalSummary: team?.teamSignalSummary || null,
+      futureCompetition: team?.futureCompetition || null,
       transfers: team?.transfers || null,
       mismatch: team?.mismatch === true,
     }))
@@ -109,24 +109,16 @@ export const filterClubsPageRows = ({
       return result
     }
 
+    const directions = selectedLeaguePathDirections.length || selectedLeagueLevelDirections.length
+      ? group.teams.map(team => getClubTeamSignalDirections({ team, club: group.club })) : []
     if (selectedLeaguePathDirections.length && !selectedLeaguePathDirections.every(direction => (
-      (Array.isArray(group?.intelligence?.spotlights) ? group.intelligence.spotlights : [])
-        .some(spotlight => (
-          direction === 'up'
-            ? spotlight?.type === CLUB_SPOTLIGHT_TYPE.FUTURE_LEAGUE_PATH_RISE
-            : spotlight?.type === CLUB_SPOTLIGHT_TYPE.FUTURE_LEAGUE_PATH_DROP
-        ))
+      directions.some(item => item.futureCompetition === direction)
     ))) {
       return result
     }
 
     if (selectedLeagueLevelDirections.length && !selectedLeagueLevelDirections.every(direction => (
-      (Array.isArray(group?.intelligence?.spotlights) ? group.intelligence.spotlights : [])
-        .some(spotlight => (
-          direction === 'above'
-            ? spotlight?.type === CLUB_SPOTLIGHT_TYPE.LEAGUE_ABOVE_CLUB_LEVEL
-            : spotlight?.type === CLUB_SPOTLIGHT_TYPE.LEAGUE_BELOW_CLUB_LEVEL
-        ))
+      directions.some(item => item.clubLevel === direction)
     ))) {
       return result
     }

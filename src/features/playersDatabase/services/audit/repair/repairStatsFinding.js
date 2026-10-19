@@ -36,7 +36,6 @@ const SEARCH_FIELDS = new Set([
 const CENTER_FIELDS = new Set([
   'documentationState',
   'documentationStateUpdatedAt',
-  'teamTaskSignals',
 ])
 
 const requireTarget = ({ scope, finding }) => {

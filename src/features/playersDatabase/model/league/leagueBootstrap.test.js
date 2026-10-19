@@ -1,6 +1,7 @@
 // src/features/playersDatabase/model/league/leagueBootstrap.test.js
 
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../catalog/leagues.catalog.js'
+import { buildTeamSignalSummary } from '../../domain/signals/teamSignalSummary.js'
 import { PLAYERS_DATABASE_AGE_GROUPS_CATALOG } from '../../catalog/ageGroups.catalog.js'
 import { PLAYERS_DATABASE_CURRENT_SEASON_KEY } from '../../catalog/seasons.catalog.js'
 import {
@@ -76,12 +77,16 @@ test('derives operational League Center facts from the season projection', () =>
               teamOne: {
                 documentationState: 'NO_ROSTER',
                 documentationStateUpdatedAt: '2026-10-03T00:00:00.000Z',
-                teamTaskSignals: { offense: true, defense: false },
+                teamSignalSummary: buildTeamSignalSummary({ familiesById: {
+                  'roster-balance': { level: 1, availability: 'available' },
+                } }),
               },
               teamTwo: {
                 documentationState: 'STATS_FINAL',
                 documentationStateUpdatedAt: '2026-10-04T00:00:00.000Z',
-                teamTaskSignals: { offense: true, defense: true },
+                teamSignalSummary: buildTeamSignalSummary({ familiesById: {
+                  'roster-balance': { level: 2, availability: 'available' },
+                } }),
               },
             },
           },
@@ -96,9 +101,16 @@ test('derives operational League Center facts from the season projection', () =>
     tableState: 'LOADED',
     teamsCount: 2,
     requiresReview: true,
-    offenseOnlyPriorityCount: 1,
-    defenseOnlyPriorityCount: 0,
-    combinedPriorityCount: 1,
+    hasTeamSignals: true,
+    signalStrengthCounts: { strong: 1, watch: 1, none: 0, uncovered: 0 },
+    strongSignalWorkCounts: {
+      strongMin1: 1, strongMin2: 0, strongMin3: 0,
+      strongMin1Pending: 1, strongMin2Pending: 0, strongMin3Pending: 0,
+    },
+    researchWorkCounts: { pendingStrong: 1, pendingWatch: 1, markedInvestigation: 0, missingSignalInformation: 0 },
+    signalFamiliesById: expect.objectContaining({
+      'roster-balance': expect.objectContaining({ activeTeamCount: 2, maxLevel: 2 }),
+    }),
     latestDocumentationUpdatedAt: '2026-10-04T00:00:00.000Z',
   }))
 })

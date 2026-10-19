@@ -6,6 +6,9 @@ import {
   collectLeagueSeasonClubIds,
 } from './buildExpected.js'
 import { compareLeagueAudit } from './compare.js'
+import { compareTeamSignalSummaries } from '../signals/compareTeamSignalSummaries.js'
+import { readExpectedTeamSignals } from '../signals/readExpectedTeamSignals.js'
+import { teamSignalAuditKey } from '../signals/buildExpectedTeamSignals.js'
 import {
   LEAGUE_AUDIT_ALL_TARGETS,
   LEAGUE_AUDIT_RESULT,
@@ -50,6 +53,18 @@ export const auditLeague = async ({ leagueId = '', seasonId = '' } = {}) => {
     })
   }
   const projectionFindings = compareLeagueAudit({ expected, actual })
+  const expectedSignals = await readExpectedTeamSignals({
+    clubIds: canonical ? collectLeagueSeasonClubIds({ league: canonical, seasonId }) : [],
+  })
+  Object.entries(canonical?.seasonsById?.[seasonId]?.table?.teamsById || {}).forEach(([teamId, leagueTeam]) => {
+    projectionFindings.push(...compareTeamSignalSummaries({
+      teamId, clubId: leagueTeam.clubId, seasonId, leagueTeam,
+      expectedSummary: expectedSignals.get(teamSignalAuditKey(teamId, seasonId)) || null,
+      teamSeason: actual.teamSeasons.find(season => season.identity?.teamId === teamId),
+      leaguesCenterTeam: actual.leaguesCenter?.leaguesById?.[expected.leagueId]?.seasonsById?.[seasonId]?.teamsById?.[teamId],
+      clubsCenterTeam: actual.clubsCenter?.clubsById?.[leagueTeam.clubId]?.teamsById?.[teamId],
+    }))
+  })
   const dependencyFindings = expected.missingCanonicalDependencies || []
   const findings = [...dependencyFindings, ...projectionFindings]
   const missingCanonicalDependencies = dependencyFindings.length > 0

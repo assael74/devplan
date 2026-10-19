@@ -127,6 +127,7 @@ export default function UsageDrilldownDrawer({
                 <tr>
                   <th>זמן</th>
                   <th>Operation</th>
+                  <th>מקור</th>
                   <th>Feature</th>
                   <th>Action</th>
                   <th>Reads</th>
@@ -139,7 +140,8 @@ export default function UsageDrilldownDrawer({
                 {rows.map(row => (
                   <tr key={row.id}>
                     <td>{formatDateTime(row.createdAt)}</td>
-                    <td>{row.operation}</td>
+                    <td>{row.displayOperation}</td>
+                    <td>{row.fromCache ? 'מטמון' : 'שרת / פעולה'}</td>
                     <td>{row.feature}</td>
                     <td>{row.action}</td>
                     <td>{numberFormatter.format(row.reads)}</td>

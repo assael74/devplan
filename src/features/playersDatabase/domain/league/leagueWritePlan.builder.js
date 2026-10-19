@@ -12,6 +12,7 @@ import {
 import { resolveLeagueLoadContext } from './leagueLoadContext.resolver.js'
 import { buildLeagueLoadDocument } from './leagueLoad.builder.js'
 import { buildLeaguePerformanceProjection } from './leaguePerformance.builder.js'
+import { buildLeagueStatsProjection } from '../stats/statsLoadState.js'
 import {
   buildLeagueTeamsClearApprovedState,
   buildLeagueSeasonDeleteApprovedState,
@@ -184,6 +185,9 @@ export const buildLeaguesCenterSeason = ({
     teamsById[teamId] = {
       clubId: clean(row && row.clubId),
       teamSlot: toNullableNumber(row && row.teamSlot),
+      showInvestigationIndicator: typeof row?.showInvestigationIndicator === 'boolean'
+        ? row.showInvestigationIndicator
+        : object(previousLeaguesCenterTeamsById)[teamId]?.showInvestigationIndicator === true,
       ...centerState,
     }
   })
@@ -411,6 +415,7 @@ export const buildLeagueLoadWritePlan = ({
   existingLeague = {},
   clubProfilesById = {},
   existingTeamSeasons = [],
+  investigationByTeamId = {},
   previousLeaguesCenterTeamsById = {},
   previousClubsCenterTeamLocations = [],
   otherLeagueIdsByTeamId = {},
@@ -447,6 +452,7 @@ export const buildLeagueLoadWritePlan = ({
     season,
     clubProfilesById: profiles,
     performanceByTeamId: performance.performanceByTeamId,
+    investigationByTeamId,
     performanceCalculation: performance.performanceCalculation,
     createdAt,
     updatedAt,
@@ -459,6 +465,10 @@ export const buildLeagueLoadWritePlan = ({
     existingTeamSeasons,
     leagueId: canonical.leagueId,
     seasonId: canonical.seasonId,
+  })
+  teamSeasonsByTeamId.forEach((teamSeason, teamId) => {
+    const row = canonicalSeason.table.teamsById[teamId]
+    if (row) row.stats = buildLeagueStatsProjection(teamSeason)
   })
 
   return {
@@ -483,6 +493,9 @@ export const buildLeagueLoadWritePlan = ({
       leagueId: canonical.leagueId,
       seasonId: canonical.seasonId,
       identity: buildLeaguesCenterIdentity(canonicalLeague),
+      deleteTeamIds: Object.keys(previousLeaguesCenterTeamsById).filter(teamId => (
+        !object(canonicalSeason.table?.teamsById)[teamId]
+      )),
       season: buildLeaguesCenterSeason({
         season: canonicalSeason,
         teamSeasonsByTeamId,
@@ -730,6 +743,9 @@ export const buildLeagueLoadProjectionRepairPlan = ({
       leagueId: resolvedLeagueId,
       seasonId: resolvedSeasonId,
       identity: buildLeaguesCenterIdentity(league),
+      deleteTeamIds: Object.keys(previousLeaguesCenterTeamsById).filter(teamId => (
+        !object(season.table?.teamsById)[teamId]
+      )),
       season: buildLeaguesCenterSeason({
         season,
         teamSeasonsByTeamId,

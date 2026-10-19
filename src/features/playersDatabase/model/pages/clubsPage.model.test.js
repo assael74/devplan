@@ -7,6 +7,7 @@ import {
 import { PLAYERS_DATABASE_CLUBS_CATALOG } from '../../catalog/clubs.catalog.js'
 import { buildClubDirectoryProjection } from '../../domain/projections/club/clubDirectory.projection.js'
 import { buildAllClubIntelligencesFromCanonicalSources } from '../../domain/clubIntelligence/clubIntelligence.canonical.js'
+import { buildTeamSignalSummary, hasActiveTeamSignals, TEAM_SIGNAL_FAMILIES } from '../../domain/signals/teamSignalSummary.js'
 
 const baseClub = {
   clubId: 'club-a',
@@ -25,6 +26,45 @@ const buildIntelligence = ({ club = baseClub, current = [], previous = [] } = {}
       previous: { teams: previous },
     },
   }],
+})
+
+test('direction filters require active current summaries and preserve the direction facts', () => {
+  const summary = buildTeamSignalSummary({ familiesById: {
+    'future-competition': { level: 1, availability: 'available' },
+    'club-gap': { level: 1, availability: 'available' },
+  } })
+  const team = {
+    teamId: 'club-a_2012_1', teamSlot: 1, ageGroupId: 'u15',
+    league: { leagueLevel: 2 }, teamSignalSummary: summary,
+    futureCompetition: { direction: 'up', availability: { availability: 'available' } },
+  }
+  const groupsFor = current => buildClubsPageRows({
+    intelligencesByClubId: buildIntelligences([buildIntelligence({ current })]),
+  })
+  const groups = groupsFor([team])
+  expect(filterClubsPageRows({ groups, leaguePathDirections: ['up'], leagueLevelDirections: ['above'] })).toHaveLength(1)
+  expect(filterClubsPageRows({ groups, leaguePathDirections: ['down'] })).toEqual([])
+  expect(filterClubsPageRows({ groups, leagueLevelDirections: ['below'] })).toEqual([])
+  const missing = groupsFor([{ ...team, teamSignalSummary: null, teamTaskSignals: { offense: true } }])
+  expect(filterClubsPageRows({ groups: missing, leaguePathDirections: ['up'] })).toEqual([])
+  const stale = groupsFor([{ ...team, teamSignalSummary: { ...summary, calibrationVersion: 'old' } }])
+  expect(filterClubsPageRows({ groups: stale, leagueLevelDirections: ['above'] })).toEqual([])
+  const secondary = groupsFor([{ ...team, teamSlot: 2 }])
+  expect(filterClubsPageRows({ groups: secondary, leaguePathDirections: ['up'] })).toEqual([])
+})
+
+test.each(TEAM_SIGNAL_FAMILIES)('$id activates the signals-only filter without old task flags', ({ id }) => {
+  const summary = buildTeamSignalSummary({ familiesById: { [id]: { level: 2, availability: 'available' } } })
+  expect(hasActiveTeamSignals(summary)).toBe(true)
+  expect(hasActiveTeamSignals(null)).toBe(false)
+})
+
+test('a historical club-gap signal does not imply a current league-level mismatch', () => {
+  const summary = buildTeamSignalSummary({ familiesById: { 'club-gap': { level: 2, availability: 'partial' } } })
+  const groups = buildClubsPageRows({ intelligencesByClubId: buildIntelligences([buildIntelligence({
+    current: [{ teamId: 'club-a_2012_1', teamSlot: 1, league: { leagueLevel: 3.5 }, teamSignalSummary: summary }],
+  })]) })
+  expect(filterClubsPageRows({ groups, leagueLevelDirections: ['below'] })).toEqual([])
 })
 
 const buildIntelligences = values => new Map(

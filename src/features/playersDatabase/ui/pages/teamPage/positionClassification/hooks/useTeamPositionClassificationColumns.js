@@ -98,8 +98,8 @@ const renderScoutProfile = (row, showTooltips) => {
 export default function useTeamPositionClassificationColumns({
   onPlayerOpen,
   onPlayerRoleEdit,
-  onShirtEdit,
-  canEditShirt = false,
+  onPlayerDetailsEdit,
+  canEditPlayerDetails = false,
   favoritePlayerKeys,
   onFavoriteToggle,
   showTooltips = true,
@@ -124,38 +124,37 @@ export default function useTeamPositionClassificationColumns({
         >
           {index + 1}
         </IconButton>
-      ) : (
-        <Box sx={sx.shirtCell}>
-          <Typography sx={sx.index}>{index + 1}</Typography>
-          {canEditShirt && row.player ? (
-            <IconButton
-              size='sm'
-              variant='soft'
-              color='neutral'
-              sx={sx.shirtEdit}
-              aria-label={`עריכת מספר חולצה עבור ${row.name}`}
-              onClick={event => {
-                event.stopPropagation()
-                onShirtEdit?.(row)
-              }}
-            >
-              {row.player.numShirt || '—'}
-            </IconButton>
-          ) : null}
-        </Box>
-      ),
+      ) : <Typography sx={sx.index}>{index + 1}</Typography>,
     },
     {
       key: 'avatar',
       label: '',
       sortable: false,
       sx: sx.avatarColumn,
-      render: row => (
-        <Box sx={sx.avatarWrap}>
-          <Box component='img' src={playerImage} alt='' sx={sx.avatar} />
+      render: row => {
+        const editable = typeof canEditPlayerDetails === 'function'
+          ? canEditPlayerDetails(row)
+          : canEditPlayerDetails
+        return <Box sx={sx.avatarWrap}>
+          <Box
+            component='button'
+            type='button'
+            disabled={!editable || !row.player || !onPlayerDetailsEdit}
+            aria-label={`עריכת פרטי השחקן ${row.name}`}
+            title={editable ? `עריכת פרטי השחקן ${row.name}` : undefined}
+            sx={sx.avatarEditButton}
+            onClick={event => {
+              event.stopPropagation()
+              onPlayerDetailsEdit?.(row)
+            }}
+          >
+            {row.player?.numShirt ? (
+              <Box sx={sx.avatarNumber}>{row.player.numShirt}</Box>
+            ) : <Box component='img' src={playerImage} alt='' sx={sx.avatar} />}
+          </Box>
           <Box aria-label={getPlayerInterestLabel(getPlayerInterestLevel(row.player))} sx={sx.avatarInterestBadge(getPlayerInterestLevel(row.player))} />
         </Box>
-      ),
+      },
     },
     {
       key: 'name',
@@ -291,5 +290,5 @@ export default function useTeamPositionClassificationColumns({
         </IconButton>
       ),
     },
-  ], [favoritePlayerKeys, onFavoriteToggle, onPlayerOpen, onPlayerRoleEdit, onShirtEdit, canEditShirt, showTooltips, showProfileTooltips, onRowSelect, selectedRowKey])
+  ], [favoritePlayerKeys, onFavoriteToggle, onPlayerOpen, onPlayerRoleEdit, onPlayerDetailsEdit, canEditPlayerDetails, showTooltips, showProfileTooltips, onRowSelect, selectedRowKey])
 }

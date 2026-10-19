@@ -9,7 +9,6 @@ import {
 } from '@mui/joy'
 
 import DrawerShell from '../../../../../ui/patterns/drawer/DrawerShell.js'
-import DrawerHeaderShell from '../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
 import { entitySeasonUrlDrawerSx as sx } from './sx/entitySeasonUrlDrawer.sx.js'
 
 const clean = value => String(value || '').trim()
@@ -48,17 +47,12 @@ export default function PlayerAgentDrawer({
       isDirty={isDirty}
       canSave={canSave}
       sxOverrides={sx.shell}
-      header={(
-        <DrawerHeaderShell
-          title='סוכן ופרטי קשר'
-          titleIconId='phone'
-          entity='player'
-          subline={playerName}
-          chipLabel='מאגר שחקנים'
-          chipIconId='playersDatabase'
-          sxOverrides={sx.header}
-        />
-      )}
+      headerProps={{
+        title: 'סוכן ופרטי קשר',
+        titleIconId: 'phone',
+        subline: playerName,
+        sxOverrides: sx.header,
+      }}
       actions={{
         onSave: () => canSave && onSave(draft),
         onReset: () => setDraft(original),

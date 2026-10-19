@@ -1,5 +1,8 @@
 // src/features/playersDatabase/services/audit/roster/compare.js
 
+import { hasTeamNoteData } from '../../../model/team/teamNotes.model.js'
+import { compareTeamSignalSummaries } from '../signals/compareTeamSignalSummaries.js'
+
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 const object = value => value && typeof value === 'object' && !Array.isArray(value) ? value : {}
 const list = value => Array.isArray(value) ? value : []
@@ -7,6 +10,14 @@ const withoutSyntheticId = value => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return value
   const copy = { ...value }
   delete copy.id
+  return copy
+}
+const comparablePlayerSearchIndex = value => {
+  const copy = withoutSyntheticId(value)
+  if (!copy || !copy.team) return copy
+  copy.team = { ...copy.team }
+  delete copy.team.seasonUrl
+  delete copy.team.teamUrl
   return copy
 }
 const normalizeTime = value => {
@@ -27,7 +38,9 @@ const normalize = value => {
   if (time) return time
   if (Array.isArray(value)) return value.map(normalize)
   if (value && typeof value === 'object') {
-    return Object.keys(value).sort().reduce((result, key) => {
+    return Object.keys(value).filter(key => ![
+      'teamSignalSummary', 'teamTaskSignals', 'teamTaskAvailability',
+    ].includes(key)).sort().reduce((result, key) => {
       result[key] = normalize(value[key])
       return result
     }, {})
@@ -65,7 +78,12 @@ const getClubsCenterTeam = ({ clubsCenter, clubId, teamId }) => {
   return object(object(club).teamsById)[teamId] || null
 }
 
-export const compareRosterAudit = ({ actual = {}, expectedState = {}, approvedState = null } = {}) => {
+export const compareRosterAudit = ({
+  actual = {},
+  expectedState = {},
+  approvedState = null,
+  expectedSignalSummary,
+} = {}) => {
   const findings = []
   const state = object(approvedState)
   const expected = expectedState.expected
@@ -82,8 +100,30 @@ export const compareRosterAudit = ({ actual = {}, expectedState = {}, approvedSt
   }
 
   const canonical = object(expected.canonical)
-  if (canonical.teamRootOperation === 'SET') compareField({ findings, target: 'teamRoot', documentId: state.teamId, field: 'document', expected: canonical.teamRoot, actual: withoutSyntheticId(actual.teamRoot) })
-  if (canonical.teamRootOperation === 'DELETE' && actual.teamRoot) findings.push(finding({ type: 'unexpected_document', target: 'teamRoot', documentId: state.teamId, field: 'document', expected: 'missing', actual: 'present' }))
+  if (canonical.teamRootOperation === 'SET') {
+    compareField({
+      findings,
+      target: 'teamRoot',
+      documentId: state.teamId,
+      field: 'identity',
+      expected: canonical.teamRoot.identity,
+      actual: actual.teamRoot?.identity,
+    })
+    compareField({
+      findings,
+      target: 'teamRoot',
+      documentId: state.teamId,
+      field: `seasonRefsById.${state.seasonId}`,
+      expected: canonical.teamRoot.seasonRefsById?.[state.seasonId] || null,
+      actual: actual.teamRoot?.seasonRefsById?.[state.seasonId] || null,
+    })
+  }
+  if (canonical.teamRootOperation === 'DELETE' && actual.teamRoot && (
+    object(actual.teamRoot.seasonRefsById)[state.seasonId] || (
+      !Object.keys(object(actual.teamRoot.seasonRefsById)).length &&
+      !hasTeamNoteData(actual.teamRoot.notes)
+    )
+  )) findings.push(finding({ type: 'unexpected_document', target: 'teamRoot', documentId: state.teamId, field: 'document', expected: 'missing', actual: 'present' }))
   if (canonical.teamSeasonOperation === 'SET') compareField({ findings, target: 'teamSeason', documentId: state.teamSeasonDocumentId, field: 'document', expected: canonical.teamSeason, actual: withoutSyntheticId(actual.teamSeason) })
   if (canonical.teamSeasonOperation === 'DELETE' && actual.teamSeason) findings.push(finding({ type: 'unexpected_document', target: 'teamSeason', documentId: state.teamSeasonDocumentId, field: 'document', expected: 'missing', actual: 'present' }))
 
@@ -127,7 +167,14 @@ export const compareRosterAudit = ({ actual = {}, expectedState = {}, approvedSt
     if (row.operation === 'REMOVE_TEAM' && current.teamsById && current.teamsById[row.teamId]) findings.push(finding({ target: 'playerSeason', documentId: row.documentId, field: `teamsById.${row.teamId}`, expected: 'missing', actual: 'present' }))
   })
 
-  list(object(expected.playerSearchIndexes).upserts).forEach(row => compareField({ findings, target: 'playerSearchIndex', documentId: row.documentId, field: 'document', expected: row.document, actual: withoutSyntheticId(object(actual.playerSearchIndexes)[row.documentId]) }))
+  list(object(expected.playerSearchIndexes).upserts).forEach(row => compareField({
+    findings,
+    target: 'playerSearchIndex',
+    documentId: row.documentId,
+    field: 'document',
+    expected: comparablePlayerSearchIndex(row.document),
+    actual: comparablePlayerSearchIndex(object(actual.playerSearchIndexes)[row.documentId]),
+  }))
   list(object(expected.playerSearchIndexes).deletes).forEach(documentId => {
     if (object(actual.playerSearchIndexes)[documentId]) findings.push(finding({ type: 'unexpected_document', target: 'playerSearchIndex', documentId, field: 'document', expected: 'missing', actual: 'present' }))
   })
@@ -142,6 +189,12 @@ export const compareRosterAudit = ({ actual = {}, expectedState = {}, approvedSt
   const clubWrite = list(object(expected.clubsCenterProjection).clubWrites)[0] || {}
   const expectedClubsCenterTeam = object(object(clubWrite).upsertTeamsById)[state.teamId] || null
   compareField({ findings, target: 'clubsCenter', documentId: state.seasonId, field: `clubsById.${state.clubId}.teamsById.${state.teamId}`, expected: expectedClubsCenterTeam, actual: clubsCenterTeam })
+
+  findings.push(...compareTeamSignalSummaries({
+    teamId: state.teamId, clubId: state.clubId, seasonId: state.seasonId,
+    leagueTeam, teamSeason: actual.teamSeason, leaguesCenterTeam, clubsCenterTeam,
+    expectedSummary: expectedSignalSummary,
+  }))
 
   return findings
 }

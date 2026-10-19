@@ -233,6 +233,7 @@ const subscribePlayerDocument = ({
     feature: 'playersDatabase',
     action,
     listenerId,
+    meta: { documentPath: `${collectionName}/${documentId}` },
   }
   trackFirestoreListenerOpen(usage)
   const unsubscribe = onSnapshot(

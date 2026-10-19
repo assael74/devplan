@@ -1,6 +1,7 @@
 // src/services/firestore/subscriptions/firestoreSubscriptions.js
 
 import { onSnapshot } from 'firebase/firestore'
+import { estimatePayloadKb } from '../usage/firestoreUsage.size.js'
 import {
   getCollectionNameFromRef,
   trackFirestoreListenerClose,
@@ -133,6 +134,10 @@ const trackQuerySnapshot = ({ entry, snapshot }) => {
     listenerId: entry.listenerId,
     listenerPhase: entry.hasInitialSnapshot ? 'update' : 'initial',
     docs: changedDocs,
+    documents: (entry.hasInitialSnapshot
+      ? snapshot.docChanges().map(change => change.doc)
+      : snapshot.docs
+    ).map(item => ({ path: item.ref?.path, estimatedKb: estimatePayloadKb(item.data()) })),
     docsCount: changedDocs.length,
     readsCount: fromCache ? 0 : changedDocs.length,
     fromCache,

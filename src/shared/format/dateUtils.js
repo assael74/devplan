@@ -64,6 +64,36 @@ export function getFullDateTimeIl(dateObject) {
   return `${parts.day}.${parts.month}.${parts.year} · ${parts.hour}:${parts.minute}`
 }
 
+const loadAgeFormatter = new Intl.RelativeTimeFormat('he', { numeric: 'auto' })
+
+export function getLoadTimeParts(value, now = Date.now()) {
+  const empty = { dateLabel: '', ageLabel: '' }
+  if (!value) return empty
+
+  const normalized = typeof value?.toDate === 'function'
+    ? value.toDate()
+    : Number.isFinite(Number(value?.seconds))
+      ? Number(value.seconds) * 1000
+      : value
+  const date = new Date(normalized)
+  if (Number.isNaN(date.getTime())) return empty
+
+  const minutes = Math.max(0, Math.floor((now - date.getTime()) / 60000))
+  let ageLabel = 'הרגע'
+  if (minutes >= 525600) ageLabel = loadAgeFormatter.format(-Math.floor(minutes / 525600), 'year')
+  else if (minutes >= 43200) ageLabel = loadAgeFormatter.format(-Math.floor(minutes / 43200), 'month')
+  else if (minutes >= 1440) ageLabel = loadAgeFormatter.format(-Math.floor(minutes / 1440), 'day')
+  else if (minutes >= 60) ageLabel = loadAgeFormatter.format(-Math.floor(minutes / 60), 'hour')
+  else if (minutes >= 1) ageLabel = loadAgeFormatter.format(-minutes, 'minute')
+
+  return { dateLabel: getFullDateIl(date), ageLabel }
+}
+
+export function formatLoadTime(value, now = Date.now()) {
+  const { dateLabel, ageLabel } = getLoadTimeParts(value, now)
+  return dateLabel ? `${dateLabel} · ${ageLabel}` : ''
+}
+
 export function getDayName(dateStr, isMobile) {
   const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת']
   const daysLetter = ["א׳","ב׳","ג׳","ד׳","ה׳","ו׳","ש׳"]

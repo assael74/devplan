@@ -23,6 +23,7 @@ const canonicalWriters = [
   'services/write/club/edits/updateClubUrl.js',
   'services/write/league/edits/updateLeagueCompetitionRules.js',
   'services/write/league/edits/updateLeagueSeasonUrl.js',
+  'services/write/league/edits/updateLeagueSeasonSettings.js',
   'services/write/league/edits/updateTeamSeasonUrl.js',
   'services/write/player/edits/updatePlayerRootManual.js',
   'services/write/roster/edits/updatePlayerSeasonManual.js',

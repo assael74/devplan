@@ -42,6 +42,11 @@
       "indexes": []
     },
     {
+      "collectionGroup": "dbBirthTeamSeasons",
+      "fieldPath": "teamSignalSummary",
+      "indexes": []
+    },
+    {
       "collectionGroup": "dbBirthTeams",
       "fieldPath": "seasonRefsById",
       "indexes": []

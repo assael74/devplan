@@ -69,6 +69,7 @@ export const entitySeasonUrlDrawerSx = {
       display: 'grid',
       placeItems: 'center',
       color: '#FFFFFF',
+      '& svg': { color: '#FFFFFF', fill: '#FFFFFF' },
       bgcolor: 'rgba(47, 134, 199, 0.18)',
       border: '1px solid rgba(255, 255, 255, 0.18)',
       flexShrink: 0,
@@ -98,6 +99,10 @@ export const entitySeasonUrlDrawerSx = {
     },
     close: {
       color: '#FFFFFF',
+      opacity: 1,
+      '--Icon-color': '#FFFFFF',
+      '--variant-plainColor': '#FFFFFF',
+      '& svg': { color: '#FFFFFF', fill: '#FFFFFF' },
       borderRadius: '8px',
 
       '&:hover': {

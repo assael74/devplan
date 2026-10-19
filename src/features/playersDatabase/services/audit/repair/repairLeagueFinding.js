@@ -12,6 +12,7 @@ import { readLeagueMutationSources } from '../../write/league/readLeagueWriteSou
 import { writeClubsCenter } from '../../write/league/writeClubsCenter.js'
 import { writeLeaguesCenter } from '../../write/league/writeLeaguesCenter.js'
 import { writeTeamSeasonCompetitionSnapshots } from '../../write/league/writeTeamSeasonCompetitionSnapshots.js'
+import { refreshTeamSignalSummaries } from '../../write/signals/refreshTeamSignalSummaries.js'
 import { readClubProfiles } from '../league/readActual.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
@@ -60,6 +61,7 @@ const buildLeaguesCenterRepair = ({
   league,
   season,
   teamSeasonsByTeamId,
+  previousLeaguesCenterTeamsById = {},
   updatedAt,
 }) => ({
   leaguesCenterProjection: {
@@ -68,10 +70,13 @@ const buildLeaguesCenterRepair = ({
     leagueId,
     seasonId,
     identity: buildLeaguesCenterIdentity(league),
+    deleteTeamIds: Object.keys(previousLeaguesCenterTeamsById).filter(teamId => (
+      !object(season.table?.teamsById)[teamId]
+    )),
     season: buildLeaguesCenterSeason({
       season,
       teamSeasonsByTeamId,
-      previousLeaguesCenterTeamsById: {},
+      previousLeaguesCenterTeamsById,
       updatedAt,
     }),
     updatedAt,
@@ -150,6 +155,7 @@ export const repairLeagueFinding = async ({ scope = {}, finding = {} } = {}) => 
       league,
       season,
       teamSeasonsByTeamId,
+      previousLeaguesCenterTeamsById: sources.previousLeaguesCenterTeamsById,
       updatedAt,
     })
   } else {
@@ -167,5 +173,12 @@ export const repairLeagueFinding = async ({ scope = {}, finding = {} } = {}) => 
   const writeState = isSnapshot
     ? narrowSnapshotRepair({ approvedState, documentId })
     : approvedState
-  return writer({ approvedState: writeState })
+  const result = await writer({ approvedState: writeState })
+  if (target === 'leaguesCenter' && season) {
+    const clubIds = Array.from(new Set(
+      Object.values(teamsById).map(team => clean(team.clubId)).filter(Boolean)
+    ))
+    if (clubIds.length > 0) await refreshTeamSignalSummaries({ clubIds })
+  }
+  return result
 }

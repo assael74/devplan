@@ -19,7 +19,9 @@ export const writeRosterLeaguesCenter = async ({ approvedState = {} } = {}) => {
     throw new Error('Invalid approved LeaguesCenter roster projection')
   }
 
-  const teamPath = new FieldPath('leaguesById', leagueId, 'seasonsById', seasonId, 'teamsById', teamId)
+  const teamPaths = Object.keys(team).map(field => new FieldPath(
+    'leaguesById', leagueId, 'seasonsById', seasonId, 'teamsById', teamId, field
+  ))
   await setDoc(doc(db, PLAYERS_DATABASE_COLLECTIONS.leaguesCenter, 'all'), {
     leaguesById: {
       [leagueId]: {
@@ -33,7 +35,7 @@ export const writeRosterLeaguesCenter = async ({ approvedState = {} } = {}) => {
       },
     },
     updatedAt: target.updatedAt || null,
-  }, { mergeFields: [teamPath, 'updatedAt'] })
+  }, { mergeFields: [...teamPaths, 'updatedAt'] })
 
   return { written: true, skipped: false, leagueId, seasonId, teamId }
 }

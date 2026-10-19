@@ -274,7 +274,10 @@ test('League URL and rules edits preserve official table and unrelated season fi
     seasonId: '2026_2027',
     seasonUrl: 'https://new.test/league',
   })
-  const urlSeason = patchFor(urlResult, 'leagues/league-a')['seasonsById.2026_2027']
+  const urlSeason = applyPatch(
+    { seasonsById: { '2026_2027': leagueSeason } },
+    patchFor(urlResult, 'leagues/league-a'),
+  ).seasonsById['2026_2027']
 
   expect(urlSeason).toEqual(expect.objectContaining({
     seasonUrl: 'https://new.test/league',
@@ -293,17 +296,22 @@ test('League URL and rules edits preserve official table and unrelated season fi
     seasonId: '2026_2027',
     competitionRules: rules,
   })
-  const rulesSeason = patchFor(rulesResult, 'leagues/league-a')['seasonsById.2026_2027']
-  const rulesCenter = patchFor(rulesResult, 'leaguesCenter/all')
-    ['leaguesById.league-a.seasonsById.2026_2027']
+  const rulesSeason = applyPatch(
+    { seasonsById: { '2026_2027': leagueSeason } },
+    patchFor(rulesResult, 'leagues/league-a'),
+  ).seasonsById['2026_2027']
+  const rulesCenter = applyPatch(
+    { leaguesById: { 'league-a': { seasonsById: { '2026_2027': centerSeason } } } },
+    patchFor(rulesResult, 'leaguesCenter/all'),
+  ).leaguesById['league-a'].seasonsById['2026_2027']
 
-  expect(rulesSeason.table).toBe(leagueSeason.table)
-  expect(rulesSeason.performanceCalculation).toBe(leagueSeason.performanceCalculation)
-  expect(rulesCenter.teamsById).toBe(centerSeason.teamsById)
+  expect(rulesSeason.table).toEqual(leagueSeason.table)
+  expect(rulesSeason.performanceCalculation).toEqual(leagueSeason.performanceCalculation)
+  expect(rulesCenter.teamsById).toEqual(centerSeason.teamsById)
   expect(rulesCenter.hasCompetitionRules).toBe(true)
 })
 
-test('Team URL edit preserves League performance, Team Season state and SearchIndex fields', async () => {
+test('Team URL edit touches only League and existing Team Season, preserving all SearchIndexes', async () => {
   const indexRef = { path: 'playerSearchIndexes/index-a' }
   mockIndexRefs.push(indexRef)
   mockSnapshots['leagues/league-a'] = snapshot({
@@ -378,11 +386,49 @@ test('Team URL edit preserves League performance, Team Season state and SearchIn
     officialTable: { rank: 1 },
     clubLevel: 2,
   }))
-  expect(indexPatch.team).toEqual(expect.objectContaining({
-    teamUrl: 'https://new.test/team',
-    name: 'Team A',
-    officialTable: { rank: 1 },
-  }))
+  expect(indexPatch).toBeUndefined()
+  expect(readManualEditRefs).not.toHaveBeenCalled()
+  expect(result.refs.map(ref => ref.path)).toEqual([
+    'leagues/league-a', 'teamSeasons/club-a_2011_1__2026_2027',
+  ])
+  expect(result.changes.map(change => change.ref.path)).toEqual([
+    'leagues/league-a', 'teamSeasons/club-a_2011_1__2026_2027',
+  ])
+  expect(mockSnapshots[indexRef.path].data().team.teamUrl).toBe('https://old.test/team')
+  expect(executeManualEdit.mock.calls[0][0].refreshSignals).not.toBe(true)
+})
+
+test.each([
+  ['missing Team Season', false, 'https://new.test/team', 1],
+  ['removing the URL', true, '', 2],
+  ['unchanged URL with stale indexes', true, 'https://old.test/team', 0],
+])('Team URL handles %s without reading indexes or creating a Team Season', async (label, exists, url, count) => {
+  mockSnapshots['leagues/league-a'] = snapshot({
+    leagueId: 'league-a',
+    seasonsById: { '2026_2027': {
+      table: { teamsById: { 'team-a': { teamUrl: 'https://old.test/team' } } },
+    } },
+  })
+  mockSnapshots['teamSeasons/team-a__2026_2027'] = snapshot({
+    identity: {
+      teamId: 'team-a', seasonId: '2026_2027',
+      teamSeasonDocumentId: 'team-a__2026_2027', leagueId: 'league-a',
+    },
+    competitionSnapshot: { teamUrl: 'https://old.test/team' },
+  }, exists)
+  mockIndexRefs.push({ path: 'playerSearchIndexes/stale-index' })
+  const result = await updateTeamSeasonUrl({
+    leagueId: 'league-a', teamId: 'team-a', teamSeasonDocumentId: 'team-a__2026_2027',
+    seasonId: '2026_2027', teamUrl: url,
+  })
+  expect(readManualEditRefs).not.toHaveBeenCalled()
+  expect(result.refs.map(ref => ref.path)).toEqual([
+    'leagues/league-a', 'teamSeasons/team-a__2026_2027',
+  ])
+  expect(result.changes).toHaveLength(count)
+  expect(result.changes.every(change => change.patch && !change.document)).toBe(true)
+  if (!exists) expect(patchFor(result, 'teamSeasons/team-a__2026_2027')).toBeUndefined()
+  expect(executeManualEdit.mock.calls[0][0].refreshSignals).not.toBe(true)
 })
 
 test('Team URL edit rejects a mismatched season document id', async () => {
@@ -673,9 +719,53 @@ test('Player role edit rebuilds classification, Team Balance and Player Season p
   expect(teamSeasonPatch[`stats.playersById.${playerId}`].lineClassification.line).toBe('')
   expect(teamSeasonPatch['stats.teamBalance'].lineStructure.goalkeeperPlayersCount).toBe(1)
   expect(playerSeasonPatch[`teamsById.${teamId}`].stats.lineClassification.line).toBe('')
-  expect(patchFor(result, 'leagues/league-a')[
-    `seasonsById.${seasonId}.table.teamsById.${teamId}.scouting.teamTaskSignals`
-  ]).toEqual({ offense: true, defense: true, updatedAt: 'updated-time' })
+  expect(patchFor(result, 'leagues/league-a')).toBeUndefined()
+  expect(teamSeasonPatch).not.toHaveProperty('teamTaskSignals')
+  expect(teamSeasonPatch).not.toHaveProperty('teamTaskAvailability')
+})
+
+test('Role and season details edit writes each target once and preserves season context', async () => {
+  const { playerId, seasonId, playerSeasonDocumentId } = seedRoleProjectionSources()
+  const teamId = 'team-a'
+  const teamSeasonDocumentId = `${teamId}__${seasonId}`
+  const indexPath = `playerSearchIndexes/playerSeason__${playerId}__${teamSeasonDocumentId}`
+  const index = mockSnapshots['playerSearchIndexes/team-a-role'].data()
+  mockIndexRefs[0] = { path: indexPath }
+  mockSnapshots[indexPath] = snapshot({ ...index, seasonId, player: { ...index.player, playerUrl: '' } })
+  const teamSeasonPath = `teamSeasons/${teamSeasonDocumentId}`
+  const teamSeason = mockSnapshots[teamSeasonPath].data()
+  teamSeason.stats.statsLoadState = { status: 'loaded' }
+  const playerSeasonPath = `playerSeasons/${playerSeasonDocumentId}`
+  const playerSeason = mockSnapshots[playerSeasonPath].data()
+  playerSeason.teamsById[teamId].roster = { numShirt: null, note: 'keep roster' }
+
+  const result = await updatePlayerRole({
+    playerId,
+    primaryPosition: 'DM',
+    positionLayer: 'midfield',
+    seasonDetails: {
+      teamId,
+      seasonId,
+      teamSeasonDocumentId,
+      numShirt: '17',
+      playerUrl: 'https://example.com/player',
+    },
+  })
+
+  expect(result.changes.filter(change => change.ref.path === teamSeasonPath)).toHaveLength(1)
+  expect(result.changes.filter(change => change.ref.path === playerSeasonPath)).toHaveLength(1)
+  expect(result.changes.filter(change => change.ref.path === indexPath)).toHaveLength(1)
+  const teamPatch = patchFor(result, teamSeasonPath)
+  expect(teamPatch[`roster.playersById.${playerId}.numShirt`]).toBe(17)
+  expect(teamPatch[`manual.playersById.${playerId}.playerUrl`]).toBe('https://example.com/player')
+  const seasonPatch = patchFor(result, playerSeasonPath)
+  expect(seasonPatch[`teamsById.${teamId}`].roster).toEqual({ numShirt: 17, note: 'keep roster' })
+  expect(seasonPatch[`teamsById.${teamId}`].manual).toEqual({
+    playerUrl: 'https://example.com/player', note: 'keep manual',
+  })
+  expect(patchFor(result, indexPath).player).toEqual(expect.objectContaining({
+    primaryPosition: 'DM', numShirt: '17', playerUrl: 'https://example.com/player',
+  }))
 })
 
 test('Role edit propagates canonical scouting without loaded Stats and preserves source evidence', async () => {
@@ -713,7 +803,7 @@ test('Role edit propagates canonical scouting without loaded Stats and preserves
   expect(patchFor(result, 'playerSearchIndexes/team-a-role')).not.toHaveProperty('scoutEvidence')
 })
 
-test('Role edit syncs changed task flags and their timestamp to both Centers without touching adjacent fields', async () => {
+test('Role edit preserves retired task fields and leaves Centers to the shared summary refresh', async () => {
   const { playerId, seasonId, leagueId } = seedRoleProjectionSources()
   const result = await updatePlayerRole({
     playerId,
@@ -729,7 +819,7 @@ test('Role edit syncs changed task flags and their timestamp to both Centers wit
   const leagueTeam = leaguesCenter.leaguesById[leagueId].seasonsById[seasonId].teamsById['team-a']
   const clubTeam = clubsCenter.clubsById['club-0'].teamsById['team-a']
 
-  expect(expected).toEqual({ offense: true, defense: true, updatedAt: 'updated-time' })
+  expect(expected).toEqual({ offense: false, defense: false, updatedAt: 'old-time' })
   expect(leagueTeam.teamTaskSignals).toEqual(expected)
   expect(clubTeam.teamTaskSignals).toEqual(expected)
   const centerTeams = [leagueTeam, clubTeam]
@@ -744,12 +834,11 @@ test('Role edit syncs changed task flags and their timestamp to both Centers wit
     `playerRoots/${playerId}`,
     `teamSeasons/team-a__${seasonId}`,
     `playerSeasons/playerSeason__${playerId}__${seasonId}`,
-    'leaguesCenter/all',
-    clubsCenterPath,
+    `leagues/${leagueId}`,
   ]))
 })
 
-test('Role edit combines two team updates into each shared Center and Player Season', async () => {
+test('Role edit updates Player Season once without rewriting retired Center flags', async () => {
   const teamIds = ['team-a', 'team-b']
   const { playerId, seasonId, leagueId, playerSeasonDocumentId, playerSeason } = seedRoleProjectionSources({ teamIds })
   const result = await updatePlayerRole({
@@ -759,7 +848,7 @@ test('Role edit combines two team updates into each shared Center and Player Sea
   })
   const paths = ['leaguesCenter/all', `clubsCenter/${seasonId}`, `playerSeasons/${playerSeasonDocumentId}`]
   paths.forEach(path => {
-    expect(result.changes.filter(change => change.ref.path === path)).toHaveLength(1)
+    expect(result.changes.filter(change => change.ref.path === path)).toHaveLength(path.startsWith('playerSeasons/') ? 1 : 0)
   })
   const leaguesCenter = applyPatch(mockSnapshots[paths[0]].data(), patchFor(result, paths[0]))
   const clubsCenter = applyPatch(mockSnapshots[paths[1]].data(), patchFor(result, paths[1]))
@@ -767,7 +856,7 @@ test('Role edit combines two team updates into each shared Center and Player Sea
   teamIds.forEach((teamId, index) => {
     const leagueSignals = leaguesCenter.leaguesById[leagueId].seasonsById[seasonId].teamsById[teamId].teamTaskSignals
     const clubSignals = clubsCenter.clubsById[`club-${index}`].teamsById[teamId].teamTaskSignals
-    expect(leagueSignals).toEqual({ offense: true, defense: true, updatedAt: 'updated-time' })
+    expect(leagueSignals).toEqual({ offense: false, defense: false, updatedAt: 'old-time' })
     expect(clubSignals).toEqual(leagueSignals)
     expect(nextPlayerSeason.teamsById[teamId].scouting.updatedAt).toBe('updated-time')
     expect(nextPlayerSeason.teamsById[teamId].stats.custom).toBe('keep stats')
@@ -776,7 +865,7 @@ test('Role edit combines two team updates into each shared Center and Player Sea
   expect(nextPlayerSeason.teamsById.unrelated).toEqual(playerSeason.teamsById.unrelated)
 })
 
-test('Re-saving the same role keeps timestamp-only task and scouting updates aligned', async () => {
+test('Re-saving the same role retains retired task timestamps and refreshes scouting', async () => {
   const { playerId, seasonId, leagueId, playerSeasonDocumentId } = seedRoleProjectionSources()
   const oldSignals = { offense: true, defense: true, updatedAt: 'old-time' }
   mockSnapshots[`leagues/${leagueId}`].data().seasonsById[seasonId].table.teamsById['team-a']
@@ -790,7 +879,7 @@ test('Re-saving the same role keeps timestamp-only task and scouting updates ali
     primaryPosition: 'CB',
     positionLayer: 'defense',
   })
-  const expected = { ...oldSignals, updatedAt: 'updated-time' }
+  const expected = oldSignals
   const leaguesCenter = applyPatch(mockSnapshots['leaguesCenter/all'].data(), patchFor(result, 'leaguesCenter/all'))
   const clubsCenterPath = `clubsCenter/${seasonId}`
   const clubsCenter = applyPatch(mockSnapshots[clubsCenterPath].data(), patchFor(result, clubsCenterPath))
@@ -804,7 +893,7 @@ test('Re-saving the same role keeps timestamp-only task and scouting updates ali
   expect(playerSeason.teamsById['team-a'].scouting.evidence.capturedAt).toBe('source-evidence-time')
 })
 
-test.each(['leaguesCenter', 'clubsCenter'])('Role edit rejects a missing %s team before completing the write plan', async target => {
+test.each(['leaguesCenter', 'clubsCenter'])('Role edit does not depend on a legacy %s team when building its canonical patch', async target => {
   const { playerId, seasonId, leagueId } = seedRoleProjectionSources()
   if (target === 'leaguesCenter') {
     delete mockSnapshots['leaguesCenter/all'].data().leaguesById[leagueId].seasonsById[seasonId].teamsById['team-a']
@@ -814,11 +903,13 @@ test.each(['leaguesCenter', 'clubsCenter'])('Role edit rejects a missing %s team
   const before = Object.fromEntries(Object.entries(mockSnapshots).map(([path, value]) => [path, value.data()]))
   const serializedBefore = JSON.stringify(before)
 
-  await expect(updatePlayerRole({
+  const result = await updatePlayerRole({
     playerId,
     primaryPosition: 'GK',
     positionLayer: 'goalkeeper',
-  })).rejects.toThrow()
+  })
+  expect(executeManualEdit).toHaveBeenCalledWith(expect.objectContaining({ refreshSignals: true }))
+  expect(result.changes.some(change => change.ref.path.startsWith('teamSeasons/'))).toBe(true)
 
   expect(executeManualEdit).toHaveBeenCalledTimes(1)
   const after = Object.fromEntries(Object.entries(mockSnapshots).map(([path, value]) => [path, value.data()]))

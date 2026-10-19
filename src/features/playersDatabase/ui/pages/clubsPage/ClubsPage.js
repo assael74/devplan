@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
+import { hasActiveTeamSignals } from '../../../domain/signals/teamSignalSummary.js'
 
 import PlayersDatabaseLayout from '../../layout/PlayersDatabaseLayout.js'
 import PageContentPanel from '../../components/page/PageContentPanel.js'
@@ -210,7 +211,7 @@ export default function ClubsPage() {
             >
               <ClubsCollection
                 groups={onlyClubsWithSignals
-                  ? model.groups.filter(group => group.intelligence?.spotlights?.length)
+                  ? model.groups.filter(group => hasActiveTeamSignals(group.summaryModel?.teamSignalSummary))
                   : model.groups}
                 loading={model.loading}
                 error={model.error}

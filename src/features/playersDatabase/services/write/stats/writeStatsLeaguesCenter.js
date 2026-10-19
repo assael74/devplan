@@ -39,7 +39,6 @@ export const writeStatsLeaguesCenter = async ({ approvedState = {} } = {}) => {
       mergeFields: [
         teamPath('documentationState'),
         teamPath('documentationStateUpdatedAt'),
-        teamPath('teamTaskSignals'),
         seasonPath('updatedAt'),
         'updatedAt',
       ],

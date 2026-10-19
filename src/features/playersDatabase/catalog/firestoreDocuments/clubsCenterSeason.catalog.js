@@ -1,6 +1,8 @@
 // src/features/playersDatabase/catalog/firestoreDocuments/clubsCenterSeason.catalog.js
 // Canonical document contract.
 
+import { TEAM_SIGNAL_SUMMARY_SCHEMA } from '../teamSignalSummary.catalog.js'
+
 export const CLUBS_CENTER_SEASON_DOCUMENT = {
   collection: 'dbClubsCenter',
   documentId: '{seasonId}',
@@ -30,6 +32,8 @@ export const CLUBS_CENTER_SEASON_DOCUMENT = {
       teamsById: {
         '<teamId>': {
           teamSeasonDocumentId: '',
+          showInvestigationIndicator: false,
+          teamSignalSummary: TEAM_SIGNAL_SUMMARY_SCHEMA,
 
           birthYear: null,
           ageGroupId: '',
@@ -40,11 +44,6 @@ export const CLUBS_CENTER_SEASON_DOCUMENT = {
           documentationState: 'NO_ROSTER',
           documentationStateUpdatedAt: null,
 
-          teamTaskSignals: {
-            offense: false,
-            defense: false,
-            updatedAt: null,
-          },
 
           // Compact official League snapshot for club-level scanning.
           performance: {
@@ -113,7 +112,8 @@ export const CLUBS_CENTER_SEASON_DOCUMENT = {
   rebuildSources: [
     'ClubProfile provides club display identity, clubLevel and clubStrengthLevel.',
     'League provides league metadata, official table facts, tableImportedAt and team-to-league registry.',
-    'Team Season provides documentation state inputs, teamTaskSignals, pending roster state and canonical movement maps.',
+    'Team Season provides documentation state inputs, pending roster state and canonical movement maps.',
+    'Team Root.notes.showInvestigationIndicator provides only the investigation indicator.',
   ],
 
   documentationStateRules: [
@@ -136,7 +136,7 @@ export const CLUBS_CENTER_SEASON_DOCUMENT = {
     'This document is a season projection and never a canonical Club, League, Team or Movement source.',
     'Update one clubsById.{clubId}.teamsById.{teamId} path directly whenever possible.',
     'Do not read-modify-write the full clubsById map for one affected team.',
-    'The projection is fully rebuildable from ClubProfile, League and Team Season documents.',
+    'The projection is fully rebuildable from ClubProfile, League, Team Season and Team Root documents.',
     'A retry rebuilds the affected transfer summary from canonical Team Season state instead of incrementing counters.',
   ],
 
@@ -151,6 +151,7 @@ export const CLUBS_CENTER_SEASON_DOCUMENT = {
     'seasonKey is display/business data and never participates in the document id.',
     'seasonStatus belongs to leaguesById because leagues in one technical season may have different lifecycle states.',
     'teamSlot is the canonical field name; slot is not used.',
+    'showInvestigationIndicator is a boolean projection; notebook content stays in Team Root.',
     'teamGamePlayed is the canonical compact games-played field name in this projection.',
     'clubId and teamId are map keys and are not duplicated inside their respective values.',
     'League display metadata is stored once in leaguesById rather than repeated per team.',

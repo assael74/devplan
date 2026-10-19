@@ -14,7 +14,7 @@ import {
 } from '../../../../../services/firestore/usage/index.js'
 import { PLAYERS_DATABASE_COLLECTIONS } from '../../../constants/pdb.constants.js'
 import { requireSeasonId } from '../../../domain/identity/index.js'
-import { requireLeagueId } from '../../../domain/league/leagueIdentity.js'
+import { requireLeagueId, resolveLeagueTeamId } from '../../../domain/league/leagueIdentity.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 
@@ -141,6 +141,19 @@ const collectLoadClubIds = rows => Array.from(new Set(
   rows.map(row => clean(row && row.clubId)).filter(Boolean)
 ))
 
+const readInvestigationIndicators = async ({ rows, birthYear }) => {
+  const teamIds = [...new Set(rows.map(row => resolveLeagueTeamId({ row, birthYear })))]
+  const roots = await Promise.all(teamIds.map(teamId => readDocument({
+    collectionName: PLAYERS_DATABASE_COLLECTIONS.teamRoots,
+    documentId: teamId,
+    action: 'write-league-prepare-read-team-indicator',
+  })))
+  return Object.fromEntries(teamIds.map((teamId, index) => [
+    teamId,
+    roots[index]?.notes?.showInvestigationIndicator === true,
+  ]))
+}
+
 export const readLeagueLoadSources = async ({ league = {}, season = {}, rows = [] } = {}) => {
   const leagueId = requireLeagueId(league.leagueId)
   const seasonId = requireSeasonId(season.seasonId)
@@ -154,6 +167,7 @@ export const readLeagueLoadSources = async ({ league = {}, season = {}, rows = [
     leaguesCenter,
     clubsCenter,
     otherLeagueIdsByTeamId,
+    investigationByTeamId,
   ] = await Promise.all([
     readLeague({ leagueId }),
     readClubProfiles({ clubIds }),
@@ -161,6 +175,7 @@ export const readLeagueLoadSources = async ({ league = {}, season = {}, rows = [
     readLeaguesCenter(),
     readClubsCenter({ seasonId }),
     readOtherLeagueTeamOwners({ leagueId, seasonId }),
+    readInvestigationIndicators({ rows, birthYear: season.birthYear }),
   ])
 
   return {
@@ -170,6 +185,7 @@ export const readLeagueLoadSources = async ({ league = {}, season = {}, rows = [
     clubProfilesById,
     existingTeamSeasons,
     otherLeagueIdsByTeamId,
+    investigationByTeamId,
     previousLeaguesCenterTeamsById: readPreviousLeaguesCenterTeams({
       leaguesCenter,
       leagueId,
@@ -190,6 +206,7 @@ export const readLeagueMutationSources = async ({ leagueId = '', seasonId = '' }
     existingTeamSeasons,
     clubsCenter,
     otherLeagueIdsByTeamId,
+    leaguesCenter,
   ] = await Promise.all([
     readLeague({ leagueId: resolvedLeagueId }),
     readTeamSeasons({
@@ -201,6 +218,7 @@ export const readLeagueMutationSources = async ({ leagueId = '', seasonId = '' }
       leagueId: resolvedLeagueId,
       seasonId: resolvedSeasonId,
     }),
+    readLeaguesCenter(),
   ])
 
   return {
@@ -209,6 +227,11 @@ export const readLeagueMutationSources = async ({ leagueId = '', seasonId = '' }
     existingLeague,
     existingTeamSeasons,
     otherLeagueIdsByTeamId,
+    previousLeaguesCenterTeamsById: readPreviousLeaguesCenterTeams({
+      leaguesCenter,
+      leagueId: resolvedLeagueId,
+      seasonId: resolvedSeasonId,
+    }),
     previousClubsCenterTeamLocations: readPreviousClubsCenterTeamLocations({
       clubsCenter,
       leagueId: resolvedLeagueId,

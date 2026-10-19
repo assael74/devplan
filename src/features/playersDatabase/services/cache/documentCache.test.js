@@ -34,6 +34,25 @@ test('deduplicates concurrent reads for the same key', async () => {
   expect(read).toHaveBeenCalledTimes(1)
 })
 
+test('a live center snapshot does not cancel parallel reads of other documents', async () => {
+  const keys = ['leaguesCenter:all', 'league:1', 'team:1']
+  const resolveByKey = {}
+  const readers = keys.map(key => jest.fn(() => new Promise(resolve => {
+    resolveByKey[key] = resolve
+  })))
+  const requests = keys.map((key, index) => readWithDocumentCache({ key, read: readers[index] }))
+  const duplicateLeagueRead = readWithDocumentCache({ key: 'league:1', read: readers[1] })
+  await Promise.resolve()
+
+  setDocumentCacheValue({ key: keys[0], value: { version: 3 } })
+  keys.forEach(key => resolveByKey[key]({ version: 2 }))
+  await Promise.all([...requests, duplicateLeagueRead])
+
+  expect(readers.map(read => read.mock.calls.length)).toEqual([1, 1, 1])
+  expect(keys.map(key => getDocumentStoreSnapshot(key).data.version)).toEqual([3, 2, 2])
+  expect(keys.map(key => getDocumentStoreSnapshot(key).status)).toEqual(['ready', 'ready', 'ready'])
+})
+
 test('invalidation during an active request prevents the stale result from repopulating cache', async () => {
   let resolveRead
   const read = jest.fn(() => new Promise(resolve => { resolveRead = resolve }))
@@ -187,6 +206,43 @@ test('authoritative write-through prevents an older pending read from overwritin
     name: 'After write',
   })
 })
+
+test.each(['read', 'refresh', 'failed refresh'])(
+  'a live snapshot remains authoritative over an older pending %s',
+  async mode => {
+    const key = 'leaguesCenter:all'
+    let resolveRead
+    let rejectRead
+    const read = () => new Promise((resolve, reject) => {
+      resolveRead = resolve
+      rejectRead = reject
+    })
+    if (mode !== 'read') {
+      setDocumentCacheValue({ key, value: { version: 1 } })
+    }
+    const reader = mode === 'read' ? readWithDocumentCache : refreshWithDocumentCache
+    const pending = reader({ key, read })
+    await Promise.resolve()
+
+    setDocumentCacheValue({ key, value: { version: 3 } })
+    if (mode === 'failed refresh') {
+      rejectRead(new Error('old request failed'))
+    } else {
+      resolveRead({ version: 2 })
+    }
+    const result = await pending.catch(error => error)
+    expect(result).toEqual(mode === 'failed refresh'
+      ? new Error('old request failed')
+      : { version: 2 })
+
+    expect(getDocumentStoreSnapshot(key)).toMatchObject({
+      data: { version: 3 },
+      status: 'ready',
+      error: null,
+      refreshError: null,
+    })
+  }
+)
 
 
 test('authoritative write-through cancellation leaves an empty key idle and ignores the stale read result', async () => {

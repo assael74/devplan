@@ -1,83 +1,117 @@
 // src/features/playersDatabase/ui/pages/teamPage/notes/useTeamNotebookDraft.js
 
 import * as React from 'react'
-import {
-  createFindingDraft,
-  createNotebookView,
-  EMPTY_FILTERS,
-  filterNotebookFindings,
-} from './model/teamNotebook.ui.js'
+import { TEAM_NOTE_SECTION_IDS } from '../../../../model/team/teamNotes.model.js'
+import { mentionContentText, mentionIds, normalizeMentionContent } from '../../../../../../ui/patterns/mentions/mentionContent.model.js'
+import { TEAM_INSIGHTS } from '../information/model/teamWorkspace.navigation.js'
+import { PLAYERS_DATABASE_UI_ROUTES } from '../../../logic/routeBuilders.js'
 
-// Ephemeral UI state. No persistence, save callbacks, effects, subscriptions or browser storage.
-// The parent mounts a new session on every opening and when teamId changes.
-export default function useTeamNotebookDraft({ notes, playerOptions, initialInsightId, initialSeasonId }) {
-  const [original] = React.useState(() => createNotebookView(notes))
-  const [findings, setFindings] = React.useState(original.findings)
-  const [generalText, setGeneralText] = React.useState(original.generalText)
-  const [tab, setTab] = React.useState('findings')
-  const [selectedId, setSelectedId] = React.useState('')
-  const [navigationIds, setNavigationIds] = React.useState([])
-  const [filters, setFilters] = React.useState({ ...EMPTY_FILTERS })
-  const [showExtraFilters, setShowExtraFilters] = React.useState(false)
+const routeLabels = [
+  'מסלול ביצוע',
+  'מסלול איזון',
+  'תנועת שנתון',
+  'שינוי בצפי תחרות',
+  'השנתון בתוך המועדון',
+]
+
+export const NOTEBOOK_STEPS = Object.freeze([
+  ...TEAM_INSIGHTS.map((route, index) => ({
+    id: route.id,
+    label: routeLabels[index],
+    title: route.title,
+  })),
+  { id: 'general', label: 'הערות כלליות', title: 'הערות כלליות' },
+  { id: 'summary', label: 'סיכום', title: 'סיכום המחברת' },
+])
+
+const editableSteps = NOTEBOOK_STEPS.filter(step => TEAM_NOTE_SECTION_IDS.includes(step.id))
+const initialIndicator = notes => Boolean(notes && typeof notes === 'object' && notes.showInvestigationIndicator === true)
+const initialContents = (notes, mentionOptions, teamId) => {
+  const source = notes && typeof notes === 'object' ? notes : {}
+  const generalText = typeof notes === 'string' ? notes : source.generalText
+  const mentionLinks = new Map(mentionOptions.map(option => [option.id, option.href]))
+  return Object.fromEntries(editableSteps.map(step => [step.id, normalizeMentionContent(
+    Array.isArray(source[step.id]?.content)
+      ? source[step.id].content.map(part => part.type === 'mention'
+        ? {
+          ...part,
+          href: mentionLinks.get(part.id) || PLAYERS_DATABASE_UI_ROUTES.player({
+            playerId: part.id,
+            teamId,
+          }),
+        }
+        : part)
+      : step.id === 'general'
+      ? (typeof generalText === 'string' ? generalText : '')
+      : (typeof source.routeTextsById?.[step.id] === 'string' ? source.routeTextsById[step.id] : '')
+  )]))
+}
+
+export default function useTeamNotebookDraft({
+  open,
+  notes,
+  mentionOptions,
+  teamId,
+  initialInsightId,
+}) {
+  const [original, setOriginal] = React.useState(() => initialContents(notes, mentionOptions, teamId))
+  const [contentsById, setContentsById] = React.useState(original)
+  const [originalIndicator, setOriginalIndicator] = React.useState(() => initialIndicator(notes))
+  const [showInvestigationIndicator, setShowInvestigationIndicator] = React.useState(originalIndicator)
+  const [stepIndex, setStepIndex] = React.useState(() => {
+    const index = NOTEBOOK_STEPS.findIndex(step => step.id === initialInsightId)
+    return index >= 0 && index < editableSteps.length ? index : 0
+  })
   const [confirmClose, setConfirmClose] = React.useState(false)
-  const nextDraft = React.useRef(0)
+  const wasOpen = React.useRef(false)
+  const dirtyIds = editableSteps.filter(step => (
+    JSON.stringify(contentsById[step.id]) !== JSON.stringify(original[step.id])
+  )).map(step => step.id)
+  const textsById = Object.fromEntries(editableSteps.map(step => [
+    step.id,
+    mentionContentText(contentsById[step.id]),
+  ]))
+  const relatedPlayerIdsById = Object.fromEntries(editableSteps.map(step => [
+    step.id,
+    mentionIds(contentsById[step.id]),
+  ]))
 
-  const originalById = React.useMemo(() => new Map(
-    original.findings.map(finding => [finding.id, JSON.stringify(finding)])
-  ), [original])
-  const dirtyIds = React.useMemo(() => new Set(findings.filter(finding => (
-    originalById.get(finding.id) !== JSON.stringify(finding)
-  )).map(finding => finding.id)), [findings, originalById])
-  const hasChanges = dirtyIds.size > 0 || generalText !== original.generalText
-  const visibleFindings = React.useMemo(() => (
-    filterNotebookFindings(findings, filters, playerOptions)
-  ), [findings, filters, playerOptions])
-  const selectedFinding = findings.find(finding => finding.id === selectedId) || null
-  const navigationIndex = navigationIds.indexOf(selectedId)
+  React.useEffect(() => {
+    if (open && !wasOpen.current) {
+      const nextContents = initialContents(notes, mentionOptions, teamId)
+      const index = NOTEBOOK_STEPS.findIndex(step => step.id === initialInsightId)
+      setOriginal(nextContents)
+      setContentsById(nextContents)
+      setOriginalIndicator(initialIndicator(notes))
+      setShowInvestigationIndicator(initialIndicator(notes))
+      setStepIndex(index >= 0 && index < editableSteps.length ? index : 0)
+      setConfirmClose(false)
+    }
+    wasOpen.current = open
+  }, [open, notes, mentionOptions, teamId, initialInsightId])
 
-  const selectFinding = id => {
-    // Freeze the browsing order while editing so a draft does not jump out of a filter.
-    setNavigationIds(visibleFindings.map(finding => finding.id))
-    setSelectedId(id)
+  const selectStep = index => {
+    if (index < 0 || index >= NOTEBOOK_STEPS.length) return
+    setStepIndex(index)
   }
 
-  const addDraft = () => {
-    let id
-    do {
-      nextDraft.current += 1
-      id = `notebook-ui-draft-${nextDraft.current}`
-    } while (findings.some(finding => finding.id === id))
-    const draft = createFindingDraft({
-      id,
-      insightId: filters.insightId || initialInsightId,
-      seasonId: initialSeasonId,
-    })
-    setFindings(current => [draft, ...current])
-    setNavigationIds([id, ...visibleFindings.map(finding => finding.id)])
-    setSelectedId(id)
-    setTab('findings')
+  const changeContent = (id, value) => {
+    if (!(id in original)) return
+    setContentsById(current => ({ ...current, [id]: normalizeMentionContent(value) }))
   }
-
-  const changeFinding = patch => {
-    setFindings(current => current.map(finding => (
-      finding.id === selectedId ? { ...finding, ...patch } : finding
-    )))
-  }
-
-  const moveFinding = offset => {
-    const target = navigationIds[navigationIndex + offset]
-    if (target) setSelectedId(target)
-  }
-
-  const changeFilter = (key, value) => setFilters(current => ({ ...current, [key]: value }))
 
   return {
-    findings, generalText, setGeneralText, tab, setTab,
-    selectedFinding, visibleFindings, dirtyIds, hasChanges,
-    filters, changeFilter, clearFilters: () => setFilters({ ...EMPTY_FILTERS }),
-    showExtraFilters, setShowExtraFilters,
-    selectedId, selectFinding, backToList: () => setSelectedId(''),
-    navigationIndex, navigationCount: navigationIds.length, moveFinding,
-    addDraft, changeFinding, confirmClose, setConfirmClose,
+    textsById,
+    contentsById,
+    relatedPlayerIdsById,
+    showInvestigationIndicator,
+    setShowInvestigationIndicator,
+    stepIndex,
+    selectStep,
+    changeContent,
+    dirtyIds,
+    hasChanges: dirtyIds.length > 0 || showInvestigationIndicator !== originalIndicator,
+    confirmClose,
+    setConfirmClose,
   }
 }

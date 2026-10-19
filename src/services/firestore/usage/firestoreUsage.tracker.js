@@ -17,6 +17,13 @@ const safePath = ref => {
   return ref.path || ref.id || 'unknown'
 }
 
+const documentSamples = ({ documents, docs, meta }) => {
+  if (Array.isArray(documents)) return documents
+  if (!meta?.documentPath || !docs) return []
+  const value = Array.isArray(docs) ? (docs.length === 1 ? docs[0] : null) : docs
+  return value ? [{ path: meta.documentPath, estimatedKb: estimatePayloadKb(value) }] : []
+}
+
 const createListenerId = ({ collection, feature, action } = {}) => {
   listenerSequence += 1
   return [
@@ -126,8 +133,9 @@ export function trackFirestoreListenerUpdate({
   feature,
   action,
   listenerId,
-  listenerPhase = 'update',
+  listenerPhase,
   docs,
+  documents,
   docsCount,
   readsCount,
   estimatedKb,
@@ -164,6 +172,7 @@ export function trackFirestoreListenerUpdate({
       action,
       listenerId,
       listenerPhase,
+      documents: documentSamples({ documents, docs, meta }),
       docsCount: count,
       readsCount: resolvedReadsCount,
       estimatedKb: payloadKb,
@@ -188,11 +197,13 @@ export function trackFirestoreRead({
   feature,
   action,
   docs,
+  documents,
   docsCount,
   readsCount,
   estimatedKb,
   operationSubtype,
   queryKey,
+  fromCache = false,
   durationMs,
   status = 'success',
   errorCode,
@@ -225,6 +236,8 @@ export function trackFirestoreRead({
       feature,
       action,
       queryKey,
+      documents: documentSamples({ documents, docs, meta }),
+      fromCache,
       docsCount: count,
       readsCount: resolvedReadsCount,
       estimatedKb: payloadKb,
@@ -393,7 +406,6 @@ export function getFirestoreUsageSnapshot() {
 }
 
 export function resetFirestoreUsageSnapshot() {
-  listenerSequence = 0
   return resetFirestoreUsageSession()
 }
 

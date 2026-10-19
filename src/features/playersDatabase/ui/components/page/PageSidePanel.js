@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import {
+  Box,
   IconButton,
   Stack,
   Tooltip,
@@ -18,6 +19,7 @@ export default function PageSidePanel({
   collapsed: controlledCollapsed,
   defaultCollapsed = true,
   collapsedActions = [],
+  collapsedIndicator,
   onCollapsedChange,
 }) {
   const [uncontrolledCollapsed, setUncontrolledCollapsed] = React.useState(defaultCollapsed)
@@ -36,16 +38,23 @@ export default function PageSidePanel({
       {collapsible && collapsed && collapsedActions.length ? (
         <Stack spacing={0.75} sx={sx.collapsedActions}>
           {collapsedActions.map(action => (
-            <Tooltip key={action.label} title={action.disabled && action.disabledReason ? action.disabledReason : action.label} placement='top'>
+            <Tooltip
+              key={action.label}
+              title={action.disabled && action.disabledReason
+                ? action.disabledReason
+                : `${action.label}${action.indicator ? ` · ${action.indicator.label}` : ''}`}
+              placement='top'
+            >
               <span>
                 <IconButton
-                  aria-label={action.label}
+                  aria-label={`${action.label}${action.indicator ? ` · ${action.indicator.label}` : ''}`}
                   variant='outlined'
                   disabled={action.disabled}
                   onClick={action.onClick}
                   sx={sx.floatingActionButton}
                 >
                   {iconUi({ id: action.iconId, size: 'sm' })}
+                  {action.indicator ? <Box component='span' aria-hidden='true' sx={sx.indicatorDot(action.indicator.color)} /> : null}
                 </IconButton>
               </span>
             </Tooltip>
@@ -53,12 +62,16 @@ export default function PageSidePanel({
         </Stack>
       ) : null}
       {collapsible ? (
-        <Tooltip title={collapsed ? 'פתיחת סרגל הצד' : 'קיפול סרגל הצד'}>
+        <Tooltip title={collapsed
+          ? `פתיחת סרגל הצד${collapsedIndicator ? ` · ${collapsedIndicator.label}` : ''}`
+          : 'קיפול סרגל הצד'}>
           <IconButton
             size='sm'
             variant='soft'
             color='neutral'
-            aria-label={collapsed ? 'פתיחת סרגל הצד' : 'קיפול סרגל הצד'}
+            aria-label={collapsed
+              ? `פתיחת סרגל הצד${collapsedIndicator ? ` · ${collapsedIndicator.label}` : ''}`
+              : 'קיפול סרגל הצד'}
             sx={sx.collapseButton}
             onClick={handleCollapsedChange}
           >
@@ -68,6 +81,9 @@ export default function PageSidePanel({
               style: { transform: `rotate(${collapsed ? -90 : 90}deg)` },
               sx: { color: '#fff' },
             })}
+            {collapsed && collapsedIndicator ? (
+              <Box component='span' aria-hidden='true' sx={sx.indicatorDot(collapsedIndicator.color)} />
+            ) : null}
           </IconButton>
         </Tooltip>
       ) : null}

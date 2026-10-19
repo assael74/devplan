@@ -10,6 +10,8 @@ import {
 } from '../../../domain/identity/index.js'
 import { buildClubDirectoryProjection } from '../../../domain/projections/club/clubDirectory.projection.js'
 import { buildClubsCenterTeamProjection } from '../../../domain/league/clubsCenterTeam.builder.js'
+import { compareTeamSignalSummaries } from '../signals/compareTeamSignalSummaries.js'
+import { buildExpectedTeamSignals, teamSignalAuditKey } from '../signals/buildExpectedTeamSignals.js'
 import { arrivalSourceDocumentId, buildArrivalHistory } from '../../../domain/movement/arrivalHistory.projection.js'
 import {
   buildClubProfileProjection,
@@ -675,15 +677,10 @@ const leagueCenterSeasonFields = value => {
 
 const centerTeamStateFields = value => {
   const source = object(value)
-  const signals = object(source.teamTaskSignals)
   return {
     clubId: clean(source.clubId),
     teamSlot: source.teamSlot === undefined ? null : source.teamSlot,
     documentationState: clean(source.documentationState),
-    teamTaskSignals: {
-      offense: Boolean(signals.offense),
-      defense: Boolean(signals.defense),
-    },
   }
 }
 
@@ -976,7 +973,6 @@ const appendClubsDirectoryFindings = ({ clubProfiles, clubsDirectory, findings }
 
 const clubsCenterTeamFields = value => {
   const source = object(value)
-  const taskSignals = object(source.teamTaskSignals)
   const transfers = object(source.transfers)
   return {
     teamSeasonDocumentId: clean(source.teamSeasonDocumentId),
@@ -985,10 +981,6 @@ const clubsCenterTeamFields = value => {
     teamSlot: source.teamSlot === undefined ? null : source.teamSlot,
     leagueId: clean(source.leagueId),
     documentationState: clean(source.documentationState),
-    teamTaskSignals: {
-      offense: Boolean(taskSignals.offense),
-      defense: Boolean(taskSignals.defense),
-    },
     performance: object(source.performance),
     competitionProjection: object(source.competitionProjection),
     transfers: {
@@ -1287,6 +1279,62 @@ const appendClubsCenterFindings = ({
   })
 }
 
+const appendTeamSignalFindings = ({
+  leagues,
+  teamSeasons,
+  clubProfiles,
+  leaguesCenter,
+  clubsCenter,
+  findings,
+}) => {
+  const seasonsById = mapRows(teamSeasons)
+  const leagueCenter = mapRows(leaguesCenter).get('all')?.data
+  const clubCentersById = mapRows(clubsCenter)
+  const clubIds = new Set()
+  rows(leagues).forEach(({ data }) => {
+    Object.values(object(data?.seasonsById)).forEach(season => {
+      Object.values(object(season?.table?.teamsById)).forEach(team => {
+        if (team?.clubId) clubIds.add(team.clubId)
+      })
+    })
+  })
+  const expectedSignals = buildExpectedTeamSignals({
+    leagues: rows(leagues).map(({ id, data }) => ({ ...data, id })),
+    teamSeasons: rows(teamSeasons).map(({ id, data }) => ({ ...data, id })),
+    profilesById: Object.fromEntries(rows(clubProfiles).map(({ id, data }) => [id, data])),
+    clubIds: [...clubIds],
+  })
+  rows(leagues).forEach(({ id: leagueId, data: league }) => {
+    Object.entries(object(league?.seasonsById)).forEach(([seasonId, season]) => {
+      Object.entries(object(season?.table?.teamsById)).forEach(([teamId, leagueTeam]) => {
+        const documentId = safeBuild(() => buildTeamSeasonDocumentId({ teamId, seasonId }))
+        const teamSeason = seasonsById.get(documentId)?.data
+        const mismatches = compareTeamSignalSummaries({
+          teamId, clubId: leagueTeam.clubId, seasonId, leagueTeam, teamSeason,
+          expectedSummary: expectedSignals.get(teamSignalAuditKey(teamId, seasonId)) || null,
+          leaguesCenterTeam: leagueCenter?.leaguesById?.[leagueId]?.seasonsById?.[seasonId]?.teamsById?.[teamId],
+          clubsCenterTeam: clubCentersById.get(seasonId)?.data?.clubsById?.[leagueTeam.clubId]?.teamsById?.[teamId],
+        })
+        const targets = {
+          league: { target: SYSTEM_AUDIT_TARGET.LEAGUES, documentId: leagueId },
+          teamSeason: { target: SYSTEM_AUDIT_TARGET.TEAM_SEASONS, documentId },
+          leaguesCenter: { target: SYSTEM_AUDIT_TARGET.LEAGUES_CENTER, documentId: 'all' },
+          clubsCenter: { target: SYSTEM_AUDIT_TARGET.CLUBS_CENTER, documentId: seasonId },
+        }
+        mismatches.forEach(mismatch => findings.push(buildSystemAuditFinding({
+          ...mismatch,
+          ...(targets[mismatch.field.split('.')[0]] || (teamSeason ? targets.teamSeason : targets.league)),
+          leagueId,
+          relatedDocumentId: teamId,
+          title: 'סיכום האיתותים חסר או אינו מסונכרן',
+          owner: 'teamSignals',
+          recommendedAction: 'לרענן את סיכומי האיתותים דרך פעולת הבעלים או התיקון הממוקד הקיים.',
+        })))
+      })
+    })
+  })
+}
+
 export const evaluateSystemIntegrity = ({
   teamRoots = [],
   teamSeasons = [],
@@ -1338,6 +1386,7 @@ export const evaluateSystemIntegrity = ({
     findings,
   })
   appendClubsDirectoryFindings({ clubProfiles, clubsDirectory, findings })
+  appendTeamSignalFindings({ leagues, teamSeasons, clubProfiles, leaguesCenter, clubsCenter, findings })
 
   return findings
 }

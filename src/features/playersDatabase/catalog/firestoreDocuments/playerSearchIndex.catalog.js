@@ -63,8 +63,6 @@ export const PLAYER_SEARCH_INDEX_DOCUMENT = {
 
     region: '',
 
-    teamUrl: '',
-    seasonUrl: '',
   },
 
   player: {
@@ -216,6 +214,7 @@ export const PLAYER_SEARCH_INDEX_DOCUMENT = {
   ],
 
   invariants: [
+    'team.seasonUrl and team.teamUrl are not part of the active projection and are not written or synchronized. Legacy values may remain and are ignored; no migration or cleanup is required.',
     'entityType is intentionally not persisted.',
     'playerId equals player__{birthYear}__{externalPlayerId}; externalPlayerId is required and Player Root uses the same id.',
     'teamSeasonDocumentId equals {teamId}__{seasonId} and is based on technical seasonId, never seasonKey.',

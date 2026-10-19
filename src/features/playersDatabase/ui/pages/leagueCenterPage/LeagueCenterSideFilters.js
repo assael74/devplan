@@ -20,7 +20,7 @@ export default function LeagueCenterSideFilters({ model }) {
     { id: 'active', label: 'פעילה' },
     { id: 'not_started', label: 'לא החלה' },
     { id: 'review', label: 'לבדיקה' },
-    { id: 'priority', label: 'עדיפות מקצועית' },
+    { id: 'priority', label: 'עם איתותים' },
   ]
 
   return (

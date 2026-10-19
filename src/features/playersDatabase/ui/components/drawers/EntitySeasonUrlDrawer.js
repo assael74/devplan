@@ -10,7 +10,6 @@ import {
 } from '@mui/joy'
 
 import DrawerShell from '../../../../../ui/patterns/drawer/DrawerShell.js'
-import DrawerHeaderShell from '../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
 import { entitySeasonUrlDrawerSx as sx } from './sx/entitySeasonUrlDrawer.sx.js'
 
 const clean = value => String(value || '').trim()
@@ -66,19 +65,12 @@ export default function EntitySeasonUrlDrawer({
       isDirty={isDirty}
       canSave={canSave}
       sxOverrides={sx.shell}
-      header={(
-        <DrawerHeaderShell
-          title={title}
-          titleIconId="link"
-          entity={entityType}
-          subline={entityName}
-          meta={seasonLabel ? `עונה ${seasonLabel}` : ''}
-          metaIconId="season"
-          chipLabel="מאגר שחקנים"
-          chipIconId="playersDatabase"
-          sxOverrides={sx.header}
-        />
-      )}
+      headerProps={{
+        title,
+        titleIconId: 'link',
+        subline: [entityName, seasonLabel ? `עונה ${seasonLabel}` : ''].filter(Boolean).join(' · '),
+        sxOverrides: sx.header,
+      }}
       actions={{
         onSave: handleSave,
         onReset: handleReset,

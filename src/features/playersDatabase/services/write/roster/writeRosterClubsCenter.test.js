@@ -26,10 +26,14 @@ describe('writeRosterClubsCenter', () => {
     })
 
     expect(writeClubsCenter.mock.calls).toEqual([
-      [{ approvedState: { clubsCenterProjection: local } }],
-      [{ approvedState: { clubsCenterProjection: counterpartA } }],
-      [{ approvedState: { clubsCenterProjection: counterpartB } }],
+      [{ approvedState: { clubsCenterProjection: local }, refreshSignals: false }],
+      [{ approvedState: { clubsCenterProjection: counterpartA }, refreshSignals: false }],
+      [{ approvedState: { clubsCenterProjection: counterpartB }, refreshSignals: false }],
     ])
     expect(result).toMatchObject({ written: true, projectionsCount: 3 })
   })
 })
+
+jest.mock('../signals/refreshTeamSignalSummaries.js', () => ({
+  refreshTeamSignalSummaries: jest.fn(async () => ({ teams: 1, documents: 3 })),
+}))

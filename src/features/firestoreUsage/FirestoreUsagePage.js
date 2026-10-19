@@ -18,6 +18,7 @@ import UsageProcessesTable from './components/UsageProcessesTable.js'
 import UsageListenersTable from './components/UsageListenersTable.js'
 import UsagePayloadSummary from './components/UsagePayloadSummary.js'
 import UsageKpis from './components/UsageKpis.js'
+import UsageDocumentsTable from './components/UsageDocumentsTable.js'
 
 import {
   firestoreUsageAsideColumnSx,
@@ -120,6 +121,7 @@ export default function FirestoreUsagePage() {
             </Box>
 
             <Box sx={firestoreUsageAsideColumnSx}>
+              <UsageDocumentsTable rows={viewModel.documents} />
               <UsageListenersTable rows={viewModel.activeListeners} />
             </Box>
           </Box>

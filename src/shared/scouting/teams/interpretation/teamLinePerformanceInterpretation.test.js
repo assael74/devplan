@@ -2,7 +2,6 @@
 
 import {
   buildTeamLinePerformanceInterpretation,
-  buildTeamTaskSignals,
 } from './teamLinePerformanceInterpretation.js'
 
 test('missing line classification requests review without a recruitment task', () => {
@@ -23,8 +22,6 @@ test('missing line classification requests review without a recruitment task', (
   expect(interpretation.defense.finding).toBe('DEFENSE_CLASSIFICATION_MISSING')
   expect(interpretation.offense.actions).toEqual({ teamNeed: null, marketOpportunity: null })
   expect(interpretation.defense.actions).toEqual({ teamNeed: null, marketOpportunity: null })
-  expect(buildTeamTaskSignals({
-    offenseFinding: interpretation.offense.finding,
-    defenseFinding: interpretation.defense.finding,
-  })).toEqual({ offense: false, defense: false })
+  expect(interpretation.teamInterest.lines.offense.isInteresting).toBe(true)
+  expect(interpretation.teamInterest.lines.defense.isInteresting).toBe(true)
 })

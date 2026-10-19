@@ -240,6 +240,26 @@ describe('leagueWritePlan.builder', () => {
     ))
   })
 
+  test('restores the original Stats game snapshot when importing a newer table', () => {
+    const input = loadInput()
+    const teamSeason = input.existingTeamSeasons[0]
+    teamSeason.stats = {
+      playersById: { 'player-1': { statsStatus: 'loaded' } },
+      statsLoadState: { status: 'loaded', updatedAt: 'stats-load-time', teamGamePlayedAtLoad: 3 },
+    }
+    const plan = buildLeagueLoadWritePlan(input)
+    const team = plan.document.seasonsById[seasonId].table.teamsById['club-a_2010_1']
+
+    expect(team.officialTable.teamGamePlayed).toBe(5)
+    expect(team.stats).toEqual({
+      hasStats: true,
+      statsComplete: true,
+      loadedAt: 'stats-load-time',
+      teamGamePlayedAtLoad: 3,
+    })
+    expect(teamSeason.stats.statsLoadState.teamGamePlayedAtLoad).toBe(3)
+  })
+
   test('Open creates a NOT_LOADED season without Team writes', () => {
     const input = loadInput()
     const plan = buildLeagueOpenWritePlan({
@@ -297,12 +317,10 @@ describe('leagueWritePlan.builder', () => {
     expect(plan.leaguesCenterProjection.season.teamsById['club-a_2010_1']).toMatchObject({
       documentationState: 'ROSTER_ONLY',
       documentationStateUpdatedAt: 'original-leagues-center-time',
-      teamTaskSignals: { offense: false, defense: true, updatedAt },
     })
     expect(plan.leaguesCenterProjection.season.teamsById['club-b_2010_1']).toMatchObject({
       documentationState: 'NO_ROSTER',
       documentationStateUpdatedAt: null,
-      teamTaskSignals: { offense: false, defense: false, updatedAt: null },
     })
 
     const clubA = plan.clubsCenterProjection.clubWrites.find(item => item.clubId === 'club-a')

@@ -1,5 +1,7 @@
 // src/features/playersDatabase/services/audit/stats/compare.js
 
+import { compareTeamSignalSummaries } from '../signals/compareTeamSignalSummaries.js'
+
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 const object = value => (value && typeof value === 'object' && !Array.isArray(value) ? value : {})
 const normalizeTime = value => {
@@ -22,6 +24,10 @@ const normalize = value => {
   if (Array.isArray(value)) return value.map(normalize)
   if (value && typeof value === 'object') {
     return Object.keys(value)
+      .filter(key => (
+        !['teamTaskSignals', 'teamTaskAvailability'].includes(key) &&
+        (key !== 'teamGamePlayedAtLoad' || (value[key] !== null && value[key] !== undefined))
+      ))
       .sort()
       .reduce((result, key) => {
         result[key] = normalize(value[key])
@@ -48,7 +54,13 @@ const compareField = ({ findings, target, documentId, field, expected, actual })
   findings.push(finding({ target, documentId, field, expected, actual }))
 }
 
-export const compareStatsAudit = ({ actual = {}, expectedState = {}, approvedState = null, seasonId = '' } = {}) => {
+export const compareStatsAudit = ({
+  actual = {},
+  expectedState = {},
+  approvedState = null,
+  seasonId = '',
+  expectedSignalSummary,
+} = {}) => {
   const findings = []
   const teamSeason = actual.teamSeason
   const expected = expectedState.expected
@@ -68,8 +80,6 @@ export const compareStatsAudit = ({ actual = {}, expectedState = {}, approvedSta
   if (approvedState && expected.canonicalTeamSeason) {
     compareField({ findings, target: 'teamSeason', documentId: approvedState.teamSeasonDocumentId, field: 'stats', expected: expected.canonicalTeamSeason.stats, actual: teamSeason && teamSeason.stats })
     compareField({ findings, target: 'teamSeason', documentId: approvedState.teamSeasonDocumentId, field: 'scouting', expected: expected.canonicalTeamSeason.scouting, actual: teamSeason && teamSeason.scouting })
-    compareField({ findings, target: 'teamSeason', documentId: approvedState.teamSeasonDocumentId, field: 'teamTaskSignals', expected: expected.canonicalTeamSeason.teamTaskSignals, actual: teamSeason && teamSeason.teamTaskSignals })
-    compareField({ findings, target: 'teamSeason', documentId: approvedState.teamSeasonDocumentId, field: 'teamTaskAvailability', expected: expected.canonicalTeamSeason.teamTaskAvailability, actual: teamSeason && teamSeason.teamTaskAvailability })
   }
 
   ;(expected.counterpartPatches || []).forEach(patch => {
@@ -150,7 +160,9 @@ export const compareStatsAudit = ({ actual = {}, expectedState = {}, approvedSta
     ).teamsById
   )[identity.teamId]
   compareField({ findings, target: 'leagueMetadata', documentId: actual.league && actual.league.id, field: 'stats', expected: expected.leagueTeamPatch.stats, actual: leagueTeam && leagueTeam.stats })
-  compareField({ findings, target: 'leagueMetadata', documentId: actual.league && actual.league.id, field: 'scouting', expected: expected.leagueTeamPatch.scouting, actual: leagueTeam && leagueTeam.scouting })
+  compareField({ findings, target: 'leagueMetadata', documentId: actual.league && actual.league.id, field: 'scouting', expected: expected.leagueTeamPatch.scouting, actual: Object.fromEntries(
+    Object.keys(expected.leagueTeamPatch.scouting || {}).map(key => [key, leagueTeam?.scouting?.[key]])
+  ) })
 
   const leaguesCenterTeam = object(
     object(
@@ -172,7 +184,7 @@ export const compareStatsAudit = ({ actual = {}, expectedState = {}, approvedSta
       actual: null,
     }))
   } else {
-    ;['documentationState', 'documentationStateUpdatedAt', 'teamTaskSignals'].forEach(field => {
+    ;['documentationState', 'documentationStateUpdatedAt'].forEach(field => {
       compareField({ findings, target: 'leaguesCenter', documentId: 'all', field, expected: expected.leaguesCenterTeam[field], actual: actualLeaguesCenterTeam[field] })
     })
   }
@@ -194,7 +206,7 @@ export const compareStatsAudit = ({ actual = {}, expectedState = {}, approvedSta
       actual: null,
     }))
   } else {
-    ;['documentationState', 'documentationStateUpdatedAt', 'teamTaskSignals', 'transfers'].forEach(field => {
+    ;['documentationState', 'documentationStateUpdatedAt', 'transfers'].forEach(field => {
       compareField({ findings, target: 'clubsCenter', documentId: seasonId, field, expected: expected.clubsCenterTeam[field], actual: actualClubsCenterTeam[field] })
     })
   }
@@ -217,5 +229,10 @@ export const compareStatsAudit = ({ actual = {}, expectedState = {}, approvedSta
     })
   })
 
+  findings.push(...compareTeamSignalSummaries({
+    teamId: identity.teamId, clubId: identity.clubId, seasonId,
+    leagueTeam, teamSeason, leaguesCenterTeam: actualLeaguesCenterTeam, clubsCenterTeam: actualClubsCenterTeam,
+    expectedSummary: expectedSignalSummary,
+  }))
   return findings
 }

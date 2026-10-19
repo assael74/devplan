@@ -92,6 +92,8 @@ function MovementGroup({
   rows,
   seasonKey,
   onPlayerOpen,
+  onPlayerDetailsEdit,
+  findPlayerDetailsSeason,
   favoritePlayerKeys,
   onFavoriteToggle,
   profilePeriod,
@@ -99,6 +101,12 @@ function MovementGroup({
 }) {
   const rosterColumns = useTeamPositionClassificationColumns({
     onPlayerOpen: onPlayerOpen ? player => onPlayerOpen(player, seasonKey) : null,
+    onPlayerDetailsEdit: row => onPlayerDetailsEdit?.(
+      row, findPlayerDetailsSeason?.(row, seasonKey)
+    ),
+    canEditPlayerDetails: row => Boolean(
+      onPlayerDetailsEdit && findPlayerDetailsSeason?.(row, seasonKey)
+    ),
     favoritePlayerKeys,
     onFavoriteToggle,
     showTooltips: false,
@@ -237,6 +245,8 @@ export default function TeamYearMovementsSection({
   seasonSignals = [],
   clubLevel = null,
   onPlayerOpen,
+  onPlayerDetailsEdit,
+  findPlayerDetailsSeason,
   favoritePlayerKeys,
   onFavoriteToggle,
   profilePeriod = 'current',
@@ -295,6 +305,8 @@ export default function TeamYearMovementsSection({
                       rows={group.rows}
                       seasonKey={season.seasonKey}
                       onPlayerOpen={onPlayerOpen}
+                      onPlayerDetailsEdit={onPlayerDetailsEdit}
+                      findPlayerDetailsSeason={findPlayerDetailsSeason}
                       favoritePlayerKeys={favoritePlayerKeys}
                       onFavoriteToggle={onFavoriteToggle}
                       profilePeriod={profilePeriod}

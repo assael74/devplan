@@ -15,6 +15,7 @@ import {
 } from '@mui/joy'
 
 import { iconUi } from '../../core/icons/iconUi.js'
+import DrawerHeaderShell from './DrawerHeaderShell.js'
 import { drawerSx as sx } from './sx/drawer.sx.js'
 
 export default function DrawerShell({
@@ -22,6 +23,7 @@ export default function DrawerShell({
   onClose,
 
   header,
+  headerProps,
   children,
   entity,
 
@@ -97,7 +99,9 @@ export default function DrawerShell({
           ...(sxOverrides.sheet || {}),
         }}
       >
-        {header ? <Box>{header}</Box> : null}
+        {header || headerProps ? (
+          <Box>{header || <DrawerHeaderShell entity={entity} closeDisabled={saving} {...headerProps} />}</Box>
+        ) : null}
 
         <DialogContent
           sx={sxOverrides.dialogContent || {}}

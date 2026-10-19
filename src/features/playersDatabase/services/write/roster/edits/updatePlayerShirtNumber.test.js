@@ -1,6 +1,6 @@
 // src/features/playersDatabase/services/write/roster/edits/updatePlayerShirtNumber.test.js
 
-import { updatePlayerShirtNumber } from './updatePlayerShirtNumber.js'
+import { updatePlayerSeasonDetails, updatePlayerShirtNumber } from './updatePlayerShirtNumber.js'
 import { executeManualEdit } from '../../shared/manualEdit.write.js'
 
 jest.mock('../../shared/manualEdit.write.js', () => ({
@@ -65,4 +65,49 @@ test('blocks editing before stats load', async () => {
 
 test('rejects an invalid shirt number before reading documents', () => {
   expect(() => updatePlayerShirtNumber({ ...identity, numShirt: '9.5' })).toThrow('מספר חולצה')
+})
+
+test('saves shirt and season URL together while preserving other manual fields', async () => {
+  const team = {
+    identity,
+    stats: { statsLoadState: { status: 'loaded' } },
+    roster: { playersById: { 'player-1': { playerId: 'player-1', numShirt: null } } },
+    manual: { playersById: { 'player-1': { note: 'keep note' } } },
+  }
+  const season = {
+    identity,
+    teamsById: { 'team-1': { roster: { numShirt: null }, manual: { note: 'keep team note' } } },
+  }
+  const index = {
+    playerId: 'player-1',
+    seasonId: '2026_2027',
+    references: { teamSeasonDocumentId: 'team-season-1' },
+    player: { numShirt: '', playerUrl: '' },
+  }
+  executeManualEdit.mockImplementation(async ({ build }) => build({
+    updatedAt: 'updated-time',
+    get: ref => snapshot({
+      'teamSeasons/team-season-1': team,
+      'playerSeasons/season-1': season,
+      'playerSearchIndexes/index-1': index,
+    }[ref.path]),
+  }))
+
+  const changes = await updatePlayerSeasonDetails({
+    ...identity,
+    numShirt: '12',
+    playerUrl: 'https://example.com/player',
+  })
+
+  expect(changes.map(change => change.ref.path)).toEqual([
+    'teamSeasons/team-season-1', 'playerSeasons/season-1', 'playerSearchIndexes/index-1',
+  ])
+  expect(changes[0].patch.roster.playersById['player-1'].numShirt).toBe(12)
+  expect(changes[0].patch.manual.playersById['player-1']).toEqual(expect.objectContaining({
+    note: 'keep note', playerUrl: 'https://example.com/player',
+  }))
+  expect(changes[1].patch.teamsById['team-1'].manual).toEqual({
+    note: 'keep team note', playerUrl: 'https://example.com/player',
+  })
+  expect(changes[2].patch.player).toEqual({ numShirt: '12', playerUrl: 'https://example.com/player' })
 })

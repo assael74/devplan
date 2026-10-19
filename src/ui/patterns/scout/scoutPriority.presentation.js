@@ -58,13 +58,37 @@ const priorityByValue = {
     colors: scoutPriorityColors.lowPriority,
     iconId: 'lowPriority',
   },
+  unavailable: {
+    label: 'לא זמין',
+    shortLabel: 'לא זמין',
+    colors: scoutPriorityColors.regular,
+    iconId: 'noData',
+  },
 }
 
 export function resolveScoutPriority(value) {
-  return priorityByValue[value] || priorityByValue.neutral
+  return priorityByValue[value] || priorityByValue.unavailable
 }
 
 export const scoutPrioritySx = {
+  selected: colors => ({
+    outline: `2px solid ${colors.main}`,
+    outlineOffset: 3,
+  }),
+
+  interactive: {
+    appearance: 'none',
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+    transition: 'box-shadow 160ms ease, filter 160ms ease',
+
+    '&:hover': { filter: 'brightness(0.97)', boxShadow: 'sm' },
+
+    '&:focus-visible': { outline: '2px solid currentColor', outlineOffset: 3 },
+
+    '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
+  },
+
   tooltipContent: {
     width: 190,
     maxWidth: 190,

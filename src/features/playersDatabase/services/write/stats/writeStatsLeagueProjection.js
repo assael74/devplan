@@ -28,7 +28,7 @@ export const writeStatsLeagueProjection = async ({ approvedState = {} } = {}) =>
   }, {
     mergeFields: [
       teamPath('stats'),
-      teamPath('scouting'),
+      teamPath('scouting', 'playersWithScoutProfileCount'),
       teamPath('updatedAt'),
     ],
   })

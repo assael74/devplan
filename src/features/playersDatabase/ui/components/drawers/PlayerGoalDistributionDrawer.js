@@ -9,7 +9,6 @@ import {
 } from '@mui/joy'
 
 import DrawerShell from '../../../../../ui/patterns/drawer/DrawerShell.js'
-import DrawerHeaderShell from '../../../../../ui/patterns/drawer/DrawerHeaderShell.js'
 import { entitySeasonUrlDrawerSx as sx } from './sx/entitySeasonUrlDrawer.sx.js'
 
 const toNonNegativeInteger = value => {
@@ -58,19 +57,12 @@ export default function PlayerGoalDistributionDrawer({
       isDirty={isDirty}
       canSave={canSave}
       sxOverrides={sx.shell}
-      header={(
-        <DrawerHeaderShell
-          title='מידע נוסף · פיזור שערים'
-          titleIconId='goals'
-          entity='player'
-          subline={playerName}
-          meta={seasonLabel ? `עונה ${seasonLabel}` : ''}
-          metaIconId='season'
-          chipLabel='מאגר שחקנים'
-          chipIconId='playersDatabase'
-          sxOverrides={sx.header}
-        />
-      )}
+      headerProps={{
+        title: 'מידע נוסף · פיזור שערים',
+        titleIconId: 'goals',
+        subline: [playerName, seasonLabel ? `עונה ${seasonLabel}` : ''].filter(Boolean).join(' · '),
+        sxOverrides: sx.header,
+      }}
       actions={{
         onSave: () => canSave && onSave({ scoringGames }),
         onReset: () => setScoringGames(originalScoringGames),

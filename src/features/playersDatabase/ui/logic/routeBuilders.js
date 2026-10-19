@@ -7,6 +7,8 @@ export const PLAYERS_DATABASE_QUERY_KEYS = {
   level: 'l',
   status: 't',
   view: 'v',
+  workMode: 'wm',
+  workFilter: 'wf',
   centerSeason: 'cs',
   centerBirthYear: 'cy',
   centerAgeGroup: 'ca',
@@ -65,9 +67,14 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
     centerLevel,
     centerStatus,
     auditFindingId,
+    workMode,
+    workFilter,
   } = {}) => {
     const basePath = `/players-database/leagues/${leagueId || ''}`
     const params = new URLSearchParams()
+
+    if (workMode === 'research') params.set(PLAYERS_DATABASE_QUERY_KEYS.workMode, workMode)
+    if (workFilter && workFilter !== 'all') params.set(PLAYERS_DATABASE_QUERY_KEYS.workFilter, workFilter)
 
     if (seasonKey && seasonKey !== 'all') params.set(PLAYERS_DATABASE_QUERY_KEYS.season, seasonKey)
     if (birthYear && birthYear !== 'all') params.set(PLAYERS_DATABASE_QUERY_KEYS.birthYear, birthYear)
@@ -91,6 +98,8 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
     auditFindingId,
     auditSeasonKey,
     openStatsImport = false,
+    insightId = '',
+    seasonKey = '',
   } = {}) => {
     const basePath = `/players-database/leagues/${leagueId || ''}/teams/${teamId || ''}`
     const params = new URLSearchParams()
@@ -100,6 +109,8 @@ export const PLAYERS_DATABASE_UI_ROUTES = {
     if (auditFindingId) params.set('auditFinding', auditFindingId)
     if (auditSeasonKey) params.set('auditSeason', auditSeasonKey)
     if (openStatsImport) params.set('openStatsImport', '1')
+    if (insightId) params.set('insight', insightId)
+    if (seasonKey) params.set('signalSeason', seasonKey)
 
     const query = params.toString()
     return query ? `${basePath}?${query}` : basePath

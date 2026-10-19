@@ -4,22 +4,26 @@ import {
   buildPlayerSearchIndexDocumentId,
   buildPlayerSeasonDocumentId,
 } from '../../../../domain/identity/index.js'
-import { clean, requireValue } from '../../../../domain/edits/editIdentity.js'
+import { clean, requireValue, urlValue } from '../../../../domain/edits/editIdentity.js'
 import { executeManualEdit, manualEditRef, requireManualEditDocument } from '../../shared/manualEdit.write.js'
 
 const numberOrNull = value => value === null || value === undefined || value === '' ? null : Number(value)
 
-export const updatePlayerShirtNumber = input => {
+export const updatePlayerSeasonDetails = input => {
+  const hasShirt = Object.prototype.hasOwnProperty.call(input, 'numShirt')
+  const hasUrl = Object.prototype.hasOwnProperty.call(input, 'playerUrl')
+  requireValue(hasShirt || hasUrl, 'לא נבחר שדה לעדכון')
   const identity = {
     playerId: requireValue(clean(input.playerId), 'מזהה שחקן חסר'),
     teamId: requireValue(clean(input.teamId), 'מזהה קבוצה חסר'),
     seasonId: requireValue(clean(input.seasonId), 'מזהה עונה חסר'),
     teamSeasonDocumentId: requireValue(clean(input.teamSeasonDocumentId), 'מזהה עונת קבוצה חסר'),
   }
-  const numShirt = numberOrNull(input.numShirt)
-  if (numShirt !== null && (!Number.isSafeInteger(numShirt) || numShirt < 1)) {
+  const numShirt = hasShirt ? numberOrNull(input.numShirt) : null
+  if (hasShirt && numShirt !== null && (!Number.isSafeInteger(numShirt) || numShirt < 1)) {
     throw new Error('מספר חולצה חייב להיות מספר שלם וחיובי')
   }
+  const playerUrl = hasUrl ? urlValue(input.playerUrl) : ''
   const teamRef = manualEditRef('teamSeasons', identity.teamSeasonDocumentId)
   const seasonRef = manualEditRef('playerSeasons', buildPlayerSeasonDocumentId(identity))
   const indexRef = manualEditRef('playerSearchIndexes', buildPlayerSearchIndexDocumentId(identity))
@@ -35,7 +39,9 @@ export const updatePlayerShirtNumber = input => {
         clean(teamIdentity.seasonId) === identity.seasonId,
         'זהות עונת הקבוצה סותרת',
       )
-      requireValue(clean(team.stats?.statsLoadState?.status) === 'loaded', 'אפשר לערוך מספר חולצה רק לאחר טעינת סטטיסטיקה')
+      if (hasShirt) {
+        requireValue(clean(team.stats?.statsLoadState?.status) === 'loaded', 'אפשר לערוך מספר חולצה רק לאחר טעינת סטטיסטיקה')
+      }
       const rosterPlayer = team.roster?.playersById?.[identity.playerId]
       requireValue(Boolean(rosterPlayer), 'השחקן חסר בסגל עונת הקבוצה')
 
@@ -51,6 +57,7 @@ export const updatePlayerShirtNumber = input => {
       }
       const indexSnapshot = get(indexRef)
       const index = indexSnapshot?.exists() ? indexSnapshot.data() : null
+      if (hasUrl) requireValue(season && seasonTeam && index, 'מסמכי השחקן לעונה חסרים; לא בוצעה שמירה')
       if (index) {
         requireValue(
           clean(index.playerId) === identity.playerId &&
@@ -61,23 +68,37 @@ export const updatePlayerShirtNumber = input => {
       }
 
       const changes = []
-      if (numberOrNull(rosterPlayer.numShirt) !== numShirt) {
+      const shirtChanged = hasShirt && numberOrNull(rosterPlayer.numShirt) !== numShirt
+      const teamManual = team.manual || {}
+      const teamPlayerManual = teamManual.playersById?.[identity.playerId] || {}
+      const urlChanged = hasUrl && clean(teamPlayerManual.playerUrl) !== playerUrl
+      if (shirtChanged || urlChanged) {
         changes.push({
           ref: teamRef,
           patch: {
-            roster: {
+            ...(shirtChanged ? { roster: {
               ...team.roster,
               playersById: {
                 ...team.roster.playersById,
                 [identity.playerId]: { ...rosterPlayer, numShirt, updatedAt },
               },
               updatedAt,
-            },
+            } } : {}),
+            ...(urlChanged ? { manual: {
+              ...teamManual,
+              playersById: {
+                ...(teamManual.playersById || {}),
+                [identity.playerId]: { ...teamPlayerManual, playerUrl, updatedAt },
+              },
+              updatedAt,
+            } } : {}),
             timestamps: { ...(team.timestamps || {}), updatedAt },
           },
         })
       }
-      if (seasonTeam && numberOrNull(seasonTeam.roster?.numShirt) !== numShirt) {
+      const seasonShirtChanged = hasShirt && seasonTeam && numberOrNull(seasonTeam.roster?.numShirt) !== numShirt
+      const seasonUrlChanged = hasUrl && seasonTeam && clean(seasonTeam.manual?.playerUrl) !== playerUrl
+      if (seasonShirtChanged || seasonUrlChanged) {
         changes.push({
           ref: seasonRef,
           patch: {
@@ -85,7 +106,8 @@ export const updatePlayerShirtNumber = input => {
               ...season.teamsById,
               [identity.teamId]: {
                 ...seasonTeam,
-                roster: { ...(seasonTeam.roster || {}), numShirt },
+                ...(seasonShirtChanged ? { roster: { ...(seasonTeam.roster || {}), numShirt } } : {}),
+                ...(seasonUrlChanged ? { manual: { ...(seasonTeam.manual || {}), playerUrl } } : {}),
                 updatedAt,
               },
             },
@@ -93,10 +115,27 @@ export const updatePlayerShirtNumber = input => {
         })
       }
       const indexValue = numShirt === null ? '' : String(numShirt)
-      if (index && clean(index.player?.numShirt) !== indexValue) {
-        changes.push({ ref: indexRef, patch: { player: { ...(index.player || {}), numShirt: indexValue } } })
+      const indexShirtChanged = hasShirt && index && clean(index.player?.numShirt) !== indexValue
+      const indexUrlChanged = hasUrl && index && clean(index.player?.playerUrl) !== playerUrl
+      if (indexShirtChanged || indexUrlChanged) {
+        changes.push({
+          ref: indexRef,
+          patch: { player: {
+            ...(index.player || {}),
+            ...(indexShirtChanged ? { numShirt: indexValue } : {}),
+            ...(indexUrlChanged ? { playerUrl } : {}),
+          } },
+        })
       }
       return changes
     },
   })
 }
+
+export const updatePlayerShirtNumber = input => updatePlayerSeasonDetails({
+  playerId: input.playerId,
+  teamId: input.teamId,
+  seasonId: input.seasonId,
+  teamSeasonDocumentId: input.teamSeasonDocumentId,
+  numShirt: input.numShirt,
+})

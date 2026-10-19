@@ -253,6 +253,7 @@ describe('buildStatsLoadApprovedState', () => {
       sources: currentSources,
     })
 
+    currentSources.league.seasonsById['2026_2027'].table.teamsById['club-1_2011_1'].officialTable.teamGamePlayed = 10
     const repairState = buildStatsProjectionRepairApprovedState({
       leagueId: 'league-1',
       teamId: 'club-1_2011_1',
@@ -265,6 +266,8 @@ describe('buildStatsLoadApprovedState', () => {
     })
 
     expect(loadState.leagueProjection.patch.stats.loadedAt).toBe('2026-10-13T10:00:00.000Z')
+    expect(loadState.canonicalTeamSeason.stats.statsLoadState.teamGamePlayedAtLoad).toBe(8)
+    expect(loadState.leagueProjection.patch.stats.teamGamePlayedAtLoad).toBe(8)
     expect(repairState.canonicalTeamSeason).toBeUndefined()
     expect(repairState.counterpartPatches).toBeUndefined()
     expect(repairState.playerSeasonPlans).toHaveLength(2)
@@ -273,6 +276,7 @@ describe('buildStatsLoadApprovedState', () => {
       hasStats: true,
       statsComplete: true,
       loadedAt: '2026-10-13T10:00:00.000Z',
+      teamGamePlayedAtLoad: 8,
     })
   })
 

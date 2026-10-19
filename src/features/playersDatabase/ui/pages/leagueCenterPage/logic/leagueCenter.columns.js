@@ -1,12 +1,14 @@
 // src/features/playersDatabase/ui/pages/leagueCenterPage/logic/leagueCenter.columns.js
 
 import {
+  Box,
   Button,
   Chip,
   IconButton,
   Link,
   Stack,
   Typography,
+  Tooltip,
 } from '@mui/joy'
 
 import LeagueName from '../../../components/entities/LeagueName.js'
@@ -17,6 +19,7 @@ import { dataTableColumnsSx as columnSx } from '../../../components/tables/dataT
 import { dataTableActionsSx as actionSx } from '../../../components/tables/dataTable/sx/dataTableActions.sx.js'
 import { leagueCenterColumnsSx as sx } from '../sx/leagueCenter.columns.sx.js'
 import { getFullDateIl } from '../../../../../../shared/format/dateUtils.js'
+import { LEAGUE_RESEARCH_FILTER_LABELS } from '../../../logic/leagueWorkNavigation.js'
 
 const columnWidth = key => buildTableColumnWidth(LEAGUE_CENTER_TABLE_WIDTHS[key])
 
@@ -27,71 +30,81 @@ const seasonStatusPresentation = value => ({
   no_teams: { label: 'אין קבוצות', color: 'warning', iconId: 'noData' },
 }[value] || { label: 'לא הוגדר', color: 'neutral', iconId: 'noData' })
 
-const documentationFacts = row => {
-  const counts = row.documentationCounts || {}
-  const rosterCount = Number(row.teamsCount || 0) - Number(counts.NO_ROSTER || 0)
-  const statsCount = Number(counts.STATS_LOADED || 0) + Number(counts.STATS_FINAL || 0)
-
-  return (
-    <Stack direction='row' spacing={0.35} sx={sx.factsChips}>
-      <Chip
-        size='sm'
-        variant='outlined'
-        color='neutral'
-        title='קבוצות עם סגל'
-        startDecorator={iconUi({ id: 'addPlayers', size: 'sm' })}
-      >
-        {rosterCount}
-      </Chip>
-      <Chip
-        size='sm'
-        variant='outlined'
-        color='success'
-        title='קבוצות עם סטטיסטיקה'
-        startDecorator={iconUi({ id: 'stats', size: 'sm' })}
-      >
-        {statsCount}
-      </Chip>
-    </Stack>
-  )
-}
-
-const professionalPriorityFacts = row => (
-  <Stack direction='row' spacing={0.35} sx={sx.priorityFacts}>
-    <Chip
-      size='sm'
-      variant='outlined'
-      color='warning'
-      title='משימות התקפה'
-      startDecorator={iconUi({ id: 'attack', size: 'sm' })}
-    >
-      {row.offenseOnlyPriorityCount || 0}
-    </Chip>
-    <Chip
-      size='sm'
-      variant='outlined'
-      color='success'
-      title='משימות הגנה'
-      startDecorator={iconUi({ id: 'defense', size: 'sm' })}
-    >
-      {row.defenseOnlyPriorityCount || 0}
-    </Chip>
-    <Chip
-      size='sm'
-      variant='outlined'
-      color='primary'
-      title='משימות משולבות'
-      startDecorator={iconUi({ id: 'transitions', size: 'sm' })}
-    >
-      {row.combinedPriorityCount || 0}
-    </Chip>
-  </Stack>
+const missingFact = label => (
+  <Tooltip title={label}>
+    <Box component='span' tabIndex={0} aria-label={label} sx={sx.missingFact}>
+      {iconUi({ id: 'infoOutline', size: 'small', sx: { fontSize: 14, color: 'inherit' } })}
+    </Box>
+  </Tooltip>
 )
 
-const statusSortValue = value => {
-  const sortValue = { full: 2, partial: 1, missing: 0 }[value]
-  return sortValue === undefined || sortValue === null ? -1 : sortValue
-}
+const buildResearchColumns = (onOpenLeague, strongSignalMinimum) => [
+  { key: 'matchingTeams', label: 'קבוצות עם איתותים חזקים', pending: false },
+  { key: 'pendingTeams', label: 'ממתינות לחקירה', pending: true },
+].map(({ key, label, pending }) => {
+  const matchingKey = `strongMin${strongSignalMinimum}`
+  const filter = pending ? matchingKey + 'Pending' : matchingKey
+  return {
+    key,
+    label,
+    workArea: true,
+    defaultSortDirection: 'desc',
+    getSortValue: row => row.strongSignalWorkCounts?.[filter],
+    render: row => {
+      if (!row.teamsCount) return '−'
+      const count = row.strongSignalWorkCounts?.[filter]
+      const total = pending ? row.strongSignalWorkCounts?.[matchingKey] : row.teamsCount
+      if (typeof count !== 'number' || typeof total !== 'number') {
+        return missingFact('סיכום עוצמות האיתותים אינו זמין')
+      }
+      return (
+        <Chip
+          component='span'
+          size='sm'
+          variant='outlined'
+          startDecorator={pending
+            ? iconUi({ id: 'notes', size: 'small', sx: { fontSize: 15, color: 'inherit' } })
+            : null}
+          slotProps={{ action: {
+            type: 'button',
+            'aria-label': label + ': ' + count + ' מתוך ' + total + ' קבוצות, ' + LEAGUE_RESEARCH_FILTER_LABELS[matchingKey],
+            'aria-labelledby': undefined,
+          } }}
+          disabled={!onOpenLeague || total === 0}
+          onClick={() => onOpenLeague?.(row, filter)}
+          sx={sx.signalStrengthBadge(pending)}
+        >
+          <Box component='bdi'>{total > 0 ? count + '/' + total : '−'}</Box>
+        </Chip>
+      )
+    },
+  }
+})
+
+const buildLoadingColumns = onOpenLeague => [
+  {
+    key: 'statsLoaded', label: 'טעינת סטטיסטיקות',
+    getSortValue: row => row.teamsCount ? row.playersStatsCompleteCount / row.teamsCount : null,
+    render: row => row.teamsCount ? (
+      <Chip
+        component='span'
+        size='sm'
+        variant='outlined'
+        color={row.playersStatsCompleteCount === row.teamsCount ? 'success' : 'neutral'}
+        slotProps={{ action: {
+          type: 'button',
+          'aria-label': 'פתיחת קבוצות ללא טעינת סטטיסטיקות מלאה; נטענו ' + row.playersStatsCompleteCount + ' מתוך ' + row.teamsCount,
+          'aria-labelledby': undefined,
+        } }}
+        disabled={!onOpenLeague}
+        onClick={() => onOpenLeague?.(row, 'incompleteStats')}
+        sx={sx.coverageChip}
+      >
+        <Box component='bdi'>{row.playersStatsCompleteCount}/{row.teamsCount}</Box>
+      </Chip>
+    ) : '−',
+  },
+].map(column => ({ ...column, workArea: true, sortable: Boolean(column.getSortValue) }))
 
 const dateSortValue = value => {
   if (!value) return null
@@ -145,18 +158,6 @@ const BASE_COLUMNS = [
     },
   },
   {
-    key: 'playersStatsStatus',
-    label: 'סגל וסטטס',
-    getSortValue: row => statusSortValue(row.playersStatsStatus),
-    render: documentationFacts,
-  },
-  {
-    key: 'professionalPriority',
-    label: 'עדיפות מקצועית',
-    getSortValue: row => Number(row.offensePriorityCount || 0) + Number(row.defensePriorityCount || 0),
-    render: professionalPriorityFacts,
-  },
-  {
     key: 'tableImportedAt',
     label: 'טעינה אחרונה',
     getSortValue: row => dateSortValue(row.tableImportedAt),
@@ -171,9 +172,19 @@ const BASE_COLUMNS = [
   { key: 'actions', label: '' },
 ]
 
-export const buildLeagueCenterColumns = ({ onOpenLeague, onDeleteLeagueSeason, getDeleteAvailability }) => (
-  BASE_COLUMNS.map(column => {
-    const widthSx = columnWidth(column.key)
+export const buildLeagueCenterColumns = ({
+  onOpenLeague,
+  onDeleteLeagueSeason,
+  getDeleteAvailability,
+  strongSignalMinimum = 1,
+}) => (
+  [
+    ...BASE_COLUMNS.slice(0, 5),
+    ...buildLoadingColumns(onOpenLeague),
+    ...buildResearchColumns(onOpenLeague, strongSignalMinimum),
+    ...BASE_COLUMNS.slice(5),
+  ].map(column => {
+    const widthSx = columnWidth(column.workArea ? 'work' : column.key)
 
     if (column.key === 'actions') {
       return {
@@ -241,11 +252,13 @@ export const buildLeagueCenterColumns = ({ onOpenLeague, onDeleteLeagueSeason, g
       }
     }
 
+    const areaHeaderSx = column.key === 'statsLoaded' ? sx.loadingAreaHeader : sx.workAreaHeader
+    const areaCellSx = column.key === 'statsLoaded' ? sx.loadingAreaCell : sx.workAreaCell
     return {
       ...column,
       sx: { ...columnSx.centerColumn, ...widthSx },
-      headerSx: columnSx.centerColumn,
-      cellSx: columnSx.centerColumn,
+      headerSx: { ...columnSx.centerColumn, ...(column.workArea ? areaHeaderSx : {}) },
+      cellSx: { ...columnSx.centerColumn, ...(column.workArea ? areaCellSx : {}) },
     }
   })
 )

@@ -162,6 +162,7 @@ const subscribeCachedDocument = ({
     feature: 'playersDatabase',
     action,
     listenerId,
+    meta: { documentPath: reference.path },
   }
 
   trackFirestoreListenerOpen(usage)

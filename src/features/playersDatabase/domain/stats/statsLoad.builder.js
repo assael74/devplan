@@ -23,6 +23,7 @@ import {
   validateStatsRowsAgainstLeague,
 } from './validation.js'
 import { buildTeamBalanceFromTeamSeason } from './teamBalance.builder.js'
+import { buildLeagueStatsProjection, readStatsGameCount } from './statsLoadState.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
 const object = value => (value && typeof value === 'object' && !Array.isArray(value) ? value : {})
@@ -590,17 +591,6 @@ export const buildStatsLoadApprovedState = ({
       professionalScoutProfileIds: array(nextScoutingPlayers[playerId] && nextScoutingPlayers[playerId].professionalProfileIds),
     }))
   const scoutProfilesSummary = buildScoutProfilesSummary(scoutedRows)
-  const teamTaskSignals = {
-    offense: Boolean(teamBalance && teamBalance.teamTaskSignals && teamBalance.teamTaskSignals.offense),
-    defense: Boolean(teamBalance && teamBalance.teamTaskSignals && teamBalance.teamTaskSignals.defense),
-    updatedAt: updatedAt || null,
-  }
-  const scoutAvailability = object(teamBalance && teamBalance.scoutInterpretation)
-  const teamTaskAvailability = {
-    availability: clean(scoutAvailability.availability) || (leagueContext.teamGamePlayed < 8 ? 'unavailable' : 'available'),
-    reason: clean(scoutAvailability.availabilityReason) || (leagueContext.teamGamePlayed < 8 ? 'season_sample_insufficient' : ''),
-  }
-
   const playerUrlsById = {}
   const manual = clone(object(existingTeamSeason.manual))
   normalizedIncoming.forEach(row => {
@@ -629,6 +619,7 @@ export const buildStatsLoadApprovedState = ({
       statsLoadState: {
         status: 'loaded',
         updatedAt: updatedAt || null,
+        teamGamePlayedAtLoad: readStatsGameCount(leagueContext.teamGamePlayed),
       },
       updatedAt: updatedAt || null,
     },
@@ -637,8 +628,6 @@ export const buildStatsLoadApprovedState = ({
       scoutProfilesSummary,
       updatedAt: updatedAt || null,
     },
-    teamTaskSignals,
-    teamTaskAvailability,
     timestamps: {
       ...object(existingTeamSeason.timestamps),
       updatedAt: updatedAt || null,
@@ -648,14 +637,9 @@ export const buildStatsLoadApprovedState = ({
   const playersWithScoutProfileCount = Object.values(nextScoutingPlayers)
     .filter(player => array(player.professionalProfileIds).length > 0).length
   const leagueTeamPatch = {
-    stats: {
-      hasStats: Object.values(nextStatsPlayers).some(player => clean(player.statsStatus) === 'loaded'),
-      statsComplete: true,
-      loadedAt: teamSeason.stats.statsLoadState.updatedAt || null,
-    },
+    stats: buildLeagueStatsProjection(teamSeason),
     scouting: {
       playersWithScoutProfileCount,
-      teamTaskSignals,
     },
     updatedAt: updatedAt || null,
   }
@@ -883,8 +867,6 @@ export const buildStatsProjectionRepairApprovedState = ({
     previousClubsCenterTeam: sources.previousClubsCenterTeam || null,
     updatedAt,
   })
-  const loadedStatsPlayers = Object.values(statsPlayersById)
-    .filter(player => clean(player && player.statsStatus) === 'loaded')
   const playersWithScoutProfileCount = Object.values(scoutingPlayersById)
     .filter(player => array(player && player.professionalProfileIds).length > 0).length
 
@@ -904,16 +886,9 @@ export const buildStatsProjectionRepairApprovedState = ({
       seasonId: resolvedSeasonId,
       teamId: resolvedTeamId,
       patch: {
-        stats: {
-          hasStats: loadedStatsPlayers.length > 0,
-          statsComplete: clean(object(object(teamSeason.stats).statsLoadState).status) === 'loaded',
-          loadedAt: clean(object(object(teamSeason.stats).statsLoadState).status) === 'loaded'
-            ? object(object(teamSeason.stats).statsLoadState).updatedAt || null
-            : null,
-        },
+        stats: buildLeagueStatsProjection(teamSeason),
         scouting: {
           playersWithScoutProfileCount,
-          teamTaskSignals: { ...object(teamSeason.teamTaskSignals) },
         },
         updatedAt: updatedAt || null,
       },

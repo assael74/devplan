@@ -35,6 +35,10 @@ Team Interest משתמש רק ב־Attack וב־Defense. `midfieldCore` ו־
 כאשר אין שחקנים מסווגים בקו התקפה או הגנה, ה־finding הוא בקשת בדיקת סיווג.
 המצב אינו קובע חוסר איכות ואינו מפיק `teamNeed` או `marketOpportunity` לקו.
 
+כל ממצא שמפיק צורך לקבוצה, הזדמנות לשוק או בדיקת סיווג מסומן כמעניין
+ומשתתף במשפחת האיזון, לרבות `ATTACK_DEPTH_REVIEW` ו־
+`ATTACK_QUALITY_REVIEW`. עוצמה והקרנות מוגדרות ב־`TEAM_SIGNALS_CONTRACT.md`.
+
 ## Invalidation
 
 שינוי תפקיד ידני מחייב בנייה מחדש של `lineClassification`,‏ Team Balance,

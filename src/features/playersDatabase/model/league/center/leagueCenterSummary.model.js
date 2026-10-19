@@ -1,3 +1,5 @@
+// src/features/playersDatabase/model/league/center/leagueCenterSummary.model.js
+
 import { PLAYERS_DATABASE_LEAGUES_CATALOG } from '../../../catalog/leagues.catalog.js'
 import { toNumberOrZero } from '../../shared/value.model.js'
 
@@ -9,7 +11,7 @@ export const buildLeagueCenterSummary = rows => ({
   notStartedLeagues: rows.filter(row => row.seasonWorkStatus === 'not_started').length,
   leaguesWithoutTeams: rows.filter(row => row.seasonWorkStatus === 'no_teams').length,
   leaguesRequiringReview: rows.filter(row => row.requiresReview).length,
-  leaguesWithProfessionalPriority: rows.filter(row => row.hasProfessionalPriority).length,
+  leaguesWithSignals: rows.filter(row => row.hasTeamSignals).length,
   openedLeagues: rows.filter(row => row.hasLeagueDoc).length,
   unopenedCatalogLeagues: rows.filter(row => (
     row.catalogLeagueId && !row.hasLeagueDoc
@@ -43,14 +45,6 @@ export const buildLeagueCenterSummary = rows => ({
   ),
   teamsCount: rows.reduce(
     (sum, row) => sum + toNumber(row.teamsCount),
-    0
-  ),
-  offensePriorityCount: rows.reduce(
-    (sum, row) => sum + toNumber(row.offensePriorityCount),
-    0
-  ),
-  defensePriorityCount: rows.reduce(
-    (sum, row) => sum + toNumber(row.defensePriorityCount),
     0
   ),
   catalogLeagues: PLAYERS_DATABASE_LEAGUES_CATALOG.length,

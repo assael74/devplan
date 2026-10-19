@@ -34,17 +34,13 @@ const emptyDirections = key => ({
 
 const buildTeam = ({ leagueId = 'league-1' } = {}) => ({
   teamSeasonDocumentId: 'club-a_2010_1__2025_2026',
+  showInvestigationIndicator: false,
   birthYear: 2010,
   ageGroupId: 'u16',
   teamSlot: 1,
   leagueId,
   documentationState: 'NO_ROSTER',
   documentationStateUpdatedAt: null,
-  teamTaskSignals: {
-    offense: false,
-    defense: false,
-    updatedAt: null,
-  },
   performance: {
     tableRank: 1,
     points: 10,
@@ -143,7 +139,7 @@ describe('writeClubsCenter', () => {
 
     expect(findFieldPath(
       options.mergeFields,
-      ['clubsById', 'club-a', 'teamsById', 'club-a_2010_1']
+      ['clubsById', 'club-a', 'teamsById', 'club-a_2010_1', 'documentationState']
     )).toBeTruthy()
     expect(findFieldPath(
       options.mergeFields,
@@ -151,6 +147,9 @@ describe('writeClubsCenter', () => {
     )).toBeTruthy()
     expect(findFieldPath(options.mergeFields, ['clubsById', 'club-a'])).toBeFalsy()
     expect(options.mergeFields).not.toContain('clubsById')
+    expect(findFieldPath(options.mergeFields, ['clubsById', 'club-a', 'teamsById', 'club-a_2010_1'])).toBeFalsy()
+    expect(options.mergeFields.some(field => field instanceof FieldPath &&
+      ['teamTaskSignals', 'teamTaskAvailability'].includes(field.segments.at(-1)))).toBe(false)
 
     expect(data.clubsById['club-a'].teamsById['club-a_2010_2']).toEqual({
       __deleteField: true,
@@ -307,3 +306,7 @@ describe('writeClubsCenter', () => {
     expect(setDoc).not.toHaveBeenCalled()
   })
 })
+
+jest.mock('../signals/refreshTeamSignalSummaries.js', () => ({
+  refreshTeamSignalSummaries: jest.fn(async () => ({ teams: 1, documents: 3 })),
+}))

@@ -64,6 +64,11 @@ export default function DataTableCell({ column, row, index, rowContext }) {
   const content = column.render
     ? column.render(row, index, rowContext)
     : row[column.key]
+  const isNumber = typeof content === 'number' && Number.isFinite(content)
+  const isNumericText = typeof content === 'string' && content.trim() !== '' && Number.isFinite(Number(content))
+  const displayContent = isNumber || isNumericText ? (
+    <Box component='span' data-cell-value sx={sx.cellValue}>{content}</Box>
+  ) : content
 
   return (
     <Box
@@ -84,9 +89,9 @@ export default function DataTableCell({ column, row, index, rowContext }) {
           row={row}
           index={index}
         >
-          {content}
+          {displayContent}
         </DataTableCellLink>
-      ) : content}
+      ) : displayContent}
     </Box>
   )
 }

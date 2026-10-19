@@ -1,3 +1,7 @@
+// src/features/playersDatabase/ui/pages/leagueCenterPage/logic/leagueCenter.export.js
+
+import { TEAM_SIGNAL_FAMILIES } from '../../../../domain/signals/teamSignalSummary.js'
+
 const clean = value => String(value === undefined || value === null ? '' : value).trim()
 const toNumber = value => Number.isFinite(Number(value)) ? Number(value) : 0
 
@@ -41,22 +45,26 @@ export const buildLeagueCenterExportConfig = ({ rows = [] } = {}) => ({
         total: row?.playersStatsTargetCount,
       }),
     },
-    {
-      key: 'offensePriorityCoverage',
-      label: 'עדיפות התקפית',
-      value: row => coverage({
-        complete: row?.offensePriorityCount,
-        total: row?.offensePriorityTargetCount,
-      }),
-    },
-    {
-      key: 'defensePriorityCoverage',
-      label: 'עדיפות הגנתית',
-      value: row => coverage({
-        complete: row?.defensePriorityCount,
-        total: row?.defensePriorityTargetCount,
-      }),
-    },
+    ...TEAM_SIGNAL_FAMILIES.flatMap(({ id, label }) => [
+      {
+        key: `${id}-count`, label: `${label} — קבוצות עם איתות`,
+        value: row => row?.signalFamiliesById?.[id]?.activeTeamCount === null ||
+          row?.signalFamiliesById?.[id]?.activeTeamCount === undefined
+          ? 'לא ידוע' : row.signalFamiliesById[id].activeTeamCount,
+      },
+      {
+        key: `${id}-level`, label: `${label} — עוצמה מרבית`,
+        value: row => row?.signalFamiliesById?.[id]?.maxLevel === null ||
+          row?.signalFamiliesById?.[id]?.maxLevel === undefined
+          ? 'לא ידוע' : row.signalFamiliesById[id].maxLevel,
+      },
+      {
+        key: `${id}-availability`, label: `${label} — כיסוי מידע`,
+        value: row => ({ available: 'מלא', partial: 'חלקי', unavailable: 'חסר' }[
+          row?.signalFamiliesById?.[id]?.availability
+        ] || 'חסר'),
+      },
+    ]),
     { key: 'playersCount', label: 'שחקנים', value: row => toNumber(row?.playersCount) },
     { key: 'playersWithProfiles', label: 'שחקנים עם פרופיל', value: row => toNumber(row?.playersWithProfiles) },
     { key: 'scoutProfilesCount', label: 'שיוכי פרופיל', value: row => toNumber(row?.scoutProfilesCount) },

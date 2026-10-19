@@ -45,13 +45,6 @@ const TEAM_FIELDS = Object.freeze([
   'teamSlot',
   'documentationState',
   'documentationStateUpdatedAt',
-  'teamTaskSignals',
-])
-
-const TASK_SIGNAL_FIELDS = Object.freeze([
-  'offense',
-  'defense',
-  'updatedAt',
 ])
 
 const TABLE_STATES = new Set([
@@ -95,27 +88,14 @@ const requireIdentity = value => requireExactFields(
   'Invalid LeaguesCenter league identity projection'
 )
 
-const requireTaskSignals = value => {
-  const signals = requireExactFields(
-    value,
-    TASK_SIGNAL_FIELDS,
-    'Invalid LeaguesCenter team task signals projection'
-  )
-
-  if (typeof signals.offense !== 'boolean' || typeof signals.defense !== 'boolean') {
-    throw new Error('Invalid LeaguesCenter team task signals projection')
-  }
-
-  return signals
-}
-
 const requireTeam = ({ teamId, value }) => {
   const id = clean(teamId)
   if (!id) throw new Error('Invalid LeaguesCenter team projection identity')
 
   const team = requireExactFields(
     value,
-    TEAM_FIELDS,
+    Object.prototype.hasOwnProperty.call(value, 'showInvestigationIndicator')
+      ? [...TEAM_FIELDS, 'showInvestigationIndicator'] : TEAM_FIELDS,
     'Invalid LeaguesCenter team projection'
   )
 
@@ -127,7 +107,6 @@ const requireTeam = ({ teamId, value }) => {
     throw new Error('Invalid LeaguesCenter team documentation state')
   }
 
-  requireTaskSignals(team.teamTaskSignals)
 
   return team
 }
@@ -195,6 +174,11 @@ const requireWriteTarget = ({ approvedState = {} } = {}) => {
   const season = operation === WRITE_OPERATIONS.UPSERT_SEASON
     ? requireSeason(source.season)
     : null
+  const deleteTeamIds = source.deleteTeamIds || []
+  if (!Array.isArray(deleteTeamIds) || new Set(deleteTeamIds).size !== deleteTeamIds.length ||
+    deleteTeamIds.some(id => typeof id !== 'string' || !clean(id) || season?.teamsById?.[id])) {
+    throw new Error('Invalid LeaguesCenter team delete targets')
+  }
 
   return {
     writeRequired: true,
@@ -203,6 +187,7 @@ const requireWriteTarget = ({ approvedState = {} } = {}) => {
     operation,
     identity,
     season,
+    deleteTeamIds,
     updatedAt: source.updatedAt,
   }
 }
@@ -213,12 +198,26 @@ const buildUpsertWrite = target => {
     target.leagueId,
     'identity'
   )
-  const seasonPath = new FieldPath(
-    'leaguesById',
-    target.leagueId,
-    'seasonsById',
-    target.seasonId
+  const seasonPath = (...parts) => new FieldPath(
+    'leaguesById', target.leagueId, 'seasonsById', target.seasonId, ...parts
   )
+  const teamsById = { ...target.season.teamsById }
+  // Upserts own individual fields. Only removed teams or an explicit empty
+  // registry replace a whole row/map, retaining retired fields on live teams.
+  const mergeFields = [identityPath, 'updatedAt', ...SEASON_FIELDS
+    .filter(field => field !== 'teamsById').map(field => seasonPath(field))]
+  const teamEntries = Object.entries(teamsById)
+  if (!teamEntries.length) {
+    mergeFields.push(seasonPath('teamsById'))
+  } else {
+    teamEntries.forEach(([teamId, team]) => {
+      Object.keys(team).forEach(field => mergeFields.push(seasonPath('teamsById', teamId, field)))
+    })
+    target.deleteTeamIds.forEach(teamId => {
+      teamsById[teamId] = deleteField()
+      mergeFields.push(seasonPath('teamsById', teamId))
+    })
+  }
 
   return {
     data: {
@@ -226,13 +225,13 @@ const buildUpsertWrite = target => {
         [target.leagueId]: {
           identity: target.identity,
           seasonsById: {
-            [target.seasonId]: target.season,
+            [target.seasonId]: { ...target.season, teamsById },
           },
         },
       },
       updatedAt: target.updatedAt,
     },
-    mergeFields: [identityPath, seasonPath, 'updatedAt'],
+    mergeFields,
   }
 }
 

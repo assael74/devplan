@@ -23,29 +23,6 @@ import {
   buildTeamRosterSeasonUrl,
 } from '../model/teamWorkspace.navigation.js'
 
-const PERFORMANCE_CHANGE_LABELS = {
-  significant: 'שינוי משמעותי · לחקירה',
-  minor: 'שינוי קטן · למעקב',
-  steady: 'ללא שינוי',
-  limited: 'השוואה חלקית',
-}
-
-const rosterBalanceTaskLabel = presentation => {
-  if (!presentation.rosterBalanceAvailable) return 'ניתוח טרם זמין'
-  if (presentation.rosterBalanceStatus === 'multiple') {
-    return `${presentation.rosterBalanceTaskCount} משימות · לחקירה`
-  }
-  return presentation.rosterBalanceStatus === 'single'
-    ? 'משימה אחת · למעקב'
-    : 'ללא משימות'
-}
-
-const movementSignalLabel = signal => {
-  if (signal.status === 'limited') return 'ניתוח טרם זמין'
-  if (signal.count === 2) return '2 איתותים · לחקירה'
-  return signal.count === 1 ? 'איתות אחד · למעקב' : 'ללא איתות מזוהה'
-}
-
 const insightSlideDirection = (previous, current) => {
   if (previous.mode !== 'insight' || current.mode !== 'insight' ||
     previous.seasonKey !== current.seasonKey) return 0
@@ -71,7 +48,8 @@ export default function TeamInformationOverview({
   overviewRosterProfileFilterOptions = [],
   onProfileFilterChange,
   onPlayerRoleEdit,
-  onShirtEdit,
+  onPlayerDetailsEdit,
+  findPlayerDetailsSeason,
   onPlayerOpen,
 }) {
   const location = useLocation()
@@ -161,7 +139,8 @@ export default function TeamInformationOverview({
     profileFilterOptions: overviewRosterProfileFilterOptions,
     onProfileFilterChange,
     onPlayerRoleEdit,
-    onShirtEdit,
+    onPlayerDetailsEdit,
+    findPlayerDetailsSeason,
     onPlayerOpen,
     structureFilter,
     favoritePlayerKeys,
@@ -198,7 +177,6 @@ export default function TeamInformationOverview({
   }, [defaultStructureFilter, view.selectedSeasonKey])
 
   const insightPresentation = buildTeamInsightsPresentation({ view: insightView, club, clubIntelligence })
-  const performanceChangeStatus = view.performanceInsight?.changeStatus || 'limited'
 
   return (
     <Box
@@ -217,13 +195,9 @@ export default function TeamInformationOverview({
         <>
           <Box sx={sx.sectionTiles} aria-label='איתותי הקבוצה'>
             {TEAM_INSIGHTS.map((tile, index) => {
-              const tileStatus = tile.id === 'performance'
-                ? performanceChangeStatus
-                : tile.id === 'roster-balance'
-                  ? insightPresentation.rosterBalanceStatus
-                  : tile.id === 'year-movements' ? insightPresentation.movementSignal.status
-                    : tile.id === 'future-competition' ? insightPresentation.futureCompetitionSignal.status
-                      : tile.id === 'club-gap' ? insightPresentation.clubComparison.status : null
+              const family = insightPresentation.signals.familiesById[tile.id]
+              const tileStatus = family.level === 2 ? 'multiple' : family.level === 1 ? 'single'
+                : family.level === 0 ? 'none' : 'limited'
               const note = tile.id === 'roster-balance'
                 ? insightPresentation.rosterBalanceTitles
                   .map(title => title.replace(/[.!?]+$/, ''))
@@ -262,16 +236,8 @@ export default function TeamInformationOverview({
                       sx.sectionTileAction,
                       tileStatus && sx.insightTileStatus(tileStatus),
                     ]}>
-                      {tile.id === 'performance'
-                        ? PERFORMANCE_CHANGE_LABELS[performanceChangeStatus]
-                        : tile.id === 'roster-balance'
-                          ? rosterBalanceTaskLabel(insightPresentation)
-                          : tile.id === 'year-movements'
-                            ? movementSignalLabel(insightPresentation.movementSignal)
-                            : tile.id === 'future-competition'
-                              ? insightPresentation.futureCompetitionSignal.label
-                              : tile.id === 'club-gap' ? insightPresentation.clubComparison.label
-                          : 'לחקירה'}
+                      {family.level === 2 ? 'איתות 2 · לחקירה' : family.level === 1 ? 'איתות 1 · למעקב'
+                        : family.level === 0 ? 'ללא איתות' : 'מידע חסר'}
                     </Typography>
                   </Box>
                   <Box sx={sx.sectionTileBody}>

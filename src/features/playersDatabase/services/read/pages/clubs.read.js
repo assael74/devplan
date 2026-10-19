@@ -86,6 +86,7 @@ export const subscribeClubsDirectoryDocument = ({ onError } = {}) => {
     feature: 'playersDatabase',
     action: 'clubs-directory-live',
     listenerId,
+    meta: { documentPath: reference.path },
   }
 
   trackFirestoreListenerOpen(usage)

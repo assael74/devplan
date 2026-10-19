@@ -169,6 +169,8 @@ export default function TeamInsightContent({
               favoritePlayerKeys={rosterProps.favoritePlayerKeys}
               onFavoriteToggle={rosterProps.onFavoriteToggle}
               onPlayerOpen={rosterProps.onPlayerOpen}
+              onPlayerDetailsEdit={rosterProps.onPlayerDetailsEdit}
+              findPlayerDetailsSeason={rosterProps.findPlayerDetailsSeason}
             />
           </>
         ) : null}
@@ -202,6 +204,8 @@ export default function TeamInsightContent({
             seasonSignals={presentation.movementSeasonSignals}
             clubLevel={presentation.clubComparison.clubLevel}
             onPlayerOpen={rosterProps.onPlayerOpen}
+            onPlayerDetailsEdit={rosterProps.onPlayerDetailsEdit}
+            findPlayerDetailsSeason={rosterProps.findPlayerDetailsSeason}
             favoritePlayerKeys={rosterProps.favoritePlayerKeys}
             onFavoriteToggle={rosterProps.onFavoriteToggle}
             profilePeriod={movementPeriod}

@@ -15,6 +15,7 @@ import {
 import { resolveMovementDirection } from '../movement/index.js'
 import { arrivalSourceDocumentId, buildArrivalHistory } from '../movement/arrivalHistory.projection.js'
 import { normalizePlayerNameValue } from '../../model/player/playerIdentity.model.js'
+import { createEmptyTeamNotes, hasTeamNoteData } from '../../model/team/teamNotes.model.js'
 import { previousRosterSeasonRef } from './rosterHistory.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
@@ -247,14 +248,12 @@ const requireRemovedPlayerResolutions = ({ removedPlayerIds, movement }) => {
 const emptyStats = () => ({
   playersById: {},
   teamBalance: {},
-  statsLoadState: { status: 'missing', updatedAt: null },
+  statsLoadState: { status: 'missing', updatedAt: null, teamGamePlayedAtLoad: null },
   updatedAt: null,
 })
 
 const emptyScouting = () => ({ playersById: {}, scoutProfilesSummary: {}, updatedAt: null })
 const emptyManual = () => ({ playersById: {}, updatedAt: null })
-const emptyTaskSignals = () => ({ offense: false, defense: false, updatedAt: null })
-const emptyTaskAvailability = () => ({ availability: '', reason: '' })
 
 const buildRosterManual = ({ players, birthYear, playersById, existingManual, updatedAt }) => {
   const current = object(existingManual)
@@ -352,7 +351,7 @@ export const buildTeamRoot = ({ team, season, leagueId, existingTeamRoot, teamId
       birthYear: Number(team.birthYear),
       teamSlot: Number(team.teamSlot),
     },
-    notes: clean(current.notes),
+    notes: current.notes === undefined ? createEmptyTeamNotes() : current.notes,
     seasonRefsById,
     timestamps: {
       createdAt: current.timestamps && current.timestamps.createdAt
@@ -425,10 +424,6 @@ const buildTeamSeason = ({
     },
     scouting: Object.keys(object(current.scouting)).length ? current.scouting : emptyScouting(),
     manual: Object.keys(object(manual)).length ? manual : emptyManual(),
-    teamTaskSignals: Object.keys(object(current.teamTaskSignals)).length ? current.teamTaskSignals : emptyTaskSignals(),
-    teamTaskAvailability: Object.keys(object(current.teamTaskAvailability)).length
-      ? current.teamTaskAvailability
-      : emptyTaskAvailability(),
     timestamps: {
       createdAt: current.timestamps && current.timestamps.createdAt
         ? current.timestamps.createdAt
@@ -592,8 +587,6 @@ const buildSearchIndexDocument = ({ player, playerRoot, playerSeasonDocumentId, 
       ageGroupId: teamSeason.identity.ageGroupId,
       ageGroupLabel: clean(league.ageGroupLabel),
       region: clean(league.region),
-      teamUrl: clean(teamSeason.competitionSnapshot.teamUrl),
-      seasonUrl: clean(season.seasonUrl),
     },
     player: {
       playerUrl: clean(manual.playerUrl),
@@ -700,7 +693,15 @@ const buildLeagueProjection = ({
   updatedAt: updatedAt || null,
 })
 
-const buildLeaguesCenterProjection = ({ league, season, teamId, teamSeason, previousTeamProjection, updatedAt }) => ({
+const buildLeaguesCenterProjection = ({
+  league,
+  season,
+  teamId,
+  teamRow,
+  teamSeason,
+  previousTeamProjection,
+  updatedAt,
+}) => ({
   writeRequired: true,
   leagueId: league.leagueId,
   seasonId: teamSeason.identity.seasonId,
@@ -708,6 +709,9 @@ const buildLeaguesCenterProjection = ({ league, season, teamId, teamSeason, prev
   team: {
     clubId: teamSeason.identity.clubId,
     teamSlot: teamSeason.identity.teamSlot,
+    showInvestigationIndicator: typeof teamRow?.showInvestigationIndicator === 'boolean'
+      ? teamRow.showInvestigationIndicator
+      : previousTeamProjection?.showInvestigationIndicator === true,
     ...buildCenterTeamStateProjection({
       teamSeason,
       seasonStatus: season.seasonStatus,
@@ -1325,6 +1329,7 @@ export const buildRosterLoadWritePlan = ({
       league,
       season: normalizedSeason,
       teamId,
+      teamRow,
       teamSeason,
       previousTeamProjection: previousLeaguesCenterTeamProjection,
       updatedAt,
@@ -1450,6 +1455,7 @@ export const buildRosterProjectionRepairPlan = ({
       league: canonicalLeague,
       season,
       teamId: resolvedTeamId,
+      teamRow,
       teamSeason,
       previousTeamProjection: previousLeaguesCenterTeamProjection,
       updatedAt,
@@ -1477,7 +1483,7 @@ const buildClearedTeamRoot = ({ existingTeamRoot, seasonId, updatedAt }) => {
   if (!Object.keys(root).length) return { operation: 'NONE', document: null }
   const seasonRefsById = { ...map(root.seasonRefsById) }
   delete seasonRefsById[seasonId]
-  const hasIndependentData = Boolean(clean(root.notes))
+  const hasIndependentData = hasTeamNoteData(root.notes)
   if (!Object.keys(seasonRefsById).length && !hasIndependentData) {
     return { operation: 'DELETE', document: null }
   }
@@ -1585,6 +1591,9 @@ export const buildRosterClearWritePlan = ({
   const leaguesCenterTeam = {
     clubId,
     teamSlot,
+    showInvestigationIndicator: typeof teamRow.showInvestigationIndicator === 'boolean'
+      ? teamRow.showInvestigationIndicator
+      : previousLeaguesCenterTeamProjection?.showInvestigationIndicator === true,
     ...buildCenterTeamStateProjection({
       teamSeason: emptyTeamSeason,
       seasonStatus: season.seasonStatus,

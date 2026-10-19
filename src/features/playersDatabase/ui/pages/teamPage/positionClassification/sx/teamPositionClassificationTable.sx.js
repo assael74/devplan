@@ -142,12 +142,9 @@ export const teamPositionClassificationTableSx = {
   },
 
   indexColumn: {
-    width: '7%',
+    width: '5%',
     whiteSpace: 'nowrap',
   },
-
-  shirtCell: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.25 },
-  shirtEdit: { minWidth: 25, minHeight: 23, p: 0.25, fontSize: 11, fontWeight: 700 },
 
   avatarColumn: {
     width: '3%',
@@ -225,8 +222,8 @@ export const teamPositionClassificationTableSx = {
 
   avatarWrap: {
     position: 'relative',
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
     mx: 'auto',
   },
 
@@ -236,7 +233,43 @@ export const teamPositionClassificationTableSx = {
     display: 'block',
     objectFit: 'cover',
     borderRadius: '50%',
-    border: `1px solid ${devPlanColors.primaryLight}`,
+  },
+
+  avatarEditButton: {
+    display: 'grid',
+    placeItems: 'center',
+    width: 32,
+    height: 32,
+    p: '1px',
+    border: `1px solid ${devPlanColors.primary}`,
+    borderRadius: '50%',
+    bgcolor: '#FFFFFF',
+    boxShadow: '0 2px 5px rgba(16, 43, 64, 0.22)',
+    cursor: 'pointer',
+    transition: 'box-shadow 140ms ease, transform 140ms ease, border-color 140ms ease',
+    '&:hover:not(:disabled)': {
+      borderColor: devPlanColors.primaryDark,
+      boxShadow: '0 3px 9px rgba(16, 43, 64, 0.34)',
+      transform: 'translateY(-1px)',
+    },
+    '&:active:not(:disabled)': {
+      boxShadow: '0 1px 3px rgba(16, 43, 64, 0.2)',
+      transform: 'translateY(0)',
+    },
+    '&:disabled': { cursor: 'default', opacity: 0.6, boxShadow: 'none' },
+    '&:focus-visible': { outline: `2px solid ${devPlanColors.primary}`, outlineOffset: 2 },
+  },
+
+  avatarNumber: {
+    width: 28,
+    height: 28,
+    display: 'grid',
+    placeItems: 'center',
+    borderRadius: '50%',
+    bgcolor: devPlanColors.petrolLight,
+    color: devPlanColors.petrolDark,
+    fontSize: 12,
+    fontWeight: 800,
   },
 
   avatarInterestBadge: level => ({

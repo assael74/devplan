@@ -13,10 +13,10 @@ export const leagueCenterContextSx = {
     },
     gap: 0,
     p: 0.85,
-    border: '2px solid #9bbbd2',
+    border: `2px solid ${devPlanColors.border}`,
     borderRadius: 10,
-    bgcolor: '#eaf3fa',
-    boxShadow: '0 5px 14px rgba(23, 67, 96, 0.14)',
+    bgcolor: devPlanColors.surface,
+    boxShadow: 'none',
   },
 
   filterColumn: {
@@ -153,7 +153,7 @@ export const leagueCenterContextSx = {
     p: 0.55,
     border: '1px solid #c8d7e2',
     borderRadius: 8,
-    bgcolor: '#fff',
+    bgcolor: devPlanColors.secondaryLight,
   },
 
   statusChips: {

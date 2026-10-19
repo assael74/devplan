@@ -16,7 +16,9 @@ import {
   toNumberOrZero,
 } from '../../shared/value.model.js'
 import { buildTeamPerformanceViewModel } from '../../team/teamPerformance.viewModel.js'
+import { buildLeaguePriorityContexts } from '../../team/teamPriorityContext.model.js'
 import { sortByTableRank } from '../../shared/tableRows.model.js'
+import { buildLeagueStatsStatus } from './leagueStatsStatus.model.js'
 
 const object = value => (
   value && typeof value === 'object' && !Array.isArray(value) ? value : {}
@@ -174,6 +176,8 @@ const buildTeamRow = ([teamId, team], clubsDirectory) => {
     clubId,
     clubLevel: toNumberOrZero(team?.clubLevel),
     teamUrl: cleanValue(team?.teamUrl),
+    showInvestigationIndicator: team?.showInvestigationIndicator === true,
+    teamSignalSummary: team?.teamSignalSummary || null,
     tableRank: toNumberOrZero(officialTable.rank),
     name: resolveTeamName({ teamId, team, clubsDirectory }),
     teamSlot: team?.teamSlot,
@@ -189,7 +193,9 @@ const buildTeamRow = ([teamId, team], clubsDirectory) => {
     },
     playersCount: toNumberOrZero(roster.playersCount),
     hasPlayers: Boolean(roster.hasPlayers),
+    hasStats: stats.hasStats === true,
     statsComplete: Boolean(stats.statsComplete),
+    statsStatus: buildLeagueStatsStatus({ stats, teamGamePlayed: officialTable.teamGamePlayed }),
     rosterLoadedAt: roster.loadedAt || null,
     statsLoadedAt: stats.loadedAt || null,
     profilesCount: toNumberOrZero(scouting.playersWithScoutProfileCount),
@@ -197,21 +203,27 @@ const buildTeamRow = ([teamId, team], clubsDirectory) => {
     attackPriority: performanceView.offense.priority.level,
     defensePriority: performanceView.defense.priority.level,
     performanceView,
-    teamTaskSignals: scouting.teamTaskSignals || {
-      offense: false,
-      defense: false,
-      updatedAt: null,
-    },
   }
 }
 
-export const buildLeaguePageTeams = ({ season, clubsDirectory }) => (
-  sortByTableRank(
+export const buildLeaguePageTeams = ({
+  season,
+  clubsDirectory,
+  leagueId = '',
+  leagueLevel,
+}) => {
+  const contexts = buildLeaguePriorityContexts({ season, leagueLevel })
+  return sortByTableRank(
     Object.entries(object(season?.table?.teamsById))
-      .map(entry => buildTeamRow(entry, clubsDirectory))
+      .map(entry => ({
+        ...buildTeamRow(entry, clubsDirectory),
+        leagueId,
+        seasonKey: season?.seasonKey || '',
+        priorityContext: contexts[entry[0]] || null,
+      }))
       .filter(row => row.id)
   )
-)
+}
 
 const getLeagueLevelLabel = level => {
   if (level === null || level === undefined || level === '') return '-'

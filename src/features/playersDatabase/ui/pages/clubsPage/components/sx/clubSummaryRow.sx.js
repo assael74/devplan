@@ -102,7 +102,7 @@ export const clubSummaryRowSx = {
     fontWeight: 700,
   },
 
-  summarySpotlightAreaContentBox: {
+  summarySignalsAreaContentBox: {
     minHeight: 50,
     px: 1.25,
     py: 0.4,

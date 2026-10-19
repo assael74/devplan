@@ -1,6 +1,8 @@
 // src/features/playersDatabase/catalog/firestoreDocuments/teamSeason.catalog.js
 // Canonical document contract.
 
+import { TEAM_SIGNAL_SUMMARY_SCHEMA } from '../teamSignalSummary.catalog.js'
+
 export const TEAM_SEASON_DOCUMENT = {
   collection: 'dbBirthTeamSeasons',
   documentId: '{teamId}__{seasonId}',
@@ -111,12 +113,12 @@ export const TEAM_SEASON_DOCUMENT = {
     },
 
     // Rich Team Balance remains Stats-owned.
-    // teamTaskSignals/teamTaskAvailability are stored separately and are not duplicated here.
     teamBalance: {},
 
     statsLoadState: {
       status: '', // missing | loaded
       updatedAt: null,
+      teamGamePlayedAtLoad: null,
     },
 
     updatedAt: null,
@@ -307,16 +309,7 @@ export const TEAM_SEASON_DOCUMENT = {
   },
 
   // Automatically derived system signals. These are not personal Tasks.
-  teamTaskSignals: {
-    offense: false,
-    defense: false,
-    updatedAt: null,
-  },
-
-  teamTaskAvailability: {
-    availability: '',
-    reason: '',
-  },
+  teamSignalSummary: TEAM_SIGNAL_SUMMARY_SCHEMA,
 
   timestamps: {
     createdAt: null,
@@ -336,8 +329,7 @@ export const TEAM_SEASON_DOCUMENT = {
     movement: 'Roster/Movement flow',
     scouting: 'Stats-derived seasonal scouting canonical state',
     manual: 'Seasonal manual edit flow',
-    teamTaskSignals: 'Automatically derived team logic',
-    teamTaskAvailability: 'Automatically derived team logic',
+    teamSignalSummary: 'Rebuildable five-family summary from canonical League, Team Season and ClubProfile inputs',
   },
 
   writeModel: [
@@ -361,9 +353,12 @@ export const TEAM_SEASON_DOCUMENT = {
     'playerDocumentId is intentionally not persisted because playerId is also the Player Root document id.',
     'primaryPosition and positionLayer are canonical on Player Root; Team Season stores Team Page snapshots only.',
     'Seasonal Stats-derived scouting results and their evidence are canonical in Team Season.',
+    'stats.statsLoadState.teamGamePlayedAtLoad snapshots the official League team games at the last Stats Load, not the league round or imported player games; missing legacy values remain unknown.',
+    'Only Stats Load replaces this snapshot. Stats Clear resets it to null; League/Roster loads, manual edits and projection repairs must not advance it.',
     'Player SearchIndex and Player Season must copy/rebuild scouting views from Team Season rather than recompute them.',
     'Official table facts are canonical in League and appear here only under competitionSnapshot.',
     'teamUrl, clubLevel and clubStrengthLevel are snapshots and are not canonical in Team Season.',
+    'Editing teamUrl updates League and competitionSnapshot.teamUrl in this document only if it already exists, in one transaction. It never creates Team Season, reads or writes player SearchIndexes, or refreshes team signals.',
     'lineClassification is derived from Stats and persists line only.',
     'pendingById is unresolved roster state and is not a resolved movement.',
     'transfersInById is the canonical Movement fact on the destination Team Season.',
@@ -373,7 +368,7 @@ export const TEAM_SEASON_DOCUMENT = {
     'A missing source Team Season makes a missing transfersOut counterpart legal; writers must not create a Team Root or Team Season only to complete the counterpart.',
     'If canonical transfersIn and an existing transfersOut counterpart disagree, Audit reports the mismatch and the incoming fact wins for rebuild/migration.',
     'Player Season and ClubsCenter movement projections rebuild from the canonical incoming fact; counterpart rows are verification/navigation aids, not a second source of truth.',
-    'teamTaskSignals and teamTaskAvailability are stored once at Team Season level.',
+    'Retired task signal fields may remain in existing documents; current flows do not calculate, update or delete them.',
     'Personal Tasks are owned by the separate internal Tasks system and are not embedded here.',
     'notes are multi-season and belong to Team Root, not Team Season.',
   ],

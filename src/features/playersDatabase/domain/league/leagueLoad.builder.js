@@ -1,6 +1,7 @@
 // src/features/playersDatabase/domain/league/leagueLoad.builder.js
 
 import { normalizeCompetitionRules } from '../projections/club/clubCompetition.projection.js'
+import { readStatsGameCount } from '../stats/statsLoadState.js'
 import {
   resolveLeagueTeamId,
 } from './leagueIdentity.js'
@@ -120,19 +121,14 @@ const normalizeStatsProjection = value => ({
   hasStats: Boolean(value && value.hasStats),
   statsComplete: Boolean(value && value.statsComplete),
   loadedAt: value && value.loadedAt || null,
+  teamGamePlayedAtLoad: readStatsGameCount(value && value.teamGamePlayedAtLoad),
 })
 
 const normalizeScoutingProjection = value => ({
+  ...value,
   playersWithScoutProfileCount: toNullableNumber(
     value && value.playersWithScoutProfileCount
   ),
-  teamTaskSignals: {
-    offense: Boolean(value && value.teamTaskSignals && value.teamTaskSignals.offense),
-    defense: Boolean(value && value.teamTaskSignals && value.teamTaskSignals.defense),
-    updatedAt: value && value.teamTaskSignals
-      ? value.teamTaskSignals.updatedAt || null
-      : null,
-  },
 })
 
 const resolveClubLevel = ({ clubId, clubProfilesById, existingRow }) => {
@@ -152,6 +148,7 @@ const buildTeamRow = ({
   birthYear,
   clubProfilesById,
   existingTeamsById,
+  investigationByTeamId,
   performanceByTeamId,
   updatedAt,
 }) => {
@@ -186,6 +183,9 @@ const buildTeamRow = ({
       roster: normalizeRosterProjection(existingRow && existingRow.roster),
       stats: normalizeStatsProjection(existingRow && existingRow.stats),
       scouting: normalizeScoutingProjection(existingRow && existingRow.scouting),
+      showInvestigationIndicator: typeof investigationByTeamId?.[teamId] === 'boolean'
+        ? investigationByTeamId[teamId]
+        : existingRow?.showInvestigationIndicator === true,
       updatedAt: updatedAt || null,
     },
   }
@@ -196,6 +196,7 @@ const buildTeamsById = ({
   birthYear,
   clubProfilesById,
   existingTeamsById,
+  investigationByTeamId,
   performanceByTeamId,
   updatedAt,
 }) => {
@@ -207,6 +208,7 @@ const buildTeamsById = ({
       birthYear,
       clubProfilesById,
       existingTeamsById,
+      investigationByTeamId,
       performanceByTeamId,
       updatedAt,
     })
@@ -250,6 +252,7 @@ export const buildLeagueLoadDocument = ({
   season = {},
   clubProfilesById = {},
   performanceByTeamId = {},
+  investigationByTeamId = {},
   performanceCalculation = {},
   createdAt = null,
   updatedAt = null,
@@ -310,6 +313,7 @@ export const buildLeagueLoadDocument = ({
     birthYear,
     clubProfilesById,
     existingTeamsById,
+    investigationByTeamId,
     performanceByTeamId,
     updatedAt,
   })

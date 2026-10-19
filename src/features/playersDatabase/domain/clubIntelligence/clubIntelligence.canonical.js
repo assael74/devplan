@@ -5,8 +5,8 @@ import {
   CLUB_INTELLIGENCE_SEASON_VIEW,
 } from './clubIntelligence.contract.js'
 import { buildClubSignalCoverage } from './clubSignalCoverage.builder.js'
-import { buildClubSpotlights } from './clubSpotlights.builder.js'
 import { buildClubCompetitionPath } from './clubCompetitionPath.builder.js'
+import { adaptClubCohortComparison } from './clubCohortComparison.adapter.js'
 import { buildTeamCompetitionState } from '../league/clubsCenterTeam.builder.js'
 
 const clean = value => String(value === null || value === undefined ? '' : value).trim()
@@ -75,10 +75,6 @@ const buildTeam = ({
     leagueLevel: positiveNumberOrNull(league && league.leagueLevel),
   },
   performance: object(team && team.performance),
-  teamTaskAvailability: {
-    availability: team && team.documentExists === false ? 'unavailable' : 'available',
-    reason: team && team.documentExists === false ? 'TEAM_SEASON_MISSING' : null,
-  },
 })
 
 const buildBirthYearTeam = ({ birthYear, teamsByView }) => ({
@@ -98,16 +94,6 @@ const buildBirthYearTeam = ({ birthYear, teamsByView }) => ({
   performance: {
     current: (teamsByView.current || []).map(team => team.performance),
     previous: (teamsByView.previous || []).map(team => team.performance),
-  },
-  squad: {
-    current: (teamsByView.current || []).map(team => ({
-      teamTaskSignals: team.teamTaskSignals || {},
-      teamTaskAvailability: team.teamTaskAvailability,
-    })),
-    previous: (teamsByView.previous || []).map(team => ({
-      teamTaskSignals: team.teamTaskSignals || {},
-      teamTaskAvailability: team.teamTaskAvailability,
-    })),
   },
   profiles: { current: [], previous: [] },
   transfers: {
@@ -217,13 +203,44 @@ export const buildClubIntelligenceFromCanonicalSources = ({
     },
     birthYearTeams,
     signalCoverage: {},
-    spotlights: [],
   }
 
   return {
     ...intelligence,
     signalCoverage: buildClubSignalCoverage({ club, birthYearTeams }),
-    spotlights: buildClubSpotlights({ club, birthYearTeams }),
+  }
+}
+
+export const buildClubSeasonIntelligence = ({
+  clubId = '',
+  profile = null,
+  directoryEntry = null,
+  seasonKey = '',
+  sources = {},
+} = {}) => {
+  const { current = {}, history = [], leaguesById = {}, unavailableSeasonIds = [] } = sources
+  const { seasonId = '', center = null, teamSeasonsById = {} } = current
+
+  return {
+    ...buildClubIntelligenceFromCanonicalSources({
+      clubId,
+      profile,
+      directoryEntry,
+      centers: [{
+        season: { seasonId, seasonKey, target: 'current' },
+        document: center,
+        leagueDocumentsById: leaguesById,
+      }],
+    }),
+    cohortComparison: adaptClubCohortComparison({
+      clubId,
+      seasonId,
+      center,
+      leaguesById,
+      teamSeasonsById,
+      history,
+      unavailableSeasonIds,
+    }),
   }
 }
 
