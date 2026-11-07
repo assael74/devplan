@@ -199,7 +199,7 @@ const FULL_NAV_SECTIONS = [
     items: [
       { label: 'ניטור שימוש', path: '/admin/firestore-usage', visualSrc: firestoreVisual, disabled: false },
       { label: 'בדיקת דוחות', path: '/dev/reports', iconId: 'insights', disabled: false },
-      { label: 'מעבדת ניתוח וידאו', href: process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:5173/' : '/videolab/', iconId: 'videoAnalysis', disabled: false },
+      { label: 'מעבדת ניתוח וידאו', href: process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:5173/' : '/videolab/', iconId: 'videoAnalysis', disabled: false, desktopOnly: true },
     ],
   },
 ]
@@ -209,6 +209,7 @@ export default function SideNav({
   badges,
   collapsed = false,
   navMode = 'full',
+  mobile = false,
 }) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -224,12 +225,12 @@ export default function SideNav({
 
     return FULL_NAV_SECTIONS.map(section => ({
       ...section,
-      items: section.items.map(item => ({
+      items: section.items.filter(item => !mobile || !item.desktopOnly).map(item => ({
         ...item,
         badge: item.badgeKey ? badges?.[item.badgeKey] : undefined,
       })),
     }))
-  }, [badges, navMode])
+  }, [badges, navMode, mobile])
 
   const handleNavigate = (path, disabled) => {
     if (disabled) return

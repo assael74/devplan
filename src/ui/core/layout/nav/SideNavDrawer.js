@@ -1,3 +1,4 @@
+// src/ui/core/layout/nav/SideNavDrawer.js
 import React from 'react'
 import { Drawer, Box, Typography, ModalClose } from '@mui/joy'
 import SideNav from './SideNav'
@@ -17,7 +18,7 @@ export default function SideNavDrawer({ open, onClose, badges, navMode = 'full',
       </Box>
 
       {/* --- תפריט --- */}
-      <SideNav onNavigate={onClose} badges={badges} navMode={navMode} />
+      <SideNav onNavigate={onClose} badges={badges} navMode={navMode} mobile />
     </Drawer>
   )
 }
