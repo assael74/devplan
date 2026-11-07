@@ -17,6 +17,7 @@ import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownR
 
 import { iconUi } from '../../icons/iconUi'
 import firestoreVisual from '../../images/firestore.png'
+import videoLabVisual from '../../images/videoLab.svg'
 import { navSx as sx } from './nav.sx'
 
 function SectionTitle({ children, collapsed }) {
@@ -199,7 +200,7 @@ const FULL_NAV_SECTIONS = [
     items: [
       { label: 'ניטור שימוש', path: '/admin/firestore-usage', visualSrc: firestoreVisual, disabled: false },
       { label: 'בדיקת דוחות', path: '/dev/reports', iconId: 'insights', disabled: false },
-      { label: 'מעבדת ניתוח וידאו', href: process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:5173/' : '/videolab/', iconId: 'videoAnalysis', disabled: false, desktopOnly: true },
+      { label: 'מעבדת ניתוח וידאו', href: process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:5173/' : '/videolab/', visualSrc: videoLabVisual, disabled: false, desktopOnly: true },
     ],
   },
 ]
