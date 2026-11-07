@@ -1,4 +1,4 @@
-// src/features/playersDatabase/domain/orchestration/playerFutureCompetitionPath.js
+// src/shared/scouting/players/playerFutureCompetitionPath.js
 
 import { buildYouthFutureCompetitionPath } from '../common/futureCompetition/futureCompetitionPath.js'
 

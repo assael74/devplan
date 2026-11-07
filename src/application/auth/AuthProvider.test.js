@@ -4,20 +4,12 @@ import * as React from 'react'
 import { act, render, screen } from '@testing-library/react'
 import { onAuthStateChanged } from 'firebase/auth'
 
-import { clearPlayersDatabaseDocumentCache } from '../../features/playersDatabase/services/cache/documentCache.js'
-import { resetPlayersDatabaseTasksSubscription } from '../../features/playersDatabase/services/read/tasks/tasks.read.js'
 import { AuthProvider, useAuth } from './AuthProvider.js'
 
 jest.mock('firebase/auth', () => ({ onAuthStateChanged: jest.fn() }))
 jest.mock('../../services/firebase/firebase', () => ({ auth: {} }))
 jest.mock('../../services/auth/auth.api', () => ({ authApi: { login: jest.fn(), logout: jest.fn() } }))
 jest.mock('../../services/auth/registerExternalUser.js', () => ({ registerExternalUser: jest.fn() }))
-jest.mock('../../features/playersDatabase/services/cache/documentCache.js', () => ({
-  clearPlayersDatabaseDocumentCache: jest.fn(),
-}))
-jest.mock('../../features/playersDatabase/services/read/tasks/tasks.read.js', () => ({
-  resetPlayersDatabaseTasksSubscription: jest.fn(),
-}))
 
 let authCallback
 let mountCount = 0
@@ -39,7 +31,7 @@ beforeEach(() => {
   })
 })
 
-test('changing uid clears PlayersDatabase store and remounts authenticated children', async () => {
+test('changing uid remounts authenticated children', async () => {
   render(
     <AuthProvider>
       <Consumer />
@@ -56,7 +48,5 @@ test('changing uid clears PlayersDatabase store and remounts authenticated child
     authCallback({ uid: 'user-b' })
   })
   expect(screen.getByText('user-b')).toBeInTheDocument()
-  expect(clearPlayersDatabaseDocumentCache).toHaveBeenCalledTimes(1)
-  expect(resetPlayersDatabaseTasksSubscription).toHaveBeenCalledTimes(1)
   expect(mountCount).toBe(2)
 })

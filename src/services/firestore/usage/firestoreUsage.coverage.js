@@ -24,18 +24,6 @@ export const FIRESTORE_USAGE_COVERAGE = [
   operation({ id: 'hub.trainings.transactions', feature: 'hub', collection: 'teamsShorts', type: 'transaction', instrumented: true, source: 'services/firestore/shorts/trainings' }),
   operation({ id: 'hub.abilities.transactions', feature: 'hub', collection: 'abilitiesShorts', type: 'transaction', instrumented: true, source: 'services/firestore/shorts/abilities/abilitiesUpsertHistory.js' }),
 
-  operation({ id: 'playersDatabase.search.count', feature: 'playersDatabase', collection: 'dbSearchIndexes', type: 'aggregation', instrumented: true, source: 'features/playersDatabase/services/read/searchPage.read.js' }),
-  operation({ id: 'playersDatabase.search.rows', feature: 'playersDatabase', collection: 'dbSearchIndexes', type: 'query', instrumented: true, source: 'features/playersDatabase/services/read/searchPage.read.js' }),
-  operation({ id: 'playersDatabase.leagues.list', feature: 'playersDatabase', collection: 'dbLeagues', type: 'query', instrumented: true, source: 'features/playersDatabase/services/read/league.js' }),
-  operation({ id: 'playersDatabase.league.read', feature: 'playersDatabase', collection: 'dbLeagues', type: 'document-read', instrumented: true, source: 'features/playersDatabase/services/read/league.js' }),
-  operation({ id: 'playersDatabase.team.read', feature: 'playersDatabase', collection: 'dbBirthTeams', type: 'document-read', instrumented: true, source: 'features/playersDatabase/services/read/team.js' }),
-  operation({ id: 'playersDatabase.player.read', feature: 'playersDatabase', collection: 'dbPlayers', type: 'document-read', instrumented: true, source: 'features/playersDatabase/services/read/playerPage.read.js' }),
-  operation({ id: 'playersDatabase.player.fallback', feature: 'playersDatabase', collection: 'dbBirthTeams', type: 'query', instrumented: true, source: 'features/playersDatabase/services/read/playerPage.read.js' }),
-  operation({ id: 'playersDatabase.favorites.read', feature: 'playersDatabase', collection: 'dbFavorites', type: 'document-read', instrumented: true, source: 'features/playersDatabase/services/read/favorites.read.js' }),
-  operation({ id: 'playersDatabase.tasks.listener', feature: 'playersDatabase', collection: 'tasksShorts', type: 'listener', instrumented: true, source: 'features/playersDatabase/services/read/tasks/tasks.read.js' }),
-
-  operation({ id: 'playersDatabase.entities.write', feature: 'playersDatabase', collection: 'dbPlayers/dbBirthTeams/dbLeagues', type: 'transaction', instrumented: true, source: 'features/playersDatabase/services/write' }),
-  operation({ id: 'playersDatabase.favorites.write', feature: 'playersDatabase', collection: 'dbFavorites', type: 'transaction', instrumented: true, source: 'features/playersDatabase/services/write/favorites' }),
   operation({ id: 'reports.public', feature: 'reports', collection: 'publicReports', type: 'read-write', instrumented: true, source: 'features/reports/service/firestore' }),
   operation({ id: 'reports.versions', feature: 'reports', collection: 'publicReports/versions', type: 'query-read-write', instrumented: true, source: 'features/reports/service/firestore' }),
   operation({ id: 'reports.index', feature: 'reports', collection: 'publicReportsIndexByType', type: 'query-transaction', instrumented: true, source: 'features/reports/service/firestore/publicReportIndex.firestore.js' }),

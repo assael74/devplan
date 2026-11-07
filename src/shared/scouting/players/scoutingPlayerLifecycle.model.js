@@ -1,4 +1,4 @@
-// src/features/playersDatabase/services/write/players/scoutingPlayerLifecycle.model.js
+// src/shared/scouting/players/scoutingPlayerLifecycle.model.js
 
 import { cleanDomainValue as clean } from './contracts/domainValue.contract.js'
 

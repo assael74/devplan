@@ -25,7 +25,7 @@ export const REPORT_CATEGORY_OPTIONS = [
     id: REPORT_CATEGORY_IDS.EXTERNAL_DETAILS,
     label: 'מפרט חיצוני',
     description: 'דוחות מידע על שחקנים, קבוצות, ליגות ופרופילי סקאוט חיצוניים',
-    idIcon: 'playersDatabase',
+    idIcon: 'playerDatabase',
   },
 ]
 

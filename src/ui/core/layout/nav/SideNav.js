@@ -16,6 +16,7 @@ import {
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded'
 
 import { iconUi } from '../../icons/iconUi'
+import firestoreVisual from '../../images/firestore.png'
 import { navSx as sx } from './nav.sx'
 
 function SectionTitle({ children, collapsed }) {
@@ -29,6 +30,7 @@ function SectionTitle({ children, collapsed }) {
 }
 
 function isItemActive(pathname, itemPath) {
+  if (!itemPath) return false
   if (pathname === itemPath) return true
   if (itemPath === '/') return false
 
@@ -38,13 +40,19 @@ function isItemActive(pathname, itemPath) {
 function NavItem({ item, active, onClick, collapsed }) {
   const button = (
     <ListItemButton
+      component={item.href ? 'a' : undefined}
+      href={item.href}
+      target={item.href ? '_blank' : undefined}
+      rel={item.href ? 'noopener noreferrer' : undefined}
       disabled={item.disabled}
-      onClick={item.disabled ? undefined : onClick}
+      onClick={item.disabled || item.href ? undefined : onClick}
       {...sx.navItem(active, collapsed)}
     >
       <Box {...sx.navBox(collapsed)}>
         <Box sx={sx.navIcon}>
-          {iconUi({ id: item.iconId })}
+          {item.visualSrc ? (
+            <Box component="img" src={item.visualSrc} alt="" aria-hidden="true" sx={sx.navVisual} />
+          ) : iconUi({ id: item.iconId })}
         </Box>
 
         {!collapsed && (
@@ -90,7 +98,7 @@ function CollapsibleSection({
       <List sx={{ py: 0 }}>
         {section.items.map(item => (
           <NavItem
-            key={item.path}
+            key={item.path || item.href}
             item={item}
             collapsed
             active={isItemActive(pathname, item.path)}
@@ -132,7 +140,7 @@ function CollapsibleSection({
           <List sx={{ pt: 0.5, pb: 0 }}>
             {section.items.map(item => (
               <NavItem
-                key={item.path}
+                key={item.path || item.href}
                 item={item}
                 collapsed={false}
                 active={isItemActive(pathname, item.path)}
@@ -173,7 +181,6 @@ const FULL_NAV_SECTIONS = [
     title: 'ניהול',
     items: [
       { label: 'וידאו', path: '/video', iconId: 'video', disabled: false },
-      { label: 'מאגר שחקנים', path: '/players-database', iconId: 'playersDatabase', disabled: false },
       { label: 'כספים', path: '/finance', iconId: 'payments', disabled: false },
       { label: 'ניהול יומנים', path: '/calendar', iconId: 'meetings', disabled: false },
       { label: 'ניהול תגים', path: '/tags', iconId: 'tags', disabled: false },
@@ -190,8 +197,9 @@ const FULL_NAV_SECTIONS = [
     title: 'מערכת ופיתוח',
     collapsible: true,
     items: [
-      { label: 'ניטור שימוש', path: '/admin/firestore-usage', iconId: 'firestoreUsage', disabled: false },
+      { label: 'ניטור שימוש', path: '/admin/firestore-usage', visualSrc: firestoreVisual, disabled: false },
       { label: 'בדיקת דוחות', path: '/dev/reports', iconId: 'insights', disabled: false },
+      { label: 'מעבדת ניתוח וידאו', href: process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:5173/' : '/videolab/', iconId: 'videoAnalysis', disabled: false },
     ],
   },
 ]
@@ -261,7 +269,7 @@ export default function SideNav({
             <List sx={{ py: 0 }}>
               {section.items.map(item => (
                 <NavItem
-                  key={item.path}
+                  key={item.path || item.href}
                   item={item}
                   collapsed={collapsed}
                   active={isItemActive(location.pathname, item.path)}

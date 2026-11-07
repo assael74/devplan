@@ -1,5 +1,8 @@
 # Player Scoring Model
 
+> **הנחת עבודה מחייבת:** DevPlan היא מערכת למשתמש אחד, המבצע בכל רגע תהליך כתיבה עיקרי אחד.
+> כל הסוכנים חייבים להתבסס על כך בתכנון, במימוש ובביקורת, תוך שמירה על אימות נתונים, כתיבות אטומיות והגנה מפני כתיבה חלקית.
+
 ## Related Targets Model
 
 Player scoring consumes player targets. The target-setting process itself is documented separately:

@@ -1,0 +1,149 @@
+{
+  "fieldOverrides": [],
+  "indexes": [
+    {
+      "collectionGroup": "dbSearchIndexes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "seasonId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scoutCombinationIds",
+          "arrayConfig": "CONTAINS"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "dbSearchIndexes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "seasonId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "birthYear",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scoutCombinationIds",
+          "arrayConfig": "CONTAINS"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "dbSearchIndexes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "seasonId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "leagueLevel",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scoutCombinationIds",
+          "arrayConfig": "CONTAINS"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "dbSearchIndexes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "seasonId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "birthYear",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "leagueLevel",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scoutCombinationIds",
+          "arrayConfig": "CONTAINS"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "dbSearchIndexes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "seasonId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scoutProfileIds",
+          "arrayConfig": "CONTAINS"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "dbSearchIndexes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "seasonId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "birthYear",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scoutProfileIds",
+          "arrayConfig": "CONTAINS"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "dbSearchIndexes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "seasonId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "leagueLevel",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scoutProfileIds",
+          "arrayConfig": "CONTAINS"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "dbSearchIndexes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "seasonId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "birthYear",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "leagueLevel",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scoutProfileIds",
+          "arrayConfig": "CONTAINS"
+        }
+      ]
+    }
+  ]
+}

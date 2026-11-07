@@ -1,4 +1,4 @@
-// src/features/playersDatabase/domain/orchestration/buildPlayerScoutState.js
+// src/shared/scouting/players/buildPlayerScoutState.js
 
 import {
   buildDbPlayerScoutResult,

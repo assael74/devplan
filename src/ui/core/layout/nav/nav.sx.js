@@ -131,6 +131,13 @@ export const navSx = {
     gap: 1,
   },
 
+  navVisual: {
+    width: '100%',
+    height: '100%',
+    display: 'block',
+    objectFit: 'contain',
+  },
+
   navIcon: {
     width: 22,
     height: 22,

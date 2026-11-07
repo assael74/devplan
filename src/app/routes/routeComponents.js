@@ -7,9 +7,6 @@ const loadCalendarHubPage = () => import('../../features/calendarHub/CalendarHub
 const loadVideoHubPage = () => import('../../features/videoHub/VideoHubPage')
 const loadTagsManagementPage = () => import('../../features/tagsHub/TagsManagementPage.js')
 const loadFinancePage = () => import('../../features/finance/FinancePage.js')
-const loadPlayersDatabasePage = () => import('../../features/playersDatabase/index.js')
-const loadPlayersDatabaseReadScope = () =>
-  import('../../features/playersDatabase/ui/providers/PlayersDatabaseReadScope.js')
 const loadHubPage = () => import('../../features/hub/ui/HubPage')
 const loadPrivatePage = () => import('../../features/hub/scopes/PrivatePage.js')
 const loadRolesPage = () => import('../../features/roles/RolesPage.js')
@@ -27,69 +24,6 @@ const loadRegisterPage = () => import('../../features/auth/pages/RegisterPage')
 const loadForgotPasswordPage = () => import('../../features/auth/pages/ForgotPasswordPage')
 const loadPendingApprovalPage = () => import('../../features/auth/pages/PendingApprovalPage')
 const loadFirestoreUsagePage = () => import('../../features/firestoreUsage/FirestoreUsagePage.js')
-
-const loadPlayersDatabaseLeaguesCenterPage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.LeaguesCenterPage,
-  }))
-
-const loadPlayersDatabaseLeaguePage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.LeaguePage,
-  }))
-
-const loadPlayersDatabaseTeamPage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.TeamPage,
-  }))
-
-const loadPlayersDatabasePlayerPage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.PlayerPage,
-  }))
-
-const loadPlayersDatabaseSearchPage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.SearchPage,
-  }))
-
-const loadPlayersDatabaseDataOpsPage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.DataOpsPage,
-  }))
-
-const loadPlayersDatabaseDataOpsLayout = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.DataOpsLayout,
-  }))
-
-const loadPlayersDatabaseDataOpsAuditPage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.DataOpsAuditPage,
-  }))
-
-const loadPlayersDatabaseDataOpsReceiptsPage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.DataOpsReceiptsPage,
-  }))
-
-const loadPlayersDatabaseDataOpsSystemAuditPage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.DataOpsSystemAuditPage,
-  }))
-
-const loadPlayersDatabaseClubsPage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.ClubsPage,
-  }))
-const loadPlayersDatabaseClubPage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.ClubPage,
-  }))
-const loadPlayersDatabaseProfilesPage = () =>
-  import('../../features/playersDatabase/index.js').then(module => ({
-    default: module.ProfilesPage,
-  }))
 
 const loadAbilitiesExplainerPage = () =>
   import('../../features/abilities/explainer/AbilitiesExplainerPage.js')
@@ -109,21 +43,6 @@ export const CalendarHubPage = React.lazy(loadCalendarHubPage)
 export const VideoHubPage = React.lazy(loadVideoHubPage)
 export const TagsManagementPage = React.lazy(loadTagsManagementPage)
 export const FinancePage = React.lazy(loadFinancePage)
-export const PlayersDatabasePage = React.lazy(loadPlayersDatabasePage)
-export const PlayersDatabaseReadScope = React.lazy(loadPlayersDatabaseReadScope)
-export const PlayersDatabaseLeaguesCenterPage = React.lazy(loadPlayersDatabaseLeaguesCenterPage)
-export const PlayersDatabaseLeaguePage = React.lazy(loadPlayersDatabaseLeaguePage)
-export const PlayersDatabaseTeamPage = React.lazy(loadPlayersDatabaseTeamPage)
-export const PlayersDatabasePlayerPage = React.lazy(loadPlayersDatabasePlayerPage)
-export const PlayersDatabaseSearchPage = React.lazy(loadPlayersDatabaseSearchPage)
-export const PlayersDatabaseDataOpsLayout = React.lazy(loadPlayersDatabaseDataOpsLayout)
-export const PlayersDatabaseDataOpsPage = React.lazy(loadPlayersDatabaseDataOpsPage)
-export const PlayersDatabaseDataOpsAuditPage = React.lazy(loadPlayersDatabaseDataOpsAuditPage)
-export const PlayersDatabaseDataOpsReceiptsPage = React.lazy(loadPlayersDatabaseDataOpsReceiptsPage)
-export const PlayersDatabaseDataOpsSystemAuditPage = React.lazy(loadPlayersDatabaseDataOpsSystemAuditPage)
-export const PlayersDatabaseClubsPage = React.lazy(loadPlayersDatabaseClubsPage)
-export const PlayersDatabaseClubPage = React.lazy(loadPlayersDatabaseClubPage)
-export const PlayersDatabaseProfilesPage = React.lazy(loadPlayersDatabaseProfilesPage)
 
 export const HubPage = React.lazy(loadHubPage)
 export const PrivatePage = React.lazy(loadPrivatePage)

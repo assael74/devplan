@@ -1,5 +1,10 @@
 # DevPlan Codex instructions
 
+> **הנחת עבודה מחייבת:** DevPlan היא מערכת למשתמש אחד, המבצע בכל רגע תהליך כתיבה עיקרי אחד.
+> כל הסוכנים חייבים להתבסס על כך בתכנון, במימוש ובביקורת, תוך שמירה על אימות נתונים, כתיבות אטומיות והגנה מפני כתיבה חלקית.
+
+**חובה בכל מסמך חדש:** כל סוכן, כולל סוכני משנה, חייב להוסיף את הערת ״הנחת עבודה מחייבת״ שלעיל בראש כל מסמך הנחיות או תיעוד חדש במאגר, מיד אחרי הכותרת הראשית ולאחר מטא־נתונים אם קיימים. בעת עדכון מסמך קיים יש לוודא שההערה מופיעה בראשו. יש לשמור על גבולות העבודה שהמשתמש קבע.
+
 ## Scope
 
 - These instructions are for Codex working with the live repository.
@@ -15,8 +20,6 @@
 - Start from the requested files and the current diff when relevant.
 - Inspect only the narrowest dependency path needed to complete or verify the task.
 - Read `docs/README.md` only when the task needs an architecture or domain contract.
-- Under `src/features/playersDatabase`, use `$players-database` and follow the
-  feature `AGENTS.md`.
 - For visible UI, interaction, layout, styling, responsive behavior, or print UI,
   use `$devplan-ui-ux`.
 - If no documented skill or professional role clearly matches the task, propose

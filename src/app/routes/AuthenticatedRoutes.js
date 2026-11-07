@@ -27,21 +27,6 @@ import {
   RolesPage,
   ScoutPage,
   PlayerProfilePage,
-  PlayersDatabaseClubsPage,
-  PlayersDatabaseClubPage,
-  PlayersDatabaseDataOpsLayout,
-  PlayersDatabaseDataOpsPage,
-  PlayersDatabaseDataOpsAuditPage,
-  PlayersDatabaseDataOpsReceiptsPage,
-  PlayersDatabaseDataOpsSystemAuditPage,
-  PlayersDatabaseLeaguePage,
-  PlayersDatabaseLeaguesCenterPage,
-  PlayersDatabasePage,
-  PlayersDatabasePlayerPage,
-  PlayersDatabaseProfilesPage,
-  PlayersDatabaseReadScope,
-  PlayersDatabaseSearchPage,
-  PlayersDatabaseTeamPage,
   ReportsDashboardPage,
   SquadSimulatorPage,
   TagsManagementPage,
@@ -49,9 +34,9 @@ import {
   VideoHubPage,
 } from './routeComponents'
 
-function renderAdminRoutes(sessionKey) {
+function renderAdminRoutes() {
   return (
-    <Route element={lazyRoute(<PlayersDatabaseReadScope key={sessionKey} />)}>
+    <Route>
       <Route path={PUBLIC_ROUTES.login} element={<Navigate to={ROUTE_REDIRECTS.adminHome} replace />} />
       <Route path={PUBLIC_ROUTES.register} element={<Navigate to={ROUTE_REDIRECTS.adminHome} replace />} />
       <Route path={PUBLIC_ROUTES.forgotPassword} element={<Navigate to={ROUTE_REDIRECTS.adminHome} replace />} />
@@ -69,27 +54,6 @@ function renderAdminRoutes(sessionKey) {
       <Route path={ADMIN_ROUTES.tags} element={lazyRoute(<TagsManagementPage />, <TagsSkeleton />)} />
       <Route path={ADMIN_ROUTES.finance} element={lazyRoute(<FinancePage />)} />
       <Route path={ADMIN_ROUTES.paymentsLegacy} element={<Navigate to={ADMIN_ROUTES.finance} replace />} />
-
-      <Route>
-        <Route path={ADMIN_ROUTES.playersDatabase} element={lazyRoute(<PlayersDatabasePage />)} />
-        <Route path={ADMIN_ROUTES.playersDatabaseLeagues} element={lazyRoute(<PlayersDatabaseLeaguesCenterPage />)} />
-        <Route path={ADMIN_ROUTES.playersDatabaseSearch} element={lazyRoute(<PlayersDatabaseSearchPage />)} />
-        <Route path={ADMIN_ROUTES.playersDatabaseDataOps} element={lazyRoute(<PlayersDatabaseDataOpsLayout />)}>
-          <Route index element={lazyRoute(<PlayersDatabaseDataOpsPage />)} />
-          <Route path={ADMIN_ROUTES.playersDatabaseDataOpsAudit} element={lazyRoute(<PlayersDatabaseDataOpsAuditPage />)} />
-          <Route path={ADMIN_ROUTES.playersDatabaseDataOpsReceipts} element={lazyRoute(<PlayersDatabaseDataOpsReceiptsPage />)} />
-          <Route path={ADMIN_ROUTES.playersDatabaseDataOpsSystemAudit} element={lazyRoute(<PlayersDatabaseDataOpsSystemAuditPage />)} />
-        </Route>
-        <Route path={ADMIN_ROUTES.playersDatabaseClubs} element={lazyRoute(<PlayersDatabaseClubsPage />)} />
-        <Route path={ADMIN_ROUTES.playersDatabaseClub} element={lazyRoute(<PlayersDatabaseClubPage />)} />
-        <Route path={ADMIN_ROUTES.playersDatabaseProfiles} element={lazyRoute(<PlayersDatabaseProfilesPage />)} />
-        <Route path={ADMIN_ROUTES.playersDatabaseLegacyScan} element={<Navigate to={ROUTE_REDIRECTS.playersDatabaseSearch} replace />} />
-        <Route path={ADMIN_ROUTES.playersDatabaseLeague} element={lazyRoute(<PlayersDatabaseLeaguePage />)} />
-        <Route path={ADMIN_ROUTES.playersDatabaseTeam} element={lazyRoute(<PlayersDatabaseTeamPage />)} />
-        <Route path={ADMIN_ROUTES.playersDatabaseTeamV1} element={lazyRoute(<PlayersDatabaseTeamPage />)} />
-        <Route path={ADMIN_ROUTES.playersDatabaseTeamV2} element={lazyRoute(<PlayersDatabaseTeamPage />)} />
-        <Route path={ADMIN_ROUTES.playersDatabasePlayer} element={lazyRoute(<PlayersDatabasePlayerPage />)} />
-      </Route>
 
       <Route path={ADMIN_ROUTES.abilitiesExplainer} element={lazyRoute(<AbilitiesExplainerPage />)} />
       <Route path={ADMIN_ROUTES.squadSimulator} element={lazyRoute(<SquadSimulatorPage />, <SimulatorSkeleton />)} />
@@ -122,7 +86,7 @@ function renderSquadRoutes() {
   )
 }
 
-export default function renderAuthenticatedRoutes({ isAdmin, sessionKey }) {
+export default function renderAuthenticatedRoutes({ isAdmin }) {
   return (
     <Route
       element={
@@ -138,7 +102,7 @@ export default function renderAuthenticatedRoutes({ isAdmin, sessionKey }) {
         />
       }
     >
-      {isAdmin ? renderAdminRoutes(sessionKey) : renderSquadRoutes()}
+      {isAdmin ? renderAdminRoutes() : renderSquadRoutes()}
     </Route>
   )
 }

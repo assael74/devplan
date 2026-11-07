@@ -1,3 +1,5 @@
+// src/ui/core/icons/core/navigation.icons.js
+
 import {
   AddCircleOutline,
   AutoAwesomeMosaic,
@@ -40,7 +42,6 @@ export const navigationIcons = {
   insights: <Insights />,
   squadSimulator: <AccountTree />,
   playerDatabase: <ManageSearch />,
-  playersDatabase: <ManageSearch />,
   dataShow: <DataObject />,
   firestoreUsage: <DataObject />,
   viewLeague: <Visibility />,

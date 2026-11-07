@@ -521,7 +521,7 @@ export async function trackedRunTransaction(db, updateFunction, context = {}, op
 
     trackFirestoreTransaction({
       ...context,
-      feature: context.feature || 'playersDatabase',
+      feature: context.feature || 'unknown',
       action: context.action || 'firestore-transaction',
       collection: context.collection || collections[0] || 'unknown',
       operationSubtype: context.operationSubtype || 'runTransaction',
@@ -542,7 +542,7 @@ export async function trackedRunTransaction(db, updateFunction, context = {}, op
   } catch (error) {
     trackFirestoreTransaction({
       ...context,
-      feature: context.feature || 'playersDatabase',
+      feature: context.feature || 'unknown',
       action: context.action || 'firestore-transaction',
       collection: context.collection || 'unknown',
       operationSubtype: context.operationSubtype || 'runTransaction',

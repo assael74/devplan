@@ -1,4 +1,4 @@
-// features/squadSimulator/ui/components/SimulatorToolbar.js
+// src/features/squadSimulator/ui/components/SimulatorToolbar.js
 
 import { Box, Button, Chip, FormControl, FormLabel, Input, Sheet, Typography } from '@mui/joy'
 import { useTheme } from '@mui/joy/styles'
@@ -60,7 +60,6 @@ export default function SimulatorToolbar({
             </Button>
           </Box>
         </FormControl>
-        : null
       )}
       <Box sx={toolbarSx.toolbar}>
         {!isMobile && (
@@ -85,7 +84,6 @@ export default function SimulatorToolbar({
               </Button>
             </Box>
           </FormControl>
-          : null
         )}
 
         {targetMode === 'range' ? (

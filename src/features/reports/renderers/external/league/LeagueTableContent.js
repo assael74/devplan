@@ -8,7 +8,7 @@ import { SortMenuButton } from '../../../../../ui/patterns/sort/index.js'
 import {
   resolveTeamScoutPriorityLevel,
   resolveTeamScoutPriorityScoreLevel,
-} from '../../../../../shared/scouting/teams/index.js'
+} from '../../../../../shared/scouting/teams/teamScout.model.js'
 import {
   ReportList,
   ReportListRow,
