@@ -1,4 +1,4 @@
-// hub/playerProfile/desktop/modules/games/sx/list.sx.js
+// src/features/hub/playerProfile/desktop/modules/games/sx/list.sx.js
 
 import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 
@@ -7,7 +7,7 @@ const c = getEntityColors('players')
 export const listSx = {
   wrap: {
     display: 'grid',
-    gap: 0.35,
+    gap: 0.75,
   },
 
   emptyState: {

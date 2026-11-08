@@ -80,6 +80,11 @@ function buildUpdatePayload({
     teamId: payload.teamId || currentStatsDoc.teamId,
     gameStatsDocId,
     playerStats: nextPlayerStats,
+    meta: {
+      ...(payload.meta || {}),
+      timePlayed: currentStatsDoc.teamStats?.timePlayed,
+      timeVideoStats: currentStatsDoc.teamStats?.timeVideoStats,
+    },
   }
 }
 

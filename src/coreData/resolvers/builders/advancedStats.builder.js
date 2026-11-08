@@ -121,13 +121,15 @@ const hasAdvancedStats = ({ meta, refs, stats }) => {
   return false
 }
 
-const buildSource = type => {
+const buildSource = (type, entity) => {
   return {
     kind: 'aggregate',
     type,
     updatedFrom: type === 'team'
       ? 'teamsStats'
-      : 'playersStats',
+      : entity.isPrivatePlayer || entity.playerSource === 'private'
+        ? 'privatePlayersStats'
+        : 'playersStats',
   }
 }
 
@@ -162,6 +164,6 @@ export const buildAdvancedStatsState = (entity = {}, type = 'player') => {
       refsCount: countRefs(refs),
     },
 
-    source: buildSource(type),
+    source: buildSource(type, entity),
   }
 }

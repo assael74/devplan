@@ -270,7 +270,7 @@ function writePrivateSaveTransaction({
   nextPrivatePlayersStatsList,
   now,
 }) {
-  tx.set(gameStatsRef, nextGameStatsDoc, { merge: true })
+  tx.set(gameStatsRef, nextGameStatsDoc)
 
   tx.set(
     refs.externalGameInfoRef,

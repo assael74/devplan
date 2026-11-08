@@ -18,12 +18,8 @@ import {
 // תצוגת שדות המילוי בשלב Entry.
 
 function FieldCard({ field, children }) {
-  const type = field.statsParmType ||
-    (field.param && field.param.statsParmType) ||
-    'general'
-
   return (
-    <Sheet variant="plain" sx={sx.entryFieldCard(type)}>
+    <Sheet variant="outlined" sx={sx.entryFieldCard(field.id)}>
       {children}
     </Sheet>
   )
@@ -72,6 +68,7 @@ export function TripletFieldsSection({ fields, row, locked, onUpdateRow }) {
           <FieldCard key={field.id} field={field}>
             <StatsTripletInput
               label={field.label}
+              description={field.description}
               totalKey={field.totalKey}
               successKey={field.successKey}
               rateKey={field.rateKey}

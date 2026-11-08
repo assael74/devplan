@@ -20,6 +20,7 @@ export const createInitialGameStatsDraft = ({ game, team }) => {
     gameId: game?.id || '',
     teamId: team?.id || game?.teamId || '',
     gameStatsDocId: game?.statsDocId || '',
+    gameDuration,
     status: game?.statsStatus || 'draft',
     source: 'manual',
     preset: 'basic',

@@ -2,6 +2,7 @@
 
 import { getVisibleParams } from '../params.logic.js'
 import { buildEntryFields, getEntryFieldsProgress } from '../entry.logic.js'
+import { calculateSuccessRate } from '../../../../../shared/stats/stats.helpers.js'
 
 const toPayloadNumber = value => {
   const num = Number(value)
@@ -9,8 +10,12 @@ const toPayloadNumber = value => {
   return Number.isFinite(num) ? num : 0
 }
 
-const hasPositiveNumber = value => {
-  return toPayloadNumber(value) > 0
+const hasNumber = value => {
+  if (value === null || value === undefined || value === '') return false
+  if (typeof value === 'string' && !value.trim()) return false
+
+  const num = Number(value)
+  return Number.isFinite(num) && num >= 0
 }
 
 const clampSuccess = ({ total, success }) => {
@@ -28,18 +33,15 @@ const calcRate = ({ total, success }) => {
 
   if (totalNum <= 0) return 0
 
-  return Math.round((successNum / totalNum) * 1000) / 10
+  return calculateSuccessRate(totalNum, successNum)
 }
 
 const shouldKeepRegularField = ({ row, field }) => {
-  return hasPositiveNumber(row?.[field.id])
+  return hasNumber(row?.[field.id])
 }
 
 const shouldKeepTripletField = ({ row, field }) => {
-  const total = toPayloadNumber(row?.[field.totalKey])
-  const success = toPayloadNumber(row?.[field.successKey])
-
-  return total > 0 || success > 0
+  return hasNumber(row?.[field.totalKey])
 }
 
 const addRegularField = ({ acc, row, field }) => {
@@ -115,7 +117,9 @@ const hasStatsToSave = row => {
 const getScopedSelectedIds = draft => {
   const selectedIds = draft?.selectedPlayerIds || []
 
-  if (draft?.scope !== 'player' && draft?.meta?.scope !== 'player') {
+  const scope = draft?.scope || draft?.meta?.scope
+
+  if (scope !== 'player' && scope !== 'privatePlayer') {
     return selectedIds
   }
 
@@ -151,6 +155,15 @@ const buildFormModel = draft => {
 }
 
 const buildPayloadMeta = draft => {
+  const scope = draft?.scope || draft?.meta?.scope
+
+  if (scope === 'player' || scope === 'privatePlayer') {
+    const meta = { ...(draft?.meta || {}) }
+    delete meta.timePlayed
+    delete meta.timeVideoStats
+    return meta
+  }
+
   return {
     ...(draft?.meta || {}),
     timePlayed: toPayloadNumber(draft?.timePlayed),
@@ -169,6 +182,7 @@ export const buildGameStatsPayload = draft => {
   return {
     gameId: draft?.gameId || '',
     teamId: draft?.teamId || '',
+    gameDuration: toPayloadNumber(draft?.gameDuration),
     status: draft?.status || 'draft',
     source: draft?.source || 'manual',
     preset: draft?.preset || 'custom',

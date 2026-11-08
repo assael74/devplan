@@ -1,3 +1,5 @@
+// src/shared/stats/statsParmList.js
+
 export const statsParm = [
   // בסיס
   {
@@ -78,11 +80,47 @@ export const statsParm = [
     tripletGroup: 'passes',
     displayFormat: 'triplet'
   },
+  // מסירות מקדמות
+  {
+    id: 'progressivePassesTotal',
+    statsParmName: 'סה"כ מסירות מקדמות',
+    statsParmShortName: 'מסירות מקדמות',
+    statsParmDescription: 'מסירה בין הקווים כולל מסירה אלכסונית',
+    statsParmFieldType: 'triplet',
+    statsParmType: 'offensive',
+    isDefault: false,
+    order: 2.5,
+    tripletGroup: 'progressivePasses',
+    displayFormat: 'triplet'
+  },
+  {
+    id: 'progressivePassesSuccess',
+    statsParmName: 'מסירות מקדמות מוצלחות',
+    statsParmShortName: 'מוצלחות',
+    statsParmFieldType: 'triplet',
+    statsParmType: 'offensive',
+    isDefault: false,
+    order: 2.5,
+    tripletGroup: 'progressivePasses',
+    displayFormat: 'triplet'
+  },
+  {
+    id: 'progressivePassesSuccessRate',
+    statsParmName: 'אחוז הצלחה',
+    statsParmShortName: 'אחוז הצלחה',
+    statsParmFieldType: 'triplet',
+    statsParmType: 'offensive',
+    isDefault: false,
+    order: 2.5,
+    tripletGroup: 'progressivePasses',
+    displayFormat: 'triplet'
+  },
   // מסירות מפתח
   {
     id: 'keyPassesTotal',
     statsParmName: 'סה"כ מסירות מפתח',
     statsParmShortName: 'מסירות מפתח',
+    statsParmDescription: 'מסירה לשחקן שיכול לאיים על השער',
     statsParmFieldType: 'triplet',
     statsParmType: 'offensive',
     isDefault: false,

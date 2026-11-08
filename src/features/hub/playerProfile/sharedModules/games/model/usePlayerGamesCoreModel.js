@@ -80,13 +80,6 @@ function resolvePlayerScoring(profileData) {
   return null
 }
 
-function resolveHasAnyGames(livePlayer) {
-  if (!livePlayer) return false
-  if (!Array.isArray(livePlayer.playerGames)) return false
-
-  return livePlayer.playerGames.length > 0
-}
-
 export function usePlayerGamesCoreModel({
   entity,
   context,
@@ -139,7 +132,7 @@ export function usePlayerGamesCoreModel({
   }, [games, sort])
 
   const hasRows = Array.isArray(sortedGames) && sortedGames.length > 0
-  const hasAnyGames = resolveHasAnyGames(livePlayer)
+  const hasAnyGames = Boolean(summary && summary.totalGames > 0)
 
   return {
     livePlayer,

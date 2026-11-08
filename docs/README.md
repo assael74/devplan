@@ -32,6 +32,7 @@
 | Core Data | `architecture/CORE_DATA.md` |
 | ממשק, עיצוב ו־SX | `architecture/UI_PATTERNS.md` |
 | שכבת Firestore הכללית | `architecture/FIRESTORE_ROUTER.md` |
+| שמירה וטעינה של סטטיסטיקת משחק | `architecture/GAME_STATS.md` |
 | ציון שחקן | `architecture/PLAYER_SCORING_MODEL.md` |
 | ציון קבוצה | `architecture/TEAM_SCORING_MODEL.md` |
 | ציפיות קבוצה | `architecture/TEAM_EXPECTATIONS_MODEL.md` |

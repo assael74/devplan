@@ -42,6 +42,13 @@ export const getParamDisplayLabel = param => {
   return getParamLabel(param)
 }
 
+export const getParamCardLabel = param => {
+  if (param.statsParmFieldType !== 'triplet') return getParamLabel(param)
+  if (param.id.endsWith('Total')) return 'סה״כ'
+  if (param.id.endsWith('Rate')) return 'אחוז הצלחה'
+  return param.id === 'shotsOnTarget' ? 'למסגרת' : 'הצלחות'
+}
+
 export const getStatsParams = () => {
   const list = Array.isArray(statsParm) ? statsParm : []
 
@@ -106,4 +113,24 @@ export const groupParamsByType = params => {
       [key]: [...(acc[key] || []), item],
     }
   }, {})
+}
+
+export const groupParamsByFamily = params => {
+  const groups = new Map()
+
+  for (const item of params || []) {
+    const id = item.tripletGroup || item.id
+    if (!groups.has(id)) groups.set(id, { id, items: [] })
+    groups.get(id).items.push(item)
+  }
+
+  return Array.from(groups.values()).map(group => {
+    const total = group.items.find(item => item.id.endsWith('Total')) || group.items[0]
+
+    return {
+      ...group,
+      label: total.statsParmShortName || total.statsParmName,
+      description: total.statsParmDescription || '',
+    }
+  })
 }

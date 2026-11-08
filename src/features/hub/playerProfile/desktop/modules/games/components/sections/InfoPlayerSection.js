@@ -1,4 +1,4 @@
-// playerProfile/desktop/modules/games/components/sections/InfoPlayerSection.js
+// src/features/hub/playerProfile/desktop/modules/games/components/sections/InfoPlayerSection.js
 
 import React from 'react'
 import { Box, Typography, Tooltip, Avatar, Divider, Chip } from '@mui/joy'
@@ -43,9 +43,11 @@ export function InfoPlayerSection({ game }) {
             {game?.displayTitle || 'ללא משחק'}
           </Typography>
 
-          <Chip size="sm" variant="soft" color="neutral" sx={sx.leagueNum}>
-            מחזור: {game?.gameLeagueNum || '—'}
-          </Chip>
+          {game?.type !== 'cup' ? (
+            <Chip size="sm" variant="soft" color="neutral" sx={sx.leagueNum}>
+              מחזור: {game?.gameLeagueNum || '—'}
+            </Chip>
+          ) : null}
         </Box>
 
         <Box sx={sx.metaItemSx}>

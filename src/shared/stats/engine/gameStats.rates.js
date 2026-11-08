@@ -1,7 +1,7 @@
 // src/shared/stats/engine/gameStats.rates.js
 
 import { statsParm } from '../statsParmList.js'
-import { n } from '../stats.helpers.js'
+import { calculateSuccessRate, n } from '../stats.helpers.js'
 
 const isRateField = item => {
   return String(item?.id || '').endsWith('Rate')
@@ -59,7 +59,10 @@ export function applyStatsRates(stats = {}) {
   const next = { ...(stats || {}) }
 
   for (const t of TRIPLETS) {
-    if (!shouldCalculateRate(next, t)) continue
+    if (!shouldCalculateRate(next, t)) {
+      delete next[t.rateKey]
+      continue
+    }
 
     const total = n(next[t.totalKey])
     const success = n(next[t.successKey])
@@ -69,7 +72,7 @@ export function applyStatsRates(stats = {}) {
       continue
     }
 
-    next[t.rateKey] = Number(((success / total) * 100).toFixed(1))
+    next[t.rateKey] = calculateSuccessRate(total, success)
   }
 
   return next

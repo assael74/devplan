@@ -55,10 +55,11 @@ const getTripletFieldValue = ({ field, row }) => {
   const total = row[field.totalKey]
   const success = row[field.successKey]
   const rate = row[field.rateKey]
+  const roundedRate = hasValue(rate) && rate !== '' ? Math.round(Number(rate)) : rate
 
   if (!hasPositiveValue(total)) return '—'
 
-  return `${formatSummaryValue(success)}/${formatSummaryValue(total)} · ${formatSummaryValue(rate)}%`
+  return `${formatSummaryValue(success)}/${formatSummaryValue(total)} · ${formatSummaryValue(roundedRate)}%`
 }
 
 export const buildPlayerStatsProgress = ({ player, row, fields }) => {
@@ -150,9 +151,11 @@ export const getSummaryRowStats = ({ draft, playerId }) => {
 export const getSummaryFieldLabel = field => {
   if (field.type === 'triplet') return field.label || field.id
 
+  const param = field.param || field.parm
+
   return (
-    (field.parm && field.parm.statsParmShortName) ||
-    (field.parm && field.parm.statsParmName) ||
+    (param && param.statsParmShortName) ||
+    (param && param.statsParmName) ||
     field.id ||
     ''
   )

@@ -1,6 +1,7 @@
 // src/features/hub/hooks/games/useGameStatsHubUpdate.js
 
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 
 import {
   deleteGameStats,
@@ -9,6 +10,7 @@ import {
 } from '../../application/index.js'
 
 export function useGameStatsHubUpdate() {
+  const queryClient = useQueryClient()
   const [pending, setPending] = useState(false)
   const [error, setError] = useState(null)
 
@@ -18,7 +20,9 @@ export function useGameStatsHubUpdate() {
 
     try {
       const result = await request()
-      return unwrapActionResult(result)
+      const data = unwrapActionResult(result)
+      await queryClient.invalidateQueries({ queryKey: ['game-stats'] })
+      return data
     } catch (err) {
       setError(err)
       throw err

@@ -1,4 +1,4 @@
-// playerProfile/desktop/modules/games/components/PlayerGameRow.js
+// src/features/hub/playerProfile/desktop/modules/games/components/PlayerGameRow.js
 
 import React from 'react'
 import { Box, Divider, Tooltip, IconButton } from '@mui/joy'
@@ -32,6 +32,7 @@ export default function PlayerGameRow({
 }) {
   const [open, setOpen] = React.useState(false)
   const [trendMounted, setTrendMounted] = React.useState(false)
+  const isCupGame = game?.type === 'cup'
 
   const isPrivatePlayer =
     player?.isPrivatePlayer === true ||
@@ -84,11 +85,11 @@ export default function PlayerGameRow({
   }
 
   return (
-    <Box sx={sx.panelSx(open)}>
+    <Box sx={sx.panelSx(open, isCupGame)}>
       <Box
         role="button"
         tabIndex={0}
-        sx={sx.rowCardSx(open)}
+        sx={sx.rowCardSx(open, isCupGame)}
         onClick={toggleOpen}
         onKeyDown={handleKeyDown}
       >

@@ -1,7 +1,9 @@
-// src/features/players/playerProfile/desktop/components/PlayerNav.js
+// src/features/hub/playerProfile/desktop/components/PlayerNav.js
 
 import React, { useMemo } from 'react'
+import { Box } from '@mui/joy'
 import NavCards from '../../../../hub/sharedProfile/desktop/NavCards'
+import { devPlanColors } from '../../../../../ui/core/theme/Colors.js'
 import {
   PLAYER_TABS,
   PLAYER_PROJECT_TABS,
@@ -17,10 +19,12 @@ export default function PlayerNav({ tab, entity }) {
   }, [entity?.type, entity?.isPrivatePlayer])
 
   return (
-    <NavCards
-      tabs={tabs}
-      activeTab={tab}
-      defaultTab={DEFAULT_TAB}
-    />
+    <Box sx={{ pb: 1.25, borderBottom: '1px solid', borderColor: devPlanColors.border }}>
+      <NavCards
+        tabs={tabs}
+        activeTab={tab}
+        defaultTab={DEFAULT_TAB}
+      />
+    </Box>
   )
 }

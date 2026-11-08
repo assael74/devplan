@@ -1,6 +1,15 @@
 // src/ui/forms/gameStats/sx/form.sx.js
 
 export const formSx = {
+  drawerMotion: {
+    '--Drawer-transitionDuration': '260ms',
+    '--Drawer-transitionFunction': 'cubic-bezier(0.22, 1, 0.36, 1)',
+
+    '@media (prefers-reduced-motion: reduce)': {
+      '--Drawer-transitionDuration': '0.01ms',
+    },
+  },
+
   drawerContent: {
     height: { xs: '100dvh', md: '90dvh' },
     maxHeight: { xs: '100dvh', md: 'calc(100dvh - 22px)' },
@@ -104,4 +113,20 @@ export const formSx = {
     borderRadius: 'md',
     alignSelf: 'start',
   },
+
+  timeFields: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: 0.75,
+
+    '& .MuiFormControl-root, & .MuiInput-root': {
+      minWidth: 0,
+    },
+
+    '& .MuiFormLabel-root': {
+      fontSize: '0.75rem',
+      minHeight: 26,
+    },
+  },
+
 }

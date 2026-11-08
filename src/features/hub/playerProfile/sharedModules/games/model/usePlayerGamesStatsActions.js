@@ -146,7 +146,8 @@ export function usePlayerGamesStatsActions({
     deleteStatsDraft,
     statsFormDraftsByGameId,
     completeStatsFirestoreSave,
-  } = useGameStatsHubDrafts()
+    draftError,
+  } = useGameStatsHubDrafts(`${getStatsScope(livePlayer)}:${livePlayer?.id || ''}`)
 
   const {
     runSave: saveStatsToFirestore,
@@ -169,20 +170,6 @@ export function usePlayerGamesStatsActions({
   const handleOpenStatsGame = async game => {
     const statsScope = getStatsScope(livePlayer)
     const gameStatsDocId = getGameStatsDocId(game)
-
-    if (!gameStatsDocId) {
-      openInitialStatsDraft({
-        game,
-        liveTeam,
-        livePlayer,
-        contextPlayers,
-        statsScope,
-        openStatsGame,
-      })
-
-      return
-    }
-
     const gameId = getGameId(game)
 
     if (gameId && statsFormDraftsByGameId[gameId]) {
@@ -191,6 +178,18 @@ export function usePlayerGamesStatsActions({
         liveTeam,
         livePlayer,
         contextPlayers,
+        openStatsGame,
+      })
+      return
+    }
+
+    if (!gameStatsDocId) {
+      openInitialStatsDraft({
+        game,
+        liveTeam,
+        livePlayer,
+        contextPlayers,
+        statsScope,
         openStatsGame,
       })
 
@@ -293,7 +292,7 @@ export function usePlayerGamesStatsActions({
     statsPayloadsByGameId,
     statsDeleteAction,
     statsSavePending,
-    statsSaveError,
+    statsSaveError: statsSaveError || draftError,
 
     handleOpenStatsGame,
     handleSaveStats,

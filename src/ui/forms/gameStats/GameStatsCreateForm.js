@@ -72,17 +72,22 @@ export default function GameStatsCreateForm({
   const [confirmOpen, setConfirmOpen] = React.useState(false)
   const [pendingSave, setPendingSave] = React.useState(null)
   const [deleteOpen, setDeleteOpen] = React.useState(false)
+  const [retainedGame, setRetainedGame] = React.useState(game)
 
   React.useEffect(() => {
     if (!open) return
 
+    setRetainedGame(game)
     setActiveStep('players')
     setConfirmOpen(false)
     setPendingSave(null)
     setDeleteOpen(false)
 
     if (savedDraft) {
-      setDraft(savedDraft)
+      setDraft({
+        ...savedDraft,
+        gameDuration: savedDraft.gameDuration || game?.gameDuration || game?.game?.gameDuration || 0,
+      })
       return
     }
 
@@ -160,8 +165,9 @@ export default function GameStatsCreateForm({
     <>
       <GameStatsShell
         open={open}
-        game={game}
+        game={game || retainedGame}
         team={team}
+        context={context}
         draft={draft}
         savedDraft={savedDraft}
         activeStep={activeStep}

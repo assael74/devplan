@@ -1,14 +1,14 @@
-// playerProfile/desktop/modules/games/sx/row.sx.js
+// src/features/hub/playerProfile/desktop/modules/games/sx/row.sx.js
 
-import { devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
+import { COLORS, devPlanColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 export const rowSx = {
-  panelSx: open => ({
+  panelSx: (open, isCupGame = false) => ({
     position: 'relative',
-    mb: 0.75,
     borderRadius: open ? '12px' : 'lg',
     overflow: 'hidden',
     bgcolor: open ? 'background.level1' : 'transparent',
+    boxShadow: 'xs',
 
     '&::before': {
       content: '""',
@@ -18,14 +18,14 @@ export const rowSx = {
       right: 0,
       width: 3,
       opacity: 0.95,
-      bgcolor: devPlanColors.tertiary,
+      bgcolor: isCupGame ? COLORS.status.warning.solid : devPlanColors.tertiary,
       zIndex: 2,
       borderTopRightRadius: 'inherit',
       borderBottomRightRadius: 'inherit',
     },
   }),
 
-  rowCardSx: open => ({
+  rowCardSx: (open, isCupGame = false) => ({
     position: 'relative',
     display: 'grid',
     gridTemplateColumns: {
@@ -38,16 +38,16 @@ export const rowSx = {
     py: 0.95,
     borderRadius: open ? '12px 12px 0 0' : 'lg',
     border: '1px solid',
-    borderColor: open ? devPlanColors.tertiary : devPlanColors.border,
-    bgcolor: open ? devPlanColors.tertiaryLight : devPlanColors.secondaryLight,
-    transition: 'transform .14s ease, box-shadow .14s ease, border-color .14s ease',
+    borderColor: open
+      ? (isCupGame ? COLORS.status.warning.solid : devPlanColors.tertiary)
+      : devPlanColors.border,
+    bgcolor: open
+      ? (isCupGame ? COLORS.status.warning.softBg : devPlanColors.tertiaryLight)
+      : devPlanColors.surface,
+    transition: 'border-color .14s ease',
     cursor: 'pointer',
     overflow: 'hidden',
 
-    '&:hover': {
-      bgcolor: devPlanColors.primaryLight,
-      boxShadow: 'sm',
-    },
   }),
 
   dividerSx: {

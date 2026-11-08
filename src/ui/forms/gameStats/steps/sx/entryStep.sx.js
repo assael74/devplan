@@ -1,28 +1,6 @@
 // src/ui/forms/gameStats/steps/sx/entryStep.sx.js
 
-const getEntryFieldTone = type => {
-  return {
-    offensive: {
-      bg: 'rgba(255, 247, 237, 0.72)',
-      hover: 'rgba(255, 237, 213, 0.88)',
-      border: 'warning.200',
-    },
-    defensive: {
-      bg: 'rgba(239, 246, 255, 0.72)',
-      hover: 'rgba(219, 234, 254, 0.88)',
-      border: 'primary.200',
-    },
-    general: {
-      bg: 'background.surface',
-      hover: 'background.level1',
-      border: 'divider',
-    },
-  }[type] || {
-    bg: 'background.surface',
-    hover: 'background.level1',
-    border: 'divider',
-  }
-}
+import { getParamFamilyTone } from '../../sx/paramFamilies.sx.js'
 
 export const entryStepSx = {
   stepContent: {
@@ -33,7 +11,7 @@ export const entryStepSx = {
 
   placeholder: {
     display: 'grid',
-    gap: 0.75,
+    gap: 0.5,
     p: 1.25,
     borderRadius: 'md',
   },
@@ -62,6 +40,7 @@ export const entryStepSx = {
     gap: 0.85,
     p: 1,
     borderRadius: 'md',
+    bgcolor: 'background.level1',
   },
 
   entryHeader: {
@@ -102,7 +81,7 @@ export const entryStepSx = {
       md: 'repeat(4, minmax(110px, 1fr))',
       lg: 'repeat(6, minmax(100px, 1fr))',
     },
-    gap: 0.65,
+    gap: 1.5,
     minWidth: 0,
   },
 
@@ -113,25 +92,30 @@ export const entryStepSx = {
       md: 'repeat(2, minmax(220px, 1fr))',
       lg: 'repeat(3, minmax(220px, 1fr))',
     },
-    gap: 0.75,
+    gap: 1.5,
     minWidth: 0,
   },
 
-  entryFieldCard: type => {
-    const tone = getEntryFieldTone(type)
+  entryFieldCard: family => {
+    const tone = getParamFamilyTone(family)
 
     return {
       display: 'grid',
       gap: 0.65,
-      p: 0.75,
+      p: 0.85,
       borderRadius: 'md',
-      bgcolor: tone.bg,
+      bgcolor: tone.selectedBg,
       borderColor: tone.border,
-      transition: 'background-color .14s ease, border-color .14s ease, box-shadow .14s ease',
+      boxShadow: 'xs',
+      color: tone.text,
+      transition: 'background-color .14s ease, border-color .14s ease',
 
       '&:hover': {
-        bgcolor: tone.hover,
-        boxShadow: 'xs',
+        borderColor: tone.selectedBorder,
+      },
+
+      '& .MuiFormLabel-root': {
+        fontSize: '0.74rem',
       },
     }
   },

@@ -1,6 +1,7 @@
-// playerProfile/sharedLogic/games/module/playerGames.filters.logic.js
+// src/features/hub/playerProfile/sharedLogic/games/module/playerGames.filters.logic.js
 
 import { createGameRowNormalizer } from '../../../../../../shared/games/games.normalize.logic.js'
+import { findPlayerGameEntry } from './playerGames.filters.enrich.js'
 
 import {
   applyPlayerGamesFilters,
@@ -59,17 +60,14 @@ const isPrivatePlayer = player => {
 }
 
 const resolveSourceGames = ({ player, profileData }) => {
-  const profileGames = profileData?.games?.playerGames
+  const sourceGames = isPrivatePlayer(player)
+    ? player?.externalGames
+    : player?.playerGames
 
-  if (Array.isArray(profileGames) && profileGames.length) {
-    return profileGames
-  }
+  // The scoring profile includes league games only; the list needs every game type.
+  if (Array.isArray(sourceGames)) return sourceGames
 
-  if (isPrivatePlayer(player)) {
-    return safeArray(player?.externalGames)
-  }
-
-  return safeArray(player?.playerGames)
+  return safeArray(profileData?.games?.playerGames)
 }
 
 const resolveScoreRow = ({ row, scoring }) => {
@@ -89,6 +87,11 @@ const resolveEntryByGameId = ({ row, profileData }) => {
 }
 
 const resolvePlayerEntry = ({ rawGame, player, profileData }) => {
+  const savedEntry = findPlayerGameEntry(rawGame, player)
+
+  if (savedEntry) return savedEntry
+  if (rawGame?.playerGame) return rawGame.playerGame
+
   const byIdEntry = resolveEntryByGameId({
     row: rawGame,
     profileData,
@@ -96,7 +99,6 @@ const resolvePlayerEntry = ({ rawGame, player, profileData }) => {
 
   if (byIdEntry) return byIdEntry
 
-  if (rawGame?.playerGame) return rawGame.playerGame
   if (rawGame?.stats) return rawGame.stats
 
   if (isPrivatePlayer(player)) {

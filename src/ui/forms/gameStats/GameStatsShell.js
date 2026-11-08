@@ -1,6 +1,6 @@
 // src/ui/forms/gameStats/GameStatsShell.js
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   Box,
   Button,
@@ -21,6 +21,7 @@ import { iconUi } from '../../core/icons/iconUi.js'
 import {
   GAME_STATS_FORM_STEPS,
   getGameTitle,
+  getGameStatsTeamName,
 } from './logic/index.js'
 
 const statusLabels = {
@@ -36,6 +37,7 @@ const getStatusLabel = status => {
 function Header({
   game,
   team,
+  context,
   draft,
   onClose,
   onSave,
@@ -56,7 +58,7 @@ function Header({
           </Typography>
 
           <Typography level="title-md" sx={sx.title}>
-            {team?.name || 'קבוצה'} · {getGameTitle(game)}
+            {getGameStatsTeamName({ game, team, context })} · {getGameTitle(game)}
           </Typography>
         </Box>
       </Box>
@@ -90,7 +92,7 @@ function Header({
           {saveButtonLabel}
         </Button>
 
-        <IconButton size="sm" variant="soft" color="neutral" onClick={onClose}>
+        <IconButton size="sm" variant="soft" color="neutral" onClick={onClose} aria-label="סגירת עריכת הסטטיסטיקה">
           {iconUi({ id: 'close' })}
         </IconButton>
       </Box>
@@ -121,6 +123,7 @@ export default function GameStatsShell({
   open,
   game,
   team,
+  context,
   draft,
   savedDraft,
   activeStep,
@@ -132,21 +135,34 @@ export default function GameStatsShell({
   onDeleteDraft,
   saveButtonLabel = 'שמירת סטטיסטיקה',
 }) {
+  const [entered, setEntered] = useState(false)
+  useEffect(() => {
+    if (!open) { setEntered(false); return }
+    // Paint the starting position even when this drawer is mounted already open.
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => setEntered(true))
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [open])
+
   return (
     <Drawer
       open={!!open}
       anchor="bottom"
       onClose={onClose}
+      sx={sx.drawerMotion}
       slotProps={{
         content: {
-          sx: sx.drawerContent,
+          sx: [sx.drawerContent, open && !entered ? { transform: 'translateY(100%)' } : {}],
         },
+        backdrop: { sx: open && !entered ? { opacity: 0 } : {} },
       }}
     >
       <Sheet variant="plain" sx={sx.drawerSheet}>
         <Header
           game={game}
           team={team}
+          context={context}
           draft={draft}
           onClose={onClose}
           onSave={onSave}
@@ -160,7 +176,7 @@ export default function GameStatsShell({
         <Box sx={sx.body}>
           <Box sx={sx.side}>
             <StepsBar activeStep={activeStep} onStep={onStep} />
-            <GameStatsMetaPanel draft={draft} onDraft={onDraft} />
+            <GameStatsMetaPanel draft={draft} game={game} onDraft={onDraft} />
           </Box>
 
           <Box sx={sx.main} className="dpScrollThin">

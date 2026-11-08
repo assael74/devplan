@@ -62,7 +62,8 @@ export function useTeamGamesStatsActions({
     deleteStatsDraft,
     statsFormDraftsByGameId,
     completeStatsFirestoreSave,
-  } = useGameStatsHubDrafts()
+    draftError,
+  } = useGameStatsHubDrafts(`team:${liveTeam?.id || ''}`)
 
   const {
     runSave: saveStatsToFirestore,
@@ -172,7 +173,7 @@ export function useTeamGamesStatsActions({
     statsPayloadsByGameId,
     statsDeleteAction,
     statsSavePending,
-    statsSaveError,
+    statsSaveError: statsSaveError || draftError,
 
     handleOpenStatsGame,
     handleSaveStats,

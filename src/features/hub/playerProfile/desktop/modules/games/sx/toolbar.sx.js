@@ -1,4 +1,4 @@
-// hub/playerProfile/desktop/modules/games/sx/toolbar.sx.js
+// src/features/hub/playerProfile/desktop/modules/games/sx/toolbar.sx.js
 
 import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 
@@ -10,7 +10,7 @@ export const toolbarSx = {
     gap: 0.75,
     p: 1,
     borderRadius: '16px',
-    bgcolor: 'background.level',
+    bgcolor: 'transparent',
   },
 
   toolbarTop: {

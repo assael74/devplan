@@ -10,6 +10,17 @@ import {
   hasAdvancedStatsByParm
 } from './perf.statsParm'
 
+export function normalizePerformanceValue(value, recordedMinutes, targetMinutes) {
+  if (value === null || value === undefined || value === '') return null
+  const number = Number(value)
+  const recorded = Number(recordedMinutes)
+  const target = Number(targetMinutes)
+  if (!Number.isFinite(number) || number < 0 || !Number.isFinite(recorded) || recorded <= 0) return null
+  if (!Number.isFinite(target) || target <= 0) return null
+
+  return number * target / recorded
+}
+
 export function buildNewFilteredStats(games, statsParm, filters, opts) {
   var g = Array.isArray(games) ? games : []
   var f = filters || {}
@@ -168,6 +179,6 @@ function applyNormalization(out, keys, normalizedKeys, recordedTotal, gameDurati
     if (!normalizedKeys.has(k)) return
     if (k === 'gamesCount' || k === 'timePlayed') return
     if (endsWith(k, 'SuccessRate')) return
-    out[k] = Math.round((toNum0(out[k]) / recordedTotal) * gameDurationPerGame)
+    out[k] = Math.round(normalizePerformanceValue(toNum0(out[k]), recordedTotal, gameDurationPerGame))
   })
 }

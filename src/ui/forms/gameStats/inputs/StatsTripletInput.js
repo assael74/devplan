@@ -14,9 +14,11 @@ import {
 } from '../logic/entry.logic.js'
 
 import { inputsSx as sx } from './sx/inputs.sx.js'
+import StatsParameterHelp from './StatsParameterHelp.js'
 
 export default function StatsTripletInput({
   label,
+  description,
   totalValue,
   successValue,
   rateValue,
@@ -24,6 +26,8 @@ export default function StatsTripletInput({
   totalKey,
   successKey,
   rateKey,
+  disabled = false,
+  readOnly = false,
 }) {
   const totalNum = toTripletNumber(totalValue)
   const successDisabled = isTripletSuccessDisabled(totalValue)
@@ -43,6 +47,7 @@ export default function StatsTripletInput({
   }
 
   const handleTotal = event => {
+    if (disabled || readOnly) return
     const rawValue = event.target.value
     if (!isValidTripletNumberInput(rawValue)) return
 
@@ -58,6 +63,7 @@ export default function StatsTripletInput({
   }
 
   const handleSuccess = event => {
+    if (disabled || readOnly) return
     const rawValue = event.target.value
     if (successDisabled) return
     if (!isValidTripletNumberInput(rawValue)) return
@@ -73,17 +79,22 @@ export default function StatsTripletInput({
   }
 
   return (
-    <Sheet variant="outlined" sx={sx.tripletCard}>
-      <Typography level="body-sm" sx={sx.tripletTitle}>
-        {label}
-      </Typography>
+    <Sheet variant="plain" sx={sx.tripletCard}>
+      <Box sx={sx.tripletHeader}>
+        <Typography level="body-xs" sx={sx.tripletTitle}>
+          {label}
+        </Typography>
+        <StatsParameterHelp label={label} description={description} />
+      </Box>
 
       <Box sx={sx.tripletGrid}>
-        <FormControl size="sm" sx={sx.compactField}>
+        <FormControl size="sm" sx={sx.compactField} disabled={disabled}>
           <FormLabel>סה״כ</FormLabel>
           <Input
             type="number"
-            value={totalValue ?? ''}
+            value={totalValue === null || totalValue === undefined ? '' : totalValue}
+            disabled={disabled}
+            readOnly={readOnly}
             onKeyDown={blockInvalidKeys}
             onPaste={blockInvalidPaste}
             onChange={handleTotal}
@@ -91,17 +102,19 @@ export default function StatsTripletInput({
               input: {
                 min: 0,
                 inputMode: 'numeric',
+                'aria-label': `סה״כ ${label}`,
               },
             }}
           />
         </FormControl>
 
-        <FormControl size="sm" sx={sx.compactField} disabled={successDisabled}>
+        <FormControl size="sm" sx={sx.compactField} disabled={disabled || successDisabled}>
           <FormLabel>מוצלח</FormLabel>
           <Input
             type="number"
-            value={successDisabled ? '' : successValue ?? ''}
-            disabled={successDisabled}
+            value={successDisabled || successValue === null || successValue === undefined ? '' : successValue}
+            disabled={disabled || successDisabled}
+            readOnly={readOnly}
             onKeyDown={blockInvalidKeys}
             onPaste={blockInvalidPaste}
             onChange={handleSuccess}
@@ -110,6 +123,7 @@ export default function StatsTripletInput({
                 min: 0,
                 max: totalNum,
                 inputMode: 'numeric',
+                'aria-label': `הצלחות ${label}`,
               },
             }}
           />
@@ -118,8 +132,12 @@ export default function StatsTripletInput({
         <FormControl size="sm" sx={sx.compactField}>
           <FormLabel>%</FormLabel>
           <Input
-            value={successDisabled ? '' : rateValue ?? ''}
+            value={successDisabled || rateValue === null || rateValue === undefined || rateValue === ''
+              ? ''
+              : `${Math.round(toTripletNumber(rateValue))}%`}
             readOnly
+            sx={sx.percentInput}
+            slotProps={{ input: { 'aria-label': `אחוז הצלחה ${label}` } }}
           />
         </FormControl>
       </Box>

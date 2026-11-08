@@ -1,4 +1,4 @@
-// features/hub/playerProfile/desktop/PlayerProfileDesktop.js
+// src/features/hub/playerProfile/desktop/PlayerProfileDesktop.js
 
 import React, { useState } from 'react'
 import ProfileShell from '../../sharedProfile/ProfileShell'
@@ -46,7 +46,7 @@ export default function PlayerProfileDesktop({
       entity={entity}
       context={context}
       taskContext={taskContext}
-      scrollMode={tab === 'meetings' ? 'contained' : 'page'}
+      scrollMode={tab === 'meetings' || tab === 'games' || tab === 'performance' ? 'contained' : 'page'}
       headerProps={{ counts }}
       HeaderComp={PlayerHeader}
       NavComp={PlayerNav}

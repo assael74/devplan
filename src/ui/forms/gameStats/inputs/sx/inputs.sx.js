@@ -1,17 +1,32 @@
 
+// src/ui/forms/gameStats/inputs/sx/inputs.sx.js
+
 export const inputsSx = {
   tripletCard: {
     minWidth: 0,
     display: 'grid',
-    gap: 1,
-    p: 0.65,
-    borderRadius: 'md',
+    gap: 0.5,
+    p: 0.25,
+    bgcolor: 'transparent',
+    borderRadius: 'sm',
     overflow: 'hidden',
+  },
+
+  tripletHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.4,
+    minHeight: 26,
+    minWidth: 0,
+    pb: 0.4,
+    borderBottom: '1px solid',
+    borderColor: 'divider',
   },
 
   tripletTitle: {
     minWidth: 0,
-    fontSize: '0.74rem',
+    flex: 1,
+    fontSize: '0.78rem',
     fontWeight: 700,
     lineHeight: 1.1,
     overflow: 'hidden',
@@ -22,8 +37,18 @@ export const inputsSx = {
   tripletGrid: {
     minWidth: 0,
     display: 'grid',
-    gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) 65px',
-    gap: 1,
+    gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) 72px',
+    gap: 0.5,
+  },
+
+  percentInput: {
+    '--Input-paddingInline': '4px',
+
+    '& input': {
+      px: 0.35,
+      textAlign: 'center',
+      fontVariantNumeric: 'tabular-nums',
+    },
   },
 
   compactField: {
@@ -31,15 +56,16 @@ export const inputsSx = {
 
     '& .MuiFormLabel-root': {
       mb: 0.25,
-      fontSize: '0.78rem',
+      fontSize: '0.7rem',
       lineHeight: 1,
     },
 
     '& .MuiInput-root': {
       minWidth: 0,
-      minHeight: 30,
-      '--Input-minHeight': '30px',
-      fontSize: '0.94rem',
+      minHeight: { xs: 32, sm: 28 },
+      '--Input-minHeight': '28px',
+      fontSize: '0.82rem',
+      bgcolor: 'background.surface',
     },
 
     '& input': {

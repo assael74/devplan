@@ -1,4 +1,4 @@
-// playerProfile/desktop/modules/games/PlayerGamesModule.js
+// src/features/hub/playerProfile/desktop/modules/games/PlayerGamesModule.js
 
 import React from 'react'
 
@@ -15,11 +15,15 @@ const PlayerGamesInsightsDrawer = React.lazy(() => import('./components/insights
 const EntryEditDrawer = React.lazy(() => import('./components/entryDrawer/EntryEditDrawer.js'))
 const EditDrawer = React.lazy(() => import('./components/drawer/EditDrawer.js'))
 
+function PlayerGamesSection({ children }) {
+  return <SectionPanel scrollMode="contained">{children}</SectionPanel>
+}
+
 export default function PlayerGamesModule(props) {
   return (
     <PlayerGamesModuleBase
       {...props}
-      Section={SectionPanel}
+      Section={PlayerGamesSection}
       ToolbarComponent={PlayerGamesToolbar}
       ListComponent={PlayerGamesList}
       InsightsDrawerComponent={PlayerGamesInsightsDrawer}

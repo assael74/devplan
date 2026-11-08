@@ -47,15 +47,16 @@ const normalizeValue = (key, value) => {
   if (type === 'number' || type === 'triplet') return n(value)
   if (type === 'boolean') return Boolean(value)
 
-  return value ?? ''
+  return value === null || value === undefined ? '' : value
 }
 
 const shouldKeepNumber = value => {
-  return n(value) > 0
+  const num = Number(value)
+  return Number.isFinite(num) && num >= 0
 }
 
 const shouldKeepTripletValue = value => {
-  return n(value) > 0
+  return shouldKeepNumber(value)
 }
 
 const shouldKeepValue = (key, value) => {
@@ -91,7 +92,7 @@ const hasAdvancedStatsValues = row => {
 
     const num = Number(value)
 
-    if (Number.isFinite(num)) return num > 0
+    if (Number.isFinite(num)) return num >= 0 && fieldTypeById.has(key)
     if (typeof value === 'boolean') return value === true
 
     return String(value).trim() !== ''

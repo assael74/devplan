@@ -1,14 +1,17 @@
-// playerProfile/sharedLogic/games/module/playerGames.filters.enrich.js
+// src/features/hub/playerProfile/sharedLogic/games/module/playerGames.filters.enrich.js
 
 const safe = (v) => (v == null ? '' : String(v))
 const safeArray = (v) => (Array.isArray(v) ? v : [])
 
 export const findPlayerGameEntry = (game, player) => {
-  const playerId = player?.id || player?.playerId || ''
-  const rows = safeArray(game?.gamePlayers)
+  const playerId = safe(player?.id || player?.playerId).trim()
+  const source = game?.game || game
+  const rows = safeArray(source?.gamePlayers)
+
+  if (!playerId) return null
 
   return rows.find((item) => {
-    const itemPlayerId = item?.playerId || item?.id || ''
+    const itemPlayerId = safe(item?.playerId || item?.id).trim()
     return itemPlayerId === playerId
   }) || null
 }

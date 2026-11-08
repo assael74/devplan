@@ -1,5 +1,7 @@
 // src/ui/forms/gameStats/logic/entry.logic.js
 
+import { calculateSuccessRate } from '../../../../shared/stats/stats.helpers.js'
+
 const isRateParm = param => {
   return param?.id?.toLowerCase().includes('rate')
 }
@@ -47,6 +49,7 @@ const buildTripletField = (group, items) => {
     id: group,
     type: 'triplet',
     label: getTripletLabel(items),
+    description: total.statsParmDescription || '',
     statsParmType: getTripletType(items),
     totalKey: total.id,
     successKey: success.id,
@@ -69,19 +72,12 @@ const isRegularFieldFilled = ({ field, row }) => {
   return hasValue(row[field.id])
 }
 
-const hasPositiveNumber = value => {
-  const num = Number(value)
-
-  return Number.isFinite(num) && num > 0
-}
-
 const isTripletFieldFilled = ({ field, row }) => {
   if (!field || !row) return false
 
-  return (
-    hasPositiveNumber(row[field.totalKey]) ||
-    hasPositiveNumber(row[field.successKey])
-  )
+  if (!hasValue(row[field.totalKey])) return false
+
+  return Number(row[field.totalKey]) === 0 || hasValue(row[field.successKey])
 }
 
 export const getEntryFieldsProgress = ({ fields, row }) => {
@@ -246,7 +242,7 @@ export const calcTripletRate = ({ total, success }) => {
 
   if (totalNum <= 0) return ''
 
-  return Math.round((successNum / totalNum) * 1000) / 10
+  return calculateSuccessRate(totalNum, successNum)
 }
 
 export const buildTripletTotalPatch = ({

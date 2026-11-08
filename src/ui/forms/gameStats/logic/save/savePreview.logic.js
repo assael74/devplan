@@ -10,6 +10,14 @@ const sumStatsFields = rows => {
   }, 0)
 }
 
+const getTimeValue = (source, key) => {
+  const value = source && source[key]
+  if (value === null || value === undefined || value === '') return null
+
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
 export const buildGameStatsSavePreview = payload => {
   const playerStats = Array.isArray(payload?.playerStats)
     ? payload.playerStats
@@ -25,6 +33,12 @@ export const buildGameStatsSavePreview = payload => {
   const statsFieldsCount = sumStatsFields(playerStats)
 
   const mode = payload?.gameStatsDocId ? 'update' : 'create'
+  const scope = payload?.meta?.scope
+  const isPlayerScope = scope === 'player' || scope === 'privatePlayer'
+  const playerId = payload?.meta?.editablePlayerId || payload?.meta?.playerId || selectedPlayerIds[0]
+  const timeSource = isPlayerScope
+    ? playerStats.find(row => row.playerId === playerId)
+    : payload?.meta
 
   return {
     mode,
@@ -35,6 +49,7 @@ export const buildGameStatsSavePreview = payload => {
     gameId: payload?.gameId || '',
     teamId: payload?.teamId || '',
     status: payload?.status || 'draft',
+    isPlayerScope,
 
     selectedPlayersCount,
     savedPlayersCount,
@@ -43,8 +58,9 @@ export const buildGameStatsSavePreview = payload => {
     selectedParamsCount: payload?.selectedParmIds?.length || 0,
     statsFieldsCount,
 
-    timePlayed: payload?.meta?.timePlayed || 0,
-    timeVideoStats: payload?.meta?.timeVideoStats || 0,
+    gameDuration: getTimeValue(payload, 'gameDuration'),
+    timePlayed: getTimeValue(timeSource, 'timePlayed'),
+    timeVideoStats: getTimeValue(timeSource, 'timeVideoStats'),
 
     hasDataToSave: savedPlayersCount > 0 && statsFieldsCount > 0,
   }

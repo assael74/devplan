@@ -51,12 +51,16 @@ export function indexPlayersById(players) {
 export function findPlayerEntry({ game, player }) {
   const playerId = clean(player && player.id)
   const players = getGamePlayers(game)
+  const source = getGameSource(game)
+  const entry = players.find(item => clean(getPlayerId(item)) === playerId)
 
-  return players.find(item => clean(getPlayerId(item)) === playerId) || null
+  if (entry) return entry
+  if (playerId && clean(source.playerId) === playerId) return source
+
+  return null
 }
 
 export function buildPlayerEntry({ game, player }) {
-  const source = getGameSource(game)
   const entry = findPlayerEntry({ game, player })
   const identity = player || entry || {}
 
@@ -71,13 +75,10 @@ export function buildPlayerEntry({ game, player }) {
 
   const timePlayed = pickValue([
     entry && entry.timePlayed,
-    source.gameDuration,
   ])
 
   const timeVideoStats = pickValue([
     entry && entry.timeVideoStats,
-    entry && entry.timePlayed,
-    source.gameDuration,
   ])
 
   return {
@@ -121,10 +122,7 @@ function buildStatsDocPlayerRow({
 
   const timeVideoStats = pickValue([
     row.timeVideoStats,
-    row.timePlayed,
     identity.timeVideoStats,
-    identity.timePlayed,
-    source.gameDuration,
   ])
 
   return {
@@ -241,6 +239,8 @@ export function lockDraftToPlayer({ draft, player, scope = 'player' }) {
   if (!draft || !playerId) return draft
 
   const source = getStatsSource(scope)
+  const statsRow = (Array.isArray(draft.playerStats) ? draft.playerStats : [])
+    .find(row => clean(row.playerId || row.id) === playerId)
 
   return {
     ...draft,
@@ -248,6 +248,8 @@ export function lockDraftToPlayer({ draft, player, scope = 'player' }) {
     source,
     activePlayerId: playerId,
     editablePlayerId: playerId,
+    timePlayed: statsRow ? statsRow.timePlayed : '',
+    timeVideoStats: statsRow ? statsRow.timeVideoStats : '',
     selectedPlayerIds: buildSelectedPlayerIds({ draft, playerId }),
     players: Array.isArray(draft.players)
       ? draft.players.map(row => lockPlayerRow({ row, playerId }))

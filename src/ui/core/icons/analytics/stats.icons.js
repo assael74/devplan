@@ -1,3 +1,5 @@
+// src/ui/core/icons/analytics/stats.icons.js
+
 import {
   Addchart,
   StackedLineChart,
@@ -74,6 +76,11 @@ export const statsIcons = {
   passesSuccess: <SyncAlt />,
   passesSuccessRate: <SyncAlt />,
   passesTotal: <SyncAlt />,
+
+  progressivePasses: <SyncAlt />,
+  progressivePassesTotal: <SyncAlt />,
+  progressivePassesSuccess: <SyncAlt />,
+  progressivePassesSuccessRate: <SyncAlt />,
 
   performance: <QueryStats />,
 

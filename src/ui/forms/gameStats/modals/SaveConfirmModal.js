@@ -87,8 +87,8 @@ function SaveRulesNotice() {
   return (
     <Sheet variant="soft" color="neutral" sx={{ p: 1, borderRadius: 'md' }}>
       <Typography level="body-xs">
-        שדות ריקים או שדות שערכם 0 בלבד לא יישמרו ב־Firestore.
-        ב־triplet, אם אין total או success גדול מ־0, כל השלישייה תוסר מהשמירה.
+        ערך 0 שהוזן הוא מדידה תקינה ונשמר. שדות ריקים לא יישמרו.
+        {' '}זמני המשחק והווידאו נשמרים בנפרד. הנרמול מבוסס על דקות הווידאו שנותחו.
       </Typography>
     </Sheet>
   )
@@ -110,6 +110,7 @@ export default function SaveConfirmModal({
     status: preview.status,
     pending,
   })
+  const formatTime = value => value === null || value === undefined ? '—' : `${value} דק׳`
 
   return (
     <Modal
@@ -179,13 +180,18 @@ export default function SaveConfirmModal({
             />
 
             <PreviewRow
-              label="זמן משחק"
-              value={`${preview.timePlayed} דק׳`}
+              label="משך משחק מלא לקבוצת הגיל"
+              value={formatTime(preview.gameDuration)}
             />
 
             <PreviewRow
-              label="זמן וידאו"
-              value={`${preview.timeVideoStats} דק׳`}
+              label={preview.isPlayerScope ? 'דקות משחק של השחקן' : 'זמן משחק לסטטיסטיקה'}
+              value={formatTime(preview.timePlayed)}
+            />
+
+            <PreviewRow
+              label="דקות וידאו שנותחו"
+              value={formatTime(preview.timeVideoStats)}
             />
           </Box>
 

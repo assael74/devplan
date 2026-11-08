@@ -15,7 +15,12 @@ const getGameDuration = game => {
 }
 
 const getPlayerMinutes = ({ player, game }) => {
-  return toNumber(player?.timePlayed) || getGameDuration(game)
+  const value = player?.timePlayed
+  if (value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value))) {
+    return toNumber(value)
+  }
+
+  return getGameDuration(game)
 }
 
 const findStatsRow = ({ rows, playerId }) => {
@@ -72,6 +77,7 @@ export const buildGameStatsPlayers = game => {
         isStarting: isPlayerStarting(player),
         onSquad: isPlayerInSquad(player),
         timePlayed: toNumber(player?.timePlayed),
+        timeVideoStats: player?.timeVideoStats,
         goals: toNumber(player?.goals),
         assists: toNumber(player?.assists),
       }
@@ -96,8 +102,12 @@ export const buildPlayerStatsRow = ({ player, game, team, currentRow = null }) =
     isStarting: Boolean(player?.isStarting),
     position: player?.position || currentRow?.position || '',
 
-    timePlayed,
-    timeVideoStats: timePlayed,
+    timePlayed: currentRow && currentRow.timePlayed !== undefined
+      ? currentRow.timePlayed
+      : timePlayed,
+    timeVideoStats: currentRow && currentRow.timeVideoStats !== undefined
+      ? currentRow.timeVideoStats
+      : player?.timeVideoStats === undefined ? timePlayed : player.timeVideoStats,
 
     goals: toNumber(player?.goals),
     assists: toNumber(player?.assists),

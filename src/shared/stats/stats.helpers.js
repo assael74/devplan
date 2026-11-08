@@ -6,6 +6,11 @@ export const n = (v) => {
   return Number.isFinite(x) ? x : 0
 }
 
+export const calculateSuccessRate = (total, success) => {
+  const attempts = n(total)
+  return attempts > 0 ? Math.round((n(success) / attempts) * 100) : 0
+}
+
 export const normalizeGameType = (g) => {
   if (!g) return 'friendly'
   const raw = g.type ?? g.gameType ?? g.meta?.type ?? ''

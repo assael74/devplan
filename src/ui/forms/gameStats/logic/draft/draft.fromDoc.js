@@ -63,9 +63,10 @@ const getTeamId = ({ team, game, statsDoc }) => {
 
 const getGameDuration = ({ game, statsDoc }) => {
   return (
-    Number(statsDoc?.teamStats?.timePlayed) ||
     Number(game?.gameDuration) ||
     Number(game?.game?.gameDuration) ||
+    Number(statsDoc?.gameDuration) ||
+    Number(statsDoc?.teamStats?.timePlayed) ||
     80
   )
 }
@@ -177,6 +178,7 @@ export const createGameStatsDraftFromDoc = ({ game, team, statsDoc } = {}) => {
     gameId: getGameId({ game, statsDoc }),
     teamId: getTeamId({ team, game, statsDoc }),
     gameStatsDocId: getStatsDocId(statsDoc),
+    gameDuration,
 
     status: statsDoc?.status || game?.statsStatus || 'partial',
     source: statsDoc?.source || 'manual',
