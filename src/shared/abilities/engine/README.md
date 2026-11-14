@@ -139,12 +139,14 @@
 - כתיבת תוצאה סופית ל־`playersShorts.playersAbilities`
 - שמירת raw forms + windows ב־`abilitiesShorts`
 
+ההיסטוריה והסיכום נכתבים יחד בטרנזקציה אחת.
+
 ---
 
 ## הזרימה המלאה
 
 ### 1. טופס חדש נכנס
-הקריאה מתחילה ב־`upsertAbilitiesHistory.js`
+הקריאה מתחילה ב־`upsertAbilitiesHistory` שבקובץ `abilitiesUpsertHistory.js`.
 
 ### 2. הטופס מנורמל
 `abilitiesHistory.forms.js`

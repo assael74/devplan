@@ -53,9 +53,13 @@
     {
       "source": "functions",
       "codebase": "default",
+      "predeploy": [
+        "node scripts/prepare-project-documents.cjs"
+      ],
       "ignore": [
         "node_modules",
         ".git",
+        "test",
         "firebase-debug.log",
         "firebase-debug.*.log",
         "*.local"

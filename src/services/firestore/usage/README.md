@@ -8,7 +8,7 @@
 This module observes client operations; it does not reproduce Firestore Billing
 or measure network bytes. No usage data is persisted to Firestore.
 
-Snapshot `measurementVersion: 2` separates observed server reads from local cache
+Snapshot `measurementVersion: 3` separates observed server reads from local cache
 events. `readsCount` / `reads` and `estimatedKb` / `estimatedReadKb` exclude read
 events marked `fromCache`. Their document counts and JSON sizes are retained in
 `cacheReadsCount` / `cacheReads` and `estimatedCacheReadKb`. Cache payload is not
@@ -37,7 +37,7 @@ and alerts. Cumulative collection payload is informational. Action payload can
 contain multiple documents, so its thresholds are performance indicators and
 must not be interpreted as document-size limits.
 
-Version 3 adds `byDocument` for identified full-document read samples, including
+`byDocument` records identified full-document read samples, including
 query results. Each row keeps the last and maximum observed JSON size, server and
 cache observation counts, and their separate cumulative payloads. Feature filters
 use their own document aggregates. These aggregates survive recent-event trimming

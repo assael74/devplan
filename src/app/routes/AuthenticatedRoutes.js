@@ -27,6 +27,7 @@ import {
   RolesPage,
   ScoutPage,
   PlayerProfilePage,
+  ProjectDocumentsPage,
   ReportsDashboardPage,
   SquadSimulatorPage,
   TagsManagementPage,
@@ -59,6 +60,7 @@ function renderAdminRoutes() {
       <Route path={ADMIN_ROUTES.squadSimulator} element={lazyRoute(<SquadSimulatorPage />, <SimulatorSkeleton />)} />
       <Route path={ADMIN_ROUTES.firestoreUsage} element={lazyRoute(<FirestoreUsagePage />)} />
       <Route path={ADMIN_ROUTES.reportsDashboard} element={lazyRoute(<ReportsDashboardPage />)} />
+      <Route path={ADMIN_ROUTES.projectDocuments} element={lazyRoute(<ProjectDocumentsPage />)} />
 
       <Route path={ADMIN_ROUTES.club} element={lazyRoute(<ClubProfilePage />, <ProfileSkeleton />)} />
       <Route path={ADMIN_ROUTES.clubTab} element={lazyRoute(<ClubProfilePage />, <ProfileSkeleton />)} />

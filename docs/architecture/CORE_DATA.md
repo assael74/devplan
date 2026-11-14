@@ -408,17 +408,17 @@ const {
 
 ---
 
-## מצב נוכחי והמשך מומלץ
+## דגלי מוכנות
 
 הפיצול לסטטוסי טעינה כבר מיושם ב־`CoreDataProvider`:
 
 ```js
-coreReady        // clubs + teams + players
+coreReady        // clubs + teams + players + roles
 accessReady      // roles
-summaryReady     // meetings + payments + games + videos/videoAnalysis
-secondaryReady   // scouting, external domains, etc.
+summaryReady     // meetings + payments + games + externalGames + videos + videoAnalysis
+secondaryReady   // privatePlayers + scouting
 ```
 
 כך Home/tasks יוכלו להיפתח מוקדם, בזמן ש־CoreData ממשיך להשלים נתונים ברקע.
 
-המשך מומלץ: להמשיך להעביר מסכים כבדים ל־lazy loading, ולוודא שכל מסך שאינו Home בודק את הסטטוס המתאים לו (`primaryLoading`, `summaryLoading` או `secondaryLoading`) במקום להישען על `loading` כללי.
+מסך בוחר את דגל המוכנות לפי הנתונים שהוא צורך.

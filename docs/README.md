@@ -14,6 +14,15 @@
 - GPT עם קובץ ZIP: פועל לפי `onboarding/CHATGPT_ZIP_MODE.md` ואינו מניח גישה
   לקוד החי.
 
+## ספריית התיעוד באפליקציה
+
+העמוד `/dev/documents` נמצא בתפריט ״מערכת ופיתוח״. בסביבת פיתוח מקומית
+העמוד קורא את המסמכים מהמאגר דרך שרת הפיתוח, לאחר `npm ci --prefix functions`.
+בפרודקשן, פונקציית
+`readProjectDocuments` מגישה את המסמכים מתוך עותק שהוכן בעת פריסת הפונקציות.
+הגישה דורשת חשבון Firebase עם אימייל מאומת שמופיע ב־`FIRESTORE_USAGE_ADMIN_EMAILS`.
+שינוי במסמכים שמוצגים בפרודקשן נכנס לתוקף בפריסה של `readProjectDocuments`.
+
 ## סדר סמכות
 
 1. בקשת המשתמש והוראות הסוכן המתאימות לסביבה.
@@ -28,16 +37,16 @@
 
 | תחום | מסמך כניסה |
 |---|---|
-| מבנה הפרויקט ומיקום קוד | `architecture/PROJECT_STRUCTURE.md` |
-| Core Data | `architecture/CORE_DATA.md` |
-| ממשק, עיצוב ו־SX | `architecture/UI_PATTERNS.md` |
-| שכבת Firestore הכללית | `architecture/FIRESTORE_ROUTER.md` |
-| שמירה וטעינה של סטטיסטיקת משחק | `architecture/GAME_STATS.md` |
-| ציון שחקן | `architecture/PLAYER_SCORING_MODEL.md` |
-| ציון קבוצה | `architecture/TEAM_SCORING_MODEL.md` |
-| ציפיות קבוצה | `architecture/TEAM_EXPECTATIONS_MODEL.md` |
-| יעדים | `architecture/targets/README.md` |
-| סקאוט | `SCOUT_MODEL.md` |
+| מבנה הפרויקט ומיקום קוד | [מבנה הפרויקט](architecture/PROJECT_STRUCTURE.md) |
+| Core Data | [הרכבת נתונים](architecture/CORE_DATA.md) |
+| ממשק, עיצוב ו־SX | [תבניות ממשק](architecture/UI_PATTERNS.md) |
+| שכבת Firestore הכללית | [נתב Firestore](architecture/FIRESTORE_ROUTER.md) |
+| שמירה וטעינה של סטטיסטיקת משחק | [סטטיסטיקת משחק](architecture/GAME_STATS.md) |
+| ציון שחקן | [מודל ציון שחקן](architecture/PLAYER_SCORING_MODEL.md) |
+| ציון קבוצה | [מודל ציון קבוצה](architecture/TEAM_SCORING_MODEL.md) |
+| ציפיות קבוצה | [מודל ציפיות קבוצה](architecture/TEAM_EXPECTATIONS_MODEL.md) |
+| יעדים | [ארכיטקטורת יעדים](architecture/targets/README.md) |
+| סקאוט | [מודל הסקאוט](SCOUT_MODEL.md) |
 
 מסמך הסקאוט פעיל, אך סיווג הקווים ואיזון הקבוצה עדיין מתפתחים. מסמך החזרה
 למנוע היעדים הישן נקרא רק במשימת החזרה או הסרת המנוע הישן.

@@ -176,29 +176,9 @@ targetSource: 'benchmarkUnavailable'
 
 אין fallback אוטומטי למנוע הישן.
 
-## Rollback
+## המנוע הישן
 
-המנוע הישן נשמר בזיכרון תחת:
-
-```txt
-legacyExplicitTargets
-```
-
-כדי להפעיל אותו במפורש:
-
-```js
-{
-  useLegacyTargets: true
-}
-```
-
-או:
-
-```js
-{
-  targetEngine: 'legacy'
-}
-```
+אפשרויות ההפעלה והבדיקות מרוכזות ב[מסמך החזרה למנוע הישן](LEGACY_TARGETS_ROLLBACK.md).
 
 ## קשר לשכבות אחרות
 

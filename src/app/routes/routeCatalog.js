@@ -25,6 +25,7 @@ export const ADMIN_ROUTES = {
   squadSimulator: '/squad-simulator',
   firestoreUsage: '/admin/firestore-usage',
   reportsDashboard: '/dev/reports',
+  projectDocuments: '/dev/documents',
   club: '/clubs/:clubId',
   clubTab: '/clubs/:clubId/:tabKey',
   team: '/teams/:teamId',

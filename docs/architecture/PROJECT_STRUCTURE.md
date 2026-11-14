@@ -38,7 +38,7 @@ build/
 דוגמאות:
 
 - `src/app/App.js`
-- `src/app/AuthProvider.js`
+- `src/application/auth/AuthProvider.js`
 - `src/app/routes/AppRoutes.js`
 - `src/app/providers.js`
 
@@ -71,7 +71,6 @@ CoreData תלוי ב־Auth ולכן הוא צריך לשבת מתחת ל־`AuthP
 - `src/features/videoHub`
 - `src/features/calendarHub`
 - `src/features/squadSimulator`
-- `src/coreData`
 
 בתוך פיצ'ר מקובל להשתמש בחלוקה:
 

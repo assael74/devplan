@@ -19,14 +19,14 @@ jest.mock('./routeComponents', () => {
   const names = [
     'AbilitiesExplainerPage', 'CalendarHubPage', 'ClubProfilePage', 'FinancePage',
     'FirestoreUsagePage', 'HomePage', 'HubPage', 'PrivatePage', 'RolesPage',
-    'ScoutPage', 'PlayerProfilePage', 'ReportsDashboardPage', 'SquadSimulatorPage',
+    'ScoutPage', 'PlayerProfilePage', 'ProjectDocumentsPage', 'ReportsDashboardPage', 'SquadSimulatorPage',
     'TagsManagementPage', 'TeamProfilePage', 'VideoHubPage',
   ]
 
   return Object.fromEntries(names.map(name => [name, Page]))
 })
 
-const paths = ['/home', '/hub', '/scouting', '/calendar', '/dev/reports', '/admin/firestore-usage']
+const paths = ['/home', '/hub', '/scouting', '/calendar', '/dev/reports', '/dev/documents', '/admin/firestore-usage']
 
 function App({ isAdmin = true, initialPath = '/home' }) {
   return (
@@ -58,7 +58,7 @@ test('unknown admin routes fall back to the hub', async () => {
 })
 
 test('restricted users stay in the squad simulator', async () => {
-  render(<App isAdmin={false} />)
+  render(<App isAdmin={false} initialPath='/dev/documents' />)
 
   expect(await screen.findByText('/squad-simulator', { exact: true })).toBeInTheDocument()
 })

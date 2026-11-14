@@ -24,6 +24,7 @@ const loadRegisterPage = () => import('../../features/auth/pages/RegisterPage')
 const loadForgotPasswordPage = () => import('../../features/auth/pages/ForgotPasswordPage')
 const loadPendingApprovalPage = () => import('../../features/auth/pages/PendingApprovalPage')
 const loadFirestoreUsagePage = () => import('../../features/firestoreUsage/FirestoreUsagePage.js')
+const loadProjectDocumentsPage = () => import('../../features/projectDocuments/ProjectDocumentsPage.js')
 
 const loadAbilitiesExplainerPage = () =>
   import('../../features/abilities/explainer/AbilitiesExplainerPage.js')
@@ -64,6 +65,7 @@ export const PendingApprovalPage = React.lazy(loadPendingApprovalPage)
 export const SquadSimulatorPage = React.lazy(loadSquadSimulatorPage)
 export const FirestoreUsagePage = React.lazy(loadFirestoreUsagePage)
 export const ReportsDashboardPage = React.lazy(loadReportsDashboardPage)
+export const ProjectDocumentsPage = React.lazy(loadProjectDocumentsPage)
 
 export const ADMIN_ROUTE_LOADERS = [
   loadHubPage,

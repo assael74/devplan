@@ -1,3 +1,4 @@
 node_modules/
 *.local
 .env.devplan-b4454
+generated/project-documents.json*

@@ -196,14 +196,11 @@ rawGames
 = מקור גולמי רק עבור teamScoring
 ```
 
-## מה נשאר עתידית
+## תובנות ביצועים
 
-```txt
-לבנות games/insights/team/sections/performance
-לייצר brief עצמאי שמפרש את הסקורינג
-להוסיף tooltip / פירוט לקוביות הסקורינג
-לשלב בדוחות ו־print
-```
+`src/shared/games/insights/team/sections/performance` כולל מודל תצוגה
+ותקציר ביצועים המבוססים על ציון הקבוצה. כרטיסי תובנות המשחקים מוצגים
+באמצעות `TeamScoringCards.js` בתצוגה המשותפת של פרופיל הקבוצה.
 
 ## Benchmark Normalization Layer
 
