@@ -1,9 +1,4 @@
-// teamProfile/modules/videos/components/insightsDrawer/sx/teamVideos.insightsRows.sx.js
-
-import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('teams')
-const p = getEntityColors('players')
+// src/features/hub/playerProfile/mobile/modules/videos/components/insightsDrawer/sx/playerVideos.insightsDrawer.sx.js
 
 export const insightsDrawersSx = {
   drawerSx: {

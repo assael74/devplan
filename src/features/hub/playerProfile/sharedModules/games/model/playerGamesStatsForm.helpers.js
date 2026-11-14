@@ -83,12 +83,12 @@ export function buildPlayerEntry({ game, player }) {
 
   return {
     ...(entry || {}),
-    id: player && player.id || entry && entry.id || '',
-    playerId: player && player.id || entry && entry.playerId || entry && entry.id || '',
+    id: (player && player.id) || (entry && entry.id) || '',
+    playerId: (player && player.id) || (entry && entry.playerId) || (entry && entry.id) || '',
     name: getPlayerName(identity),
-    photo: identity.photo || entry && entry.photo || '',
+    photo: identity.photo || (entry && entry.photo) || '',
     position:
-      entry && entry.position ||
+      (entry && entry.position) ||
       identity.primaryPosition ||
       identity.position ||
       '',
@@ -190,7 +190,7 @@ export function buildPlayerStatsFormGame({
 }) {
   const source = getGameSource(game)
   const gameId = getGameId(game)
-  const teamId = clean(source.teamId || game && game.teamId || team && team.id)
+  const teamId = clean(source.teamId || (game && game.teamId) || (team && team.id))
   const statsDocId = getGameStatsDocId(game)
 
   const statsPlayers = statsDoc

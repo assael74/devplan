@@ -1,7 +1,7 @@
-// playerProfile/desktop/modules/meetings/components/list/MeetingCard.js
+// src/features/hub/playerProfile/desktop/modules/meetings/components/list/MeetingCard.js
 
 import React from 'react'
-import { Box, Card, Chip, IconButton, Stack, Tooltip, Typography } from '@mui/joy'
+import { Box, Card, Chip, Stack, Typography } from '@mui/joy'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 
 import { listSx as sx } from '../sx/list.sx'

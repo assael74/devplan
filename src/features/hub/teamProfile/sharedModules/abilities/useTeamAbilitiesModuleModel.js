@@ -1,4 +1,4 @@
-// teamProfile/sharedModules/abilities/useTeamAbilitiesModuleModel.js
+// src/features/hub/teamProfile/sharedModules/abilities/useTeamAbilitiesModuleModel.js
 
 import { useEffect, useMemo, useState } from 'react'
 
@@ -12,6 +12,8 @@ import {
 import {
   DEFAULT_SELECTED_DOMAINS,
 } from './teamAbilitiesModule.constants.js'
+
+const EMPTY_DOMAINS = []
 
 export default function useTeamAbilitiesModuleModel({
   entity,
@@ -30,7 +32,7 @@ export default function useTeamAbilitiesModuleModel({
     return resolveTeamAbilitiesDomain(team || {}, context || {})
   }, [team, context])
 
-  const domains = domainResult?.domains || []
+  const domains = domainResult?.domains || EMPTY_DOMAINS
   const summary = domainResult?.summary || {}
 
   const { total, filled, avgAll } = useAbilitiesSummary(domains)

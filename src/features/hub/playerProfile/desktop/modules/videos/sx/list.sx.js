@@ -1,8 +1,4 @@
-// hub/playerProfile/desktop/modules/videos/sx/list.sx.js
-
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('videoAnalysis')
+// src/features/hub/playerProfile/desktop/modules/videos/sx/list.sx.js
 
 export const listSx = {
   emptyState: {

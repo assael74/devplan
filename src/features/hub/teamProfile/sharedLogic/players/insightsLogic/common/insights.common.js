@@ -1,4 +1,4 @@
-// teamProfile/sharedLogic/players/insightsLogic/common/insights.common.js
+// src/features/hub/teamProfile/sharedLogic/players/insightsLogic/common/insights.common.js
 
 export const toNum = (value, fallback = 0) => {
   const n = Number(value)
@@ -59,16 +59,6 @@ const getSquadRoleLabel = (row = {}) => {
   const role = clean(row.squadRole)
 
   return clean(squadRoleLabels[role])
-}
-
-const getPrimaryPositionLabel = (row = {}) => {
-  return clean(
-    row.primaryPositionLabel ||
-    row.primaryPositionMeta?.label ||
-    row.primaryPositionMeta?.labelH ||
-    row.positionLabel ||
-    row.generalPositionLabel
-  )
 }
 
 export const getPlayerName = (row = {}) => {

@@ -1,4 +1,4 @@
-// features/hub/teamProfile/mobile/components/TeamHeader.js
+// src/features/hub/teamProfile/mobile/components/TeamHeader.js
 
 import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -35,11 +35,12 @@ const resolveClubName = ({ entity, context }) => {
 
 export default function TeamHeader({ entity, context, onBack }) {
   const navigate = useNavigate()
+  const clubName = resolveClubName({ entity, context })
   const source = resolveEntityAvatar({
     entityType: 'team',
     entity,
     parentEntity: context?.club || entity?.club,
-    subline: resolveClubName({ entity, context }),
+    subline: clubName,
   })
   const ifaLink = entity?.ifaLink || null
   const image = useProfileHeaderImage({
@@ -48,12 +49,7 @@ export default function TeamHeader({ entity, context, onBack }) {
   })
 
 
-  const subtitle = useMemo(() => {
-    const clubName = resolveClubName({ entity, context })
-    const teamYear = entity?.teamYear || ''
-
-    return [clubName, teamYear].filter(Boolean).join(' · ')
-  }, [context?.club, entity])
+  const subtitle = [clubName, entity?.teamYear].filter(Boolean).join(' · ')
 
   const pathItems = useMemo(() => {
     return [

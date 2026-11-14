@@ -28,7 +28,6 @@ import {
   RemoveModerator,
   Layers,
   Waves,
-  Box,
 } from '@mui/icons-material'
 
 function PositionLetterIcon({ text, fontSize = 'md', sx = {} }) {

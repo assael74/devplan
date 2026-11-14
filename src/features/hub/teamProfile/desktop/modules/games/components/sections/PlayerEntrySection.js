@@ -1,7 +1,7 @@
-// teamProfile/desktop/modules/games/components/sections/PlayerEntrySection.js
+// src/features/hub/teamProfile/desktop/modules/games/components/sections/PlayerEntrySection.js
 
 import React from 'react'
-import { Box, Chip, Typography, Tooltip, IconButton } from '@mui/joy'
+import { Box, Chip, Tooltip, IconButton } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { sectionsSx as sx } from './sx/sections.sx.js'

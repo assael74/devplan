@@ -1,4 +1,4 @@
-// teamProfile/sharedUi/insights/teamGames/useTeamGamesInsightsModel.js
+// src/features/hub/teamProfile/sharedUi/insights/teamGames/useTeamGamesInsightsModel.js
 
 import { useEffect, useMemo, useState } from 'react'
 
@@ -9,7 +9,6 @@ import {
 
 import {
   buildPlayersInsightsFromGames,
-  printPlayersInsightsDebug,
 } from '../../../../../../shared/players/insights/index.js'
 
 import { createGameRowNormalizer } from '../../../../../../shared/games/games.normalize.logic.js'
@@ -21,7 +20,6 @@ import { CALCULATION_MODES } from './controls/index.js'
 const emptyArray = []
 const emptyObject = {}
 
-const DEBUG_PLAYER_INSIGHTS = false
 const DEBUG_SINGLE_GAME_PLAYERS = false
 const DEBUG_GAME_ID = ''
 const findDebugGame = games => {

@@ -1,7 +1,6 @@
 // src/shared/players/targets/playerTargets.view.js
 
 import {
-  buildLowHighChips,
   buildRangeThresholdChips,
   buildRangeObjThresholdChips,
   buildSingleTargetChips,
@@ -21,16 +20,6 @@ const emptyText = '—'
 const toNumber = (value, fallback = null) => {
   const n = Number(value)
   return Number.isFinite(n) ? n : fallback
-}
-
-const pickNumber = (source = {}, keys = []) => {
-  for (let i = 0; i < keys.length; i++) {
-    const n = toNumber(source?.[keys[i]])
-
-    if (Number.isFinite(n)) return n
-  }
-
-  return null
 }
 
 const pickNestedNumber = (sources = []) => {

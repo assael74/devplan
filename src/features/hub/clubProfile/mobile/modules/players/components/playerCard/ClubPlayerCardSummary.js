@@ -1,4 +1,4 @@
-// ClubProfile/mobile/modules/players/components/playerCard/ClubPlayerCardSummary.js
+// src/features/hub/clubProfile/mobile/modules/players/components/playerCard/ClubPlayerCardSummary.js
 
 import React from 'react'
 import { Box, Chip } from '@mui/joy'
@@ -6,17 +6,11 @@ import { Box, Chip } from '@mui/joy'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { cardSx as sx } from '../../sx/card.mobile.sx.js'
 
-import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
-
 import {
   buildPerformanceSectionModel,
 } from './ui/performanceSection.ui.js'
 
-const c = getEntityColors('players')
-
 export default function ClubPlayerCardSummary({ row, performance }) {
-  const goals = Number(row?.playerFullStats?.goals ?? 0)
-  const assists = Number(row?.playerFullStats?.assists ?? 0)
   const timeRateLabel = row?.playerFullStats?.timeRateLabel || '0%'
 
   const modelPerf = buildPerformanceSectionModel({

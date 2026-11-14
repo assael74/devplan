@@ -97,9 +97,9 @@ const hasScoutSideValue = value => Boolean(
   typeof value === 'object' &&
   (
     value.priorityLevel ||
-    value.scoutPriorityScore !== null && value.scoutPriorityScore !== undefined ||
+    (value.scoutPriorityScore !== null && value.scoutPriorityScore !== undefined) ||
     value.priority?.level ||
-    value.priority?.score !== null && value.priority?.score !== undefined
+    (value.priority?.score !== null && value.priority?.score !== undefined)
   )
 )
 

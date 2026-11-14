@@ -1,3 +1,5 @@
+// functions/src/services/firestoreUsage/readFirestoreUsageMetrics.js
+
 const { GoogleAuth } = require('google-auth-library')
 
 const METRICS = {
@@ -58,7 +60,7 @@ async function listMetricSeries({ authClient, projectId, metricType, startTime, 
 
   do {
     const params = new URLSearchParams({
-      filter: `metric.type=\"${metricType}\"`,
+      filter: `metric.type="${metricType}"`,
       'interval.startTime': startTime,
       'interval.endTime': endTime,
       view: 'FULL',

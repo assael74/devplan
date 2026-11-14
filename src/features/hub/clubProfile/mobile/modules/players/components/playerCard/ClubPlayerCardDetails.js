@@ -1,35 +1,15 @@
-// ClubProfile/mobile/modules/players/components/playerCard/ClubPlayerCardDetails.js
+// src/features/hub/clubProfile/mobile/modules/players/components/playerCard/ClubPlayerCardDetails.js
 
 import React from 'react'
 import {
-  Avatar,
   Box,
   Button,
   Chip,
   Divider,
-  IconButton,
-  Tooltip,
   Typography,
 } from '@mui/joy'
 
-import EntityActionsMenu from '../../../../../../sharedProfile/EntityActionsMenu.js'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-
-import { cardSx as sx } from '../../sx/card.mobile.sx.js'
-
-function MetaItem({ icon, value, color = 'neutral' }) {
-  return (
-    <Box sx={sx.metaItem}>
-      <Typography
-        level="body-sm"
-        color={color}
-        startDecorator={iconUi({ id: icon, size: 'sm' })}
-      >
-        {value || '—'}
-      </Typography>
-    </Box>
-  )
-}
 
 function PositionsBlock({ row, onEditPosition }) {
   const positions = Array.isArray(row?.positions) ? row.positions : []
@@ -151,10 +131,6 @@ export default function ClubPlayerCardDetails({
   onEditPlayer,
   onEditPosition,
 }) {
-  const goals = Number(row?.playerFullStats?.goals ?? 0)
-  const assists = Number(row?.playerFullStats?.assists ?? 0)
-  const timeRateLabel = row?.playerFullStats?.timeRateLabel || '0%'
-  const timeRateColor = row?.playerFullStats?.trColor || 'neutral'
   const chip = row?.projectChipMeta || {
     labelH: 'כללי',
     idIcon: 'noneType',

@@ -1,4 +1,4 @@
-// playerProfile/mobile/modules/videos/components/toolbar/PlayerVideosToolbar.js
+// src/features/hub/playerProfile/mobile/modules/videos/components/toolbar/PlayerVideosToolbar.js
 
 import React, { useMemo, useState } from 'react'
 import { Box, Chip, Button } from '@mui/joy'
@@ -18,7 +18,6 @@ import PlayerVideosFilters from './PlayerVideosFilters.js'
 
 import {
   buildToolbarState,
-  clearToolbarIndicator,
   safeArray,
 } from '../../../../../sharedLogic'
 

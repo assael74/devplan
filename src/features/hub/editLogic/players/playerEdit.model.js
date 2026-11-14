@@ -1,4 +1,4 @@
-// features/hub/editLogic/players/playerEdit.model.js
+// src/features/hub/editLogic/players/playerEdit.model.js
 
 export const safe = (value) => (value == null ? '' : String(value))
 export const clean = (value) => safe(value).trim()
@@ -120,12 +120,6 @@ function addNullableIfChanged(next, draft, initial, key) {
 function addBoolIfChanged(next, draft, initial, key) {
   if (draft[key] !== initial[key]) {
     next[key] = draft[key] === true
-  }
-}
-
-function addArrayIfChanged(next, draft, initial, key) {
-  if (!sameArr(draft[key], initial[key])) {
-    next[key] = safeArr(draft[key])
   }
 }
 

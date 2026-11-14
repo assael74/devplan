@@ -1,7 +1,7 @@
-// playerProfile/mobile/modules/abilities/components/PlayerAbilitiesToolbar.js
+// src/features/hub/playerProfile/mobile/modules/abilities/components/PlayerAbilitiesToolbar.js
 
 import React from 'react'
-import { Box, Typography, Chip, IconButton, ChipDelete } from '@mui/joy'
+import { Box, Typography, Chip, IconButton } from '@mui/joy'
 import JoyStarRatingStatic from '../../../../../../../ui/domains/ratings/JoyStarRating.js'
 import { FiltersTrigger } from '../../../../../../../ui/patterns/filters/index.js'
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
@@ -36,27 +36,6 @@ function MetaChip({ label, value, idIcon, color = 'neutral' }) {
         <Typography color="primary" sx={{ display: 'inline', fontWeight: 700, mr: 0.5 }}>
           {value}
         </Typography>
-      </Typography>
-    </Chip>
-  )
-}
-
-function IndicatorChip({ item, onClearIndicator }) {
-  return (
-    <Chip
-      size="sm"
-      variant="soft"
-      color={item?.color || 'primary'}
-      startDecorator={item?.idIcon ? iconUi({ id: item.idIcon }) : null}
-      endDecorator={
-        onClearIndicator ? (
-          <ChipDelete onDelete={() => onClearIndicator(item)} />
-        ) : null
-      }
-      sx={{ maxWidth: '100%' }}
-    >
-      <Typography level="body-xs" noWrap>
-        {item?.label}
       </Typography>
     </Chip>
   )

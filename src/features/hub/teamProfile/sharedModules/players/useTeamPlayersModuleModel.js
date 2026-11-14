@@ -29,6 +29,9 @@ import {
   performanceScopeInitial,
 } from './teamPlayersModule.constants.js'
 
+const EMPTY_ROWS = []
+const EMPTY_SUMMARY = {}
+
 function getPlayerId(row = {}) {
   return row?.id || row?.playerId || row?.player?.id || ''
 }
@@ -68,8 +71,8 @@ export default function useTeamPlayersModuleModel({
     return profileData?.games?.playedLeagueGames || []
   }, [profileData?.games?.playedLeagueGames])
 
-  const rows = profileData?.players?.rows || []
-  const summary = profileData?.players?.summary || {}
+  const rows = profileData?.players?.rows || EMPTY_ROWS
+  const summary = profileData?.players?.summary || EMPTY_SUMMARY
 
   const {
     imgRow,
@@ -102,10 +105,13 @@ export default function useTeamPlayersModuleModel({
     direction: 'desc',
   })
 
+  const hasLiveTeam = Boolean(liveTeam)
+  const liveTeamId = liveTeam?.id
+
   useEffect(() => {
     setInsightsEnabled(false)
 
-    if (!liveTeam || !rows.length) return undefined
+    if (!hasLiveTeam || !rows.length) return undefined
 
     const handle = scheduleIdle(() => {
       setInsightsEnabled(true)
@@ -114,7 +120,7 @@ export default function useTeamPlayersModuleModel({
     return () => {
       cancelIdle(handle)
     }
-  }, [liveTeam?.id, rows.length])
+  }, [hasLiveTeam, liveTeamId, rows.length])
 
   const insightsModel = useTeamPlayersInsightsModel({
     rows,

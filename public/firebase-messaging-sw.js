@@ -1,3 +1,6 @@
+// public/firebase-messaging-sw.js
+/* eslint-env serviceworker */
+/* global firebase:readonly */
 
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
@@ -15,5 +18,5 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   const { title, body } = payload.notification || {};
-  self.registration.showNotification(title || 'פגישה', { body: body || '' });
+  registration.showNotification(title || 'פגישה', { body: body || '' });
 });

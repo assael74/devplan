@@ -1,11 +1,11 @@
+// src/features/hub/teamProfile/sharedLogic/players/moduleLogic/row/row.targets.js
+
 // // teamProfile/sharedLogic/players/moduleLogic/row/row.targets.js
 
 import {
   buildPlayerTargetsState,
   buildPlayerTargetsViewModel,
-  formatPlayerTargetRange,
   formatPlayerTargetRangeObj,
-  formatPlayerTargetValue,
 } from '../../../../../../../shared/players/targets/index.js'
 
 const emptyTargets = {
@@ -40,27 +40,6 @@ const makeItem = ({
     icon,
     tone,
   }
-}
-
-const buildUsageItems = values => {
-  const usage = values?.usage || {}
-
-  return [
-    makeItem({
-      id: 'minutes',
-      label: 'דקות',
-      value: formatPlayerTargetRange(usage.minutesRange, '%'),
-      icon: 'playTimeRate',
-      tone: 'neutral',
-    }),
-    makeItem({
-      id: 'starts',
-      label: 'הרכב',
-      value: formatPlayerTargetRange(usage.startsRange, '%'),
-      icon: 'isStart',
-      tone: 'neutral',
-    }),
-  ].filter(Boolean)
 }
 
 const buildAttackItems = values => {

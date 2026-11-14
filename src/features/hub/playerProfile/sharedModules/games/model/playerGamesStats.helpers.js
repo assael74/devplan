@@ -32,8 +32,8 @@ export function getGameId(game) {
   return clean(
     source.id ||
       source.gameId ||
-      game && game.id ||
-      game && game.gameId
+      (game && game.id) ||
+      (game && game.gameId)
   )
 }
 
@@ -43,8 +43,8 @@ export function getGameStatsDocId(game) {
   return clean(
     source.statsDocId ||
       source.gameStatsDocId ||
-      game && game.statsDocId ||
-      game && game.gameStatsDocId
+      (game && game.statsDocId) ||
+      (game && game.gameStatsDocId)
   )
 }
 
@@ -53,9 +53,9 @@ export function getCreatedStatsDocId({ result, payload }) {
 
   return clean(
     ids.gameStatsDocId ||
-      result && result.gameStatsDocId ||
-      payload && payload.gameStatsDocId ||
-      payload && payload.statsDocId
+      (result && result.gameStatsDocId) ||
+      (payload && payload.gameStatsDocId) ||
+      (payload && payload.statsDocId)
   )
 }
 
@@ -147,8 +147,8 @@ function getMetaValue(source, key) {
 
 function resolveDeleteScope({ draft, activeStatsFormDraft, livePlayer }) {
   return (
-    draft && draft.scope ||
-    activeStatsFormDraft && activeStatsFormDraft.scope ||
+    (draft && draft.scope) ||
+    (activeStatsFormDraft && activeStatsFormDraft.scope) ||
     getMetaValue(draft, 'scope') ||
     getMetaValue(activeStatsFormDraft, 'scope') ||
     getStatsScope(livePlayer)
@@ -157,8 +157,8 @@ function resolveDeleteScope({ draft, activeStatsFormDraft, livePlayer }) {
 
 function resolveDeleteSource({ draft, activeStatsFormDraft, scope }) {
   return (
-    draft && draft.source ||
-    activeStatsFormDraft && activeStatsFormDraft.source ||
+    (draft && draft.source) ||
+    (activeStatsFormDraft && activeStatsFormDraft.source) ||
     getMetaValue(draft, 'source') ||
     getMetaValue(activeStatsFormDraft, 'source') ||
     getStatsSource(scope)
@@ -167,8 +167,8 @@ function resolveDeleteSource({ draft, activeStatsFormDraft, scope }) {
 
 function resolveDeletePlayerId({ livePlayer, draft, activeStatsFormDraft }) {
   return (
-    livePlayer && livePlayer.id ||
-    draft && draft.playerId ||
+    (livePlayer && livePlayer.id) ||
+    (draft && draft.playerId) ||
     getMetaValue(draft, 'playerId') ||
     getMetaValue(activeStatsFormDraft, 'playerId') ||
     ''

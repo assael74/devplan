@@ -1,4 +1,4 @@
-// clubProfile/mobile/modules/teams/components/ClubTeamsList.js
+// src/features/hub/clubProfile/mobile/modules/teams/components/ClubTeamsList.js
 
 import React from 'react'
 import { Box, Typography } from '@mui/joy'
@@ -43,7 +43,6 @@ export default function ClubTeamsList({
   return (
     <Box sx={{ display: 'grid', gap: 0.5 }}>
       {rows.map((row) => {
-        const teamId = getTeamId(row)
 
         return (
           <ClubTeamCardMobile

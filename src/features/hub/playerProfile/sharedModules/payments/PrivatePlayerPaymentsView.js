@@ -1,3 +1,5 @@
+// src/features/hub/playerProfile/sharedModules/payments/PrivatePlayerPaymentsView.js
+
 import React, { useMemo, useState } from 'react'
 import moment from 'moment'
 import {
@@ -38,14 +40,6 @@ const primaryButtonSx = {
   },
 }
 
-const secondaryButtonSx = {
-  color: devPlanColors.primary,
-  borderColor: devPlanColors.primary,
-  '&:hover': {
-    bgcolor: devPlanColors.primaryLight,
-    borderColor: devPlanColors.primaryDark,
-  },
-}
 
 function statusMeta(payment) {
   if (payment?.agreementStatus === 'closed') return { label: 'נסגר', color: 'success' }

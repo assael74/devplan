@@ -1,4 +1,4 @@
-// playerProfile/desktop/modules/meetings/components/form/useMeetingForm.js
+// src/features/hub/playerProfile/desktop/modules/meetings/components/form/useMeetingForm.js
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
@@ -10,6 +10,8 @@ import {
   isMeetingEditDirty,
   getIsMeetingEditValid,
 } from '../../../../../../editLogic/meetings/index.js'
+
+const EMPTY_PATCH = {}
 
 export default function useMeetingForm(selected) {
   const [isEditing, setIsEditing] = useState(false)
@@ -29,7 +31,7 @@ export default function useMeetingForm(selected) {
     return buildMeetingEditBundle(draft, initial)
   }, [draft, initial])
 
-  const patch = bundle?.meetingPatch || {}
+  const patch = bundle?.meetingPatch || EMPTY_PATCH
 
   const isDirty = useMemo(() => {
     return isMeetingEditDirty(draft, initial)

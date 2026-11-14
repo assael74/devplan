@@ -1,13 +1,10 @@
+// src/features/hub/playerProfile/desktop/modules/games/components/sections/PlayerImpactSection.js
+
 import React from 'react'
 import { Box, Chip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { sectionsSx as sx } from '../../sx/sections.sx.js'
-import {
-  getGamePlayers,
-  getScorers,
-  getAssisters,
-} from '../../../../../sharedLogic'
 
 export function PlayerImpactSection({ game }) {
   const goals = Number(game?.goals || 0)

@@ -1,5 +1,7 @@
+// src/features/hub/playerProfile/desktop/modules/games/components/toolbar/PlayerGamesToolbar.js
+
 import React from 'react'
-import { Box, Input, Option, Select, Chip, Button } from '@mui/joy'
+import { Box, Input, Option, Select, Chip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
@@ -11,7 +13,6 @@ import {
   buildToolbarState,
   getHomeOptionColor,
   clearToolbarIndicator,
-  safeArray,
 } from '../../../../../sharedLogic'
 
 export default function PlayerGamesToolbar({

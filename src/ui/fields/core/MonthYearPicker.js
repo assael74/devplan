@@ -1,4 +1,4 @@
-/// ui/fields/core/MonthYearPicker.js
+// src/ui/fields/core/MonthYearPicker.js
 
 import * as React from 'react'
 import { Stack, Box, FormLabel, Input, Select, Option } from '@mui/joy'
@@ -64,19 +64,18 @@ export default function MonthYearPicker({
     return Array.from({ length: len }, (_, i) => currentYear - i)
   }, [context, currentYear])
 
-  const parsedValue = React.useMemo(() => parseMonthYear(value), [value])
+  const { year, month } = React.useMemo(() => parseMonthYear(value), [value])
 
-  const [ym, setYM] = React.useState(parsedValue)
+  const [ym, setYM] = React.useState({ year, month })
 
   const monthBtnRef = React.useRef(null)
   const yearBtnRef = React.useRef(null)
 
   React.useEffect(() => {
-    const sameYear = ym.year === parsedValue.year
-    const sameMonth = ym.month === parsedValue.month
-    if (sameYear && sameMonth) return
-    setYM(parsedValue)
-  }, [parsedValue.year, parsedValue.month]) // בכוונה לא תלוי ב-ym כ-object
+    setYM(current => (
+      current.year === year && current.month === month ? current : { year, month }
+    ))
+  }, [year, month])
 
   React.useEffect(() => {
     if (disabled) {

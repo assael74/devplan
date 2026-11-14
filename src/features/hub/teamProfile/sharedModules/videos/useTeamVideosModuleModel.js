@@ -1,3 +1,5 @@
+// src/features/hub/teamProfile/sharedModules/videos/useTeamVideosModuleModel.js
+
 import { useEffect, useMemo, useState } from 'react'
 
 import {
@@ -29,7 +31,7 @@ export default function useTeamVideosModuleModel({
 
   const [sort, setSort] = useState({ by: 'date', direction: 'desc' })
 
-  const tags = useMemo(() => resolveContextTags(context), [context?.tags, context?.tagsArr])
+  const tags = useMemo(() => resolveContextTags(context), [context])
 
   const domain = useMemo(() => {
     return resolveTeamVideosFiltersDomain(liveTeam, filters, {

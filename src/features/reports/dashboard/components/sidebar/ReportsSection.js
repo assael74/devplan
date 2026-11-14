@@ -1,7 +1,6 @@
 // src/features/reports/dashboard/components/sidebar/ReportsSection.js
 
 import Box from '@mui/joy/Box'
-import Divider from '@mui/joy/Divider'
 import Dropdown from '@mui/joy/Dropdown'
 import IconButton from '@mui/joy/IconButton'
 import ListItemDecorator from '@mui/joy/ListItemDecorator'

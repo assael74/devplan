@@ -1,9 +1,8 @@
-//  playerProfile/sharedLogic/games/insightsDrawer/cards/impact.cards.js
+// src/features/hub/playerProfile/sharedLogic/games/insightsDrawer/cards/impact.cards.js
 
 import {
   formatNumber,
   formatPercent,
-  toNum,
 } from './cards.shared.js'
 
 import {

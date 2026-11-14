@@ -1,4 +1,4 @@
-// teamProfile/sharedLogic/players/moduleLogic/row/row.helpers.js
+// src/features/hub/teamProfile/sharedLogic/players/moduleLogic/row/row.helpers.js
 
 import { getPlayerAge } from '../../../../../../../shared/players/player.age.utils.js'
 
@@ -32,11 +32,11 @@ export const countList = (value) => {
 }
 
 export const pickId = (row) => {
-  return row && (row.playerId || row?.player?.id || row.id) || null
+  return (row && (row.playerId || row?.player?.id || row.id)) || null
 }
 
 export const pickPlayer = (row) => {
-  return row && (row.player || row) || {}
+  return (row && (row.player || row)) || {}
 }
 
 export const pickLevel = (player, row) => {

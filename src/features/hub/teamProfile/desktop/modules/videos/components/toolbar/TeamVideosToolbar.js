@@ -1,7 +1,7 @@
-// teamProfile/desktop/modules/videos/components/toolbar/TeamVideosToolbar.js
+// src/features/hub/teamProfile/desktop/modules/videos/components/toolbar/TeamVideosToolbar.js
 
 import React from 'react'
-import { Box, Input, Option, Select, Typography, Chip, ChipDelete } from '@mui/joy'
+import { Box, Input, Option, Select, Typography, Chip } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
@@ -25,37 +25,6 @@ function SelectValue({ label, icon, count, fixedWidth }) {
   )
 }
 
-function FilterIndicatorChip({ item, onClear }) {
-  if (!item) return null
-
-  return (
-    <Chip
-      size="md"
-      variant="soft"
-      color="primary"
-      sx={{ '--Chip-paddingInline': '-3px' }}
-      startDecorator={iconUi({ id: item.idIcon, sx: { pl: 0.5, fontSize: 18 } })}
-      endDecorator={
-        <ChipDelete
-          color="danger"
-          variant="plain"
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            onClear(item)
-          }}
-        >
-          {iconUi({ id: 'close' })}
-        </ChipDelete>
-      }
-    >
-      <Typography level="body-xs" noWrap sx={{ minWidth: 0 }}>
-        {item.label} ({item.count || 0})
-      </Typography>
-    </Chip>
-  )
-}
-
 export default function TeamVideosToolbar({
   summary,
   filters,
@@ -68,7 +37,6 @@ export default function TeamVideosToolbar({
   onChangeSortBy,
   onChangeSortDirection,
 }) {
-  const periodOptions = Array.isArray(options?.periodOptions) ? options.periodOptions : []
   const scopeOptions = Array.isArray(options?.scopeOptions) ? options.scopeOptions : []
   const categoryOptions = Array.isArray(options?.tagCategoryOptions) ? options.tagCategoryOptions : []
   const topicOptions = Array.isArray(options?.tagTopicOptions) ? options.tagTopicOptions : []

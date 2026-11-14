@@ -25,7 +25,6 @@ import {
 } from './playerGamesStatsForm.helpers.js'
 
 import {
-  buildStatsDeleteAction,
   buildStatsDeletePayload,
   getCreatedStatsDocId,
   getGameId,
@@ -251,7 +250,7 @@ export function usePlayerGamesStatsActions({
 
   const handleDeleteStats = async ({ draft, game, statsDeleteAction } = {}) => {
     const targetGame = game || editingStatsGame
-    const gameId = getGameId(targetGame) || draft && draft.gameId || ''
+    const gameId = getGameId(targetGame) || (draft && draft.gameId) || ''
 
     if (!gameId) return
     if (!statsDeleteAction || !statsDeleteAction.type) return

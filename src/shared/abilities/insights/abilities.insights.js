@@ -3,9 +3,6 @@
 import {
   fmtScore,
   roundTo,
-  getAbilityScoreHex,
-  getAbilityGapHex,
-  getAbilitySemanticHex,
 } from '../abilities.utils.js'
 import { resolveAbilitiesDomain, resolveTeamAbilitiesDomain } from '../abilities.domain.logic.js'
 import {
@@ -24,7 +21,6 @@ import {
   resolvePlayerLevel,
   resolvePlayerPotential,
   resolvePlayerEvaluation,
-  resolvePlayerWindows,
 } from '../abilities.resolvers.js'
 
 function buildInsight({
@@ -239,7 +235,6 @@ function buildPlayerEvaluatorInsight(player = {}) {
 export function resolvePlayerAbilitiesInsights(player = {}, options = {}) {
   const eligibility = resolvePlayerAbilitiesInsightsEligibility(player, options)
   const domainResult = resolveAbilitiesDomain(player)
-  const x = buildPlayerEvaluatorInsight(player)
 
   const insights = [
     buildPlayerReadinessInsight(eligibility),

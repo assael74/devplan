@@ -53,7 +53,7 @@ export default function TagEditorDrawer({
     isGroup,
     childrenCount,
     usageCount,
-  } = useTagEditorState({ open, tag: t })
+  } = useTagEditorState({ open, tag })
 
   const entityName = useMemo(() => {
     return clean(t?.tagName) || (isGroup ? 'קטגוריה' : 'תג')

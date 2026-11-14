@@ -77,23 +77,7 @@ export function CoreDataProvider({ children }) {
   )
 
   const {
-    loading,
-    accessLoading,
     primaryLoading,
-    secondaryLoading,
-    summaryLoading,
-    accessReady,
-    primaryReady,
-    secondaryReady,
-    summaryReady,
-    coreReady,
-    readiness,
-    sources: sourceStatus,
-    sourceHealth,
-    failedSources,
-    errorCount,
-    hasSourceErrors,
-    error,
   } = status
 
   const accessRoles = useMemo(() => resolveAccessRoles(rolesShorts), [rolesShorts])

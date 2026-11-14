@@ -1,10 +1,9 @@
-// playerProfile/desktop/modules/meetings/components/form/MeetingHeader.js
+// src/features/hub/playerProfile/desktop/modules/meetings/components/form/MeetingHeader.js
 
 import React from 'react'
 import { Box, Button, Chip, IconButton, Stack, Tooltip, Typography } from '@mui/joy'
 
-import { MEETING_TYPES, MEETING_STATUSES } from '../../../../../../../../shared/meetings/meetings.constants.js'
-import { getStatusId } from '../../../../../../../../shared/meetings/meetings.status.js'
+import { MEETING_TYPES } from '../../../../../../../../shared/meetings/meetings.constants.js'
 import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 
@@ -13,7 +12,6 @@ import { formSx as sx } from '../sx/form.sx'
 const c = getEntityColors('players')
 
 const getTypeLabel = (type) => MEETING_TYPES.find((item) => item.id === type)?.labelH || '—'
-const getStatusLabel = (statusId) => MEETING_STATUSES.find((item) => item.id === statusId)?.labelH || '—'
 
 export default function MeetingHeader({
   selected,
@@ -26,9 +24,7 @@ export default function MeetingHeader({
   onReset,
   onSave,
 }) {
-  const statusId = getStatusId(selected.status)
   const typeLabel = getTypeLabel(selected.type)
-  const statusLabel = getStatusLabel(statusId)
 
   return (
     <Box sx={sx.header}>

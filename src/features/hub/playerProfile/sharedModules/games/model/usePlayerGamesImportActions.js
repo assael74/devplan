@@ -1,6 +1,6 @@
 // src/features/hub/playerProfile/sharedModules/games/model/usePlayerGamesImportActions.js
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { createEntity, unwrapActionResult } from '../../../../application/index.js'
 import { useCreateRequest } from '../../../../../../application/actions/entities/useCreateRequest.js'
@@ -22,19 +22,21 @@ export function usePlayerGamesImportActions({
   const [gamesImportError, setGamesImportError] = useState('')
   const { getCreateRequest, clearCreateRequest } = useCreateRequest()
 
-  useEffect(() => {
-    if (gamesImportRequest > 0) {
-      handleOpenGamesImport()
-    }
-  }, [gamesImportRequest])
+  const lastImportRequest = useRef(0)
 
-  function handleOpenGamesImport() {
+  const handleOpenGamesImport = useCallback(() => {
     if (gamesImportSaving) return
 
     clearCreateRequest()
     setGamesImportError('')
     setGamesImportOpen(true)
-  }
+  }, [clearCreateRequest, gamesImportSaving])
+
+  useEffect(() => {
+    if (lastImportRequest.current === gamesImportRequest) return
+    lastImportRequest.current = gamesImportRequest
+    if (gamesImportRequest > 0) handleOpenGamesImport()
+  }, [gamesImportRequest, handleOpenGamesImport])
 
   function handleCloseGamesImport() {
     if (gamesImportSaving) return

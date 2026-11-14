@@ -1,4 +1,4 @@
-// features/home/mobile/screens/InProgressTasksScreenMobile.js
+// src/features/home/mobile/screens/InProgressTasksScreenMobile.js
 
 import React, { useMemo, useState } from 'react'
 import { Box, Card, Chip, Typography } from '@mui/joy'
@@ -14,8 +14,10 @@ import {
 
 import { workSpaceSx as sx } from './sx/workSpace.sx'
 
+const EMPTY_TASKS = []
+
 export default function InProgressTasksScreenMobile({ bucket, onBack, onEditTask }) {
-  const tasks = bucket?.all || []
+  const tasks = bucket?.all || EMPTY_TASKS
 
   const [filters, setFilters] = useState(() => {
     return createInitialTasksFilters({

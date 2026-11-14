@@ -1,6 +1,5 @@
 // src/shared/performance/logic/perf.cards.logic.js
-import { toNum0, endsWith, getOrder } from './perf.utils'
-import { isTotalKey, toSuccessKey, toRateKey } from './perf.statsParm'
+import { endsWith, getOrder } from './perf.utils'
 
 export function buildPerformanceStatsModel(args) {
   var fullStats = args ? args.fullStats : null

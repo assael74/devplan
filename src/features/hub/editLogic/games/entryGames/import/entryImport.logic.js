@@ -1,4 +1,4 @@
-// src/features/hub/teamProfile/editLogic/games/entryGames/import/entryImport.logic.js
+// src/features/hub/editLogic/games/entryGames/import/entryImport.logic.js
 
 import {
   clean,
@@ -6,10 +6,7 @@ import {
 } from '../entryGame.shared.js'
 
 import {
-  getAssistsTotal,
   getGameDurationLimit,
-  getGoalsTotal,
-  getOnStartTotal,
   getTeamGoalsLimit,
 } from '../teamGameEntry.model.js'
 

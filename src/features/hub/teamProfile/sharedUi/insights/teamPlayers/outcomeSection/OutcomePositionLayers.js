@@ -1,4 +1,4 @@
-// TEAMPROFILE/sharedUi/insights/teamPlayers/outcomeSection/OutcomePositionLayers.js
+// src/features/hub/teamProfile/sharedUi/insights/teamPlayers/outcomeSection/OutcomePositionLayers.js
 
 import React from 'react'
 import { Box, Typography } from '@mui/joy'
@@ -8,7 +8,6 @@ import {
   LayerSummary,
   ModeSwitch,
   SelectableChips,
-  StatusStrip,
 } from '../shared/index.js'
 
 import OutcomeDetails from './OutcomeDetails.js'
@@ -118,57 +117,6 @@ const getWorstTone = groups => {
   }, 'success')
 }
 
-const buildStatusItems = groups => {
-  const counts = groups.reduce((acc, group) => {
-    const tone = getTone(group)
-
-    acc[tone] = (acc[tone] || 0) + 1
-
-    return acc
-  }, {})
-
-  return [
-    counts.danger
-      ? {
-          id: 'danger',
-          label: `סיכון גבוה · ${counts.danger}`,
-          color: 'danger',
-        }
-      : null,
-
-    counts.warning
-      ? {
-          id: 'warning',
-          label: `דורש בדיקה · ${counts.warning}`,
-          color: 'warning',
-        }
-      : null,
-
-    counts.primary
-      ? {
-          id: 'primary',
-          label: `חריגה קלה · ${counts.primary}`,
-          color: 'primary',
-        }
-      : null,
-
-    counts.success
-      ? {
-          id: 'success',
-          label: `תקין · ${counts.success}`,
-          color: 'success',
-        }
-      : null,
-
-    counts.neutral
-      ? {
-          id: 'neutral',
-          label: `ללא הכרעה · ${counts.neutral}`,
-          color: 'neutral',
-        }
-      : null,
-  ].filter(Boolean)
-}
 
 const buildLayers = groups => {
   const map = new Map()

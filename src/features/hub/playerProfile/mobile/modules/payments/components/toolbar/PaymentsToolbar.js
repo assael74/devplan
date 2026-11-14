@@ -1,7 +1,7 @@
-// playerProfile/mobile/modules/payments/components/toolbar/PaymentsToolbar.js
+// src/features/hub/playerProfile/mobile/modules/payments/components/toolbar/PaymentsToolbar.js
 
 import React from 'react'
-import { Box, Chip, IconButton, Sheet, Typography, Button } from '@mui/joy'
+import { Box, Chip, IconButton, Sheet, Typography } from '@mui/joy'
 
 import { FiltersTrigger } from '../../../../../../../../ui/patterns/filters/index.js'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'

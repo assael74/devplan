@@ -1,6 +1,7 @@
+// src/features/notifications/components/NotificationsBell.js
+
 import { Badge, IconButton } from '@mui/joy'
 import { iconUi } from '../../../ui/core/icons/iconUi'
-import { notificationsSx as sx } from '../sx/notifications.sx'
 
 function getBadgeLabel(unreadCount) {
   if (!unreadCount) return 0

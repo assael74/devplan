@@ -1,4 +1,4 @@
-// shared/games/insights/team/build/teamGamesInsights.build.js
+// src/shared/games/insights/team/build/teamGamesInsights.build.js
 
 import { buildTeamLeagueSnapshot } from '../snapshots/teamLeague.snapshot.js'
 import { buildTeamGamesSnapshot } from '../snapshots/teamGames.snapshot.js'
@@ -57,7 +57,6 @@ export const buildTeamGamesInsights = ({
     ? team.targets
     : buildTeamTargetsState(team)
 
-  const targetPositionMode = targets?.targetPositionMode || ''
   const targetPosition = targets?.targetPosition || ''
   const targetProfile = targets?.targetProfile || null
 

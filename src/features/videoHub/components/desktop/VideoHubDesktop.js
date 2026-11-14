@@ -18,7 +18,6 @@ import {
 
 import { VIDEO_TAB } from '../../logic/videoHub.model.js'
 import {
-  enrichVideoAnalysis,
   filterVideoAnalysis,
   sortVideoAnalysis,
   filterVideosGeneral,

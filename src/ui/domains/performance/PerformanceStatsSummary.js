@@ -1,6 +1,6 @@
-// src/shared/performance/PerformanceStatsSummary.js
+// src/ui/domains/performance/PerformanceStatsSummary.js
 import React, { useMemo } from 'react'
-import { Box, Sheet, Divider, Chip } from '@mui/joy'
+import { Box, Divider } from '@mui/joy'
 
 import { buildPerformanceStatsModel } from '../../../shared/performance/logic/perf.cards.logic.js'
 import StatCard from './StatCard'
@@ -9,9 +9,6 @@ export default function PerformanceStatsSummary({ fullStats, statsParm = [] }) {
   var model = useMemo(function () {
     return buildPerformanceStatsModel({ fullStats: fullStats, statsParm: statsParm })
   }, [fullStats, statsParm])
-
-  const rmt = fullStats.recordedMinutesTotal
-  const rcp = fullStats.recordedCoveragePct
 
   return (
     <Box sx={{ display: 'grid', gap: 1 }}>
@@ -26,5 +23,3 @@ export default function PerformanceStatsSummary({ fullStats, statsParm = [] }) {
     </Box>
   )
 }
-
-function safe(v) { return v == null ? '—' : String(v) }

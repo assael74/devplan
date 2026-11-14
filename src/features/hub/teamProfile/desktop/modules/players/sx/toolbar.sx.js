@@ -1,8 +1,4 @@
-// teamProfile/desktop/modules/players/sx/toolbar.sx.js
-
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('players')
+// src/features/hub/teamProfile/desktop/modules/players/sx/toolbar.sx.js
 
 export const toolbarSx = {
   toolbar: {

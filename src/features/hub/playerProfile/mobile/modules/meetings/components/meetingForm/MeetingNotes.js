@@ -1,7 +1,7 @@
-// playerProfile/mobile/modules/meetings/components/meetingForm/MeetingNotes.js
+// src/features/hub/playerProfile/mobile/modules/meetings/components/meetingForm/MeetingNotes.js
 
 import React from 'react'
-import { Box, Sheet, Textarea, Typography } from '@mui/joy'
+import { Box, Sheet, Typography } from '@mui/joy'
 import MeetingCommentsField from '../../../../../../../../ui/fields/meetings/MeetingCommentsField.js'
 
 import { formSx } from '../sx/form.sx.js'

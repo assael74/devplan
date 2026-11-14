@@ -1,10 +1,12 @@
+// src/shared/scouting/players/playerInterest/playerInterest.js
+
 import { SCOUT_PROFILE_COMBINATIONS } from '../combinations.js'
 import { PLAYER_INTEREST_LEVEL, PLAYER_INTEREST_REASON } from './playerInterest.model.js'
 
 const clean = value => String(value || '').trim()
 
 const resolveSeasonOrder = value => {
-  const match = clean(value).match(/(?:^|[^0-9])(\d{2,4})\s*[\/_-]\s*(\d{2,4})(?:$|[^0-9])/)
+  const match = clean(value).match(/(?:^|[^0-9])(\d{2,4})\s*[/_-]\s*(\d{2,4})(?:$|[^0-9])/)
   if (!match) return 0
   const first = Number(match[1])
   return first < 100 ? first + 2000 : first

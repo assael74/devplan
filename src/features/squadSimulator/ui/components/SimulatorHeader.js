@@ -1,8 +1,7 @@
-// features/squadSimulator/ui/components/SimulatorHeader.js
+// src/features/squadSimulator/ui/components/SimulatorHeader.js
 
 import { Box, Button, Chip, Stack, Typography } from '@mui/joy'
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
-import GroupsRoundedIcon from '@mui/icons-material/GroupsRounded'
 import RestartAltRoundedIcon from '@mui/icons-material/RestartAltRounded'
 
 import { iconUi } from '../../../../ui/core/icons/iconUi.js'

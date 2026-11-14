@@ -120,7 +120,7 @@ function buildDeletedPrivatePlayerAggregate({
 
   next = applyStatsDelta(next, delta)
 
-  next.gamesWithStats = clampMinZero((current && current.gamesWithStats || 0) - 1)
+  next.gamesWithStats = clampMinZero(((current && current.gamesWithStats) || 0) - 1)
   next.statsGameRefs = removeStatsGameRef(current && current.statsGameRefs, gameId)
 
   return compactPrivateAggregate(applyStatsRates(next))

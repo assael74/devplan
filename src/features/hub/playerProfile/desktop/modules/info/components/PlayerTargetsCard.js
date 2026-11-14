@@ -1,4 +1,4 @@
-// playerProfile/desktop/modules/info/components/PlayerTargetsCard.js
+// src/features/hub/playerProfile/desktop/modules/info/components/PlayerTargetsCard.js
 
 import React, { useCallback, useMemo } from 'react'
 import { Box, Sheet, Typography } from '@mui/joy'
@@ -8,6 +8,8 @@ import { buildPlayerTargetsViewModel } from '../../../../sharedLogic/info'
 import PlayerTargetsView from '../../../../sharedUi/info/PlayerTargetsView.js'
 
 import { targetsSx as sx } from './sx/targets.sx.js'
+
+const EMPTY_TEAM = {}
 
 const TEXT = {
   personalPerformance: '\u05d1\u05d9\u05e6\u05d5\u05e2 \u05d0\u05d9\u05e9\u05d9 \u05e0\u05d5\u05db\u05d7\u05d9',
@@ -50,7 +52,7 @@ export default function PlayerTargetsCard({
     }
   }, [player, draft])
 
-  const activeTeam = team || livePlayer?.team || {}
+  const activeTeam = team || livePlayer?.team || EMPTY_TEAM
 
   const targets = useMemo(() => {
     return buildPlayerTargetsState({

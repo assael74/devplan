@@ -3,22 +3,10 @@
 import Box from '@mui/joy/Box'
 import Typography from '@mui/joy/Typography'
 
-import { getFullDateIl } from '../../../../../shared/format/dateUtils.js'
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import { CollapseBox } from '../../../../../ui/patterns/collapseBox/index.js'
 import { sidebarSx as sx } from './sx/sidebar.sx.js'
 import CategorySection from './CategorySection.js'
 import ReportsSection from './ReportsSection.js'
-
-function formatPublicationDate(publication = {}) {
-  const rawDate = publication.publishedAt || ''
-  const dateValue = typeof rawDate?.toDate === 'function' ? rawDate.toDate() : rawDate
-  const formattedDate = getFullDateIl(dateValue, false)
-
-  return formattedDate && formattedDate !== 'ג€”'
-    ? formattedDate
-    : 'תאריך לא זמין'
-}
 
 export default function DashboardSidebar({
   reports = [],

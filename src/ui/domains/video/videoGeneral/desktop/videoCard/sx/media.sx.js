@@ -13,12 +13,6 @@ const toneColor = tone => {
   return '#64748B'
 }
 
-const statusColor = status => {
-  if (status === 'needs_tagging') return '#F59E0B'
-  if (status === 'partial') return '#D97706'
-  return '#16A34A'
-}
-
 export const mediaSx = {
   media: {
     position: 'relative',

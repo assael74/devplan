@@ -1,9 +1,7 @@
-// TEAMPROFILE/sharedUi/insights/teamPlayers/recommendSection/RecommendSection.js
+// src/features/hub/teamProfile/sharedUi/insights/teamPlayers/recommendSection/RecommendSection.js
 
 import React from 'react'
 import { Box, Chip, Typography } from '@mui/joy'
-
-import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 
 import RecommendCard from './RecommendCard.js'
 

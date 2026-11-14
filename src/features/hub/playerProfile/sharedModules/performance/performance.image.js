@@ -177,8 +177,9 @@ export async function createPerformanceImage(report) {
   columnLines.forEach((lines, index) => lines.forEach((line, lineIndex) => {
     context.fillText(line, cellCenter(index), tableY + tableHeaderHeight / 2 + (lineIndex - (lines.length - 1) / 2) * 20)
   }))
-  let y = tableY + tableHeaderHeight
+  let rowTop = tableY + tableHeaderHeight
   for (const row of rows) {
+    const y = rowTop
     context.fillStyle = getParamFamilyTone(row.id).selectedBg
     context.fillRect(PADDING, y, CONTENT, row.height)
     row.cells.forEach((cell, index) => {
@@ -205,7 +206,7 @@ export async function createPerformanceImage(report) {
       context.fillStyle = colors.subText
       cell.notes.forEach((line, lineIndex) => context.fillText(line, x, y + 22 + cell.lines.length * 24 + lineIndex * 19))
     })
-    y += row.height
+    rowTop += row.height
   }
   return new Promise((resolve, reject) => {
     canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('image export failed')), 'image/png')

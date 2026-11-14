@@ -1,15 +1,12 @@
-// teamProfile/modules/games/components/entryDrawer/EntryEditHeaderDrawer.js
+// src/features/hub/teamProfile/desktop/modules/games/components/entryDrawer/EntryEditHeaderDrawer.js
 
 import React from 'react'
 import { Avatar, Box, Chip, DialogTitle, ModalClose, Typography } from '@mui/joy'
 
-import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi'
 import { resolveEntityAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 
 import { entryEditDrawerSx as sx } from './sx/entryEditDrawer.sx.js'
-
-const c = getEntityColors('teams')
 
 export default function EntryEditHeaderDrawer({
   game,

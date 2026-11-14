@@ -1,4 +1,4 @@
-// src/features/hub/teamProfile/sharedUi/management/print/shared/sx/print.pdf.sx.js
+// src/features/reports/teamTargets/renderer/shared/sx/print.pdf.sx.js
 
 import { alpha } from '@mui/system'
 
@@ -14,8 +14,6 @@ const getSectionGridColumn = id => {
 
   return 'auto'
 }
-
-const startsSecondPage = id => id === 'squadUsage'
 
 const getGridTemplate = (sectionId, rowCount) => {
   if (sectionId === 'homeAway') return 'repeat(2, minmax(0, 1fr))'

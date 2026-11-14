@@ -1,9 +1,8 @@
-// playerProfile/mobile/modules/trainings/components/TrainingsToolbar.js
+// src/features/hub/playerProfile/mobile/modules/trainings/components/TrainingsToolbar.js
 
 import React from 'react'
-import { Box, Chip, IconButton, Sheet, Tooltip, Typography } from '@mui/joy'
+import { Box, Chip, Sheet, Typography } from '@mui/joy'
 
-import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 import { toolbarSx as sx } from '../sx/toolbar.sx.js'
 
 export default function TrainingsToolbar({

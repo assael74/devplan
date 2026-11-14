@@ -40,7 +40,6 @@ export default function FirestoreUsagePage() {
 
   const {
     snapshot,
-    lastRefreshedAt,
     refresh,
     reset,
     exportJson,

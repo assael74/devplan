@@ -4,9 +4,6 @@ import { iconUi } from '../../../ui/core/icons/iconUi'
 const warningColor = '#f7d397'
 const succssesColor = '#11eb61'
 const dangerColor = '#f80303'
-const white = '#ffffff'
-const black = '#000000'
-const gray = '#5b5b5b'
 
 export const playerFilterGroups = [
   {

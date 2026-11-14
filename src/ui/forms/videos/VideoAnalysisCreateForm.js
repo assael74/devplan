@@ -1,4 +1,4 @@
-// ui/forms/videos/VideoAnalysisCreateForm.js
+// src/ui/forms/videos/VideoAnalysisCreateForm.js
 
 import React, { useEffect, useMemo } from 'react'
 import { useTheme } from '@mui/joy/styles'
@@ -13,6 +13,15 @@ import {
   VIDEOANALYSIS_OBJECTTYPES,
   VIDEOANALYSIS_CONTEXTTYPES,
 } from '../../../shared/videoAnalysis/videoAnalysis.constants.js'
+
+const EMPTY_LOCKS = {}
+const LOCKED_FIELDS = [
+  ['lockContextType', 'contextType'],
+  ['lockObjectType', 'objectType'],
+  ['lockPlayerId', 'playerId'],
+  ['lockTeamId', 'teamId'],
+  ['lockMeetingId', 'meetingId'],
+]
 
 const clean = (v) => String(v ?? '').trim()
 
@@ -41,9 +50,7 @@ export default function VideoAnalysisCreateForm({
   const isMobile = forceMobile || isMobileViewport
 
   const hasContext = !!context
-  const locks = draft?.__locks || {}
-  const expected = locks?.expected || {}
-
+  const locks = draft?.__locks || EMPTY_LOCKS
   const { isMeetingMode, isEntityMode, isFloating } = useMemo(
     () => getVideoModes(contextType),
     [contextType]
@@ -60,84 +67,35 @@ export default function VideoAnalysisCreateForm({
   )
 
   useEffect(() => {
-    const hasLocks = !!locks && Object.keys(locks).length > 0
-    if (!hasLocks) return
+    let next = draft
 
-    const next = { ...draft }
-    let changed = false
-
-    if (locks.lockContextType && expected.contextType && next.contextType !== expected.contextType) {
-      next.contextType = expected.contextType
-      changed = true
-    }
-
-    if (locks.lockObjectType && expected.objectType && next.objectType !== expected.objectType) {
-      next.objectType = expected.objectType
-      changed = true
-    }
-
-    if (locks.lockPlayerId && expected.playerId && next.playerId !== expected.playerId) {
-      next.playerId = expected.playerId
-      changed = true
-    }
-
-    if (locks.lockTeamId && expected.teamId && next.teamId !== expected.teamId) {
-      next.teamId = expected.teamId
-      changed = true
-    }
-
-    if (locks.lockMeetingId && expected.meetingId && next.meetingId !== expected.meetingId) {
-      next.meetingId = expected.meetingId
-      changed = true
-    }
-
-    if (changed) onDraft(next)
-  }, [
-    draft,
-    onDraft,
-    locks,
-    expected?.contextType,
-    expected?.objectType,
-    expected?.playerId,
-    expected?.teamId,
-    expected?.meetingId,
-  ])
-
-  // Clean dependent fields by mode
-  useEffect(() => {
-    if (isMeetingMode) {
-      if (objectType !== 'meeting' || teamId || playerId) {
-        onDraft({ ...draft, objectType: 'meeting', teamId: null, playerId: null })
-      }
-      return
-    }
-
-    if (isEntityMode) {
-      if (meetingId) {
-        onDraft({ ...draft, meetingId: null })
-        return
-      }
+    if (isMeetingMode && (objectType !== 'meeting' || teamId || playerId)) {
+      next = { ...next, objectType: 'meeting', teamId: null, playerId: null }
+    } else if (isEntityMode) {
+      if (meetingId) next = { ...next, meetingId: null }
       if (!objectType || objectType === 'meeting') {
-        onDraft({ ...draft, objectType: 'player', teamId: null, playerId: null })
-        return
+        next = { ...next, objectType: 'player', teamId: null, playerId: null }
+      } else if (objectType === 'player' && teamId) {
+        next = { ...next, teamId: null }
+      } else if (objectType === 'team' && playerId) {
+        next = { ...next, playerId: null }
       }
-      if (objectType === 'player' && teamId) {
-        onDraft({ ...draft, teamId: null })
-        return
-      }
-      if (objectType === 'team' && playerId) {
-        onDraft({ ...draft, playerId: null })
-        return
-      }
-      return
+    } else if (isFloating && (objectType || meetingId || teamId || playerId)) {
+      next = { ...next, objectType: '', meetingId: null, teamId: null, playerId: null }
     }
 
-    if (isFloating) {
-      if (objectType || meetingId || teamId || playerId) {
-        onDraft({ ...draft, objectType: '', meetingId: null, teamId: null, playerId: null })
+    // A draft opened from a profile or meeting keeps its locked associations.
+    for (const [lock, field] of LOCKED_FIELDS) {
+      const expected = locks.expected?.[field]
+      if (locks[lock] && expected && next[field] !== expected) {
+        next = { ...next, [field]: expected }
       }
     }
-  }, [contextType, objectType])
+
+    if (next !== draft && LOCKED_FIELDS.some(([, field]) => next[field] !== draft[field])) {
+      onDraft(next)
+    }
+  }, [draft, isEntityMode, isFloating, isMeetingMode, locks, meetingId, objectType, onDraft, playerId, teamId])
 
   const objectTypeOptions = useMemo(() => {
     if (contextType === 'meeting') return VIDEOANALYSIS_OBJECTTYPES.filter((o) => o.id === 'meeting')

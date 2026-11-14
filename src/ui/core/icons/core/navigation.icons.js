@@ -1,7 +1,6 @@
 // src/ui/core/icons/core/navigation.icons.js
 
 import {
-  AddCircleOutline,
   AutoAwesomeMosaic,
   ArrowBack,
   ArrowForward,
@@ -20,8 +19,7 @@ import {
   ViewTimeline,
   Insights,
   AccountTree,
-  ManageSearch,
-  PlaylistAdd
+  ManageSearch
 } from '@mui/icons-material';
 
 export const navigationIcons = {

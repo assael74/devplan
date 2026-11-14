@@ -1,8 +1,6 @@
-// C:\projects\devplan\src\ui\patterns\schedule\components\editDrawer\logic\editDayTrainingDrawer.logic.js
+// src/ui/patterns/schedule/components/editDrawer/logic/editDayTrainingDrawer.logic.js
 
 const EMPTY_DRAFT = {}
-
-const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
 
 const safeStr = (v) => (v == null ? '' : String(v))
 const clean = (v) => safeStr(v).trim()

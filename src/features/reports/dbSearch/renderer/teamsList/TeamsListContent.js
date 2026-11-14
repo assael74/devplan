@@ -19,6 +19,9 @@ import LeagueName from '../components/LeagueName.js'
 import TeamName from '../components/TeamName.js'
 import { teamsListSx as sx } from './teamsList.sx.js'
 
+const EMPTY_CAPABILITIES = {}
+const DEFAULT_SORT = { field: 'teamName', direction: 'asc' }
+
 const EXPECTED_LEVEL_LABELS = {
   relegation: 'ירידה צפויה',
   unchanged: 'ללא שינוי',
@@ -187,7 +190,7 @@ export default function TeamsListContent({
   device = 'desktop',
 }) {
   const options = model.filterOptions || {}
-  const capabilities = model.filterCapabilities || {}
+  const capabilities = model.filterCapabilities || EMPTY_CAPABILITIES
   const isPdf = presentation === 'pdf'
   const [filters, setFilters] = React.useState({
     search: '',
@@ -199,12 +202,16 @@ export default function TeamsListContent({
     expectedLevelChange: '',
     favoritesOnly: false,
   })
-  const [sort, setSort] = React.useState(model.defaultSort || {
-    field: 'teamName',
-    direction: 'asc',
-  })
+  const [sort, setSort] = React.useState(model.defaultSort || DEFAULT_SORT)
+
+  const entityId = model.entityId
+  const capturedAt = model.snapshot?.capturedAt
+  const lastReport = React.useRef({ entityId, capturedAt })
 
   React.useEffect(() => {
+    if (lastReport.current.entityId === entityId && lastReport.current.capturedAt === capturedAt) return
+    lastReport.current = { entityId, capturedAt }
+
     setFilters({
       search: '',
       clubLevel: '',
@@ -215,11 +222,8 @@ export default function TeamsListContent({
       expectedLevelChange: '',
       favoritesOnly: false,
     })
-    setSort(model.defaultSort || {
-      field: 'teamName',
-      direction: 'asc',
-    })
-  }, [model.entityId, model.snapshot?.capturedAt])
+    setSort(model.defaultSort || DEFAULT_SORT)
+  }, [entityId, capturedAt, model.defaultSort])
 
   const updateFilter = React.useCallback((field, value) => {
     setFilters(current => ({

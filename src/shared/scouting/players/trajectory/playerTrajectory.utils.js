@@ -16,7 +16,7 @@ const ratio = (value, total) => {
 
 const seasonOrder = (stint = {}) => {
   const seasonKey = String(stint.seasonKey || stint.season || '')
-  const match = seasonKey.match(/(?:^|[^0-9])(\d{2,4})\s*[\/_-]\s*(\d{2,4})(?:$|[^0-9])/)
+  const match = seasonKey.match(/(?:^|[^0-9])(\d{2,4})\s*[/_-]\s*(\d{2,4})(?:$|[^0-9])/)
 
   if (match) {
     const first = Number(match[1])

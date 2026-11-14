@@ -1,7 +1,8 @@
+// src/shared/videoAnalysis/insights/videoInsights.build.js
+
 import { VIDEO_INSIGHTS_DEFAULT_TAG_TYPE } from './videoInsights.constants.js'
 import {
   buildSeasonMonths,
-  buildSeasonMonthMap,
   isMonthInSeason,
   resolveVideoMonthKey,
 } from './videoInsights.months.js'

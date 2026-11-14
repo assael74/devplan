@@ -129,7 +129,7 @@ function buildNewFullStatsPack(rows, statsParm) {
   var timePlayedSum = 0
 
   for (var j = 0; j < r.length; j++) {
-    var row = r[j]
+    const row = r[j]
     if (!row) continue
     keys.forEach(function (kk) { raw[kk] = toNum0(raw[kk]) + toNum0(row[kk]) })
     gameDurationTotal += toNum0(row.__gameDuration)

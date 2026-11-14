@@ -2,12 +2,6 @@
 
 import { getFullDateIl } from '../../../../shared/format/dateUtils.js'
 
-const DOMAIN_STATE = {
-  PARTIAL: 'PARTIAL',
-  EMPTY: 'EMPTY',
-  READY: 'READY',
-}
-
 const safe = (v) => (v == null ? '' : String(v))
 const asArr = (v) => (Array.isArray(v) ? v : [])
 const norm = (v) => safe(v).trim().toLowerCase()
@@ -327,7 +321,6 @@ export function resolveVideosDomain(entity, filters = {}, deps = {}) {
       const isKey = playerId ? keySet.has(playerId) : false
       const date = pickVideoDate(video)
       const monthKey = getMonthKey(video)
-      const monthKeyLabel = getFullDateIl(getMonthKey(video))
       const tagIds = getTagIdsFromVideo(video)
       const hasNotes = !!safe(video?.notes).trim()
 

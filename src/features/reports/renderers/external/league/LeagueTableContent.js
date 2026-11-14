@@ -18,6 +18,8 @@ import {
 } from '../shared/index.js'
 import { leagueTableSx as sx } from './leagueTable.sx.js'
 
+const EMPTY_ROWS = []
+
 const LEVEL_DISPLAY = {
   elite: { label: 'יעד מוביל', border: '#1F7A4D', background: '#E8F5EE', text: '#175C3A' },
   high: { label: 'עדיפות גבוהה', border: '#2F86C7', background: '#EAF5FC', text: '#215F8F' },
@@ -205,7 +207,7 @@ export default function LeagueTableContent({ model = {} }) {
   const content = model.content || {}
   const snapshot = model.snapshot || {}
   const summary = snapshot.summary || {}
-  const rows = Array.isArray(snapshot.rows) ? snapshot.rows : []
+  const rows = Array.isArray(snapshot.rows) ? snapshot.rows : EMPTY_ROWS
   const sortedRows = React.useMemo(
     () => sortRows(rows, sortBy, sortDirection, view),
     [rows, sortBy, sortDirection, view]

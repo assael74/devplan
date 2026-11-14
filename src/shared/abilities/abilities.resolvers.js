@@ -13,18 +13,6 @@ export function isPlainObject(v) {
   return Boolean(v) && typeof v === 'object' && !Array.isArray(v)
 }
 
-function getAbilitiesObject(entity = {}) {
-  if (isPlainObject(entity?.abilitiesState?.abilities)) return entity.abilitiesState.abilities
-
-  return null
-}
-
-function getAbilitiesArray(entity = {}) {
-  if (Array.isArray(entity?.abilitiesState?.abilities)) return entity.abilitiesState.abilities
-
-  return []
-}
-
 function mapAbilitiesArrayToObject(arr = []) {
   const out = {}
 

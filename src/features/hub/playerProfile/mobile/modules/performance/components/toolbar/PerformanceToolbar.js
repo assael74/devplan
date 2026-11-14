@@ -1,9 +1,8 @@
-// playerProfile/mobile/modules/performance/components/toolbar/PerformanceToolbar.js
+// src/features/hub/playerProfile/mobile/modules/performance/components/toolbar/PerformanceToolbar.js
 
 import React, { useState } from 'react'
-import { Box, Typography, Chip, IconButton } from '@mui/joy'
+import { Box, Typography } from '@mui/joy'
 
-import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
 
 import {

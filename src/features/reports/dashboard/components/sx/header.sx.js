@@ -1,7 +1,5 @@
 // src/features/reports/dashboard/components/sx/header.sx.js
 
-import { devPlanColors } from '../../../../../ui/core/theme/Colors.js'
-
 export const headerSx = {
   header: {
     position: 'relative',

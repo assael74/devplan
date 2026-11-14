@@ -1,4 +1,4 @@
-// playerProfile/mobile/modules/payments/components/parentDrawer/parentDrawer.js
+// src/features/hub/playerProfile/mobile/modules/payments/components/parentDrawer/parentDrawer.js
 
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import {
@@ -36,6 +36,8 @@ import {
 
 import { drawerSx as sx } from './../../sx/drawer.sx.js'
 
+const EMPTY_PARENTS = []
+
 export default function ParentDrawer({
   open,
   onClose,
@@ -57,7 +59,7 @@ export default function ParentDrawer({
   const { run, pending } = usePlayerHubUpdate(player)
 
   const playerId = player?.id || player?.playerId || player?.entityId || player?.docId || ''
-  const parents = Array.isArray(player?.parents) ? player.parents : []
+  const parents = Array.isArray(player?.parents) ? player.parents : EMPTY_PARENTS
   const isEdit = Boolean(parent?.id)
   const layout = getParentFormLayout({ isMobile: true })
 

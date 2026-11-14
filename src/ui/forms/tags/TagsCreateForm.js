@@ -1,4 +1,4 @@
-// ui/forms/tags/TagsCreateForm.js
+// src/ui/forms/tags/TagsCreateForm.js
 
 import React, { useEffect, useMemo } from 'react'
 import { useTheme } from '@mui/joy/styles'
@@ -7,6 +7,8 @@ import useMediaQuery from '@mui/material/useMediaQuery'
 import TagsCreateFields from './TagsCreateFields.js'
 import { getTagsCreateFormLayout } from './create.layout.js'
 import { buildParentOptions } from '../../../shared/tags'
+
+const EMPTY_TAGS = []
 
 const fallback = (value, fallbackValue) => {
   return value == null ? fallbackValue : value
@@ -27,7 +29,7 @@ export default function TagsCreateForm({
   const isMobileViewport = useMediaQuery(theme.breakpoints.down('sm'))
   const isMobile = forceMobile || context?.forceMobile || isMobileViewport
 
-  const tags = Array.isArray(context?.tags) ? context.tags : []
+  const tags = Array.isArray(context?.tags) ? context.tags : EMPTY_TAGS
 
   const kind = fallback(draft.kind, 'tag')
   const isGroup = kind === 'group'

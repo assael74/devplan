@@ -1,10 +1,9 @@
+// src/ui/core/icons/entities/roles.icons.js
+
 import {
   Analytics,
-  Badge,
   PersonSearch,
   Psychology,
-  SportsSoccer,
-  Star,
 } from '@mui/icons-material';
 
 export const roleIcons = {

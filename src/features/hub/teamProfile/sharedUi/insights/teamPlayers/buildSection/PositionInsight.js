@@ -1,7 +1,7 @@
-// teamPlayers/buildSection/PositionLayerInsight.js
+// src/features/hub/teamProfile/sharedUi/insights/teamPlayers/buildSection/PositionInsight.js
 
 import React from 'react'
-import { Box, Chip, Typography } from '@mui/joy'
+import { Box, Typography } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../ui/core/icons/iconUi.js'
 

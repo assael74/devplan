@@ -1,3 +1,5 @@
+// src/ui/core/icons/core/actions.icons.js
+
 import {
   Add,
   Addchart,
@@ -8,12 +10,10 @@ import {
   AddCircleOutline,
   ArrowDownward,
   ArrowUpward,
-  BookmarkAdd,
   Close,
   Clear,
   DashboardCustomize,
   Delete,
-  Done,
   Download,
   DomainAdd,
   EditNote,

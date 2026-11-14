@@ -1,3 +1,5 @@
+// src/ui/core/icons/core/status.icons.js
+
 import {
   AdsClick,
   Beenhere,
@@ -41,7 +43,6 @@ import {
   Quiz,
   SentimentDissatisfied,
   SentimentVeryDissatisfied,
-  Stars,
   ManageHistory,
   WorkspacePremium,
 } from '@mui/icons-material';

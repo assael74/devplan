@@ -7,6 +7,8 @@ import {
   sortTeamGamesRows,
 } from '../../../sharedLogic/games'
 
+const EMPTY_GAMES = []
+
 function getContextTeams(context) {
   if (!context) return []
   if (!Array.isArray(context.teams)) return []
@@ -115,7 +117,7 @@ export function useTeamGamesCoreModel({
   }, [liveTeam, filters, teamScoringByGameId])
 
   const summary = domain && domain.summary ? domain.summary : null
-  const viewGames = domain && Array.isArray(domain.games) ? domain.games : []
+  const viewGames = domain && Array.isArray(domain.games) ? domain.games : EMPTY_GAMES
   const options = domain && domain.options ? domain.options : null
   const indicators = domain && domain.indicators ? domain.indicators : null
 

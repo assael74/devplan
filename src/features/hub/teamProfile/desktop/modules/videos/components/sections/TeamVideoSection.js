@@ -1,11 +1,9 @@
-// teamProfile/desktop/modules/videos/components/sections/TeamVideoSection.js
+// src/features/hub/teamProfile/desktop/modules/videos/components/sections/TeamVideoSection.js
 
 import React, { useMemo } from 'react'
 import {
   Box,
   Chip,
-  IconButton,
-  Tooltip,
   Typography,
 } from '@mui/joy'
 
@@ -17,6 +15,8 @@ import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import { getFullDateIl } from '../../../../../../../../shared/format/dateUtils.js'
 import { sectionsSx as sx } from '../../sx/sections.sx.js'
 import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
+
+const EMPTY_TAGS = []
 
 const c = getEntityColors('videoAnalysis')
 
@@ -109,7 +109,7 @@ export function AssignmentSection({ video }) {
 /* ---------------- TAGS ---------------- */
 
 export function TagsSection({ video }) {
-  const tagsFull = Array.isArray(video?.tagsFull) ? video.tagsFull : []
+  const tagsFull = Array.isArray(video?.tagsFull) ? video.tagsFull : EMPTY_TAGS
 
   const visibleTags = useMemo(() => tagsFull.slice(0, 6), [tagsFull])
   const extraTagsCount = Math.max(tagsFull.length - visibleTags.length, 0)

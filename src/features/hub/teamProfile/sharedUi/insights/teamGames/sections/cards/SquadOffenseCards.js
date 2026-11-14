@@ -1,4 +1,4 @@
-// teamProfile/sharedUi/insights/teamGames/sections/cards/SquadOffenseCards.js
+// src/features/hub/teamProfile/sharedUi/insights/teamGames/sections/cards/SquadOffenseCards.js
 
 import React from 'react'
 import { Box, Chip, Sheet, Typography } from '@mui/joy'
@@ -19,18 +19,6 @@ import {
 } from '../shared/index.js'
 
 import { squadOffenseSx as sx } from '../sx/squadOffense.sx.js'
-
-function renderMetricCard(isMobile) {
-  return function render(item) {
-    return (
-      <MetricCardView
-        key={item.id}
-        item={item}
-        isMobile={isMobile}
-      />
-    )
-  }
-}
 
 export default function SquadOffenseCards({ brief, isMobile }) {
   const model = buildSquadOffenseCardsModel({

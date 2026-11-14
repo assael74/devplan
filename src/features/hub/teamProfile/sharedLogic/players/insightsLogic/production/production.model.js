@@ -1,9 +1,8 @@
-// teamProfile/sharedLogic/players/insightsLogic/production/production.model.js
+// src/features/hub/teamProfile/sharedLogic/players/insightsLogic/production/production.model.js
 
 import {
   clean,
   getInvolvement,
-  getMinutesPct,
   buildPlayerRef,
   sortPlayersByInvolvement,
   toNum,

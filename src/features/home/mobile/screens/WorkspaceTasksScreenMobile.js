@@ -1,4 +1,4 @@
-// features/home/mobile/screens/WorkspaceTasksScreenMobile.js
+// src/features/home/mobile/screens/WorkspaceTasksScreenMobile.js
 
 import React, { useMemo, useState } from 'react'
 import { Box, Card, Chip, Typography } from '@mui/joy'
@@ -20,6 +20,8 @@ import {
 import { workSpaceSx as sx } from './sx/workSpace.sx'
 
 import { getEntityColors } from '../../../../ui/core/theme/Colors.js'
+
+const EMPTY_TASKS = []
 
 const c = (entity) => getEntityColors(entity)
 
@@ -48,7 +50,7 @@ export default function WorkspaceTasksScreenMobile({
 }) {
   const safeWorkspaceId = workspaceId === 'app' ? 'app' : 'analyst'
   const meta = WORKSPACE_META[safeWorkspaceId]
-  const tasks = buckets?.[safeWorkspaceId] || []
+  const tasks = buckets?.[safeWorkspaceId] || EMPTY_TASKS
 
   const [filters, setFilters] = useState(() => createInitialTasksFilters())
   const [sortBy, setSortBy] = useState('updatedAt')

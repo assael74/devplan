@@ -1,4 +1,4 @@
-// playerProfile/desktop/modules/abilities/components/PlayerAbilitiesToolbar.js
+// src/features/hub/playerProfile/desktop/modules/abilities/components/PlayerAbilitiesToolbar.js
 
 import React from 'react'
 import {
@@ -6,7 +6,6 @@ import {
   Typography,
   Chip,
   Button,
-  ChipDelete,
 } from '@mui/joy'
 import JoyStarRatingStatic from '../../../../../../../ui/domains/ratings/JoyStarRating.js'
 import AbilitiesMultiSelectField from '../../../../../../../ui/fields/abilities/AbilitiesMultiSelectField.js'

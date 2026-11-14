@@ -1,4 +1,4 @@
-//  teamProfile/sharedLogic/players/moduleLogic/teamPlayers.summary.logic.js
+// src/features/hub/teamProfile/sharedLogic/players/moduleLogic/teamPlayers.summary.logic.js
 
 import {
   POSITION_LAYERS,
@@ -98,31 +98,6 @@ const buildPrimaryPositionBuckets = (rows) => {
 }
 
 const buildPositionCoverageBuckets = (rows) => {
-  const list = []
-
-  Object.entries(POSITION_LAYERS || {}).forEach(([groupKey, items]) => {
-    ;(Array.isArray(items) ? items : []).forEach((item) => {
-      list.push({
-        id: item.code,
-        value: item.code,
-        label: item.label || item.code,
-        idIcon: item.code,
-        layerCode: item.layerCode || '',
-        groupKey,
-      })
-    })
-  })
-
-  return list.map((item) => ({
-    ...item,
-    count: rows.filter((row) => {
-      const positions = Array.isArray(row?.positions) ? row.positions : []
-      return positions.includes(item.id)
-    }).length,
-  }))
-}
-
-const buildPositionCodeBuckets = (rows) => {
   const list = []
 
   Object.entries(POSITION_LAYERS || {}).forEach(([groupKey, items]) => {

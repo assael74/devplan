@@ -8,15 +8,6 @@ import {
   buildTooltip,
 } from '../tooltips/index.js'
 
-const getPositionCardStatus = (status) => {
-  if (status === 'ok') return 'עומד ביעד'
-  if (status === 'under') return 'מתחת למינימום'
-  if (status === 'over') return 'מעל המקסימום'
-  if (status === 'keyOverload') return 'יותר משחקן מפתח אחד בעמדה'
-
-  return 'ללא הערכה'
-}
-
 const getPositionRangeStatus = (status) => {
   if (status === 'under') return 'under'
   if (status === 'over') return 'over'
@@ -24,14 +15,6 @@ const getPositionRangeStatus = (status) => {
   if (status === 'ok') return 'ok'
 
   return 'neutral'
-}
-
-const getPositionTargetText = (item = {}) => {
-  const min = item.minTarget ?? item?.target?.min ?? 2
-  const max = item.maxTarget ?? item?.target?.max ?? 4
-  const maxKey = item.maxKeyTarget ?? item?.target?.maxKey ?? 1
-
-  return `${min}–${max} שחקנים · עד ${maxKey} שחקן מפתח`
 }
 
 const getPositionSubText = (item = {}) => {

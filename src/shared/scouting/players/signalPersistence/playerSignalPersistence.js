@@ -24,7 +24,7 @@ const normalizeSeasonStatus = value => String(value || '').trim().toLowerCase()
 
 const resolveSeasonOrder = (value = '') => {
   const seasonKey = normalizeSeasonKey(value)
-  const match = seasonKey.match(/(?:^|[^0-9])(\d{2,4})\s*[\/_-]\s*(\d{2,4})(?:$|[^0-9])/)
+  const match = seasonKey.match(/(?:^|[^0-9])(\d{2,4})\s*[/_-]\s*(\d{2,4})(?:$|[^0-9])/)
 
   if (!match) return 0
 

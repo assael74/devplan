@@ -30,7 +30,6 @@ import {
   RemoveModerator,
   Layers,
   Waves,
-  Box,
   Logout,
   PersonAddAlt1,
   PersonOff,

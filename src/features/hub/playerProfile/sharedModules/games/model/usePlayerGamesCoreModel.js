@@ -12,6 +12,8 @@ import {
   isPrivatePlayerEntity,
 } from '../playerGamesModule.helpers.js'
 
+const EMPTY_GAMES = []
+
 function getContextPlayers(context) {
   if (!context) return []
   if (!Array.isArray(context.players)) return []
@@ -119,7 +121,7 @@ export function usePlayerGamesCoreModel({
   }, [livePlayer, filters, seasonStartYear, playerScoring, profileData])
 
   const summary = domain && domain.summary ? domain.summary : null
-  const games = domain && Array.isArray(domain.games) ? domain.games : []
+  const games = domain && Array.isArray(domain.games) ? domain.games : EMPTY_GAMES
   const options = domain && domain.options ? domain.options : null
   const indicators = domain && domain.indicators ? domain.indicators : null
 

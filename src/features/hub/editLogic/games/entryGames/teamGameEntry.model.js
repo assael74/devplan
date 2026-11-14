@@ -1,7 +1,6 @@
-// features/hub/editLogic/games/entryGames/teamGameEntry.model.js
+// src/features/hub/editLogic/games/entryGames/teamGameEntry.model.js
 
 import {
-  safe,
   clean,
   toNum,
   toNumOrEmpty,

@@ -1,4 +1,4 @@
-// playerProfile/sharedModules/abilities/usePlayerAbilitiesModuleModel.js
+// src/features/hub/playerProfile/sharedModules/abilities/usePlayerAbilitiesModuleModel.js
 
 import { useEffect, useMemo, useState } from 'react'
 
@@ -12,6 +12,8 @@ import {
 import {
   DEFAULT_SELECTED_DOMAINS,
 } from './playerAbilitiesModule.constants.js'
+
+const EMPTY_DOMAINS = []
 
 export default function usePlayerAbilitiesModuleModel({
   entity,
@@ -32,7 +34,7 @@ export default function usePlayerAbilitiesModuleModel({
     return resolveAbilitiesDomain(player || {})
   }, [player])
 
-  const domains = domainResult?.domains || []
+  const domains = domainResult?.domains || EMPTY_DOMAINS
 
   const { total, filled, avgAll } = useAbilitiesSummary(domains)
 

@@ -1,7 +1,6 @@
-// teamProfile/mobile/modules/games/components/insightsDrawer/TeamGamesInsightsDrawer.js
+// src/features/hub/teamProfile/mobile/modules/games/components/insightsDrawer/TeamGamesInsightsDrawer.js
 
-import React, { useMemo } from 'react'
-import { Box } from '@mui/joy'
+import React from 'react'
 
 import {
   InsightsDrawerShell,
@@ -13,10 +12,7 @@ import { TeamGamesInsightsContent } from '../../../../../sharedUi/insights/teamG
 import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 import { resolveEntityAvatar } from '../../../../../../../../ui/core/avatars/fallbackAvatar.js'
 
-import { buildTeamGamesInsights } from '../../../../../../../../shared/games/insights/team/index.js'
-import { createGameRowNormalizer } from '../../../../../../../../shared/games/games.normalize.logic.js'
-
-import { buildTeamGamesDrawerViewModel } from './../../../../../sharedLogic/games'
+const EMPTY_TEAM = {}
 
 const c = getEntityColors('teams')
 
@@ -27,21 +23,7 @@ export default function TeamGamesInsightsDrawer({
   team,
   entity,
 }) {
-  const liveTeam = team || entity || {}
-
-  const normalizeRow = useMemo(() => createGameRowNormalizer({}), [])
-
-  const insights = useMemo(() => {
-    return buildTeamGamesInsights({
-      team: liveTeam,
-      rows: Array.isArray(games) ? games : [],
-      normalizeRow,
-    })
-  }, [games, liveTeam, normalizeRow])
-
-  const viewModel = useMemo(() => {
-    return buildTeamGamesDrawerViewModel(insights)
-  }, [insights])
+  const liveTeam = team || entity || EMPTY_TEAM
 
   const avatarSrc = resolveEntityAvatar({
     entityType: 'team',

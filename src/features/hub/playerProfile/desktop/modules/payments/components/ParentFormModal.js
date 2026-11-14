@@ -1,4 +1,4 @@
-// playerProfile/mobile/modules/payments/components/parentDrawer/parentDrawer.js
+// src/features/hub/playerProfile/desktop/modules/payments/components/ParentFormModal.js
 
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import { Avatar, Box, Typography } from '@mui/joy'
@@ -24,6 +24,8 @@ import {
   isParentEditDirty,
 } from '../../../../../editLogic/payments/index.js'
 
+const EMPTY_PARENTS = []
+
 const noop = () => {}
 
 export default function ParentDrawer({
@@ -47,7 +49,7 @@ export default function ParentDrawer({
   const { run, pending } = usePlayerHubUpdate(player)
 
   const playerId = player?.id || player?.playerId || player?.entityId || player?.docId || ''
-  const parents = Array.isArray(player?.parents) ? player.parents : []
+  const parents = Array.isArray(player?.parents) ? player.parents : EMPTY_PARENTS
   const isEdit = Boolean(parent?.id)
   const layout = getParentFormLayout()
 

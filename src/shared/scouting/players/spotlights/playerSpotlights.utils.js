@@ -1,9 +1,5 @@
 // src/shared/scouting/players/spotlights/playerSpotlights.utils.js
 
-import {
-  PLAYER_SCOUT_SPOTLIGHT_CONFIDENCE,
-} from './playerSpotlights.model.js'
-
 const DEFENSIVE_POSITIONS = new Set([
   'd',
   'dm',

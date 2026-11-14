@@ -1,4 +1,4 @@
-// ui/forms/abilities/AbilitiesCreateForm.js
+// src/ui/forms/abilities/AbilitiesCreateForm.js
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Box from '@mui/joy/Box'
 
@@ -24,6 +24,8 @@ import {
   calcDomains,
 } from './logic/abilitiesCreateForm.derived.js'
 
+const EMPTY_DRAFT = {}
+
 const todayYmd = () => {
   const d = new Date()
   const to2 = (n) => String(n).padStart(2, '0')
@@ -31,7 +33,7 @@ const todayYmd = () => {
 }
 
 export default function AbilitiesCreateForm({ draft, onDraft, onValidChange, context }) {
-  const d = draft || {}
+  const d = draft || EMPTY_DRAFT
   const [isDirty, setIsDirty] = useState(!!d?.isDirty)
 
   const patch = useCallback(

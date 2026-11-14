@@ -211,7 +211,7 @@ const buildIdealLeagueLevelEvaluation = (immediacyContext = {}) => {
 
 const normalizeSeasonIdentity = value => {
   const text = String(value || '').trim().toLowerCase()
-  const match = text.match(/(?:^|[^0-9])(\d{2,4})\s*[\/_-]\s*(\d{2,4})(?:$|[^0-9])/)
+  const match = text.match(/(?:^|[^0-9])(\d{2,4})\s*[/_-]\s*(\d{2,4})(?:$|[^0-9])/)
 
   if (!match) return text
 

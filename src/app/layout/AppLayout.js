@@ -1,6 +1,6 @@
 // src/app/layout/AppLayout.js
 
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Box } from '@mui/joy'
 import { useTheme } from '@mui/joy/styles'
@@ -26,10 +26,9 @@ export default function AppLayout({ topbar, sidenav, navBadges, navMode = 'full'
     setIsSideOpen((v) => !v)
   }
 
-  const topbarWithHandler = useMemo(() => {
-    if (!topbar) return null
-    return React.cloneElement(topbar, { onMenuClick: handleMenuClick })
-  }, [topbar, isMobile])
+  const topbarWithHandler = topbar
+    ? React.cloneElement(topbar, { onMenuClick: handleMenuClick })
+    : null
 
   const sideWidth = isSideOpen ? 220 : 72
 

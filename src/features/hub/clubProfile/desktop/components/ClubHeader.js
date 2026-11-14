@@ -1,6 +1,6 @@
 // src/features/hub/clubProfile/desktop/components/ClubHeader.js
 
-import React, { useMemo } from 'react'
+import React from 'react'
 
 import { buildFallbackAvatar } from '../../../../../ui/core/avatars/fallbackAvatar.js'
 import { getEntityColors } from '../../../../../ui/core/theme/Colors.js'

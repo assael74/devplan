@@ -1,9 +1,8 @@
-// playerProfile/desktop/modules/meetings/components/list/MeetingsFilters.js
+// src/features/hub/playerProfile/desktop/modules/meetings/components/list/MeetingsFilters.js
 
 import React from 'react'
 import {
   Box,
-  Checkbox,
   FormControl,
   FormLabel,
   IconButton,

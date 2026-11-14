@@ -1,5 +1,7 @@
+// src/features/hub/playerProfile/mobile/modules/games/components/toolbar/PlayerGamesToolbarFilterChip.js
+
 import React from 'react'
-import { Chip, Typography, ChipDelete } from '@mui/joy'
+import { Chip, ChipDelete } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 

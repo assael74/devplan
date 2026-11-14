@@ -1,8 +1,4 @@
-// playerProfile/mobile/modules/games/sx/sections.sx.js
-
-import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('players')
+// src/features/hub/playerProfile/mobile/modules/games/sx/sections.sx.js
 
 export const sectionsSx = {
   infoCellSx: {

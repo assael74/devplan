@@ -6,7 +6,6 @@ import {
 
 import {
   buildScoutMetrics,
-  getScoutDataAvailability,
 } from './metrics.js'
 
 import {
@@ -324,37 +323,6 @@ export const buildPlayerScoutResult = ({
     playerTrajectory: resolvedPlayerTrajectory,
     currentSeasonKey: season?.seasonKey || season?.season || '',
     currentSeasonStatus: season?.seasonStatus || '',
-  })
-  const preliminaryCombinations = buildScoutProfileCombinations({
-    signals: preliminarySignals,
-  })
-  const preliminaryHierarchy = buildPlayerProfileHierarchy({
-    signals: preliminarySignals,
-  })
-  const preliminaryCaseStrength = buildPlayerProfileCaseStrength({
-    signals: preliminarySignals,
-    combinations: preliminaryCombinations,
-    profileHierarchy: preliminaryHierarchy,
-  })
-  const preliminaryOpportunity = buildPlayerScoutOpportunity({
-    signals: preliminarySignals,
-    candidateSignals,
-    combinations: preliminaryCombinations,
-    profileCaseStrength: preliminaryCaseStrength,
-    playerTrajectory: resolvedPlayerTrajectory,
-    futureCompetitionPath,
-    immediacyContext,
-    currentSeasonKey: season?.seasonKey || season?.season || '',
-    currentSeasonStatus: season?.seasonStatus || '',
-    manualImmediacyDecision,
-  })
-  const preliminaryVerification = buildPlayerVerification({
-    player: normalizedInput.player,
-    signals: preliminarySignals,
-    candidateSignals,
-    opportunity: preliminaryOpportunity,
-    answers: verificationAnswers,
-    profiles,
   })
   const reclassificationResult = reclassifyPlayerScoutSignals({
     signals: preliminarySignals,

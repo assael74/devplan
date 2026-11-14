@@ -1,4 +1,4 @@
-// features/home/components/editDrawer/EditDrawer.js
+// src/features/home/desktop/components/editDrawer/EditDrawer.js
 
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import { Box } from '@mui/joy'
@@ -85,7 +85,7 @@ export default function EditDrawer({
     } finally {
       setIsSaving(false)
     }
-  }, [canSave, run, patch, initial.id, initial.raw, onSaved, onClose])
+  }, [canSave, run, patch, draft.id, initial.raw, onSaved, onClose])
 
   const handleReset = useCallback(() => {
     if (saving) return

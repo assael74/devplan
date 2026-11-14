@@ -1,6 +1,6 @@
 // src/features/hub/teamProfile/desktop/components/TeamHeader.js
 
-import React, { useMemo } from 'react'
+import React from 'react'
 import { Box, Button, Typography } from '@mui/joy'
 import { useNavigate } from 'react-router-dom'
 

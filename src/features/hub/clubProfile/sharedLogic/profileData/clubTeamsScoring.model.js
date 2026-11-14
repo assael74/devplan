@@ -1,4 +1,4 @@
-// features/hub/clubProfile/sharedLogic/profileData/clubTeamsScoring.model.js
+// src/features/hub/clubProfile/sharedLogic/profileData/clubTeamsScoring.model.js
 
 import {
   buildTeamScoringModel,
@@ -18,14 +18,6 @@ const toNumber = (value, fallback = null) => {
   const num = Number(value)
 
   return Number.isFinite(num) ? num : fallback
-}
-
-const roundNumber = (value, digits = 2) => {
-  const num = Number(value)
-
-  if (!Number.isFinite(num)) return null
-
-  return Number(num.toFixed(digits))
 }
 
 const getTeamId = team => {

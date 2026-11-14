@@ -1,6 +1,6 @@
 // src/features/bulkActions/players/import/components/PlayersBulkPasteDrawer.js
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Box,
   Button,
@@ -130,6 +130,7 @@ export default function PlayersBulkPasteDrawer({
   const [savingSeconds, setSavingSeconds] = useState(0)
   const [removedRowKeys, setRemovedRowKeys] = useState([])
   const [existingPlayersSnapshot, setExistingPlayersSnapshot] = useState([])
+  const wasOpen = useRef(false)
 
   useEffect(() => {
     if (!saving) {
@@ -145,14 +146,12 @@ export default function PlayersBulkPasteDrawer({
   }, [saving])
 
   useEffect(() => {
-    if (!open) return
-
-    setExistingPlayersSnapshot(
-      Array.isArray(existingPlayers)
-        ? existingPlayers
-        : []
-    )
-  }, [open])
+    // Keep the duplicate check stable through save retries during this import.
+    if (open && !wasOpen.current) {
+      setExistingPlayersSnapshot(Array.isArray(existingPlayers) ? existingPlayers : [])
+    }
+    wasOpen.current = open
+  }, [open, existingPlayers])
 
   useEffect(() => {
     if (open) return

@@ -1,8 +1,4 @@
-// teamProfile/desktop/modules/games/sections/sx/sections.sx.js
-
-import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
-
-const c = getEntityColors('teams')
+// src/features/hub/teamProfile/desktop/modules/games/components/sections/sx/sections.sx.js
 
 export const sectionsSx = {
   mediaCellSx: {

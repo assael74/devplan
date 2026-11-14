@@ -4,7 +4,6 @@ import Box from '@mui/joy/Box'
 import Typography from '@mui/joy/Typography'
 
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
-import { CollapseBox } from '../../../../../ui/patterns/collapseBox/index.js'
 import { categorySx as sx } from './sx/category.sx.js'
 
 export default function CategorySection({

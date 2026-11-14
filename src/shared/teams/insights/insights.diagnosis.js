@@ -5,8 +5,7 @@ import {
   TEAM_INSIGHTS_THRESHOLDS,
   TEAM_QUALITY_TONES,
   TEAM_RISK_TONES,
-  TEAM_ROLE_RISK_RULES,
-  TEAM_TONE_RANK
+  TEAM_ROLE_RISK_RULES
 } from './insights.config.js'
 
 const toNum = value => {
@@ -37,16 +36,6 @@ const getDamageRiskLevel = damageScore => {
   if (damage >= TEAM_INSIGHTS_THRESHOLDS.warningDamageScore) return 'info'
 
   return 'none'
-}
-
-const getMaxTeamTone = (...tones) => {
-  return tones.reduce((best, tone) => {
-    const current = tone || 'neutral'
-
-    return TEAM_TONE_RANK[current] > TEAM_TONE_RANK[best]
-      ? current
-      : best
-  }, 'neutral')
 }
 
 const riskRank = {
@@ -202,7 +191,6 @@ export const buildTeamGroupDiagnosis = ({
 
   const qualityTone = TEAM_QUALITY_TONES[qualityLevel] || 'neutral'
   const riskTone = TEAM_RISK_TONES[riskLevel] || 'neutral'
-  const displayTone = getMaxTeamTone(qualityTone, riskTone)
 
   const hasRisk = riskLevel !== 'none' || qualityLevel === 'weak' || qualityLevel === 'bad'
 

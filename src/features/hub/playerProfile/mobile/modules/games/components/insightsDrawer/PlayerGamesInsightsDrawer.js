@@ -1,7 +1,6 @@
-// playerProfile/desktop/modules/games/components/insightsDrawer/playerGamesInsightsDrawer.js
+// src/features/hub/playerProfile/mobile/modules/games/components/insightsDrawer/PlayerGamesInsightsDrawer.js
 
-import React, { useMemo } from 'react'
-import { Box } from '@mui/joy'
+import React from 'react'
 
 import {
   InsightsDrawerShell,

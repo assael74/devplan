@@ -1,4 +1,4 @@
-// teamProfile/mobile/modules/players/components/playerCard/TeamPlayerCardHeader.js
+// src/features/hub/teamProfile/mobile/modules/players/components/playerCard/TeamPlayerCardHeader.js
 
 import React from 'react'
 import { Avatar, Box, Chip, Typography } from '@mui/joy'
@@ -7,11 +7,8 @@ import JoyStarRatingStatic from '../../../../../../../../ui/domains/ratings/JoyS
 
 import playerImage from '../../../../../../../../ui/core/images/playerImage.jpg'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 
 import { cardSx as sx } from '../../sx/card.mobile.sx.js'
-
-const c = getEntityColors('players')
 
 const getPrimaryPosition = (row = {}) => {
   const positions = Array.isArray(row?.positions) ? row.positions : []

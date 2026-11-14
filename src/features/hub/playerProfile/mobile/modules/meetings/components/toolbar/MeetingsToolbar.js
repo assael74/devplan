@@ -1,7 +1,7 @@
-// playerProfile/mobile/modules/meetings/components/toolbar/MeetingsToolbar.js
+// src/features/hub/playerProfile/mobile/modules/meetings/components/toolbar/MeetingsToolbar.js
 
 import React from 'react'
-import { Box, Chip, IconButton } from '@mui/joy'
+import { Box, Chip } from '@mui/joy'
 
 import {
   FiltersTrigger,

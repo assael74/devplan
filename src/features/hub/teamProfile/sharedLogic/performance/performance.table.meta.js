@@ -1,6 +1,4 @@
-// teamProfile/sharedLogic/performance/performance.table.meta.js
-
-import { iconUi } from '../../../../../ui/core/icons/iconUi'
+// src/features/hub/teamProfile/sharedLogic/performance/performance.table.meta.js
 
 export const PRESETS = [
   { id: 'general', label: 'בסיסי' },

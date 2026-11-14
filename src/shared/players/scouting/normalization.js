@@ -33,9 +33,6 @@ const pickPositiveNum = (...values) => {
   return 0
 }
 
-const hasValue = value =>
-  value !== null && value !== undefined && value !== ''
-
 const roundNumber = (value, digits = 3) => {
   const nextValue = Number(value)
   if (!Number.isFinite(nextValue)) return 0

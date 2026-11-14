@@ -1,4 +1,4 @@
-// clubProfile/mobile/modules/players/components/ClubPlayersList.js
+// src/features/hub/clubProfile/mobile/modules/players/components/ClubPlayersList.js
 
 import React from 'react'
 import { Box, Typography } from '@mui/joy'
@@ -44,7 +44,6 @@ export default function ClubPlayersList({
   return (
     <Box sx={{ display: 'grid', gap: 0.5 }}>
       {rows.map((row) => {
-        const playerId = getPlayerId(row)
         const performance = getPerformance({ row, profileData })
 
         return (

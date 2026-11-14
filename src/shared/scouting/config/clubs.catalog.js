@@ -44,35 +44,35 @@ const clean = value => String(value === null || value === undefined ? '' : value
 const CLUB_LOCATION_ALIASES = [
   {
     full: 'תל אביב',
-    short: 'ת\"א',
+    short: 'ת"א',
   },
   {
     full: 'פתח תקוה',
-    short: 'פ\"ת',
+    short: 'פ"ת',
   },
   {
     full: 'כפר סבא',
-    short: 'כפ\"ס',
+    short: 'כפ"ס',
   },
   {
     full: 'באר שבע',
-    short: 'ב\"ש',
+    short: 'ב"ש',
   },
   {
     full: 'ראשון לציון',
-    short: 'ראשל\"צ',
+    short: 'ראשל"צ',
   },
   {
     full: 'ירושלים',
-    short: 'י\"ם',
+    short: 'י"ם',
   },
   {
     full: 'רמת השרון',
-    short: 'רמה\"ש',
+    short: 'רמה"ש',
   },
   {
     full: 'רמת גן',
-    short: 'ר\"ג',
+    short: 'ר"ג',
   },
 ]
 

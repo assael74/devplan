@@ -1,5 +1,5 @@
-// src/ui/snackbar/SnackbarCenter.js
-import React, { useEffect, useMemo } from 'react'
+// src/ui/core/feedback/snackbar/SnackbarCenter.js
+import React, { useMemo } from 'react'
 import Snackbar from '@mui/joy/Snackbar'
 import Box from '@mui/joy/Box'
 import Typography from '@mui/joy/Typography'

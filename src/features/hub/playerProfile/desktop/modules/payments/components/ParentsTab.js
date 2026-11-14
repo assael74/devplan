@@ -1,4 +1,4 @@
-// playerProfile/desktop/modules/payments/components/ParentsTab.js
+// src/features/hub/playerProfile/desktop/modules/payments/components/ParentsTab.js
 
 import React, { useState } from 'react'
 import { Box, Card, Typography, Button, Divider, Stack } from '@mui/joy'
@@ -14,7 +14,6 @@ import { usePlayerHubUpdate } from '../../../../../hooks/players/usePlayerHubUpd
 
 import {
   buildParentEditInitial,
-  buildParentsPlayerPatch,
   buildRemoveParentPlayerPatch,
   getCanCreateParent,
 } from '../../../../../editLogic/payments/index.js'

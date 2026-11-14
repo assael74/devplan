@@ -1,9 +1,8 @@
-// playerProfile/mobile/modules/meetings/components/MeetingsListPane.js
+// src/features/hub/playerProfile/mobile/modules/meetings/components/MeetingsListPane.js
 
 import React from 'react'
-import { Box, Divider, List, Sheet, Typography } from '@mui/joy'
+import { Box, Typography } from '@mui/joy'
 
-import MeetingsToolbar from './toolbar/MeetingsToolbar.js'
 import MeetingCard from './meetingCard/MeetingCard.js'
 
 import { listSx as sx } from './sx/list.sx'

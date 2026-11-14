@@ -1,4 +1,4 @@
-// playerProfile/sharedUi/insights/playerGames/sections/MainDiagnosis.js
+// src/features/hub/playerProfile/sharedUi/insights/playerGames/sections/MainDiagnosis.js
 
 import React from 'react'
 import { Box, Chip, Sheet, Typography } from '@mui/joy'
@@ -54,25 +54,6 @@ function RoleChip({ role }) {
       }}
     >
       {role?.label || 'לא הוגדר מעמד'}
-    </Chip>
-  )
-}
-
-function DiagnosisChip({ diagnosis }) {
-  const color = normalizeColor(diagnosis?.tone)
-
-  return (
-    <Chip
-      size="sm"
-      variant="soft"
-      color={color}
-      startDecorator={iconUi({
-        id: diagnosis?.icon || 'insights',
-        size: 'sm',
-      })}
-      sx={sx.statusChip}
-    >
-      {diagnosis?.title || 'אבחנה חסרה'}
     </Chip>
   )
 }

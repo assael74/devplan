@@ -1,6 +1,6 @@
-// teamProfile/sharedUi/insights/teamGames/sections/sx/difficulty.sx.js
+// src/features/hub/teamProfile/sharedUi/insights/teamGames/sections/sx/forecast.sx.js
 
-import { coloredCard, neutralCard } from './shared.sx.js'
+import { coloredCard } from './shared.sx.js'
 
 export const forecastSx = {
   heroCard: (color = 'neutral') =>

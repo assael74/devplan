@@ -1,7 +1,7 @@
-// playerProfile/mobile/modules/payments/components/cardUi/PaymentsSummaryCards.js
+// src/features/hub/playerProfile/mobile/modules/payments/components/toolbar/PaymentsSummaryCards.js
 
 import React from 'react'
-import { Box, Sheet, Typography, Chip } from '@mui/joy'
+import { Box, Chip } from '@mui/joy'
 
 import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
 

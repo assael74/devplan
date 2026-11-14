@@ -6,7 +6,6 @@ import { Box, Typography } from '@mui/joy'
 
 import { VIDEO_TAB } from '../../logic/videoHub.model.js'
 import {
-  enrichVideoAnalysis,
   filterVideoAnalysis,
   sortVideoAnalysis,
   filterVideosGeneral,
@@ -30,8 +29,6 @@ import VideoHubGlobalLayer from '../../sharedUi/VideoHubGlobalLayer.js'
 import VideoHubDrawersLayer from '../../sharedUi/VideoHubDrawersLayer.js'
 
 import { pageSx as sx } from './page.sx.js'
-
-const EMPTY_ARRAY = []
 
 const ALL_ID = 'all'
 

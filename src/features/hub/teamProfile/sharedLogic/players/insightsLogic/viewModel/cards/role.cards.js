@@ -75,14 +75,6 @@ const getRoleRangeStatus = ({
   return 'ok'
 }
 
-const getRoleStatusText = (status) => {
-  if (status === 'under') return 'מתחת ליעד'
-  if (status === 'over') return 'מעל היעד'
-  if (status === 'ok') return 'בטווח היעד'
-
-  return 'ללא הערכה'
-}
-
 export const buildRoleCards = ({
   structure = {},
 } = {}) => {

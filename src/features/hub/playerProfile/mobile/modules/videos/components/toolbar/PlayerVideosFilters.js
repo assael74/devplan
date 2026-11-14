@@ -1,6 +1,6 @@
-// playerProfile/mobile/modules/videos/components/toolbar/PlayerVideosFilters.js
+// src/features/hub/playerProfile/mobile/modules/videos/components/toolbar/PlayerVideosFilters.js
 
-import React, { useMemo } from 'react'
+import React from 'react'
 import {
   Box,
   Input,
@@ -16,11 +16,6 @@ import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 
 import { toolbarSx as sx } from '../../sx/toolbar.sx.js'
 import ToolbarSelectValue from './ToolbarSelectValue.js'
-
-import {
-  buildToolbarState,
-  getHomeOptionColor,
-} from '../../../../../sharedLogic'
 
 export default function PlayerVideosFilters({
   entityType = 'videoAnalysis',
@@ -46,10 +41,6 @@ export default function PlayerVideosFilters({
     categoryOptions.find((x) => x.value === (filters?.categoryKey || '')) || null
   const selectedTopic =
     topicOptions.find((x) => x.value === (filters?.topicKey || '')) || null
-
-  const resultsText = useMemo(() => {
-    return `מוצגים ${summary?.filteredVideos || 0} מתוך ${summary?.totalVideos || 0} קטעים`
-  }, [summary?.filteredVideos, summary?.totalVideos])
 
   return (
     <Box sx={{ display: 'grid', gap: 1.1 }}>

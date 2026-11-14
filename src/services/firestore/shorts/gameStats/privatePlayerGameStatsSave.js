@@ -127,11 +127,11 @@ function buildNextPrivatePlayerAggregate({
   next = applyStatsDelta(next, delta)
 
   if (!hadPrev && hasNext) {
-    next.gamesWithStats = clampMinZero((current && current.gamesWithStats || 0) + 1)
+    next.gamesWithStats = clampMinZero(((current && current.gamesWithStats) || 0) + 1)
   }
 
   if (hadPrev && hasNext) {
-    next.gamesWithStats = clampMinZero(current && current.gamesWithStats || 0)
+    next.gamesWithStats = clampMinZero((current && current.gamesWithStats) || 0)
   }
 
   next.statsGameRefs = upsertStatsGameRef(current && current.statsGameRefs, gameRef)

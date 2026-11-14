@@ -1,4 +1,4 @@
-// teamProfile/modules/games/components/entryDrawer/EntryEditDrawer.js
+// src/features/hub/teamProfile/desktop/modules/games/components/entryDrawer/EntryEditDrawer.js
 
 import React, { useEffect, useMemo, useState } from 'react'
 import {
@@ -31,6 +31,8 @@ import {
   setTeamGameEntryRowField,
 } from '../../../../../../editLogic/games/entryGames/index.js'
 
+const EMPTY_TEAM = {}
+
 const defaultEntryFilters = {
   squad: 'all',
   start: 'all',
@@ -45,7 +47,7 @@ export default function EntryEditDrawer({
   onSaved,
 }) {
   const [entryImportOpen, setEntryImportOpen] = useState(false)
-  const team = context?.team || game?.team || {}
+  const team = context?.team || game?.team || EMPTY_TEAM
 
   const initial = useMemo(() => {
     return buildTeamGameEntryInitial(game, team, context)

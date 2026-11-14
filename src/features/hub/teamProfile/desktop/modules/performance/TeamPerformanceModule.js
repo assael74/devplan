@@ -1,4 +1,4 @@
-// teamProfile/modules/performance/TeamPerformanceModule.js
+// src/features/hub/teamProfile/desktop/modules/performance/TeamPerformanceModule.js
 
 import React, { useMemo, useState } from 'react'
 import {
@@ -17,6 +17,8 @@ import SectionPanel from '../../../../sharedProfile/desktop/SectionPanel'
 import EmptyState from '../../../../sharedProfile/EmptyState'
 
 import { statsParm } from '../../../../../../shared/stats/statsParmList'
+
+const EMPTY_TEAM = {}
 
 const sx = {
   root: {
@@ -453,7 +455,6 @@ function PlayerStatsDebugBlock({
   preset,
   viewMode,
 }) {
-  const name = player?.name || playerId || 'שחקן'
   const meta = getMeta(source)
 
   const gamesWithStats = toNumber(meta?.gamesWithStats)
@@ -503,7 +504,7 @@ export default function TeamPerformanceModule({ entity }) {
   const [preset, setPreset] = useState('general')
   const [viewMode, setViewMode] = useState('table')
 
-  const team = entity || {}
+  const team = entity || EMPTY_TEAM
 
   const model = useMemo(() => {
     const teamStats = getTeamAdvancedStats(team)

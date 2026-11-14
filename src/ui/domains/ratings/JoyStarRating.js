@@ -1,8 +1,7 @@
-// ui/domains/ratings/JoyStarRating.js
+// src/ui/domains/ratings/JoyStarRating.js
 import React from 'react';
 import { Box } from '@mui/joy';
 import StarIcon from '@mui/icons-material/Star';
-import StarHalfIcon from '@mui/icons-material/StarHalf';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 
 export default function JoyStarRatingStatic({
@@ -20,14 +19,6 @@ export default function JoyStarRatingStatic({
         const full = index + 1 <= value;
         const half = !full && index + 0.5 <= value;
         const iconSize = size === 'xs' ? 15 : size === 'sm' ? 18 : size === 'md' ? 20 : 25;
-
-        const iconProps = {
-          fontSize: size,
-        };
-        const iconPropsColor = {
-          fontSize: size,
-          style: { color },
-        };
 
         if (full) return <StarIcon key={index} sx={{ fontSize: iconSize, color, }} />;
         if (half) {

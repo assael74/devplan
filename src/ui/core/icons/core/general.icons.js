@@ -8,7 +8,6 @@ import {
   AddLocationAlt,
   Bolt,
   Bookmarks,
-  Forward,
   History,
   Info,
   InfoOutlined,

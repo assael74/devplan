@@ -16,9 +16,6 @@ export const buildPlayerProfileCaseStrength = ({
   const safeSignals = Array.isArray(signals) ? signals : []
   const safeCombinations = Array.isArray(combinations) ? combinations : []
   const allProfileIds = unique(safeSignals.map((signal) => signal.profileId))
-  const preliminaryProfileIds = Array.isArray(profileHierarchy.preliminaryProfileIds)
-    ? profileHierarchy.preliminaryProfileIds
-    : []
   const professionalProfileIds = Array.isArray(profileHierarchy.professionalProfileIds)
     ? profileHierarchy.professionalProfileIds
     : []

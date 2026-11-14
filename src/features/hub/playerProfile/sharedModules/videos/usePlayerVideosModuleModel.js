@@ -1,3 +1,5 @@
+// src/features/hub/playerProfile/sharedModules/videos/usePlayerVideosModuleModel.js
+
 import { useEffect, useMemo, useState } from 'react'
 
 import {
@@ -33,7 +35,7 @@ export default function usePlayerVideosModuleModel({
     direction: 'desc',
   })
 
-  const tags = useMemo(() => resolveContextTags(context), [context?.tags, context?.tagsArr])
+  const tags = useMemo(() => resolveContextTags(context), [context])
 
   const domain = useMemo(() => {
     return resolvePlayerVideosFiltersDomain(livePlayer, filters, {

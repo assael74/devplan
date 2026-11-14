@@ -1,7 +1,9 @@
+// src/features/hub/teamProfile/mobile/modules/videos/components/toolbar/ToolbarFilterChip.js
+
 // // teamProfile/mobile/modules/videos/components/toolbar/ToolbarFilterChip.js
 
 import React from 'react'
-import { Chip, Typography, ChipDelete } from '@mui/joy'
+import { Chip, ChipDelete } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 

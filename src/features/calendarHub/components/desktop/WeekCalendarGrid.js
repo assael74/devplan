@@ -1,9 +1,11 @@
-// src/features/calendar/components/WeekCalendarGrid.js
+// src/features/calendarHub/components/desktop/WeekCalendarGrid.js
 
 import React, { useMemo } from 'react'
 import { Box, Typography, Chip } from '@mui/joy'
 import { weekCalendarGridSx as sx, GRID, buildGridCols } from './sx/WeekCalendarGrid.sx'
 import CalendarEventItem from './items/CalendarEventItem.js'
+
+const EMPTY_DAYS = []
 
 const fmtDay = (d) =>
   new Intl.DateTimeFormat('he-IL', {
@@ -126,7 +128,7 @@ function buildOverlapLayout(dayEvents = []) {
 }
 
 export default function WeekCalendarGrid({ days = [], events = [], onEventClick, context }) {
-  const safeDays = Array.isArray(days) && days.length ? days : []
+  const safeDays = Array.isArray(days) && days.length ? days : EMPTY_DAYS
   const daysCount = safeDays.length || 7
 
   const hours = useMemo(() => {

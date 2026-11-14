@@ -1,4 +1,4 @@
-// playerProfile/desktop/modules/games/components/entryDrawer/EntryEditDrawer.js
+// src/features/hub/playerProfile/desktop/modules/games/components/entryDrawer/EntryEditDrawer.js
 
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
 
@@ -19,6 +19,8 @@ import {
   getPlayerGameEntryLimits,
   isPlayerGameEntryDirty,
 } from '../../../../../../editLogic/games/entryGames/index.js'
+
+const EMPTY_PLAYER = {}
 
 const getGameId = game => {
   return game?.id || game?.gameId || game?.game?.id || game?.game?.gameId || ''
@@ -53,7 +55,7 @@ export default function EntryEditDrawer({
   onSaved,
   context,
 }) {
-  const player = context?.player || {}
+  const player = context?.player || EMPTY_PLAYER
   const isPrivatePlayer = isPrivatePlayerEntity(player)
   const activeGame = game || null
 

@@ -1,4 +1,4 @@
-// TEAMPROFILE/sharedUi/insights/teamPlayers/outcomeSection/OutcomeBlock.js
+// src/features/hub/teamProfile/sharedUi/insights/teamPlayers/outcomeSection/OutcomeBlock.js
 
 import React from 'react'
 import { Box, Chip, Typography } from '@mui/joy'
@@ -10,7 +10,6 @@ import OutcomeDetails from './OutcomeDetails.js'
 import OutcomePositionLayers from './OutcomePositionLayers.js'
 
 import {
-  byGroupIds,
   getFirstGroupId,
   getInfoGroups,
   getOutcomeGroups,

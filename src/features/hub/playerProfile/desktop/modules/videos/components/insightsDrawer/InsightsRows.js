@@ -1,12 +1,9 @@
-// playerProfile/modules/videos/components/insightsDrawer/InsightsRows.js
+// src/features/hub/playerProfile/desktop/modules/videos/components/insightsDrawer/InsightsRows.js
 
 import React from 'react'
 import { Box, Sheet, Typography, Divider, Chip } from '@mui/joy'
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
 import { insightsRowsSx as sx } from './sx/playerVideos.insightsRows.sx.js'
-
-const c = getEntityColors('videoAnalysis')
 
 const toNum = (v) => {
   const n = Number(v)

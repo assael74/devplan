@@ -1,4 +1,4 @@
-// ui/forms/trainings/TrainingWeekCreateForm.js
+// src/ui/forms/trainings/TrainingWeekCreateForm.js
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Box from '@mui/joy/Box'
 import Typography from '@mui/joy/Typography'
@@ -69,7 +69,7 @@ export default function TrainingWeekCreateForm({
   useEffect(() => {
     if (draft && (draft.weekStartDate || draft.days || draft.defaults)) return
     onDraft(d)
-  }, [])
+  }, [d, draft, onDraft])
 
   const patch = useCallback(
     (next, { silent } = {}) => {

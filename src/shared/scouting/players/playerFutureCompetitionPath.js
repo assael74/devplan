@@ -29,7 +29,7 @@ const normalizeSeasonKey = (value) => {
   const raw = String(value || '').trim().toLowerCase()
   if (!raw) return ''
 
-  const match = raw.match(/(?:^|s)(\d{2,4})[\/_-](\d{2,4})$/)
+  const match = raw.match(/(?:^|s)(\d{2,4})[/_-](\d{2,4})$/)
   if (!match) return raw
 
   return `${match[1].slice(-2)}/${match[2].slice(-2)}`

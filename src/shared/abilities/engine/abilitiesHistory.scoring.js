@@ -1,4 +1,4 @@
-// C:\projects\devplan\src\shared\abilities\engine\abilitiesHistory.scoring.js
+// src/shared/abilities/engine/abilitiesHistory.scoring.js
 
 // קובץ מקביל: functions/src/domain/abilities/engine/abilitiesHistory.scoring.js
 // הערה: בכל שינוי בקובץ זה יש לבדוק ולעדכן גם את הקובץ המקביל בצד Functions.
@@ -318,10 +318,6 @@ export function buildFinalPlayerResult({ forms = [], player = null } = {}) {
     domainsResult.domains,
     mergedAbilities?.growthStage ?? null,
     playerContext
-  )
-
-  const domainsByIdWithPotential = Object.fromEntries(
-    domainsWithPotentialScores.map((domain) => [domain.domain, domain])
   )
 
   const overallAbility = calcWeightedOverallFromDomains(

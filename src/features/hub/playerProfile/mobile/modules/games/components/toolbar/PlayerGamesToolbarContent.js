@@ -1,7 +1,7 @@
-// playerProfile/mobile/modules/games/components/toolbar/PlayerGamesToolbarContent.js
+// src/features/hub/playerProfile/mobile/modules/games/components/toolbar/PlayerGamesToolbarContent.js
 
 import React, { useMemo, useState } from 'react'
-import { Box, Chip, IconButton, Button } from '@mui/joy'
+import { Box, Chip, Button } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
 import {

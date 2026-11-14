@@ -1,4 +1,4 @@
-// src/ui/entityImage/EntityImageModal.js
+// src/ui/domains/entityImage/EntityImageModal.js
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Modal,
@@ -77,12 +77,8 @@ export default function EntityImageModal({
 
   const pendingAny = pendingUpdate || pendingUpload || pendingDelete
 
-  useEffect(() => {
-    return () => {
-      revokeUrl(cropSrc)
-      revokeUrl(previewUrl)
-    }
-  }, [])
+  useEffect(() => () => revokeUrl(cropSrc), [cropSrc])
+  useEffect(() => () => revokeUrl(previewUrl), [previewUrl])
 
   const effectivePreview = previewUrl || currentPhotoUrl || ''
 
@@ -94,12 +90,9 @@ export default function EntityImageModal({
 
     setCropOpen(false)
 
-    revokeUrl(cropSrc)
     setCropSrc(null)
-
-    revokeUrl(previewUrl)
     setPreviewUrl(null)
-  }, [cropSrc, previewUrl])
+  }, [])
 
   const handleClose = useCallback(() => {
     if (pendingAny) return
@@ -118,25 +111,23 @@ export default function EntityImageModal({
       if (!f) return
       e.target.value = ''
 
-      revokeUrl(cropSrc)
       const nextSrc = makePreviewUrl(f)
       setCropSrc(nextSrc)
       setCropOpen(true)
     },
-    [cropSrc]
+    []
   )
 
   const onCropDone = useCallback(
     (f) => {
       setSelectedFile(f)
 
-      revokeUrl(previewUrl)
       const nextPrev = makePreviewUrl(f)
       setPreviewUrl(nextPrev)
 
       setCropOpen(false)
     },
-    [previewUrl]
+    []
   )
 
   const canSave = !!selectedFile && !!id && typeof uploader === 'function' && !pendingAny
@@ -212,7 +203,7 @@ export default function EntityImageModal({
     } finally {
       setPendingDelete(false)
     }
-  }, [canDelete, pendingDelete, currentPhotoUrl, runUpdate, entityType, resetLocal, onClose])
+  }, [canDelete, pendingDelete, currentPhotoUrl, runUpdate, entityType, id, resetLocal, onClose])
 
   return (
     <>
@@ -305,7 +296,6 @@ export default function EntityImageModal({
         onCancel={() => {
           if (pendingAny) return
           setCropOpen(false)
-          revokeUrl(cropSrc)
           setCropSrc(null)
         }}
         onDone={onCropDone}

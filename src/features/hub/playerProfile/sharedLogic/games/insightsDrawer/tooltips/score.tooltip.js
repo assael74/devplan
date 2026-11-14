@@ -1,4 +1,4 @@
-// playerProfile/sharedLogic/games/insightsDrawer/tooltip/score.tooltip.js
+// src/features/hub/playerProfile/sharedLogic/games/insightsDrawer/tooltips/score.tooltip.js
 
 import {
   getFullDateIl,
@@ -39,10 +39,6 @@ const getMinutes = (brief = {}) => {
   return getMetrics(brief).minutesPlayed || 0
 }
 
-const getGameObject = (row = {}) => {
-  return row?.game || row
-}
-
 const getGameRows = (gamesData) => {
   if (Array.isArray(gamesData)) {
     return safeArray(gamesData)
@@ -64,7 +60,6 @@ const getGameRows = (gamesData) => {
 }
 
 const getGameName = (row = {}) => {
-  const game = getGameObject(row)
   return (
     row.rival ||
     'יריבה'
@@ -72,7 +67,6 @@ const getGameName = (row = {}) => {
 }
 
 const getGameDateValue = (row = {}) => {
-  const game = getGameObject(row)
 
   return row?.game?.gameDate || row?.gameDate || ''
 }

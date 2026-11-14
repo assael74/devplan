@@ -133,17 +133,17 @@ function buildNextPlayerAggregate({
   next = applyStatsDelta(next, delta)
 
   if (!hadPrev && hasNext) {
-    next.gamesWithStats = clampMinZero((current && current.gamesWithStats || 0) + 1)
+    next.gamesWithStats = clampMinZero(((current && current.gamesWithStats) || 0) + 1)
     next.statsGameRefs = upsertStatsGameRef(current && current.statsGameRefs, gameRef)
   }
 
   if (hadPrev && !hasNext) {
-    next.gamesWithStats = clampMinZero((current && current.gamesWithStats || 0) - 1)
+    next.gamesWithStats = clampMinZero(((current && current.gamesWithStats) || 0) - 1)
     next.statsGameRefs = removeStatsGameRef(current && current.statsGameRefs, gameId)
   }
 
   if (hadPrev && hasNext) {
-    next.gamesWithStats = clampMinZero(current && current.gamesWithStats || 0)
+    next.gamesWithStats = clampMinZero((current && current.gamesWithStats) || 0)
     next.statsGameRefs = upsertStatsGameRef(current && current.statsGameRefs, gameRef)
   }
 
@@ -181,9 +181,9 @@ function buildNextTeamAggregate({
 
   next = applyStatsDelta(next, delta)
 
-  next.gamesWithStats = clampMinZero(current && current.gamesWithStats || 0)
+  next.gamesWithStats = clampMinZero((current && current.gamesWithStats) || 0)
   next.playersWithStats = clampMinZero(
-    (current && current.playersWithStats || 0) + nextPlayersCount - prevPlayersCount
+    ((current && current.playersWithStats) || 0) + nextPlayersCount - prevPlayersCount
   )
 
   next.statsGameRefs = upsertStatsGameRef(current && current.statsGameRefs, gameRef)
@@ -443,7 +443,7 @@ export async function updateGameStatsDoc({
 
     const currentGameStats = gameStatsSnap.data() || {}
     const gameId = clean(data.gameId || currentGameStats.gameId)
-    const teamId = clean(data.teamId || currentGameStats.teamId || game && game.teamId)
+    const teamId = clean(data.teamId || currentGameStats.teamId || (game && game.teamId))
 
     if (!gameId) throw new Error('[updateGameStatsDoc] missing resolved gameId')
     if (!teamId) throw new Error('[updateGameStatsDoc] missing resolved teamId')

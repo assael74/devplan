@@ -1,14 +1,11 @@
-// playerProfile/sharedLogic/games/insightsDrawer/tooltip/summary.tooltip.js
+// src/features/hub/playerProfile/sharedLogic/games/insightsDrawer/tooltips/summary.tooltip.js
 
 import {
-  formatNumber,
-  formatPercent,
   toNum,
 } from '../common/index.js'
 
 import {
   buildFormulaText,
-  gapRow,
   numRow,
   pctRow,
   row,

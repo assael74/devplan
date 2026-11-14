@@ -1,4 +1,4 @@
-// playerProfile/mobile/modules/games/components/drawer/EditDrawer.js
+// src/features/hub/playerProfile/mobile/modules/games/components/drawer/EditDrawer.js
 
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
 
@@ -20,6 +20,8 @@ import {
   isExternalGameEditDirty,
   buildExternalGameEditPatch,
 } from '../../../../../../editLogic/games/externalGames/index.js'
+
+const EMPTY_PLAYER = {}
 
 const layout = {
   topCols: { xs: '1fr 1fr', md: '1fr 1fr' },
@@ -47,7 +49,7 @@ export default function EditDrawer({
   onSaved,
   context,
 }) {
-  const player = context?.player || {}
+  const player = context?.player || EMPTY_PLAYER
   const activeGame = game || null
   const lifecycle = useLifecycle()
 

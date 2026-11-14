@@ -1,3 +1,5 @@
+// src/features/reports/dbSearch/renderer/playersList/PlayersListContent.js
+
 import React from 'react'
 import {
   Box,
@@ -13,6 +15,9 @@ import {
 } from '@mui/joy'
 
 import { playersListSx as sx } from './playersList.sx.js'
+
+const EMPTY_CAPABILITIES = {}
+const DEFAULT_SORT = { field: 'minutes', direction: 'desc' }
 
 const clean = value => String(value || '').trim()
 
@@ -112,17 +117,24 @@ export default function PlayersListContent({
   device = 'desktop',
 }) {
   const options = model.filterOptions || {}
-  const capabilities = model.filterCapabilities || {}
+  const capabilities = model.filterCapabilities || EMPTY_CAPABILITIES
   const isPdf = presentation === 'pdf'
   const [filters, setFilters] = React.useState({
     search: '', season: '', birthYear: '', team: '', league: '', leagueLevel: '', profile: '', favoritesOnly: false,
   })
-  const [sort, setSort] = React.useState(model.defaultSort || { field: 'minutes', direction: 'desc' })
+  const [sort, setSort] = React.useState(model.defaultSort || DEFAULT_SORT)
+
+  const entityId = model.entityId
+  const capturedAt = model.snapshot?.capturedAt
+  const lastReport = React.useRef({ entityId, capturedAt })
 
   React.useEffect(() => {
+    if (lastReport.current.entityId === entityId && lastReport.current.capturedAt === capturedAt) return
+    lastReport.current = { entityId, capturedAt }
+
     setFilters({ search: '', season: '', birthYear: '', team: '', league: '', leagueLevel: '', profile: '', favoritesOnly: false })
-    setSort(model.defaultSort || { field: 'minutes', direction: 'desc' })
-  }, [model.entityId, model.snapshot?.capturedAt])
+    setSort(model.defaultSort || DEFAULT_SORT)
+  }, [entityId, capturedAt, model.defaultSort])
 
   const updateFilter = React.useCallback((field, value) => {
     setFilters(current => ({ ...current, [field]: value }))
