@@ -1,25 +1,27 @@
-// src/features/reports/teamMinutesPlan/presentation/teamMinutesPlan.shared.js
+// src/features/reports/shared/teamPlayerReportRows.js
 
-import { PLAYER_INSIGHT_PROFILES } from '../../../../shared/players/insights/insights.profiles.js'
+import { PLAYER_INSIGHT_PROFILES } from '../../../shared/players/insights/insights.profiles.js'
 
 import {
   PROJECT_STATUS_CANDIDATE,
   SEASON_PLAN_STATUS,
   SEASON_PLAN_STATUS_OPTIONS,
   SQUAD_ROLE_OPTIONS,
-} from '../../../../shared/players/players.constants.js'
+} from '../../../shared/players/players.constants.js'
 
 import {
   isDefensivePlayerTargetLayer,
-} from '../../../../shared/players/targets/playerTargets.sections.js'
+} from '../../../shared/players/targets/playerTargets.sections.js'
 
 import {
   formatLtr,
-} from '../../../../shared/format/direction.js'
+} from '../../../shared/format/direction.js'
 
-import {
-  TARGET_PRINT_METRICS,
-} from './teamMinutesPlan.constants.js'
+const TARGET_PRINT_METRICS = [
+  { key: 'goals', icon: 'goal', metricKey: 'goals' },
+  { key: 'assists', icon: 'assists', metricKey: 'assists' },
+  { key: 'defense', icon: 'defense', metricKey: 'defense' },
+]
 
 export const EMPTY = '—'
 export const UNDEFINED_SQUAD_ROLE = 'undefined'
@@ -334,12 +336,6 @@ export function mapSeasonPlanPrintRow(row = {}, index = 0) {
     level: asNumber(row.level),
     project: getProjectMeta(row),
   }
-}
-
-export function mapSeasonPlanPrintRows(rows = []) {
-  return rows.map((row, index) => {
-    return mapSeasonPlanPrintRow(row, index)
-  })
 }
 
 export function mapMinutesPlanPrintRow(row = {}, index = 0) {

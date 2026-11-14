@@ -8,7 +8,7 @@ import {
   getPerformanceSortValue,
   mapPerformancePrintRows,
   nameCollator,
-} from './performance.shared.js'
+} from '../../shared/teamPlayerReportRows.js'
 
 function sortPerformanceRows(rows = []) {
   return [...rows].sort((first, second) => {

@@ -1,6 +1,6 @@
 // src/application/actions/entities/createEntity.builders.js
 
-import { createShort } from '../../../services/firestore/shorts/shortsCreate.js'
+import { createShortItems } from '../../../services/firestore/shorts/shortsCreate.js'
 import { makeId } from '../../../utils/id.js'
 
 import {
@@ -16,6 +16,23 @@ import {
 } from '../../../shared/tasks/tasks.constants.js'
 
 const clean = value => String(value == null ? '' : value).trim()
+
+const valueOr = (value, fallback) => value == null ? fallback : value
+
+export function resolveCreateIdentity(request, index) {
+  if (!request?.id) return { id: makeId(), now: Date.now() }
+  if (!Number.isFinite(request.startedAt)) throw new Error('[createEntity] Invalid request timestamp')
+  const id = index == null ? request.id : `${request.id}_${index}`
+  return { id, now: request.startedAt }
+}
+
+async function writeCreateRecords(records, request) {
+  await createShortItems({
+    entries: records.flatMap(record => record.entries),
+    allowExisting: Boolean(request?.id),
+  })
+  return records.map(record => record.item)
+}
 
 const toNum = value => {
   const n = Number(value)
@@ -85,7 +102,7 @@ export const buildGameResultItem = ({ id, draft }) => {
 export const normalizeGameCreateDraft = (draft = {}) => ({
   ...draft,
   gameHour: clean(draft?.gameHour) || DEFAULT_GAME_HOUR,
-  gameLeagueNum: draft?.gameLeagueNum ?? '',
+  gameLeagueNum: valueOr(draft?.gameLeagueNum, ''),
   goalsFor: toNum(draft?.goalsFor),
   goalsAgainst: toNum(draft?.goalsAgainst),
   result: clean(draft?.result) || resolveResult({
@@ -113,9 +130,8 @@ export const buildGameCreateItems = ({ id, draft, now }) => {
   }
 }
 
-export const createGameShorts = async ({ draft }) => {
-  const id = makeId()
-  const now = Date.now()
+const buildGameCreateRecord = ({ draft, request, index }) => {
+  const { id, now } = resolveCreateIdentity(request, index)
   const {
     gameInfoItem,
     gameTimeItem,
@@ -123,34 +139,47 @@ export const createGameShorts = async ({ draft }) => {
     mergedItem,
   } = buildGameCreateItems({ id, draft, now })
 
-  await Promise.all([
-    createShort({ shortKey: 'games.gameInfo', item: gameInfoItem }),
-    createShort({ shortKey: 'games.gameTime', item: gameTimeItem }),
-    createShort({ shortKey: 'games.gameResult', item: gameResultItem }),
-  ])
-
-  return mergedItem
+  return {
+    item: mergedItem,
+    entries: [
+      { shortKey: 'games.gameInfo', item: gameInfoItem },
+      { shortKey: 'games.gameTime', item: gameTimeItem },
+      { shortKey: 'games.gameResult', item: gameResultItem },
+    ],
+  }
 }
 
-export const createGamesShorts = async ({ draft }) => {
+export const createGameShorts = async ({ draft, request }) => {
+  const [game] = await writeCreateRecords([buildGameCreateRecord({ draft, request })], request)
+  return game
+}
+
+const buildGameRowDraft = (draft, row) => ({
+  ...draft,
+  ...row,
+  gameHour: row?.gameHour || draft?.defaults?.gameHour || DEFAULT_GAME_HOUR,
+  gameLeagueNum: valueOr(row?.gameLeagueNum, valueOr(draft?.gameLeagueNum, '')),
+  type: row?.type || draft?.defaults?.type || '',
+  gameDuration: row?.gameDuration || draft?.defaults?.gameDuration || '',
+  home: valueOr(row?.home, valueOr(draft?.defaults?.home, true)),
+  goalsFor: valueOr(row?.goalsFor, valueOr(draft?.goalsFor, 0)),
+  goalsAgainst: valueOr(row?.goalsAgainst, valueOr(draft?.goalsAgainst, 0)),
+})
+
+async function createGameRows({ draft, context, request, buildRecord }) {
   const rows = Array.isArray(draft?.games) ? draft.games : []
-
-  const created = await Promise.all(rows.map(row => createGameShorts({
-    draft: normalizeGameCreateDraft({
-      ...draft,
-      ...row,
-      gameHour: row?.gameHour || draft?.defaults?.gameHour || DEFAULT_GAME_HOUR,
-      gameLeagueNum: row?.gameLeagueNum ?? draft?.gameLeagueNum ?? '',
-      type: row?.type || draft?.defaults?.type || '',
-      gameDuration: row?.gameDuration || draft?.defaults?.gameDuration || '',
-      home: row?.home ?? draft?.defaults?.home ?? true,
-      goalsFor: row?.goalsFor ?? draft?.goalsFor ?? 0,
-      goalsAgainst: row?.goalsAgainst ?? draft?.goalsAgainst ?? 0,
-    }),
-  })))
-
+  const records = rows.map((row, index) => buildRecord({
+    draft: buildGameRowDraft(draft, row),
+    context,
+    request,
+    index,
+  }))
+  const created = await writeCreateRecords(records, request)
   return { total: created.length, items: created }
 }
+
+export const createGamesShorts = ({ draft, request }) =>
+  createGameRows({ draft, request, buildRecord: buildGameCreateRecord })
 
 export const buildExternalGameDraft = ({ draft, context, row = {} }) => {
   const player = context?.player || context?.entity || {}
@@ -212,47 +241,29 @@ export const buildExternalGamePlayersItem = ({ id, draft }) => {
   }
 }
 
-export const createExternalGameShorts = async ({ draft, context }) => {
-  const id = makeId()
-  const now = Date.now()
+const buildExternalGameCreateRecord = ({ draft, context, request, index }) => {
+  const { id, now } = resolveCreateIdentity(request, index)
   const externalDraft = buildExternalGameDraft({ draft, context })
   const gameInfoItem = buildExternalGameInfoItem({ id, draft: externalDraft, now })
   const gamePlayersItem = buildExternalGamePlayersItem({ id, draft: externalDraft })
 
-  await Promise.all([
-    createShort({ shortKey: 'externalGames.gameInfo', item: gameInfoItem }),
-    createShort({ shortKey: 'externalGames.gamePlayers', item: gamePlayersItem }),
-  ])
-
-  return { ...gameInfoItem, ...gamePlayersItem }
-}
-
-export const createExternalGamesShorts = async ({ draft, context }) => {
-  const rows = Array.isArray(draft?.games) ? draft.games : []
-
-  const created = []
-
-  for (const row of rows) {
-    const item = await createExternalGameShorts({
-      draft: {
-        ...draft,
-        ...row,
-        gameHour: row?.gameHour || draft?.defaults?.gameHour || DEFAULT_GAME_HOUR,
-        gameLeagueNum: row?.gameLeagueNum ?? draft?.gameLeagueNum ?? '',
-        type: row?.type || draft?.defaults?.type || '',
-        gameDuration: row?.gameDuration || draft?.defaults?.gameDuration || '',
-        home: row?.home ?? draft?.defaults?.home ?? true,
-        goalsFor: row?.goalsFor ?? draft?.goalsFor ?? 0,
-        goalsAgainst: row?.goalsAgainst ?? draft?.goalsAgainst ?? 0,
-      },
-      context,
-    })
-
-    created.push(item)
+  return {
+    item: { ...gameInfoItem, ...gamePlayersItem },
+    entries: [
+      { shortKey: 'externalGames.gameInfo', item: gameInfoItem },
+      { shortKey: 'externalGames.gamePlayers', item: gamePlayersItem },
+    ],
   }
-
-  return { total: created.length, items: created }
 }
+
+export const createExternalGameShorts = async ({ draft, context, request }) => {
+  const record = buildExternalGameCreateRecord({ draft, context, request })
+  const [game] = await writeCreateRecords([record], request)
+  return game
+}
+
+export const createExternalGamesShorts = ({ draft, context, request }) =>
+  createGameRows({ draft, context, request, buildRecord: buildExternalGameCreateRecord })
 
 const resolveValue = (primaryValue, fallbackValue) => {
   if (primaryValue !== undefined && primaryValue !== null && primaryValue !== '') {
@@ -288,7 +299,7 @@ export const buildPlayerCreateItems = ({ id, draft, now }) => {
   const playerDraft = normalizePlayerCreateDraft(draft)
   const infoItem = {
     id,
-    active: true,
+    active: playerDraft.active,
     createdAt: now,
     updatedAt: now,
     type: 'noneType',
@@ -315,41 +326,40 @@ export const buildPlayerCreateItems = ({ id, draft, now }) => {
   }
 }
 
-export const createPlayerShorts = async ({ draft }) => {
-  const id = makeId()
-  const now = Date.now()
-  const { infoItem, namesItem, teamItem, mergedItem } = buildPlayerCreateItems({
-    id,
-    draft,
-    now,
-  })
+const buildPlayerCreateRecord = ({ draft, request, index }) => {
+  const { id, now } = resolveCreateIdentity(request, index)
+  const { infoItem, namesItem, teamItem, mergedItem } = buildPlayerCreateItems({ id, draft, now })
 
-  await Promise.all([
-    createShort({ shortKey: 'players.playersInfo', item: infoItem }),
-    createShort({ shortKey: 'players.playersNames', item: namesItem }),
-    createShort({ shortKey: 'players.playersTeam', item: teamItem }),
-  ])
-
-  return mergedItem
+  return {
+    item: mergedItem,
+    entries: [
+      { shortKey: 'players.playersInfo', item: infoItem },
+      { shortKey: 'players.playersNames', item: namesItem },
+      { shortKey: 'players.playersTeam', item: teamItem },
+    ],
+  }
 }
 
-export const createPlayersShorts = async ({ draft }) => {
+export const createPlayerShorts = async ({ draft, request }) => {
+  const [player] = await writeCreateRecords([buildPlayerCreateRecord({ draft, request })], request)
+  return player
+}
+
+export const createPlayersShorts = async ({ draft, request }) => {
   const rows = Array.isArray(draft?.players) ? draft.players : []
   const defaults = draft?.defaults || {}
-  const created = []
+  const records = rows.map((row, index) => buildPlayerCreateRecord({
+    draft: {
+      ...defaults,
+      ...row,
+      clubId: resolveValue(row.clubId, resolveValue(draft.clubId, defaults.clubId)),
+      teamId: resolveValue(row.teamId, resolveValue(draft.teamId, defaults.teamId)),
+    },
+    request,
+    index,
+  }))
 
-  for (const row of rows) {
-    const item = await createPlayerShorts({
-      draft: normalizePlayerCreateDraft({
-        ...defaults,
-        ...row,
-        clubId: resolveValue(row.clubId, resolveValue(draft.clubId, defaults.clubId)),
-        teamId: resolveValue(row.teamId, resolveValue(draft.teamId, defaults.teamId)),
-      }),
-    })
-    created.push(item)
-  }
-
+  const created = await writeCreateRecords(records, request)
   return { total: created.length, items: created }
 }
 

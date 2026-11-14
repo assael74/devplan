@@ -1,4 +1,4 @@
-// playerProfile/mobile/modules/abilities/PlayerAbilitiesModule.js
+// src/features/hub/playerProfile/mobile/modules/abilities/PlayerAbilitiesModule.js
 
 import React from 'react'
 import { useTheme } from '@mui/joy/styles'
@@ -9,7 +9,6 @@ import SectionPanelMobile from '../../../../sharedProfile/mobile/SectionPanelMob
 import PlayerAbilitiesToolbar from './components/PlayerAbilitiesToolbar.js'
 import AbilitiesFiltersContent from './components/AbilitiesFiltersContent.js'
 import AbilitiesDomainCard from './components/AbilitiesDomainCard'
-import AbilitiesInviteCreateDrawer from './components/inviteDrawer/AbilitiesInviteCreateDrawer'
 import PlayerAbilitiesInsightsDrawer from './components/insightsDrawer/PlayerAbilitiesInsightsDrawer.js'
 
 import { PlayerAbilitiesModuleBase } from '../../../sharedModules/abilities'
@@ -30,7 +29,6 @@ export default function PlayerAbilitiesModule(props) {
       PlayerAbilitiesToolbar={PlayerAbilitiesToolbar}
       AbilitiesFiltersContent={AbilitiesFiltersContent}
       AbilitiesDomainCard={AbilitiesDomainCard}
-      AbilitiesInviteCreateDrawer={AbilitiesInviteCreateDrawer}
       PlayerAbilitiesInsightsDrawer={PlayerAbilitiesInsightsDrawer}
     />
   )

@@ -1,3 +1,4 @@
+// src/ui/core/icons/entities/video.icons.js
 import {
   Analytics,
   Link,
@@ -17,6 +18,5 @@ export const videoIcons = {
   videoAnalysis: <Analytics />,
   videoGeneral: <VideocamRounded />,
   videoEvent: <EventAvailable />,
-  playerAnalysis: <DatasetLinked />,
   playerAnalysis: <DatasetLinked />
 };

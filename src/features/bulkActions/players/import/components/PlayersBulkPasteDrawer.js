@@ -15,7 +15,7 @@ import {
 
 import PlayersBulkPasteInput from './PlayersBulkPasteInput.js'
 import PlayersBulkImportPreview from './PlayersBulkImportPreview.js'
-import { buildPlayersImportPreview } from '../index.js'
+import { buildPlayersImportPreview } from '../logic/buildPlayersImportPreview.js'
 
 import { playersImportSx as sx } from './sx/playersImport.sx.js'
 

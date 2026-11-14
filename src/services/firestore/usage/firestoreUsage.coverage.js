@@ -18,7 +18,6 @@ const operation = ({
 
 export const FIRESTORE_USAGE_COVERAGE = [
   operation({ id: 'coreData.shorts.listeners', feature: 'coreData', collection: '*Shorts', type: 'listener', instrumented: true, source: 'services/firestore/shorts/shorts.subscribe.js' }),
-  operation({ id: 'coreData.shorts.ensure', feature: 'coreData', collection: 'playersShorts/abilitiesShorts', type: 'transaction', instrumented: true, source: 'services/firestore/shorts/shortsEnsure.js' }),
   operation({ id: 'hub.gameStats.read', feature: 'hub', collection: 'gameStatsShorts', type: 'document-read', instrumented: true, source: 'services/firestore/shorts/gameStats/getGameStatsDoc.js' }),
   operation({ id: 'hub.gameStats.transactions', feature: 'hub', collection: 'gameStatsShorts/*Shorts', type: 'transaction', instrumented: true, source: 'services/firestore/shorts/gameStats' }),
   operation({ id: 'hub.trainings.transactions', feature: 'hub', collection: 'teamsShorts', type: 'transaction', instrumented: true, source: 'services/firestore/shorts/trainings' }),

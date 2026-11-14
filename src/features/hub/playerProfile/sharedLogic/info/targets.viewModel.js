@@ -6,7 +6,7 @@ import {
 } from '../../../../../shared/players/targets/index.js'
 
 import { buildActualCards, buildPlayerTargetsActuals } from './targets.actuals.js'
-import { buildPlayerTargetSections } from './targets.cards.js'
+import { buildPlayerTargetSections } from '../../../../../shared/players/targets/playerTargetSections.js'
 
 const EMPTY = '—'
 

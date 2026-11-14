@@ -1,4 +1,4 @@
-// teamProfile/sharedLogic/management/management.printModel.js
+// src/features/reports/teamTargets/presentation/print/management.printModel.js
 
 import {
   TEAM_TARGET_BENCHMARK_DEFAULTS,
@@ -9,16 +9,15 @@ import {
   formatTargetValue,
 } from '../../../../../shared/teams/targets/index.js'
 
-import { safeText } from '../domain/management.safe.js'
-import { buildTargetPositionText } from '../domain/targets/index.js'
+import { safeText } from '../../../../hub/teamProfile/sharedLogic/management/management.safe.js'
+import { buildTargetPositionText } from '../../../../hub/teamProfile/sharedLogic/management/targets/index.js'
 
 import {
-  mapDifficultyRowsForPrint,
   mapGenericRowsForPrint,
-  mapHomeAwayRowsForPrint,
+  mapPercentageRowsForPrint,
 } from './management.printRows.js'
 
-import { buildManagementTargetsState } from '../domain/management.state.js'
+import { buildManagementTargetsState } from '../../../../hub/teamProfile/sharedLogic/management/management.state.js'
 
 const toNumber = value => {
   const n = Number(value)
@@ -252,13 +251,13 @@ const buildPrintSections = (groups = {}, options = {}) => {
       id: 'homeAway',
       title: 'בית / חוץ',
       subtitle: '',
-      rows: mapHomeAwayRowsForPrint(homeAwayRows),
+      rows: mapPercentageRowsForPrint(homeAwayRows),
     },
     {
       id: 'difficulty',
       title: 'רמת יריבה',
       subtitle: '',
-      rows: mapDifficultyRowsForPrint(difficultyRows),
+      rows: mapPercentageRowsForPrint(difficultyRows),
     },
     {
       id: 'scorers',

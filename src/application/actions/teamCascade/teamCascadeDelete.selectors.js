@@ -263,7 +263,12 @@ export const buildTeamSnapshot = ({ team, club }) => ({
 
 export const buildPlayerSnapshot = ({ player, teamSnapshot }) => ({
   id: player?.id || '',
-  name: getName(player?.playerFullName, player?.fullName, player?.name),
+  name: getName(
+    player?.playerFullName,
+    player?.fullName,
+    player?.name,
+    [player?.playerFirstName, player?.playerLastName].filter(Boolean).join(' ')
+  ),
   teamId: teamSnapshot?.id || player?.teamId || '',
   teamName: teamSnapshot?.name || '',
   clubId: teamSnapshot?.clubId || player?.clubId || '',

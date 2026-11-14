@@ -1,4 +1,4 @@
-// ui/patterns/reports/sx/report.urlMobile.sx.js
+// src/ui/patterns/reports/sx/report.urlMobile.sx.js
 
 export const buildReportUrlMobileSx = ({
   systemColors,
@@ -110,8 +110,6 @@ export const buildReportUrlMobileSx = ({
 
   date: {
     minWidth: 64,
-    px: 0,
-    py: 0,
     background: 'linear-gradient(180deg, #F8FBFD 0%, #EEF4F8 100%)',
     border: '1px solid rgba(42, 96, 136, 0.14)',
     boxShadow: '0 6px 14px rgba(23, 59, 87, 0.08)',

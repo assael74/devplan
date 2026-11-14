@@ -1,4 +1,4 @@
-// teamProfile/sharedUi/insights/teamGames/sections/sx/squadOffense.sx.js
+// src/features/hub/teamProfile/sharedUi/insights/teamGames/sections/sx/squadOffense.sx.js
 
 import { accordionDetailsClasses } from '@mui/joy/AccordionDetails';
 import { accordionSummaryClasses } from '@mui/joy/AccordionSummary';
@@ -162,18 +162,6 @@ export const squadOffenseSx = {
     },
   }),
 
-  accordion: {
-    border: 0,
-    bgcolor: 'transparent',
-    borderRadius: 12,
-    overflow: 'hidden',
-    boxShadow: 'none',
-
-    '&::before': {
-      display: 'none',
-    },
-  },
-
   takeaway: {
     width: '100%',
     display: 'grid',
@@ -228,28 +216,6 @@ export const squadOffenseSx = {
     color: 'text.secondary',
     lineHeight: 1.35,
     fontWeight: 500,
-  },
-
-  detailsStack: {
-    display: 'grid',
-    gap: 0.65,
-  },
-
-  detailItem: {
-    minWidth: 0,
-    display: 'grid',
-    gap: 0.15,
-  },
-
-  detailLabel: {
-    fontWeight: 700,
-    lineHeight: 1.25,
-    color: 'text.secondary',
-  },
-
-  detailText: {
-    color: 'text.secondary',
-    lineHeight: 1.4,
   },
 
   accordionGroup1: {

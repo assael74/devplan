@@ -1,7 +1,7 @@
-//  playerProfile/mobile/modules/abilities/components/inviteDrawer/AbilitiesInviteCreateDrawer.js
+// src/features/hub/playerProfile/sharedModules/abilities/inviteDrawer/AbilitiesInviteCreateDrawer.js
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { useAuth } from '../../../../../../../../application/auth/index.js'
+import { useAuth } from '../../../../../../application/auth/index.js'
 import {
   Box,
   Button,
@@ -11,7 +11,7 @@ import {
   DialogContent,
 } from '@mui/joy'
 
-import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
+import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { editDrawerSx as sx } from './sx/drawer.sx.js'
 import AbilitiesInviteDrawerHeader from './AbilitiesInviteDrawerHeader.js'
 import AbilitiesInviteDrawerContent from './AbilitiesInviteDrawerContent.js'
@@ -29,7 +29,7 @@ import {
   getCreatedWhatsappText,
   createInviteFlow,
   clean,
-} from './../../../../../sharedLogic'
+} from '../../../sharedLogic'
 
 export default function AbilitiesInviteCreateDrawer({
   open,

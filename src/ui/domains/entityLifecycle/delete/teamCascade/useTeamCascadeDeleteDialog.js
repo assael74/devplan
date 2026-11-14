@@ -54,26 +54,32 @@ export function useTeamCascadeDeleteDialog({
 
     try {
       const res = await executeTeamCascadeDelete({ plan })
+      const photosFailed = res.storage?.failed || 0
+      const teamName = plan.teamSnapshot?.name || ''
 
       notify?.({
-        status: 'success',
+        status: photosFailed ? 'error' : 'success',
         action: 'delete',
         entityType: 'team',
         entityName: entity?.name || plan?.teamSnapshot?.name || '',
-        message: `קבוצה נמחקה במחיקה מלאה: ${plan?.teamSnapshot?.name || ''}`,
+        message: photosFailed
+          ? `הקבוצה ${teamName} ונתוניה נמחקו. מחיקת ${photosFailed} תמונות מהאחסון נכשלה.`
+          : res.dryRun ? 'בדיקת המחיקה הסתיימה ללא שינוי בנתונים' : `הקבוצה ${teamName} נמחקה במלואה`,
         meta: {
           cascade: true,
           result: res,
         },
       })
 
-      onAfterSuccess?.({
-        action: 'delete',
-        entityType: 'team',
-        id: plan.teamId,
-        cascade: true,
-        result: res,
-      })
+      if (!res.dryRun) {
+        onAfterSuccess?.({
+          action: 'delete',
+          entityType: 'team',
+          id: plan.teamId,
+          cascade: true,
+          result: res,
+        })
+      }
 
       setState({ open: false, entity: null, plan: null })
     } catch (error) {

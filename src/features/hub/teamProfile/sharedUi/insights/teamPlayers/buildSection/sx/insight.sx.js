@@ -1,7 +1,4 @@
-// teamPlayers/buildSection/sx/insight.sx.js
-
-import { accordionDetailsClasses } from '@mui/joy/AccordionDetails'
-import { accordionSummaryClasses } from '@mui/joy/AccordionSummary'
+// src/features/hub/teamProfile/sharedUi/insights/teamPlayers/buildSection/sx/insight.sx.js
 
 export const insightSx = {
   panel: {
@@ -33,16 +30,6 @@ export const insightSx = {
 
   collapseInner: {
     overflow: 'hidden',
-  },
-
-  body: {
-    borderTop: '1px solid',
-    borderColor: 'divider',
-    px: 1,
-    py: 1,
-    display: 'grid',
-    gap: 1,
-    bgcolor: 'background.level1',
   },
 
   head: {

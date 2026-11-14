@@ -22,7 +22,7 @@ import {
   nameCollator,
   squadRoleOrder,
   UNDEFINED_SQUAD_ROLE,
-} from './teamMinutesPlan.shared.js'
+} from '../../shared/teamPlayerReportRows.js'
 
 const minutesFormatter = new Intl.NumberFormat('he-IL')
 

@@ -1,9 +1,9 @@
-// hub/playerProfile/desktop/modules/abilities/components/inviteDrawer/AbilitiesInviteDrawerHeader.js
+// src/features/hub/playerProfile/sharedModules/abilities/inviteDrawer/AbilitiesInviteDrawerHeader.js
 
 import React from 'react'
 import { Avatar, Box, DialogTitle, ModalClose, Typography } from '@mui/joy'
 
-import { getEntityColors } from '../../../../../../../../ui/core/theme/Colors.js'
+import { getEntityColors } from '../../../../../../ui/core/theme/Colors.js'
 
 const c = getEntityColors('players')
 

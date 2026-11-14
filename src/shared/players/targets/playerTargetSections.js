@@ -1,4 +1,4 @@
-// src/features/hub/playerProfile/sharedLogic/info/targets.cards.js
+// src/shared/players/targets/playerTargetSections.js
 
 const EMPTY = '—'
 

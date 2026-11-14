@@ -13,6 +13,7 @@ import {
   applyStatsRates,
   buildGameTeamStats,
   buildStatsDelta,
+  hasStatsGameRef,
   indexPlayerStatsByPlayerId,
   normalizeGamePlayerStatsList,
   removeStatsGameRef,
@@ -151,7 +152,7 @@ function buildDeletedPlayerAggregate({
 
   next = applyStatsDelta(next, delta)
 
-  next.gamesWithStats = clampMinZero((current && current.gamesWithStats || 0) - 1)
+  next.gamesWithStats = clampMinZero((current?.gamesWithStats || 0) - 1)
   next.statsGameRefs = removeStatsGameRef(current && current.statsGameRefs, gameId)
 
   return compactAggregate(applyStatsRates(next))
@@ -175,9 +176,9 @@ function buildDeletedTeamAggregate({
 
   next = applyStatsDelta(next, delta)
 
-  next.gamesWithStats = clampMinZero((current && current.gamesWithStats || 0) - 1)
+  next.gamesWithStats = clampMinZero((current?.gamesWithStats || 0) - 1)
   next.playersWithStats = clampMinZero(
-    (current && current.playersWithStats || 0) - playersCount
+    (current?.playersWithStats || 0) - playersCount
   )
   next.statsGameRefs = removeStatsGameRef(current && current.statsGameRefs, gameId)
 
@@ -227,6 +228,56 @@ function buildNextPlayersStatsList({ playersStatsDoc, prevByPlayerId, gameId, no
   }
 
   return nextPlayersStatsList
+}
+
+export async function planTeamGameStatsDeletion(tx, {
+  teamId,
+  games,
+  playersStatsList,
+  now,
+}) {
+  const statsDocIds = new Set()
+  const refs = []
+  let list = playersStatsList
+
+  for (const game of games) {
+    const gameId = game.id
+    const payload = { gameId, teamId }
+    const gameStatsDocId = resolveGameStatsDocId({ payload, game })
+    if (statsDocIds.has(gameStatsDocId)) {
+      throw new Error('[teamCascadeDelete] Multiple games point to the same stats document')
+    }
+    statsDocIds.add(gameStatsDocId)
+
+    const ref = doc(gameStatsShortsRef, gameStatsDocId)
+    const snapshot = await tx.get(ref)
+    if (!snapshot.exists()) {
+      if (list.some(player => hasStatsGameRef(player?.statsGameRefs, gameId))) {
+        throw new Error(`[teamCascadeDelete] Missing stats for game ${gameId} with a remaining player aggregate`)
+      }
+      continue
+    }
+
+    const currentGameStats = snapshot.data() || {}
+    assertDocOwnership({ payload, game, currentGameStats, gameId, teamId, gameStatsDocId })
+    const context = buildRollbackContext({
+      currentGameStats,
+      resolvedGame: game,
+      gameId,
+      teamId,
+      gameStatsDocId,
+    })
+    const prevPlayerStats = normalizeGamePlayerStatsList(currentGameStats.playerStats || [], context)
+    list = buildNextPlayersStatsList({
+      playersStatsDoc: { list },
+      prevByPlayerId: indexPlayerStatsByPlayerId(prevPlayerStats),
+      gameId,
+      now,
+    })
+    refs.push(ref)
+  }
+
+  return { list, refs }
 }
 
 function buildNextTeamsStatsList({
@@ -370,7 +421,7 @@ export async function deleteGameStatsDoc({ payload, draft, dryRun = false } = {}
     const currentGameStats = gameStatsSnap.data() || {}
 
     const gameId = clean(data.gameId || currentGameStats.gameId)
-    const teamId = clean(data.teamId || currentGameStats.teamId || game && game.teamId)
+    const teamId = clean(data.teamId || currentGameStats.teamId || game?.teamId)
 
     if (!gameId) throw new Error('[deleteGameStatsDoc] missing resolved gameId')
     if (!teamId) throw new Error('[deleteGameStatsDoc] missing resolved teamId')

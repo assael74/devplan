@@ -1,4 +1,4 @@
-// playerProfile/sharedUi/insights/playerGames/sections/shared/SectionMetricsGrid.js
+// src/features/hub/playerProfile/sharedUi/insights/playerGames/sections/shared/SectionMetricsGrid.js
 
 import React from 'react'
 import { Box } from '@mui/joy'
@@ -7,44 +7,10 @@ import {
   MetricMiniCard,
 } from '../../../../../../../../ui/patterns/insights/index.js'
 
-import {
-  normalizeColor,
-  renderTooltip,
-  safeArray,
-} from './index.js'
+import { normalizeColor, safeArray } from './shared.utils.js'
+import { renderTooltip } from './renderTooltip.js'
 
 import SectionEmptyState from './SectionEmptyState.js'
-
-const resolveColumns = ({ cols, count }) => {
-  const value = Number(cols || count)
-
-  if (value === 2) {
-    return {
-      xs: '1fr',
-      sm: '1fr 1fr',
-    }
-  }
-
-  if (value === 3) {
-    return {
-      xs: '1fr',
-      sm: '1fr 1fr 1fr',
-    }
-  }
-
-  if (value >= 4) {
-    return {
-      xs: '1fr',
-      sm: '1fr 1fr',
-      md: 'repeat(4, minmax(0, 1fr))',
-    }
-  }
-
-  return {
-    xs: '1fr',
-    sm: '1fr 1fr',
-  }
-}
 
 export default function SectionMetricsGrid({
   sx,

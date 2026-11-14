@@ -13,7 +13,7 @@ import {
   resolveTeamAvatar,
   resolveTeamName,
   resolveTeamYear,
-} from './teamMinutesPlan.shared.js'
+} from '../../shared/teamPlayerReportRows.js'
 
 import {
   buildMinutesPlanPrintModel,

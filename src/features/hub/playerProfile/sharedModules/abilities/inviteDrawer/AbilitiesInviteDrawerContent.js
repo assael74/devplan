@@ -1,4 +1,4 @@
-// playerProfile/mobile/modules/abilities/components/inviteDrawer/AbilitiesInviteDrawerContent.js
+// src/features/hub/playerProfile/sharedModules/abilities/inviteDrawer/AbilitiesInviteDrawerContent.js
 
 import React from 'react'
 import {
@@ -11,14 +11,14 @@ import {
   Typography,
 } from '@mui/joy'
 
-import RoleSelectField from '../../../../../../../../ui/fields/roles/RoleSelectField.js'
-import AbilitiesMultiSelectField from '../../../../../../../../ui/fields/abilities/AbilitiesMultiSelectField.js'
-import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
+import RoleSelectField from '../../../../../../ui/fields/roles/RoleSelectField.js'
+import AbilitiesMultiSelectField from '../../../../../../ui/fields/abilities/AbilitiesMultiSelectField.js'
+import { iconUi } from '../../../../../../ui/core/icons/iconUi.js'
 import { editDrawerSx as sx } from './sx/drawer.sx.js'
 import {
   clean,
   resolveRolePhoto,
-} from './../../../../../sharedLogic'
+} from '../../../sharedLogic'
 
 export default function AbilitiesInviteDrawerContent({
   createdState,

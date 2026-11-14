@@ -1,3 +1,4 @@
+// src/ui/core/icons/entities/games.icons.js
 import {
   AccessTime,
   Adjust,
@@ -28,7 +29,6 @@ export const gameIcons = {
   away: <Outbound />,
   cup: <EmojiEvents />,
   draw: <Handshake />,
-  duration: <AccessTime />,
   easy: <Recycling />,
   equal: <DragHandle />,
   difficulty: <TrackChanges />,

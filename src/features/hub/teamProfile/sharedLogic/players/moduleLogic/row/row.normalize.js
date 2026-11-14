@@ -1,11 +1,10 @@
-// teamProfile/sharedLogic/players/moduleLogic/row/row.normalize.js
+// src/features/hub/teamProfile/sharedLogic/players/moduleLogic/row/row.normalize.js
 
 import { getPlayerQuickStats } from '../../../../../../../shared/players/player.quickStats.utils.js'
 
 import { buildPlayerGamesStats } from '../teamPlayers.gamesStats.logic.js'
 
 import {
-  buildFullName,
   norm,
   normalizeArgs,
   pickAge,
@@ -117,7 +116,6 @@ export const normalizeTeamPlayerRow = (rawOrArgs, maybeTeam) => {
     playerId: id,
 
     playerFullName,
-    primaryPosition,
     photo: player?.photo || row?.photo || null,
 
     active,

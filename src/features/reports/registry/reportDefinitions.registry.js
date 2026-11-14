@@ -17,8 +17,8 @@ import {
 
 import {
   DbSearchReportRenderer,
-  dbSearchDefinition,
-} from '../dbSearch/index.js'
+} from '../dbSearch/renderer/index.js'
+import { dbSearchDefinition } from '../dbSearch/dbSearch.definition.js'
 
 import {
   TeamMinutesPlanReportRenderer,

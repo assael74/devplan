@@ -3,6 +3,12 @@
 import { saveGameStats } from '../../../../application/actions/gameStats/saveGameStats.action.js'
 import { loadGameStats } from '../../../../application/actions/gameStats/loadGameStats.action.js'
 import { deleteGameStats } from '../../../../application/actions/gameStats/deleteGameStats.action.js'
+import {
+  collectTeamCascadeDeletePlan,
+} from '../../../../application/actions/teamCascade/collectTeamCascadeDeletePlan.js'
+import {
+  executeTeamCascadeDelete,
+} from '../../../../application/actions/teamCascade/executeTeamCascadeDelete.action.js'
 import { buildGameStatsPayload } from '../../../../ui/forms/gameStats/logic/save/payload.logic.js'
 import { buildGameStatsSavePreview } from '../../../../ui/forms/gameStats/logic/save/savePreview.logic.js'
 import { patchGameStatsDraft } from '../../../../ui/forms/gameStats/logic/draft/draft.logic.js'
@@ -21,6 +27,7 @@ import { shortsRefs } from '../shorts.refs.js'
 
 let mockStore
 let mockId = 0
+let mockCommitFailure = false
 const mockClone = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value))
 const mockSnapshot = ref => ({
   exists: () => mockStore.has(ref.path),
@@ -38,6 +45,7 @@ jest.mock('firebase/firestore', () => ({
 }))
 jest.mock('../../../firebase/firebase.js', () => ({ db: {} }))
 jest.mock('../../shortsCollections.js', () => ({ gameStatsShortsRef: { collection: 'gameStatsShorts' } }))
+jest.mock('../../storage/deleteImageByUrl.js', () => ({ deleteImageByUrl: jest.fn() }))
 jest.mock('../../usage/firestoreUsage.instrumentation.js', () => ({
   trackedGetDoc: async ref => mockSnapshot(ref),
   trackedRunTransaction: async (_, callback) => {
@@ -47,6 +55,7 @@ jest.mock('../../usage/firestoreUsage.instrumentation.js', () => ({
       set: (ref, data, options) => writes.push({ ref, data: mockClone(data), options }),
       delete: ref => writes.push({ ref, remove: true }),
     })
+    if (mockCommitFailure) throw new Error('Transaction failed')
     for (const { ref, data, options, remove } of writes) {
       if (remove) mockStore.delete(ref.path)
       else mockStore.set(ref.path, options?.merge ? { ...mockStore.get(ref.path), ...data } : data)
@@ -94,7 +103,84 @@ function makeDraft(scope, gameDuration = 90) {
   }
 }
 
-beforeEach(() => { mockStore = new Map() })
+beforeEach(() => {
+  mockStore = new Map()
+  mockCommitFailure = false
+})
+
+test('team deletion commits payments, game stats and player changes together', async () => {
+  const { aggregateMeta } = prepare('regular')
+  const saved = await saveGameStats({ payload: buildGameStatsPayload(makeDraft('player')) })
+  expect(saved.ok).toBe(true)
+  const statsId = saved.data.ids.gameStatsDocId
+
+  const { teams, players, games, payments } = shortsRefs
+  const list = meta => mockStore.get(shortKey(meta)).list
+  const otherGame = { id: 'g2', teamId: 't2', gameDuration: 90 }
+  seed(games.gameInfo, [...list(games.gameInfo), otherGame])
+  const otherDraft = makeDraft('player')
+  const savedOther = await saveGameStats({
+    payload: buildGameStatsPayload({
+      ...otherDraft,
+      gameId: otherGame.id,
+      teamId: otherGame.teamId,
+      playerStats: [{ ...otherDraft.playerStats[0], passesTotal: 3, passesSuccess: 2 }],
+    }),
+  })
+  expect(savedOther.ok).toBe(true)
+
+  seed(teams.teamsInfo, [{ id: 't1', teamName: 'First team' }, { id: 't2' }])
+  seed(players.playersTeam, [{ id: 'p1', teamId: 't2' }, { id: 'p2', teamId: 't1' }])
+  seed(players.playersInfo, [{ id: 'p1' }, { id: 'p2' }])
+  seed(players.playersNames, [{ id: 'p2', playerFirstName: 'Test', playerLastName: 'Player' }])
+  seed(payments.paymentOperative, [{ id: 'pay', playerId: 'p2' }])
+  seed(payments.paymentProfit, [{ id: 'pay', price: 150 }])
+
+  const plan = collectTeamCascadeDeletePlan({
+    teamId: 't1',
+    shorts: {
+      teamsShorts: { teamsInfo: list(teams.teamsInfo) },
+      playersShorts: { playersTeam: list(players.playersTeam) },
+      gamesShorts: { gameInfo: list(games.gameInfo) },
+      paymentsShorts: { paymentOperative: list(payments.paymentOperative) },
+    },
+  })
+  const before = mockClone([...mockStore])
+
+  seed(games.gameInfo, [...list(games.gameInfo), { id: 'new-game', teamId: 't1' }])
+  const changed = mockClone([...mockStore])
+  await expect(executeTeamCascadeDelete({ plan })).rejects.toThrow('נתוני הקבוצה השתנו')
+  expect([...mockStore]).toEqual(changed)
+  mockStore = new Map(before)
+
+  mockCommitFailure = true
+  await expect(executeTeamCascadeDelete({ plan })).rejects.toThrow('Transaction failed')
+  expect([...mockStore]).toEqual(before)
+
+  mockCommitFailure = false
+  await expect(executeTeamCascadeDelete({ plan })).resolves.toMatchObject({ ok: true })
+  expect(list(teams.teamsInfo)).toEqual([{ id: 't2' }])
+  expect(list(players.playersInfo)).toEqual([{ id: 'p1' }])
+  expect(list(games.gameInfo)).toMatchObject([{ id: otherGame.id, teamId: otherGame.teamId }])
+  expect(mockStore.has(`gameStatsShorts/${statsId}`)).toBe(false)
+  expect(mockStore.has(`gameStatsShorts/${savedOther.data.ids.gameStatsDocId}`)).toBe(true)
+  const remainingPlayer = list(aggregateMeta).find(item => item.id === 'p1')
+  expect(remainingPlayer).toMatchObject({
+    id: 'p1',
+    playerId: 'p1',
+    gamesWithStats: 1,
+    statsGameRefs: [{ gameId: otherGame.id }],
+    passesTotal: 3,
+    passesSuccess: 2,
+  })
+  expect(list(payments.paymentProfit)[0]).toMatchObject({
+    id: 'pay',
+    price: 150,
+    archived: true,
+    playerName: 'Test Player',
+    sourceDeletedId: 't1',
+  })
+})
 
 test.each(['regular', 'project', 'private'])('%s: save, reload, reset, repeat and delete', async kind => {
   const { gameMeta, aggregateMeta, game, player, scope } = prepare(kind)

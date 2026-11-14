@@ -34,13 +34,3 @@ export const TEAM_CASCADE_DELETE_KEYS = {
     'payments.paymentProfit',
   ],
 }
-
-export const TEAM_CASCADE_DELETE_ORDER = [
-  'paymentsArchive',
-  'stats',
-  'games',
-  'meetings',
-  'players',
-  'team',
-  'storage',
-]

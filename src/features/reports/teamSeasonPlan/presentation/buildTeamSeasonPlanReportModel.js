@@ -13,7 +13,7 @@ import {
   resolveTeamAvatar,
   resolveTeamName,
   resolveTeamYear,
-} from './teamSeasonPlan.shared.js'
+} from '../../shared/teamPlayerReportRows.js'
 
 import {
   buildSeasonPlanPrintModel,

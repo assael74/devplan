@@ -1,4 +1,4 @@
-// teamProfile/sharedModules/players/useTeamPlayersModuleModel.js
+// src/features/hub/teamProfile/sharedModules/players/useTeamPlayersModuleModel.js
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -8,6 +8,7 @@ import {
   deleteEntity,
   unwrapActionResult,
 } from '../../../application/index.js'
+import { useCreateRequest } from '../../../../../application/actions/entities/useCreateRequest.js'
 import { useSnackbar } from '../../../../../ui/core/feedback/snackbar/SnackbarProvider.js'
 
 import {
@@ -46,15 +47,16 @@ export default function useTeamPlayersModuleModel({
   profileData,
   playersInsightsRequest = 0,
   playersImportRequest = 0,
+  onPlayersImportHandled,
   onPlayersInsightsStatusChange,
   bulkEnabled = false,
+  importEnabled = bulkEnabled,
 }) {
   const { notify } = useSnackbar()
+  const { getCreateRequest, clearCreateRequest } = useCreateRequest()
 
   const initialInsightsRequestRef = useRef(playersInsightsRequest)
-  const initialImportRequestRef = useRef(playersImportRequest)
   const didMountInsightsRef = useRef(false)
-  const didMountImportRef = useRef(false)
   const lastInsightsStatusRef = useRef('')
 
   const liveTeam = useMemo(() => {
@@ -191,23 +193,12 @@ export default function useTeamPlayersModuleModel({
   }, [playersInsightsRequest, insightsReady])
 
   useEffect(() => {
-    if (!didMountImportRef.current) {
-      didMountImportRef.current = true
-      return
-    }
+    if (!importEnabled || playersImportRequest <= 0) return
 
-    if (
-      !bulkEnabled ||
-      playersImportRequest <= 0 ||
-      playersImportRequest === initialImportRequestRef.current
-    ) {
-      return
-    }
-
-    initialImportRequestRef.current = playersImportRequest
     setImportError('')
     setImportOpen(true)
-  }, [playersImportRequest, bulkEnabled])
+    onPlayersImportHandled?.(0)
+  }, [playersImportRequest, importEnabled, onPlayersImportHandled])
 
   useEffect(() => {
     const validIds = new Set(rowsWithPerformance.map(getPlayerId).filter(Boolean))
@@ -343,9 +334,10 @@ export default function useTeamPlayersModuleModel({
   const handleCloseImport = useCallback(() => {
     if (importSaving) return
 
+    clearCreateRequest()
     setImportOpen(false)
     setImportError('')
-  }, [importSaving])
+  }, [importSaving, clearCreateRequest])
 
   const handleImportPlayers = useCallback(async ({ payload }) => {
     if (importSaving) return
@@ -380,15 +372,14 @@ export default function useTeamPlayersModuleModel({
     setImportError('')
 
     try {
+      const draft = { players, teamId, clubId }
       const result = unwrapActionResult(await createEntity({
         entityType: 'players',
-        draft: {
-          players,
-          teamId,
-          clubId,
-        },
+        draft,
+        request: getCreateRequest(draft),
       }))
 
+      clearCreateRequest()
       setImportOpen(false)
 
       notify({
@@ -411,7 +402,7 @@ export default function useTeamPlayersModuleModel({
     } finally {
       setImportSaving(false)
     }
-  }, [importSaving, liveTeam, notify])
+  }, [importSaving, liveTeam, notify, getCreateRequest, clearCreateRequest])
 
   return {
     liveTeam,

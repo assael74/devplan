@@ -45,12 +45,6 @@ export const PERFORMANCE_PRINT_COLUMNS = [
   { key: 'stats', label: 'ביצוע בפועל', width: '20%' },
 ]
 
-export const TARGET_PRINT_METRICS = [
-  { key: 'goals', icon: 'goal', metricKey: 'goals' },
-  { key: 'assists', icon: 'assists', metricKey: 'assists' },
-  { key: 'defense', icon: 'defense', metricKey: 'defense' },
-]
-
 export const SEASON_PLAN_REPORT_GROUPS = [
   {
     id: 'planned',

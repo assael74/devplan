@@ -1,10 +1,9 @@
-// src/ui/video/driveVideoPlayer.sx.js
+// src/ui/domains/video/driveVideoPlayer.sx.js
 const dialogBase = (isAnalysis) => ({
-  width: '100%',
   p: 0,
   borderRadius: 'lg',
   overflow: 'hidden',
-  width: isAnalysis ? 'min(1180px, 96vw)' : 'min(1180px, 96vw)',
+  width: 'min(1180px, 96vw)',
   maxWidth: isAnalysis ? '1180px' : '980px',
 })
 

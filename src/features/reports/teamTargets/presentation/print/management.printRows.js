@@ -1,4 +1,4 @@
-// teamProfile/sharedLogic/management/print/management.printRows.js
+// src/features/reports/teamTargets/presentation/print/management.printRows.js
 
 const EMPTY = '—'
 
@@ -28,22 +28,7 @@ const normalizePercentValue = (label = '') => {
   return match ? match[0] : clean
 }
 
-export const mapHomeAwayRowsForPrint = (rows = []) => {
-  return rows.map(row => {
-    const labels = getChipLabels(row)
-    const percentLabel = getPercentLabel(labels)
-
-    return {
-      id: row.id,
-      idIcon: row.idIcon,
-      label: row.label,
-      value: normalizePercentValue(percentLabel || labels[0] || '') || EMPTY,
-      helper: '',
-    }
-  })
-}
-
-export const mapDifficultyRowsForPrint = (rows = []) => {
+export const mapPercentageRowsForPrint = (rows = []) => {
   return rows.map(row => {
     const labels = getChipLabels(row)
     const percentLabel = getPercentLabel(labels)

@@ -1,4 +1,6 @@
-import { getEntityColors } from '../../../../../../../../../ui/core/theme/Colors.js'
+// src/features/hub/playerProfile/sharedModules/abilities/inviteDrawer/sx/drawer.sx.js
+
+import { getEntityColors } from '../../../../../../../ui/core/theme/Colors.js'
 
 const c = getEntityColors('players')
 

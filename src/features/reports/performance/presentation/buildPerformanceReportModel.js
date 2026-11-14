@@ -14,7 +14,7 @@ import {
   resolveTeamAvatar,
   resolveTeamName,
   resolveTeamYear,
-} from './performance.shared.js'
+} from '../../shared/teamPlayerReportRows.js'
 
 export function formatPerformanceReportDate(value) {
   if (value && typeof value.toDate === 'function') {

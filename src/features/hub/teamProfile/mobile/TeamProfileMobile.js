@@ -1,4 +1,4 @@
-// features/hub/teamProfile/mobile/TeamProfileMobile.js
+// src/features/hub/teamProfile/mobile/TeamProfileMobile.js
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Sheet } from '@mui/joy'
@@ -42,6 +42,7 @@ export default function TeamProfileMobile({
   const navigate = useNavigate()
 
   const [playersInsightsRequest, setPlayersInsightsRequest] = useState(0)
+  const [playersImportRequest, setPlayersImportRequest] = useState(0)
   const [gamesInsightsRequest, setGamesInsightsRequest] = useState(0)
   const [gamesImportRequest, setGamesImportRequest] = useState(0)
   const [performanceInsightsRequest, setPerformanceInsightsRequest] = useState(0)
@@ -92,6 +93,7 @@ export default function TeamProfileMobile({
     taskContext,
     playersInsightsStatus: isPlayersTab ? playersInsightsStatus : 'empty',
     onOpenPlayersInsights: handleOpenPlayersInsights,
+    onImportPlayers: () => setPlayersImportRequest(value => value + 1),
     onOpenGamesInsights: () => setGamesInsightsRequest(v => v + 1),
     onImportGames: () => setGamesImportRequest(v => v + 1),
     onOpenPerformanceInsights: () => setPerformanceInsightsRequest(v => v + 1),
@@ -143,6 +145,8 @@ export default function TeamProfileMobile({
               profileData={profileData}
               modulesMap={mobileTeamModulesMap}
               playersInsightsRequest={playersInsightsRequest}
+              playersImportRequest={playersImportRequest}
+              onPlayersImportHandled={setPlayersImportRequest}
               gamesInsightsRequest={gamesInsightsRequest}
               gamesImportRequest={gamesImportRequest}
               performanceInsightsRequest={performanceInsightsRequest}

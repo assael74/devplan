@@ -10,7 +10,7 @@ import {
 
 import {
   buildPlayerTargetSections,
-} from './shared/playerTargetSections.js'
+} from '../../../../shared/players/targets/playerTargetSections.js'
 
 const EMPTY = '—'
 

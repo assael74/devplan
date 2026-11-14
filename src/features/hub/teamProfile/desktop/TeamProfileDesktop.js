@@ -1,4 +1,4 @@
-// features/hub/teamProfile/desktop/TeamProfileDesktop.js
+// src/features/hub/teamProfile/desktop/TeamProfileDesktop.js
 
 import React, { useState } from 'react'
 import ProfileShell from '../../sharedProfile/ProfileShell'
@@ -38,6 +38,7 @@ export default function TeamProfileDesktop({ tab, entity, context, taskContext, 
         profileData,
         playersInsightsRequest,
         playersImportRequest,
+        onPlayersImportHandled: setPlayersImportRequest,
         gamesInsightsRequest,
         gamesImportRequest,
         performanceInsightsRequest,

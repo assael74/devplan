@@ -19,7 +19,7 @@ import {
   nameCollator,
   normalizeSeasonPlanStatus,
   squadRoleOrder,
-} from './teamSeasonPlan.shared.js'
+} from '../../shared/teamPlayerReportRows.js'
 
 function getLayerKey(row = {}) {
   return String(

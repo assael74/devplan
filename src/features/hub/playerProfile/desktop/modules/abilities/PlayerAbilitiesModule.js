@@ -1,10 +1,9 @@
-// playerProfile/desktop/modules/abilities/PlayerAbilitiesModule.js
+// src/features/hub/playerProfile/desktop/modules/abilities/PlayerAbilitiesModule.js
 
 import React from 'react'
 
 import PlayerAbilitiesToolbar from './components/PlayerAbilitiesToolbar.js'
 import AbilitiesDomainCard from './components/AbilitiesDomainCard'
-import AbilitiesInviteCreateDrawer from './components/inviteDrawer/AbilitiesInviteCreateDrawer'
 import PlayerAbilitiesInsightsDrawer from './components/insightsDrawer/PlayerAbilitiesInsightsDrawer.js'
 
 import {
@@ -23,7 +22,6 @@ export default function PlayerAbilitiesModule(props) {
       stickyHeaderSx={stickyHeaderWrapSx}
       PlayerAbilitiesToolbar={PlayerAbilitiesToolbar}
       AbilitiesDomainCard={AbilitiesDomainCard}
-      AbilitiesInviteCreateDrawer={AbilitiesInviteCreateDrawer}
       PlayerAbilitiesInsightsDrawer={PlayerAbilitiesInsightsDrawer}
     />
   )

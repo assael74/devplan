@@ -18,7 +18,7 @@ import BulkActionsPreview from './BulkActionsPreview.js'
 import {
   buildGamesImportPreview,
   getValidGamesImportPayload,
-} from '../index.js'
+} from '../logic/buildGamesImportPreview.js'
 import { bulkSx as sx } from './sx/bulk.sx.js'
 
 const SAMPLE_TEXT = `תאריך	מחזור	יריבה	בית/חוץ	סוג משחק	משך משחק	שעה

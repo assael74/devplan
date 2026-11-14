@@ -1,15 +1,10 @@
 // src/application/actions/teamCascade/executeTeamCascadeDelete.action.js
 
-import { archiveTeamCascadePayments } from './archiveTeamCascadePayments.js'
-import { deleteTeamCascadeStats } from './deleteTeamCascadeStats.js'
+import { deleteTeamCascadeData } from '../../../services/firestore/shorts/deleteTeamCascadeData.js'
+import { buildArchivePatch } from './archiveTeamCascadePayments.js'
+import { collectTeamCascadeDeletePlan } from './collectTeamCascadeDeletePlan.js'
 import { deleteTeamCascadeStorage } from './deleteTeamCascadeStorage.js'
-
-import {
-  deleteTeamGamesShorts,
-  deleteTeamMeetingsShorts,
-  deleteTeamPlayersShorts,
-  deleteTeamRootShorts,
-} from './deleteTeamCascadeShorts.js'
+import { TEAM_CASCADE_DELETE_KEYS } from './teamCascadeDelete.keys.js'
 
 const assertPlan = plan => {
   if (!plan?.teamId) throw new Error('[teamCascadeDelete] plan.teamId is required')
@@ -18,64 +13,38 @@ const assertPlan = plan => {
   }
 }
 
-export async function executeTeamCascadeDelete({ plan, deps = {} }) {
+function resolveConfirmedPlan(plan, shorts) {
+  const current = collectTeamCascadeDeletePlan({ teamId: plan.teamId, shorts })
+  const keys = ['playerIds', 'gameIds', 'meetingIds', 'paymentIds', 'statsDocIds']
+  const targetsChanged = keys.some(key => {
+    const confirmed = new Set(plan[key])
+    return confirmed.size !== current[key].length || current[key].some(id => !confirmed.has(id))
+  })
+  const statsByGame = new Map(plan.statsRefs.map(ref => [ref.gameId, ref.statsDocId]))
+  const statsChanged = statsByGame.size !== current.statsRefs.length ||
+    current.statsRefs.some(ref => statsByGame.get(ref.gameId) !== ref.statsDocId)
+  if (targetsChanged || statsChanged) {
+    throw new Error('נתוני הקבוצה השתנו. פתח מחדש את חלון המחיקה ובדוק את הרשימה')
+  }
+
+  return current
+}
+
+export async function executeTeamCascadeDelete({ plan }) {
   assertPlan(plan)
 
-  const results = {
-    teamId: plan.teamId,
-    paymentsArchive: null,
-    stats: null,
-    games: null,
-    meetings: null,
-    players: null,
-    team: null,
-    storage: null,
-  }
+  const { teamId } = plan
+  const archivedAt = Date.now()
+  const { plan: current, dryRun } = await deleteTeamCascadeData({
+    teamId,
+    keys: TEAM_CASCADE_DELETE_KEYS,
+    resolvePlan: shorts => resolveConfirmedPlan(plan, shorts),
+    archivePayment: (payment, currentPlan) => ({
+      ...payment,
+      ...buildArchivePatch({ payment, plan: currentPlan, archivedAt }),
+    }),
+  })
 
-  /**
-   * 1. תשלומים — ארכוב עם snapshot.
-   * חייב לקרות לפני מחיקת השחקנים.
-   */
-  results.paymentsArchive = await archiveTeamCascadePayments({ plan })
-
-  /**
-   * 2. סטטיסטיקה מתקדמת.
-   * חייב לקרות לפני מחיקת משחקים, כי deleteGameStatsDoc צריך למצוא את המשחק.
-   */
-  if (typeof deps.deleteStats === 'function') {
-    results.stats = await deps.deleteStats({ plan })
-  } else {
-    results.stats = await deleteTeamCascadeStats({ plan })
-  }
-
-  /**
-   * 3. משחקים.
-   */
-  results.games = await deleteTeamGamesShorts({ plan })
-
-  /**
-   * 4. פגישות.
-   */
-  results.meetings = await deleteTeamMeetingsShorts({ plan })
-
-  /**
-   * 5. שחקנים.
-   */
-  results.players = await deleteTeamPlayersShorts({ plan })
-
-  /**
-   * 6. הקבוצה עצמה.
-   */
-  results.team = await deleteTeamRootShorts({ plan })
-
-  /**
-   * 7. Storage — אחרי מחיקת הדאטה, עם urls שנשמרו מראש ב־plan.
-   */
-  results.storage = await deleteTeamCascadeStorage({ plan })
-
-  return {
-    ok: true,
-    teamId: plan.teamId,
-    results,
-  }
+  const storage = dryRun ? null : await deleteTeamCascadeStorage({ plan: current })
+  return { ok: true, teamId, dryRun, storage }
 }

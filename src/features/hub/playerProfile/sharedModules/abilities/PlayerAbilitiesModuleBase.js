@@ -1,4 +1,4 @@
-// playerProfile/sharedModules/abilities/PlayerAbilitiesModuleBase.js
+// src/features/hub/playerProfile/sharedModules/abilities/PlayerAbilitiesModuleBase.js
 
 import React from 'react'
 import {
@@ -15,6 +15,7 @@ import { MobileFiltersDrawerShell } from '../../../../../ui/patterns/filters/ind
 import { iconUi } from '../../../../../ui/core/icons/iconUi.js'
 
 import usePlayerAbilitiesModuleModel from './usePlayerAbilitiesModuleModel.js'
+import AbilitiesInviteCreateDrawer from './inviteDrawer/AbilitiesInviteCreateDrawer.js'
 
 const TEXT = {
   inviteCreated: '\u05e7\u05d9\u05e9\u05d5\u05e8 \u05d8\u05d5\u05e4\u05e1 \u05e9\u05e0\u05d5\u05e6\u05e8',
@@ -43,7 +44,6 @@ export default function PlayerAbilitiesModuleBase({
   PlayerAbilitiesToolbar,
   AbilitiesFiltersContent,
   AbilitiesDomainCard,
-  AbilitiesInviteCreateDrawer,
   PlayerAbilitiesInsightsDrawer,
 }) {
   const model = usePlayerAbilitiesModuleModel({

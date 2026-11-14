@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 
 import { createEntity, unwrapActionResult } from '../../../../application/index.js'
+import { useCreateRequest } from '../../../../../../application/actions/entities/useCreateRequest.js'
 
 export function useTeamGamesImportActions({
   liveTeam,
@@ -12,6 +13,7 @@ export function useTeamGamesImportActions({
   const [gamesImportOpen, setGamesImportOpen] = useState(false)
   const [gamesImportSaving, setGamesImportSaving] = useState(false)
   const [gamesImportError, setGamesImportError] = useState('')
+  const { getCreateRequest, clearCreateRequest } = useCreateRequest()
 
   useEffect(() => {
     if (gamesImportRequest > 0) {
@@ -22,6 +24,7 @@ export function useTeamGamesImportActions({
   function handleOpenGamesImport() {
     if (gamesImportSaving) return
 
+    clearCreateRequest()
     setGamesImportError('')
     setGamesImportOpen(true)
   }
@@ -34,6 +37,8 @@ export function useTeamGamesImportActions({
   }
 
   async function handleGamesImportPreviewReady({ payload } = {}) {
+    if (gamesImportSaving) return
+
     const teamId = liveTeam?.id || context?.teamId || ''
     const clubId = liveTeam?.clubId || context?.clubId || ''
 
@@ -64,6 +69,7 @@ export function useTeamGamesImportActions({
       unwrapActionResult(await createEntity({
         entityType: 'games',
         draft: finalPayload,
+        request: getCreateRequest(finalPayload),
         context: {
           ...context,
           teamId,

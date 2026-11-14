@@ -1,4 +1,4 @@
-// teamProfile/mobile/modules/players/components/playerCard/TeamPlayerCardDetails.js
+// src/features/hub/teamProfile/mobile/modules/players/components/playerCard/TeamPlayerCardDetails.js
 
 import React from 'react'
 import {
@@ -10,16 +10,6 @@ import {
 } from '@mui/joy'
 
 import { iconUi } from '../../../../../../../../ui/core/icons/iconUi.js'
-import { cardSx as sx } from '../../sx/card.mobile.sx.js'
-
-import {
-  ScoringProfileInfo,
-  ScoringMetricInfo,
-} from '../../../../../../../../ui/patterns/scoring/index.js'
-
-import {
-  getPlayerInsightProfile,
-} from '../../../../../../../../shared/players/insights/insights.profiles.js'
 
 const getPrimaryPosition = (row = {}) => {
   const positions = Array.isArray(row?.positions) ? row.positions : []
@@ -34,27 +24,6 @@ const toNumber = value => {
 }
 
 const getPerformance = row => row?.performance || {}
-
-const getProfile = row => {
-  const performance = getPerformance(row)
-
-  if (performance?.profile?.id) return performance.profile
-
-  return getPlayerInsightProfile(
-    performance?.profileId ||
-      performance?.insightId ||
-      'secondary_contributor'
-  )
-}
-
-const getImpactColor = value => {
-  const n = Number(String(value).replace('+', ''))
-
-  if (n > 0) return 'success'
-  if (n < 0) return 'warning'
-
-  return 'neutral'
-}
 
 function PositionsBlock({ row, onEditPosition }) {
   const positions = Array.isArray(row?.positions) ? row.positions : []
@@ -165,10 +134,6 @@ function PerformChip({
 function PerformBlock({ row }) {
   const performance = getPerformance(row)
   const gamesStats = row?.playerGamesStats || {}
-
-  const profile = getProfile(row)
-  const ratingLabel = performance?.ratingLabel || '-'
-  const tvaLabel = performance?.tvaLabel || '0.00'
 
   const goals = toNumber(performance?.goals ?? gamesStats?.goals)
   const assists = toNumber(performance?.assists ?? gamesStats?.assists)

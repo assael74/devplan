@@ -1,4 +1,4 @@
-// src/ui/entityLifecycle/delete/teamCascade/TeamCascadeDeleteDialog.js
+// src/ui/domains/entityLifecycle/delete/teamCascade/TeamCascadeDeleteDialog.js
 
 import React, { useMemo, useState } from 'react'
 import {
@@ -26,7 +26,7 @@ const WARNING_LABELS = {
   TEAM_NOT_FOUND: 'הקבוצה לא נמצאה בדאטה',
   TEAM_HAS_NO_PLAYERS: 'לא נמצאו שחקנים משויכים לקבוצה',
   TEAM_HAS_NO_GAMES: 'לא נמצאו משחקים משויכים לקבוצה',
-  ADVANCED_STATS_WILL_BE_DELETED: 'סטטיסטיקה מתקדמת תימחק לפני מחיקת המשחקים',
+  ADVANCED_STATS_WILL_BE_DELETED: 'סטטיסטיקה מתקדמת תימחק יחד עם המשחקים',
   PAYMENTS_WILL_BE_ARCHIVED_WITH_SNAPSHOTS:
     'תשלומים יעברו לארכיון עם פרטי שחקן, קבוצה ומועדון',
   MEETINGS_WILL_BE_DELETED: 'פגישות משויכות יימחקו',

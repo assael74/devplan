@@ -1,4 +1,4 @@
-// features/hub/teamProfile/sharedUi/TeamModules.js
+// src/features/hub/teamProfile/sharedUi/TeamModules.js
 
 import React from 'react'
 import ProfileModuleRenderer from '../../sharedProfile/ProfileModuleRenderer'
@@ -11,6 +11,7 @@ export default function TeamModules({
   modulesMap = {},
   playersInsightsRequest = 0,
   playersImportRequest = 0,
+  onPlayersImportHandled,
   gamesInsightsRequest = 0,
   gamesImportRequest = 0,
   performanceInsightsRequest = 0,
@@ -27,6 +28,7 @@ export default function TeamModules({
       modulesMap={modulesMap}
       playersInsightsRequest={playersInsightsRequest}
       playersImportRequest={playersImportRequest}
+      onPlayersImportHandled={onPlayersImportHandled}
       gamesInsightsRequest={gamesInsightsRequest}
       gamesImportRequest={gamesImportRequest}
       performanceInsightsRequest={performanceInsightsRequest}

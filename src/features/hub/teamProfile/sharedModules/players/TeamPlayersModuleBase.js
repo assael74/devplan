@@ -1,4 +1,4 @@
-// teamProfile/sharedModules/players/TeamPlayersModuleBase.js
+// src/features/hub/teamProfile/sharedModules/players/TeamPlayersModuleBase.js
 
 import React, { useState } from 'react'
 import { Box } from '@mui/joy'
@@ -22,9 +22,11 @@ export default function TeamPlayersModuleBase({
   profileData,
   playersInsightsRequest = 0,
   playersImportRequest = 0,
+  onPlayersImportHandled,
   onPlayersInsightsStatusChange,
   onOpenPlayer,
   bulkEnabled = false,
+  importEnabled = bulkEnabled,
 
   Section,
   ToolbarComponent,
@@ -41,8 +43,10 @@ export default function TeamPlayersModuleBase({
     profileData,
     playersInsightsRequest,
     playersImportRequest,
+    onPlayersImportHandled,
     onPlayersInsightsStatusChange,
     bulkEnabled,
+    importEnabled,
   })
 
   const [managementPrintMode, setManagementPrintMode] = useState(
@@ -67,7 +71,6 @@ export default function TeamPlayersModuleBase({
     rowPhoto,
     uploadImageOnly,
     selectionMode,
-    selectedPlayerIds,
     selectedPlayerIdsSet,
     selectedCount,
     allFilteredSelected,
@@ -216,7 +219,7 @@ export default function TeamPlayersModuleBase({
         onAfterSave={handleAfterImageSave}
       />
 
-      {bulkEnabled ? <PlayersBulkPasteDrawer {...importDrawerProps} /> : null}
+      {importEnabled ? <PlayersBulkPasteDrawer {...importDrawerProps} /> : null}
       {bulkEnabled ? <PlayersBulkDeleteModal {...deleteModalProps} /> : null}
     </Wrap>
   )

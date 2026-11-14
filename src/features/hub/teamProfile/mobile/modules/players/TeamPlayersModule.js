@@ -1,4 +1,4 @@
-// teamProfile/mobile/modules/players/TeamPlayersModule.js
+// src/features/hub/teamProfile/mobile/modules/players/TeamPlayersModule.js
 
 import React from 'react'
 
@@ -18,6 +18,7 @@ export default function TeamPlayersModule(props) {
   return (
     <TeamPlayersModuleBase
       {...props}
+      importEnabled
       Section={SectionPanelMobile}
       ToolbarComponent={TeamPlayersToolbar}
       ListComponent={TeamPlayersList}

@@ -6,7 +6,7 @@ import {
   resolvePlayerPosition,
 } from '../../../../shared/players/targets/index.js'
 
-import { buildPlayerTargetSections } from './shared/playerTargetSections.js'
+import { buildPlayerTargetSections } from '../../../../shared/players/targets/playerTargetSections.js'
 import playerImage from '../../../../ui/core/images/playerImage.jpg'
 
 const EMPTY = '—'

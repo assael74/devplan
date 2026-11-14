@@ -98,7 +98,6 @@ const GOAL_TIER_BY_EXCEL_LABEL = {
   '10-14': 'doubleDigitScorer',
   '5-9': 'supportScorer',
   '1-4': 'occasionalScorer',
-  0: 'none',
   '0': 'none',
 }
 

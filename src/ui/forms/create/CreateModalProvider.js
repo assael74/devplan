@@ -5,6 +5,7 @@ import ObjectCreateModal from './ObjectCreateModal'
 import { useCreateModalState } from './useCreateModal'
 import { useCoreData } from '../../../coreData/CoreDataProvider.js'
 import { createEntity, unwrapActionResult } from '../../../application/index.js'
+import { useCreateRequest } from '../../../application/actions/entities/useCreateRequest.js'
 import { getCreateMeta } from './createRegistry'
 
 import { useSnackbar } from '../../core/feedback/snackbar/SnackbarProvider'
@@ -58,6 +59,7 @@ export default function CreateModalProvider({ children }) {
   const st = useCreateModalState()
   const core = useCoreData()
   const { notify } = useSnackbar()
+  const { getCreateRequest, clearCreateRequest } = useCreateRequest()
 
   const defaultContext = useMemo(
     () => ({
@@ -75,12 +77,13 @@ export default function CreateModalProvider({ children }) {
     (type, draftSeed = {}, ctxOverride = {}, options = {}) => {
       const ctx = { ...defaultContext, ...(ctxOverride || {}) }
       const meta = getCreateMeta(type)
+      clearCreateRequest()
 
       st.openCreate(type, draftSeed, ctx, {
         size: options.size || meta.size || 'sm',
       })
     },
-    [st, defaultContext]
+    [st, defaultContext, clearCreateRequest]
   )
 
   const closeCreate = useCallback(() => {
@@ -88,6 +91,8 @@ export default function CreateModalProvider({ children }) {
   }, [st])
 
   const handleConfirm = useCallback(async () => {
+    if (st.busy) return
+
     const type = st.type
     const actionKey = resolveCreateActionKey({
       type,
@@ -104,6 +109,7 @@ export default function CreateModalProvider({ children }) {
         entityType: actionKey,
         draft: st.draft,
         context: st.context,
+        request: getCreateRequest({ actionKey, draft: st.draft, context: st.context }),
       })
 
       unwrapActionResult(result)
@@ -129,7 +135,7 @@ export default function CreateModalProvider({ children }) {
     } finally {
       st.setBusy(false)
     }
-  }, [st, notify])
+  }, [st, notify, getCreateRequest])
 
   const sharedProps = {
     open: st.open,

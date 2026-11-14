@@ -3,7 +3,7 @@
 import { upsertAbilitiesHistory } from '../../../services/firestore/shorts/abilities/abilitiesUpsertHistory.js'
 import { createGameStatsDoc } from '../../../services/firestore/shorts/gameStats/index.js'
 import { upsertTrainingWeek } from '../../../services/firestore/shorts/trainings/trainingsShorts.service.js'
-import { createShort } from '../../../services/firestore/shorts/shortsCreate.js'
+import { createShort, createShortItems } from '../../../services/firestore/shorts/shortsCreate.js'
 import { makeId } from '../../../utils/id.js'
 
 import {
@@ -15,6 +15,7 @@ import {
   createGamesShorts,
   createPlayerShorts,
   createPlayersShorts,
+  resolveCreateIdentity,
 } from './createEntity.builders.js'
 
 const pickIfaLink = draft => {
@@ -26,6 +27,17 @@ const clean = value => String(value == null ? '' : value).trim()
 
 const omitEmpty = (obj = {}) =>
   Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined))
+
+async function createPaymentRecords({ profit, operative, request }) {
+  await createShortItems({
+    entries: [
+      { shortKey: 'payments.paymentProfit', item: profit },
+      { shortKey: 'payments.paymentOperative', item: operative },
+    ],
+    allowExisting: Boolean(request?.id),
+  })
+  return { ...profit, ...operative }
+}
 
 export const createEntityHandlers = {
   club: async ({ draft }) => {
@@ -61,12 +73,12 @@ export const createEntityHandlers = {
     })
   },
 
-  player: async ({ draft }) => {
-    return createPlayerShorts({ draft })
+  player: async ({ draft, request }) => {
+    return createPlayerShorts({ draft, request })
   },
 
-  players: async ({ draft }) => {
-    return createPlayersShorts({ draft })
+  players: async ({ draft, request }) => {
+    return createPlayersShorts({ draft, request })
   },
 
   privatePlayer: async ({ draft }) => {
@@ -196,9 +208,8 @@ export const createEntityHandlers = {
     return { ...meetingInfoItem }
   },
 
-  payment: async ({ draft }) => {
-    const id = makeId()
-    const now = Date.now()
+  payment: async ({ draft, request }) => {
+    const { id, now } = resolveCreateIdentity(request)
 
     const initialStatus = { id: 'new', time: now }
 
@@ -215,19 +226,16 @@ export const createEntityHandlers = {
       status: initialStatus,
     }
 
-    await createShort({ shortKey: 'payments.paymentProfit', item: paymentProfitItem })
-    await createShort({ shortKey: 'payments.paymentOperative', item: paymentOperativeItem })
-
-    return {
-      ...paymentProfitItem,
-      ...paymentOperativeItem,
-    }
+    return createPaymentRecords({
+      profit: paymentProfitItem,
+      operative: paymentOperativeItem,
+      request,
+    })
   },
 
 
-  privatePaymentAgreement: async ({ draft }) => {
-    const id = makeId()
-    const now = Date.now()
+  privatePaymentAgreement: async ({ draft, request }) => {
+    const { id, now } = resolveCreateIdentity(request)
     const totalAmount = Number(String(draft.totalAmount || '').replace(/,/g, ''))
     const initialStatus = { id: 'new', time: now }
 
@@ -248,29 +256,27 @@ export const createEntityHandlers = {
       status: initialStatus,
     }
 
-    await createShort({ shortKey: 'payments.paymentProfit', item: paymentProfitItem })
-    await createShort({ shortKey: 'payments.paymentOperative', item: paymentOperativeItem })
-
-    return {
-      ...paymentProfitItem,
-      ...paymentOperativeItem,
-    }
+    return createPaymentRecords({
+      profit: paymentProfitItem,
+      operative: paymentOperativeItem,
+      request,
+    })
   },
 
-  game: async ({ draft }) => {
-    return createGameShorts({ draft })
+  game: async ({ draft, request }) => {
+    return createGameShorts({ draft, request })
   },
 
-  games: async ({ draft }) => {
-    return createGamesShorts({ draft })
+  games: async ({ draft, request }) => {
+    return createGamesShorts({ draft, request })
   },
 
-  externalGame: async ({ draft, context }) => {
-    return createExternalGameShorts({ draft, context })
+  externalGame: async ({ draft, context, request }) => {
+    return createExternalGameShorts({ draft, context, request })
   },
 
-  externalGames: async ({ draft, context }) => {
-    return createExternalGamesShorts({ draft, context })
+  externalGames: async ({ draft, context, request }) => {
+    return createExternalGamesShorts({ draft, context, request })
   },
 
   gameStats: async ({ draft }) => {

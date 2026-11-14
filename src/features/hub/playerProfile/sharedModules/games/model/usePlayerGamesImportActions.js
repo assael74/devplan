@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 
 import { createEntity, unwrapActionResult } from '../../../../application/index.js'
+import { useCreateRequest } from '../../../../../../application/actions/entities/useCreateRequest.js'
 
 const clean = value => String(value == null ? '' : value).trim()
 
@@ -19,6 +20,7 @@ export function usePlayerGamesImportActions({
   const [gamesImportOpen, setGamesImportOpen] = useState(false)
   const [gamesImportSaving, setGamesImportSaving] = useState(false)
   const [gamesImportError, setGamesImportError] = useState('')
+  const { getCreateRequest, clearCreateRequest } = useCreateRequest()
 
   useEffect(() => {
     if (gamesImportRequest > 0) {
@@ -29,6 +31,7 @@ export function usePlayerGamesImportActions({
   function handleOpenGamesImport() {
     if (gamesImportSaving) return
 
+    clearCreateRequest()
     setGamesImportError('')
     setGamesImportOpen(true)
   }
@@ -41,6 +44,8 @@ export function usePlayerGamesImportActions({
   }
 
   async function handleGamesImportPreviewReady({ payload } = {}) {
+    if (gamesImportSaving) return
+
     const playerId = clean(livePlayer?.id || context?.playerId)
     const isPrivatePlayer =
       isPrivatePlayerEntity(livePlayer) ||
@@ -107,6 +112,7 @@ export function usePlayerGamesImportActions({
       unwrapActionResult(await createEntity({
         entityType: isPrivatePlayer ? 'externalGames' : 'games',
         draft: finalPayload,
+        request: getCreateRequest(finalPayload),
         context: {
           ...context,
           playerId,

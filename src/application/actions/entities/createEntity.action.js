@@ -3,7 +3,12 @@
 import { createEntityHandlers } from './createEntity.handlers.js'
 import { actionFailure, actionSuccess } from '../../shared/actionResult.js'
 
-export async function createEntity({ entityType, draft, context = null } = {}) {
+export async function createEntity({
+  entityType,
+  draft,
+  context = null,
+  request,
+} = {}) {
   const metadata = {
     action: 'createEntity',
     entityType: entityType || null,
@@ -19,7 +24,7 @@ export async function createEntity({ entityType, draft, context = null } = {}) {
       throw error
     }
 
-    const data = await handler({ draft, context })
+    const data = await handler({ draft, context, request })
     return actionSuccess({ data, metadata })
   } catch (error) {
     return actionFailure({ error, metadata })

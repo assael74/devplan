@@ -1,15 +1,10 @@
 // src/application/actions/teamCascade/archiveTeamCascadePayments.js
 
-import { patchShortItemsByIds } from '../../../services/firestore/shorts/shortsPatchMany.js'
-import { TEAM_CASCADE_DELETE_KEYS } from './teamCascadeDelete.keys.js'
-
-const now = () => Date.now()
-
 const resolvePaymentSnapshot = ({ payment, plan }) => {
-  const byPayment = plan?.paymentSnapshotsById[payment?.id]
+  const byPayment = plan.paymentSnapshotsById?.[payment.id]
   if (byPayment) return byPayment
 
-  const byPlayer = plan?.playerSnapshotsById[payment?.playerId]
+  const byPlayer = plan.playerSnapshotsById?.[payment.playerId]
 
   return {
     id: payment?.id || '',
@@ -22,14 +17,14 @@ const resolvePaymentSnapshot = ({ payment, plan }) => {
   }
 }
 
-const buildArchivePatch = ({ payment, plan, archivedAt }) => {
+export const buildArchivePatch = ({ payment, plan, archivedAt }) => {
   const snap = resolvePaymentSnapshot({ payment, plan })
 
   return {
     active: false,
     archived: true,
     archiveReason: 'teamCascadeDelete',
-    archivedAt,
+    archivedAt: payment.archivedAt == null ? archivedAt : payment.archivedAt,
 
     sourceDeleted: true,
     sourceDeletedType: 'team',
@@ -58,33 +53,5 @@ const buildArchivePatch = ({ payment, plan, archivedAt }) => {
       id: snap.clubId,
       name: snap.clubName,
     },
-  }
-}
-
-export async function archiveTeamCascadePayments({ plan }) {
-  const paymentIds = Array.from(new Set((plan?.paymentIds || []).filter(Boolean)))
-
-  if (!paymentIds.length) {
-    return {
-      label: 'paymentsArchive',
-      skipped: true,
-      ids: [],
-      totalPatched: 0,
-    }
-  }
-
-  const archivedAt = now()
-
-  const res = await patchShortItemsByIds({
-    shortKeys: TEAM_CASCADE_DELETE_KEYS.payments,
-    ids: paymentIds,
-    requireAnyPatched: false,
-    patch: ({ item }) => buildArchivePatch({ payment: item, plan, archivedAt }),
-  })
-
-  return {
-    label: 'paymentsArchive',
-    skipped: false,
-    ...res,
   }
 }
